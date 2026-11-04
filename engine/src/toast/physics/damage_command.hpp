@@ -36,6 +36,7 @@ struct ExplosionDamage {
 	glm::vec3 point {};
 	float force = 0.0f;
 	float falloff = tunables().explosion_falloff;
+	float max_radius = tunables().explosion_max_radius;    ///< Nothing past it breaks or gets pushed
 	Hardness max_hardness = k_hardest;
 };
 

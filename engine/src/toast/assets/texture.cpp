@@ -1,8 +1,7 @@
 #include "texture.hpp"
 
-#include <toast/log.hpp>
+#include <toast/renderer/resources/vulkan_texture.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
-#include <toast/renderer/vulkan_texture.hpp>
 
 namespace assets {
 

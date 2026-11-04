@@ -1,7 +1,5 @@
 #include "audio_box_emitter.hpp"
 
-#include <glm/gtc/matrix_transform.hpp>
-
 namespace toast {
 
 void AudioBoxEmitter::extents(glm::vec3 value) {

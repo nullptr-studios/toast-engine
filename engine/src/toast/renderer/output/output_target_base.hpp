@@ -1,0 +1,84 @@
+/// @file IOutputTarget.hpp
+/// @author dario
+/// @date 16/05/2026
+
+#pragma once
+
+#include "toast/renderer/core/vulkan_common.hpp"
+
+#include <chrono>
+#include <cstdint>
+
+namespace renderer {
+
+struct OutputSubmitSync {
+	const void* chain = nullptr;
+	vk::Semaphore wait = nullptr;
+	vk::PipelineStageFlags wait_stage;
+	vk::Semaphore signal = nullptr;
+};
+
+class IOutputTarget {
+public:
+	virtual ~IOutputTarget() = default;
+
+	[[nodiscard]]
+	virtual auto getExtent() const -> vk::Extent2D = 0;
+
+	[[nodiscard]]
+	virtual auto getColorFormat() const -> vk::Format = 0;
+
+	/// scRGB float where 1.0 is 80 nits
+	[[nodiscard]]
+	virtual auto isHdr() const -> bool {
+		return false;
+	}
+
+	[[nodiscard]]
+	virtual auto getImageCount() const -> uint32_t = 0;
+
+	[[nodiscard]]
+	virtual auto getColorImage(uint32_t index) const -> const vk::Image& = 0;
+
+	[[nodiscard]]
+	virtual auto getColorAttachment(uint32_t index) const -> const vk::raii::ImageView& = 0;
+
+	virtual auto acquireNextImage(uint64_t timeout, vk::Semaphore image_available, vk::Fence in_flight_fence)
+	    -> vk::ResultValue<uint32_t> = 0;
+
+	virtual auto present(uint32_t image_index, vk::Semaphore render_finished) -> vk::Result = 0;
+
+	[[nodiscard]]
+	virtual auto usesAcquirePresentSemaphores() const -> bool {
+		return true;
+	}
+
+	virtual void recordFinalize(vk::CommandBuffer command_buffer, uint32_t image_index) = 0;
+
+	// Always release the acquisition, including probe captures that must not be published.
+	virtual void onImageRenderComplete(uint32_t image_index, bool publish = true) {
+		(void)image_index;
+		(void)publish;
+	}
+
+	/// After acquireNextImage returned eNotReady and false when none freed within @p timeout
+	virtual auto waitForFreeImage(std::chrono::nanoseconds timeout) -> bool {
+		(void)timeout;
+		return true;
+	}
+
+	[[nodiscard]]
+	virtual auto submitSync(uint32_t image_index) -> OutputSubmitSync {
+		(void)image_index;
+		return {};
+	}
+
+	virtual void recreate(vk::Extent2D extent) = 0;
+
+	[[nodiscard]]
+	virtual auto isPresentable() const -> bool {
+		return true;
+	}
+};
+
+}    // namespace renderer

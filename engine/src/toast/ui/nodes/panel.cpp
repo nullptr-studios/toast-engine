@@ -8,7 +8,6 @@
 #include <RmlUi/Core/Context.h>
 #include <RmlUi/Core/ElementDocument.h>
 #include <toast/renderer/vulkan_renderer.hpp>
-#include <utility>
 
 namespace toast {
 

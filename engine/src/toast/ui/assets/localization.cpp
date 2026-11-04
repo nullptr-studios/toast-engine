@@ -2,9 +2,6 @@
 
 #include "../csv.hpp"
 
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace assets {
 
 LocalizationBase::LocalizationBase(std::vector<uint8_t> data) {

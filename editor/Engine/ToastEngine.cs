@@ -152,6 +152,9 @@ public partial class ToastEngine : IDisposable {
 		toast_set_show_debug_windows(visible ? 1 : 0);
 	}
 
+	/// Overlay up in game view so the cursor stays free even under a game lock
+	public static bool DebugOverlayOwnsCursor => IsEngineReady && toast_debug_overlay_owns_cursor() != 0;
+
 	public string ProjectPath { get; }
 	public string CorePath { get; }
 
@@ -294,8 +297,8 @@ public partial class ToastEngine : IDisposable {
 		return IsEngineReady && toast_viewport_export_shared_slot(generation, slot, out handles) == 1;
 	}
 
-	public bool HoldSharedViewportSlot(ulong generation, uint slot) =>
-		IsEngineReady && toast_viewport_hold_shared_slot(generation, slot) == 1;
+	public bool HoldSharedViewportSlot(ulong generation, uint slot, ulong frameId) =>
+		IsEngineReady && toast_viewport_hold_shared_slot(generation, slot, frameId) == 1;
 
 	public void ReleaseSharedViewportSlot(ulong generation, uint slot, bool consumed) {
 		if (IsEngineReady) toast_viewport_release_shared_slot(generation, slot, consumed ? 1 : 0);
@@ -323,6 +326,7 @@ public partial class ToastEngine : IDisposable {
 			Log.Info($"Reloading game library: {gameDll}");
 			File.Copy(gameDll, newTempPath);
 			newHandle = NativeLibrary.Load(newTempPath);
+			Log.InvalidateBacktraceCache();
 			var newCreate =
 				Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(newHandle, "game_create"));
 			var newDestroy =
@@ -344,7 +348,10 @@ public partial class ToastEngine : IDisposable {
 			toast_begin_application();
 		} catch (Exception ex) {
 			if (!adopted) {
-				if (newHandle != IntPtr.Zero) NativeLibrary.Free(newHandle);
+				if (newHandle != IntPtr.Zero) {
+					NativeLibrary.Free(newHandle);
+					Log.InvalidateBacktraceCache();
+				}
 				TryDeleteGameTemp(newTempPath);
 			}
 
@@ -448,6 +455,7 @@ public partial class ToastEngine : IDisposable {
 
 	private void LoadFrom(string dllPath) {
 		m_gameHandle = NativeLibrary.Load(dllPath);
+		Log.InvalidateBacktraceCache();
 		m_gameTempPath = dllPath;
 		m_gameCreate =
 			Marshal.GetDelegateForFunctionPointer<GameCreate>(NativeLibrary.GetExport(m_gameHandle, "game_create"));
@@ -469,6 +477,7 @@ public partial class ToastEngine : IDisposable {
 		}
 
 		m_retiredGameLibraries.Clear();
+		Log.InvalidateBacktraceCache();
 	}
 
 	private static void TryDeleteGameTemp(string path) {
@@ -553,7 +562,7 @@ public partial class ToastEngine : IDisposable {
 		ulong generation, uint slot, out ToastViewportSharedHandles outHandles);
 
 	[LibraryImport(EngineLib)]
-	private static partial int toast_viewport_hold_shared_slot(ulong generation, uint slot);
+	private static partial int toast_viewport_hold_shared_slot(ulong generation, uint slot, ulong frameId);
 
 	[LibraryImport(EngineLib)]
 	private static partial void toast_viewport_release_shared_slot(ulong generation, uint slot, int consumed);
@@ -600,6 +609,9 @@ public partial class ToastEngine : IDisposable {
 	[LibraryImport(EngineLib)]
 	private static partial void toast_set_show_debug_windows(int visible);
 
+	[LibraryImport(EngineLib)]
+	private static partial int toast_debug_overlay_owns_cursor();
+
 	public static void ReloadProjectSettings() {
 		if (IsEngineReady) OnTickThread(toast_reload_project_settings);
 	}
@@ -619,10 +631,10 @@ public partial class ToastEngine : IDisposable {
 	private static partial void toast_pop_application();
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
-	private static partial void toast_bake_asset(string uid, string outPath);
+	private static partial int toast_bake_asset(string uid, string outPath);
 
-	public static void BakeAsset(string uid, string outPath) {
-		if (IsEngineReady) toast_bake_asset(uid, outPath);
+	public static bool BakeAsset(string uid, string outPath) {
+		return IsEngineReady && toast_bake_asset(uid, outPath) != 0;
 	}
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]

@@ -15,7 +15,7 @@
 	      RowSpacing="8">
 		<!-- Top bar -->
 		<Grid Grid.Row="0"
-		      ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto"
+		      ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto,Auto,Auto"
 		      ColumnSpacing="8">
 			<StackPanel Grid.Column="0"
 			            Orientation="Horizontal">
@@ -120,10 +120,16 @@
 					<LucideIcon Kind="SquareDashed" Size="18" StrokeWidth="2.5" />
 				</ToggleButton>
 				<ToggleButton Classes="snapTool"
-				              CornerRadius="0,6,6,0"
+				              CornerRadius="0"
 				              ToolTip.Tip="Hammer View (Z)"
 				              IsChecked="{Binding FourUp}">
 					<LucideIcon Kind="LayoutGrid" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="snapTool"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Snap to unit"
+				              IsChecked="{Binding SnapToUnit}">
+					<LucideIcon Kind="Magnet" Size="18" StrokeWidth="2.5" />
 				</ToggleButton>
 			</StackPanel>
 
@@ -158,10 +164,30 @@
 				</ToggleButton>
 			</StackPanel>
 
-			<ve:VoxelPalettePicker x:Name="PalettePicker"
-			                       Grid.Column="3" />
+			<StackPanel Grid.Column="3"
+			            Orientation="Horizontal">
+				<ToggleButton Classes="tool red camMode"
+				              CornerRadius="6,0,0,6"
+				              ToolTip.Tip="Free camera"
+				              Command="{Binding Workspace.SetEditorCameraModeCommand}"
+				              CommandParameter="Free"
+				              IsChecked="{Binding Workspace.CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Free, Mode=OneWay}">
+					<LucideIcon Kind="Camera" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool red camMode"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Orbit camera"
+				              Command="{Binding Workspace.SetEditorCameraModeCommand}"
+				              CommandParameter="Orbit"
+				              IsChecked="{Binding Workspace.CameraMode, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Orbit, Mode=OneWay}">
+					<LucideIcon Kind="Rotate3d" Size="18" StrokeWidth="2.5" />
+				</ToggleButton>
+			</StackPanel>
 
-			<StackPanel Grid.Column="4"
+			<ve:VoxelPalettePicker x:Name="PalettePicker"
+			                       Grid.Column="4" />
+
+			<StackPanel Grid.Column="5"
 			            Orientation="Horizontal"
 			            Spacing="8"
 			            HorizontalAlignment="Right">
@@ -189,7 +215,7 @@
 				</Button>
 			</StackPanel>
 
-			<StackPanel Grid.Column="5"
+			<StackPanel Grid.Column="6"
 			            Orientation="Horizontal"
 			            Spacing="6"
 			            ToolTip.Tip="Script">
@@ -201,7 +227,7 @@
 				                   Value="{Binding DefaultScript, Mode=TwoWay}" />
 			</StackPanel>
 
-			<StackPanel Grid.Column="6"
+			<StackPanel Grid.Column="7"
 			            Orientation="Horizontal"
 			            Spacing="6"
 			            ToolTip.Tip="Fill mode new volumes get">
@@ -213,7 +239,7 @@
 				                  Options="{x:Static ve:VoxelEditorViewModel.FillModes}" />
 			</StackPanel>
 
-			<Button Grid.Column="7"
+			<Button Grid.Column="8"
 			        Classes="chev"
 			        CornerRadius="6"
 			        Command="{Binding BakeCommand}"
@@ -226,7 +252,7 @@
 				</StackPanel>
 			</Button>
 
-			<Button Grid.Column="8"
+			<Button Grid.Column="9"
 			        Classes="chev"
 			        CornerRadius="6"
 			        Command="{Binding SaveCommand}"

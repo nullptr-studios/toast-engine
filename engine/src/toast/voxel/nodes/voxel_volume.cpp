@@ -4,7 +4,6 @@
 #include "voxel_node_utils.hpp"
 
 #include <toast/assets/script.hpp>
-#include <toast/log.hpp>
 
 namespace toast {
 

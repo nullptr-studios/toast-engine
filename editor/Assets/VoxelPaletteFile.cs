@@ -4,6 +4,8 @@
 //
 
 using System;
+using System.Buffers.Binary;
+using System.IO.Compression;
 using System.IO;
 using System.Linq;
 using Tomlyn;
@@ -17,13 +19,21 @@ public sealed class VoxelPaletteEntry {
 	public byte R { get; set; }
 	public byte G { get; set; }
 	public byte B { get; set; }
+	
+	public float Alpha { get; set; } = 1f;
+	
 
 	public float Roughness { get; set; }
 	public float Metallic { get; set; }
 	public float Reflectivity { get; set; }
 	public float Emissive { get; set; }
 
-	public float Alpha { get; set; } = 1f;
+
+	/// <summary>Mirrors voxel::k_default_ior</summary>
+	public const float DefaultIor = 1.5f;
+	public const float MaxIor = 3.55f;
+
+	public float Ior { get; set; } = DefaultIor;
 
 	public int Material { get; set; }
 
@@ -31,7 +41,32 @@ public sealed class VoxelPaletteEntry {
 	public bool HasMaterial { get; set; }
 
 	public int TransformsTo { get; set; }
-	public bool Transparent { get; set; }
+
+	/// <summary>Layer of the detail library, 0 for none</summary>
+	public int DetailLayer { get; set; }
+
+	/// <summary>Texels per voxel edge, 0 for the engine default</summary>
+	public int DetailScale { get; set; }
+
+	public float DetailAlbedo { get; set; }
+	public float DetailRoughness { get; set; }
+	public float DetailBump { get; set; }
+
+	public void CopyFrom(VoxelPaletteEntry other) {
+		InUse = other.InUse;
+		R = other.R;
+		G = other.G;
+		B = other.B;
+		Roughness = other.Roughness;
+		Metallic = other.Metallic;
+		Reflectivity = other.Reflectivity;
+		Emissive = other.Emissive;
+		Alpha = other.Alpha;
+		Ior = other.Ior;
+		Material = other.Material;
+		HasMaterial = other.HasMaterial;
+		TransformsTo = other.TransformsTo;
+	}
 
 	public void Clear() {
 		InUse = false;
@@ -40,8 +75,10 @@ public sealed class VoxelPaletteEntry {
 		R = G = B = 0;
 		Roughness = Metallic = Reflectivity = Emissive = 0f;
 		Alpha = 1f;
+		Ior = DefaultIor;
 		TransformsTo = 0;
-		Transparent = false;
+		DetailLayer = DetailScale = 0;
+		DetailAlbedo = DetailRoughness = DetailBump = 0f;
 	}
 }
 
@@ -67,6 +104,10 @@ public sealed class VoxelPaletteFile {
 	public const int Size = 256;
 
 	public const int SlotCount = 256;
+
+	public const int RowCount = 16;
+
+	public string[] RowLabels { get; } = Enumerable.Repeat("", RowCount).ToArray();
 
 	public float MaxEmissive { get; set; } = 1f;
 
@@ -112,6 +153,10 @@ public sealed class VoxelPaletteFile {
 					slot.DustColour = [ToByte(rgb[0]), ToByte(rgb[1]), ToByte(rgb[2])];
 			}
 
+		if (table.TryGetValue("row_labels", out var labels) && labels is TomlArray labelArray)
+			for (var i = 0; i < labelArray.Count && i < RowCount; i++)
+				palette.RowLabels[i] = labelArray[i] as string ?? "";
+
 		if (!table.TryGetValue("entries", out var list) || list is not TomlTableArray entries) return palette;
 
 		foreach (var entry in entries) {
@@ -132,12 +177,18 @@ public sealed class VoxelPaletteFile {
 			target.Reflectivity = GetFloat(entry, "reflectivity", 0f);
 			target.Emissive = GetFloat(entry, "emissive", 0f);
 			target.Alpha = GetFloat(entry, "alpha", 1f);
+			target.Ior = GetFloat(entry, "ior", VoxelPaletteEntry.DefaultIor);
 
 			target.HasMaterial = entry.ContainsKey("material");
 			target.Material = GetInt(entry, "material", 0);
 
 			target.TransformsTo = GetInt(entry, "transforms_to", 0);
-			target.Transparent = entry.TryGetValue("transparent", out var transparent) && transparent is true;
+
+			target.DetailLayer = GetInt(entry, "detail_layer", 0);
+			target.DetailScale = GetInt(entry, "detail_scale", 0);
+			target.DetailAlbedo = GetFloat(entry, "detail_albedo", 0f);
+			target.DetailRoughness = GetFloat(entry, "detail_roughness", 0f);
+			target.DetailBump = GetFloat(entry, "detail_bump", 0f);
 		}
 
 		return palette;
@@ -151,6 +202,12 @@ public sealed class VoxelPaletteFile {
 		var root = new TomlTable {
 			["max_emissive"] = (double)MaxEmissive
 		};
+
+		if (RowLabels.Any(label => label.Length > 0)) {
+			var labels = new TomlArray();
+			foreach (var label in RowLabels) labels.Add(label);
+			root["row_labels"] = labels;
+		}
 
 		// Trailing slots nobody authored are left out
 		var slotCount = Slots.Length;
@@ -185,14 +242,72 @@ public sealed class VoxelPaletteFile {
 				["emissive"] = (double)Clamp01(entry.Emissive),
 				["alpha"] = (double)Clamp01(entry.Alpha)
 			};
+			if (Math.Abs(entry.Ior - VoxelPaletteEntry.DefaultIor) > 0.005f)
+				table["ior"] = Math.Round((double)Math.Clamp(entry.Ior, 1f, VoxelPaletteEntry.MaxIor), 2);
 			if (entry.HasMaterial) table["material"] = (long)Math.Clamp(entry.Material, 0, SlotCount - 1);
 			table["transforms_to"] = (long)Math.Clamp(entry.TransformsTo, 0, 255);
-			table["transparent"] = entry.Transparent;
+			if (entry.DetailLayer != 0) {
+				table["detail_layer"] = (long)Math.Clamp(entry.DetailLayer, 0, 255);
+				table["detail_scale"] = (long)Math.Clamp(entry.DetailScale, 0, 255);
+				table["detail_albedo"] = (double)Clamp01(entry.DetailAlbedo);
+				table["detail_roughness"] = (double)Clamp01(entry.DetailRoughness);
+				table["detail_bump"] = (double)Clamp01(entry.DetailBump);
+			}
 			list.Add(table);
 		}
 
 		root["entries"] = list;
 		return TomlSerializer.Serialize(root);
+	}
+
+	public byte[] ToPng() {
+		var row = new byte[1 + Size * 4];    // filter byte then pixels
+		for (var i = 0; i < Size - 1; i++) {
+			var entry = Entries[i + 1];
+			var o = 1 + i * 4;
+			if (entry.InUse) {
+				row[o] = entry.R;
+				row[o + 1] = entry.G;
+				row[o + 2] = entry.B;
+				row[o + 3] = (byte)Math.Round(Clamp01(entry.Alpha) * 255f);
+			}
+		}
+
+		using var output = new MemoryStream();
+		output.Write([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+
+		var header = new byte[13];
+		BinaryPrimitives.WriteInt32BigEndian(header, Size);
+		BinaryPrimitives.WriteInt32BigEndian(header.AsSpan(4), 1);
+		header[8] = 8;    // bit depth
+		header[9] = 6;    // RGBA
+		WriteChunk(output, "IHDR", header);
+
+		using var compressed = new MemoryStream();
+		using (var z = new ZLibStream(compressed, CompressionLevel.Optimal, true)) z.Write(row);
+		WriteChunk(output, "IDAT", compressed.ToArray());
+		WriteChunk(output, "IEND", []);
+		return output.ToArray();
+	}
+
+	private static void WriteChunk(Stream output, string type, byte[] data) {
+		var word = new byte[4];
+		BinaryPrimitives.WriteInt32BigEndian(word, data.Length);
+		output.Write(word);
+
+		var body = new byte[4 + data.Length];
+		System.Text.Encoding.ASCII.GetBytes(type, body);
+		data.CopyTo(body, 4);
+		output.Write(body);
+
+		var crc = 0xFFFFFFFFu;
+		foreach (var b in body) {
+			crc ^= b;
+			for (var k = 0; k < 8; k++) crc = (crc & 1) != 0 ? 0xEDB88320u ^ (crc >> 1) : crc >> 1;
+		}
+
+		BinaryPrimitives.WriteUInt32BigEndian(word, ~crc);
+		output.Write(word);
 	}
 
 	private static float Clamp01(float value) {

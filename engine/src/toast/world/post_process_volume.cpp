@@ -1,8 +1,6 @@
 #include "post_process_volume.hpp"
 
-#include <algorithm>
 #include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 
@@ -32,8 +30,31 @@ void PostProcessVolume::syncSettings() const {
 	m_settings.bloom.filter_radius = m_bloom_filter_radius;
 	m_settings.bloom.strength = m_bloom_strength;
 
+	m_settings.lens_flare.intensity = m_lens_flare_intensity;
+	m_settings.lens_flare.threshold = m_lens_flare_threshold;
+	m_settings.lens_flare.ghost_intensity = m_ghost_intensity;
+	m_settings.lens_flare.halo_intensity = m_halo_intensity;
+	m_settings.lens_flare.halo_width = m_halo_width;
+	m_settings.lens_flare.halo_mask = m_halo_mask;
+	m_settings.lens_flare.halo_compression = m_halo_compression;
+	m_settings.lens_flare.halo_thickness = m_halo_thickness;
+	m_settings.lens_flare.halo_dispersion = m_halo_dispersion;
+	m_settings.lens_flare.halo_tint_r = m_halo_tint.r;
+	m_settings.lens_flare.halo_tint_g = m_halo_tint.g;
+	m_settings.lens_flare.halo_tint_b = m_halo_tint.b;
+	m_settings.lens_flare.chroma_shift = m_flare_chroma_shift;
+	m_settings.lens_flare.threshold_range = m_lens_flare_threshold_range;
+	m_settings.lens_flare.glare_divider = m_glare_divider;
+	m_settings.lens_flare.glare_intensity = m_glare_intensity;
+	m_settings.lens_flare.anamorphic_intensity = m_anamorphic_intensity;
+	m_settings.lens_flare.anamorphic_tint = m_anamorphic_tint;
+	m_settings.lens_flare.dirt_intensity = m_dirt_intensity;
+	m_settings.lens_flare.dirt_texture = m_lens_dirt_texture;
+
 	m_settings.tonemap.exposure = m_exposure;
 	m_settings.tonemap.mode = static_cast<uint32_t>(std::max(m_tonemap_mode, 0));
+	m_settings.tonemap.gt_contrast_dip = m_gt_contrast_dip;
+	m_settings.tonemap.chromatic_aberration = m_chromatic_aberration;
 	m_settings.tonemap.gamma = m_gamma;
 	m_settings.tonemap.contrast = m_contrast;
 	m_settings.tonemap.saturation = m_saturation;
@@ -59,6 +80,16 @@ void PostProcessVolume::syncSettings() const {
 	m_settings.ssao.strength = m_ssao_strength;
 	m_settings.ssao.range_cutoff = m_ssao_range_cutoff;
 	m_settings.ssao.sample_count = static_cast<uint32_t>(std::max(m_ssao_sample_count, 1));
+
+	m_settings.fog.density = std::max(m_fog_density, 0.0f);
+	m_settings.fog.height = m_fog_height;
+	m_settings.fog.height_falloff = std::max(m_fog_height_falloff, 0.0f);
+	m_settings.fog.albedo_r = m_fog_albedo.r;
+	m_settings.fog.albedo_g = m_fog_albedo.g;
+	m_settings.fog.albedo_b = m_fog_albedo.b;
+	m_settings.fog.anisotropy = std::clamp(m_fog_anisotropy, -0.9f, 0.9f);
+	m_settings.fog.ambient = std::max(m_fog_ambient, 0.0f);
+	m_settings.fog.distance = std::max(m_fog_distance, 1.0f);
 }
 
 auto PostProcessVolume::settings() const -> const renderer::PostProcessSettings& {

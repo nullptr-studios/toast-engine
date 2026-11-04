@@ -4,19 +4,10 @@
 #include "voxel_model.hpp"
 #include "voxel_palette.hpp"
 
-#include <algorithm>
 #include <cstdio>
 #include <fstream>
-#include <functional>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <nlohmann/json.hpp>
-#include <stdexcept>
 #include <toast/assets/prefab.hpp>
-#include <toast/log.hpp>
-#include <toast/uid.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
 
 namespace assets {
 

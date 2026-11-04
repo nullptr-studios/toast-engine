@@ -5,8 +5,6 @@
 #include "ui_system.hpp"
 
 #include <RmlUi/Core/Context.h>
-#include <ranges>
-#include <toast/log.hpp>
 #include <toast/window/window_events.hpp>
 
 namespace ui {
@@ -83,6 +81,9 @@ UIInputRouter::UIInputRouter() {
 
 	m_listener.subscribe<event::WindowMousePosition>(
 	    [this](event::WindowMousePosition& e) {
+		    if (m_cursor_locked) {
+			    return false;
+		    }
 		    // every panel tracks the pointer; movement is never consumed
 		    dispatchToPanels([&](Rml::Context* context) {
 			    context->ProcessMouseMove(static_cast<int>(e.x), static_cast<int>(e.y), m_mods);
@@ -105,6 +106,11 @@ UIInputRouter::UIInputRouter() {
 		    }
 
 		    if (e.action == event::window_input_pressed) {
+			    // A press ImGui wants skips the panels under it and still reaches the input system
+			    if (m_overlay_mouse || m_cursor_locked) {
+				    m_ui_buttons.erase(e.button);
+				    return false;
+			    }
 			    const bool consumed =
 			        dispatchToPanels([&](Rml::Context* context) { return context->ProcessMouseButtonDown(button, m_mods); });
 			    if (consumed) {
@@ -124,9 +130,38 @@ UIInputRouter::UIInputRouter() {
 
 	m_listener.subscribe<event::WindowMouseScroll>(
 	    [this](event::WindowMouseScroll& e) {
+		    if (m_overlay_mouse || m_cursor_locked) {
+			    return false;
+		    }
 		    return dispatchToPanels([&](Rml::Context* context) {
 			    return context->ProcessMouseWheel(Rml::Vector2f(-e.x, -e.y), m_mods);
 		    });
+	    },
+	    k_ui_input_priority
+	);
+
+	m_listener.subscribe<event::DebugOverlayCapture>(
+	    [this](event::DebugOverlayCapture& e) {
+		    m_overlay_mouse = e.mouse;
+		    return false;
+	    },
+	    k_ui_input_priority
+	);
+
+	m_listener.subscribe<event::WindowMouseLock>(
+	    [this](event::WindowMouseLock& e) {
+		    m_game_mouse_locked = e.locked;
+		    updateCursorLock();
+		    return false;
+	    },
+	    k_ui_input_priority
+	);
+
+	m_listener.subscribe<event::DebugOverlayCursor>(
+	    [this](event::DebugOverlayCursor& e) {
+		    m_overlay_cursor = e.owned;
+		    updateCursorLock();
+		    return false;
 	    },
 	    k_ui_input_priority
 	);
@@ -145,6 +180,21 @@ UIInputRouter::UIInputRouter() {
 	    },
 	    k_ui_input_priority
 	);
+}
+
+void UIInputRouter::updateCursorLock() {
+	const bool locked = m_game_mouse_locked && !m_overlay_cursor;
+	if (locked == m_cursor_locked) {
+		return;
+	}
+	m_cursor_locked = locked;
+	// Drop the hover so nothing stays highlighted under a cursor that is gone
+	if (locked) {
+		dispatchToPanels([](Rml::Context* context) {
+			context->ProcessMouseLeave();
+			return true;
+		});
+	}
 }
 
 }

@@ -2,43 +2,31 @@
 
 #include "animation_player.hpp"
 #include "camera.hpp"
+#include "light_gizmo.hpp"
 #include "node.hpp"
 #include "node_3d.hpp"
 #include "play_workspace.hpp"
 #include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
-#include <algorithm>
-#include <array>
 #include <charconv>
-#include <cmath>
-#include <filesystem>
-#include <format>
-#include <functional>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/trigonometric.hpp>
-#include <limits>
-#include <memory>
-#include <optional>
 #include <sstream>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
 #include <toast/events/signals_events.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/nodes/box_collider.hpp>
 #include <toast/physics/nodes/capsule_collider.hpp>
+#include <toast/physics/nodes/joint3d.hpp>
 #include <toast/physics/nodes/rigidbody.hpp>
 #include <toast/physics/nodes/sphere_collider.hpp>
-#include <toast/renderer/editor_overlays.hpp>
+#include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/asset_proxy.hpp>
 #include <toast/scripting/lua_types.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/time.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/nodes/carve_volume.hpp>
@@ -48,14 +36,13 @@
 #include <toast/voxel/nodes/voxel_mesh.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/window/window_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 
 namespace toast {
 
 namespace {
+
+// Handle clicks before the runtime UI (priority 32) and gameplay input (priority 0).
+constexpr char k_gizmo_input_priority = 33;
 
 // TODO: i didnt know where to place the ray picking shit since theres no physics class yet, MOVE THIS SOMEWHERE ELSE!
 
@@ -321,6 +308,14 @@ static auto gizmoField(GizmoTool tool, GizmoHandle handle, Node& node) -> const 
 		if (box.as<VoxelVolume>().exists()) {
 			return node.info()->getField("size");
 		}
+		if (const auto light = box.as<Light>(); light.exists()) {
+			const char* name = light_gizmo::handleField(*light, handle);
+			return name != nullptr ? node.info()->getField(name) : nullptr;
+		}
+		if (const auto joint = box.as<physics::Joint3D>(); joint.exists()) {
+			const char* name = joint->limitField(handle);
+			return name != nullptr ? node.info()->getField(name) : nullptr;
+		}
 		if (box.as<physics::BoxCollider>().exists()) {
 			return node.info()->getField("size");
 		}
@@ -341,6 +336,17 @@ static auto gizmoField(GizmoTool tool, GizmoHandle handle, Node& node) -> const 
 		case GizmoTool::scale: return node.info()->getField("world_scale");
 		default: return nullptr;
 	}
+}
+
+static auto hingeRayAngle(const Ray& ray, const glm::vec3& origin, const glm::quat& rotation, float fallback) -> float {
+	const auto hit_t = rayPlaneIntersect(ray, origin, rotation * glm::vec3(0.0f, 0.0f, 1.0f));
+	if (not hit_t.has_value()) {
+		return fallback;
+	}
+	const glm::vec3 hit = ray.origin + (ray.direction * (*hit_t)) - origin;
+	return glm::degrees(
+	    std::atan2(glm::dot(hit, rotation * glm::vec3(0.0f, 1.0f, 0.0f)), glm::dot(hit, rotation * glm::vec3(1.0f, 0.0f, 0.0f)))
+	);
 }
 
 Workspace::Workspace(UID handle, EmptyTag) : m_handle(handle) {
@@ -845,7 +851,7 @@ auto Workspace::retypeNode(Box<Node>& target, std::string_view type, bool keep_f
 	return fresh;
 }
 
-void Workspace::promoteNode(Box<Node>& target, std::string_view path) {
+auto Workspace::promoteNode(Box<Node>& target, std::string_view path) -> Box<Node> {
 	ZoneScoped;
 	auto parent = target->parentInternal();
 
@@ -874,10 +880,11 @@ void Workspace::promoteNode(Box<Node>& target, std::string_view path) {
 		if (auto* spawned_3d = spawned.exists() ? reflect_cast<Node3D>(&*spawned) : nullptr; spawned_3d && placement) {
 			std::tie(spawned_3d->position, spawned_3d->rotation, spawned_3d->scale) = *placement;
 		}
-	} else {
-		TOAST_WARN("World", "Promote: couldn't resolve UID for {}", path);
-		event::send<event::RequestHierarchyUpdate>();
+		return spawned;
 	}
+	TOAST_WARN("World", "Promote: couldn't resolve UID for {}", path);
+	event::send<event::RequestHierarchyUpdate>();
+	return {};
 }
 
 auto Workspace::restoreHistorySnapshot(const assets::Prefab& snapshot) -> bool {
@@ -1105,6 +1112,23 @@ auto Workspace::collectSizeHandles() const -> std::pair<std::array<SizeHandlePoi
 		out[count++] = SizeHandlePoint {.world_position = origin + rotation * local, .handle = handle};
 	};
 
+	if (auto light = m_focused_node.as<Light>(); light.exists()) {
+		const auto [entries, entry_count] = light_gizmo::handles(*light);
+		for (uint32_t i = 0; i < entry_count; ++i) {
+			out[count++] = SizeHandlePoint {.world_position = origin + rotation * entries[i].local, .handle = entries[i].handle};
+		}
+		return {out, count};
+	}
+
+	// limits of a joint
+	if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists()) {
+		const auto [entries, entry_count] = joint->limitHandles();
+		for (uint32_t i = 0; i < entry_count; ++i) {
+			out[count++] = SizeHandlePoint {.world_position = origin + rotation * entries[i].local, .handle = entries[i].handle};
+		}
+		return {out, count};
+	}
+
 	if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 		const glm::vec3 half = glm::vec3(volume->sizeVoxels()) * voxel::k_voxel_size * 0.5f;
 		const glm::mat4& world = node3d->getWorldTransform();
@@ -1165,10 +1189,29 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 		growth = std::round(growth / m_translate_snap.value) * m_translate_snap.value;
 	}
 
+	if (auto light = m_focused_node.as<Light>(); light.exists()) {
+		light_gizmo::applyHandleDistance(*light, m_gizmo_drag, m_gizmo_drag_start_size[axis] + growth);
+		return;
+	}
+
+	if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists()) {
+		float value = m_gizmo_drag_start_size[0] + delta;
+		if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+			value = std::round(value / m_translate_snap.value) * m_translate_snap.value;
+		}
+		joint->setLimitValue(m_gizmo_drag, value);
+		return;
+	}
+
 	// Volumes grow a whole voxel at a time and the negative faces move the corner
 	if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 		const int32_t start = static_cast<int32_t>(m_gizmo_drag_start_size[axis]);
-		const int32_t next = std::max(start + static_cast<int32_t>(std::lround(delta * sign / voxel::k_voxel_size)), 1);
+		int32_t step = 1;
+		if (m_translate_snap.enabled && m_translate_snap.value > 0.0001f) {
+			step = std::max<int32_t>(1, static_cast<int32_t>(std::lround(m_translate_snap.value / voxel::k_voxel_size)));
+		}
+		const auto grown = static_cast<int32_t>(std::lround(delta * sign / (voxel::k_voxel_size * static_cast<float>(step)))) * step;
+		const int32_t next = std::max(start + grown, 1);
 		glm::ivec3 size = volume->sizeVoxels();
 		size[axis] = next;
 		volume->setSizeVoxels(size);
@@ -1208,13 +1251,6 @@ void Workspace::gizmoApplySizeDrag(float delta) {
 			capsule->height = std::max(capsule->height, 2.0f * next);
 		}
 	}
-}
-
-auto Workspace::gizmoInteractionAllowed() const -> bool {
-	if (not isPlaying()) {
-		return true;
-	}
-	return m_focused_node.as<physics::Rigidbody>().exists() || m_focused_node.as<VoxelNode>().exists();
 }
 
 void Workspace::gizmoUpdateHover() {
@@ -1281,7 +1317,11 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	m_gizmo_drag_start_size = glm::vec3(0.0f);
 
 	if (gizmo_layout::isSizeHandle(handle)) {
-		if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
+		if (auto light = m_focused_node.as<Light>(); light.exists()) {
+			m_gizmo_drag_start_size[gizmo_layout::sizeHandleAxis(handle)] = light_gizmo::handleDistance(*light, handle);
+		} else if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists()) {
+			m_gizmo_drag_start_size[0] = joint->limitValue(handle);
+		} else if (auto volume = m_focused_node.as<VoxelVolume>(); volume.exists()) {
 			m_gizmo_drag_start_size = glm::vec3(volume->sizeVoxels());
 		} else if (auto box = m_focused_node.as<physics::BoxCollider>(); box.exists()) {
 			m_gizmo_drag_start_size = box->size;
@@ -1310,6 +1350,16 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 	const auto extent = renderer::getOutputTarget().getExtent();
 	const glm::vec2 viewport_size {static_cast<float>(extent.width), static_cast<float>(extent.height)};
 	const Ray ray = camera->screenPointToRay(m_gizmo_mouse_pos, viewport_size);
+
+	// hinge limit
+	if (gizmo_layout::isSizeHandle(handle)) {
+		if (auto joint = m_focused_node.as<physics::Joint3D>(); joint.exists() && joint->limitsAreAngles()) {
+			m_gizmo_drag_axis = glm::normalize(node3d->world_rotation * glm::vec3(0.0f, 0.0f, 1.0f));
+			m_gizmo_drag_plane_normal = m_gizmo_drag_axis;
+			m_gizmo_drag_start_angle = hingeRayAngle(ray, origin, node3d->world_rotation, m_gizmo_drag_start_size[0]);
+			return;
+		}
+	}
 
 	if (gizmo_layout::isSizeHandle(handle)) {
 		glm::vec3 axis {0.0f};
@@ -1376,11 +1426,31 @@ void Workspace::gizmoUpdateDrag() {
 	    m_gizmo_drag == GizmoHandle::axis_x || m_gizmo_drag == GizmoHandle::axis_y || m_gizmo_drag == GizmoHandle::axis_z;
 
 	if (gizmo_layout::isSizeHandle(m_gizmo_drag)) {
+		auto joint = m_focused_node.as<physics::Joint3D>();
+
+		if (joint.exists() && joint->limitsAreAngles()) {
+			const float angle = hingeRayAngle(ray, origin, m_gizmo_drag_start_rotation, m_gizmo_drag_start_angle);
+			float value = m_gizmo_drag_start_size[0] + std::remainder(angle - m_gizmo_drag_start_angle, 360.0f);
+			if (m_rotate_snap.enabled && m_rotate_snap.value > 0.0001f) {
+				value = std::round(value / m_rotate_snap.value) * m_rotate_snap.value;
+			}
+			joint->setLimitValue(m_gizmo_drag, value);
+			if (const char* field = joint->limitField(m_gizmo_drag); field != nullptr) {
+				m_focused_node->onReflectedFieldChanged(field);
+			}
+			return;
+		}
+
 		const auto [_, t2] = closestPointsBetweenLines(ray.origin, ray.direction, origin, m_gizmo_drag_axis);
 		const glm::vec3 current = origin + m_gizmo_drag_axis * t2;
 		gizmoApplySizeDrag(glm::dot(current - m_gizmo_drag_anchor, m_gizmo_drag_axis));
 
-		m_focused_node->onReflectedFieldChanged("size");
+		const auto light = m_focused_node.as<Light>();
+		const char* field = light.exists() ? light_gizmo::handleField(*light, m_gizmo_drag) : nullptr;
+		if (field == nullptr && joint.exists()) {
+			field = joint->limitField(m_gizmo_drag);
+		}
+		m_focused_node->onReflectedFieldChanged(field != nullptr ? field : "size");
 		return;
 	}
 
@@ -1887,7 +1957,8 @@ void Workspace::eventSubscriptions() {
 			m_history->commit();
 		}
 		const UID saved_uid = assets::AssetManager::resolveURI(e.uri).value_or(node == m_root_node ? m_handle : UID(0));
-		assets::Prefab prefab(*node, saved_uid);
+		const UID origin = node == m_root_node ? node->m_source_prefab.uid() : UID(0);
+		assets::Prefab prefab(*node, origin.data() != 0 ? origin : saved_uid);
 		auto bytes = prefab.serialize(assets::SaveMode::editor);
 		completed.success = assets::AssetManager::get().saveBytes(e.uri, bytes);
 		if (completed.success) {
@@ -2053,7 +2124,7 @@ void Workspace::eventSubscriptions() {
 			std::istringstream ss(e.value);
 			ss >> deg.x >> deg.y >> deg.z;
 			value = std::any {glm::quat(glm::radians(deg))};
-		} else if (field->value_type == FieldType::uid_t && not field->is_array && field->type.starts_with("Box<")) {
+		} else if (field->isNodeReference()) {
 			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
 			if (not parsed.has_value()) {
 				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
@@ -2371,7 +2442,31 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_gizmo_tool = static_cast<GizmoTool>(e.tool);
+		if (m_gizmo_tool != GizmoTool::ruler) {
+			m_ruler.cancelPending();
+		}
+		m_ruler_hover_dirty = true;
 		return true;
+	});
+
+	m_listener.subscribe<event::RulerCommand>([this](const auto& e) {
+		if (e.workspace_handle != m_handle.data()) {
+			return false;
+		}
+		if (e.kind == 0) {
+			m_ruler.clear();
+		} else {
+			m_ruler.removeLast();
+		}
+		return true;
+	});
+
+	m_listener.subscribe<event::WindowKey>([this](const auto& e) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera) {
+			return false;
+		}
+		rulerKey(e.key, e.action);
+		return false;
 	});
 
 	m_listener.subscribe<event::SetCoordinateSpace>([this](const auto& e) {
@@ -2404,6 +2499,7 @@ void Workspace::eventSubscriptions() {
 		if (e.game) {
 			// entering play, drop any in-progress gizmo interaction
 			m_gizmo_hover = GizmoHandle::none;
+			m_pick_press.reset();
 			gizmoEndDrag();
 		}
 		applyActiveCamera();
@@ -2421,9 +2517,12 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// Translate-gizmo interaction, driven straight off the raw window mouse events already forwarded by the editor in edit mode
+	// Editor interaction only follows the editor camera; game view passes input to the game.
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
-		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || not gizmoInteractionAllowed()) {
+		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			return false;
+		}
+		if (m_game_camera) {
 			return false;
 		}
 		m_gizmo_mouse_pos = {e.x, e.y};
@@ -2437,40 +2536,53 @@ void Workspace::eventSubscriptions() {
 		return false;
 	});
 
-	m_listener.subscribe<event::WindowMouseButton>([this](const auto& e) {
-		if (m_handle.data() != Engine::get()->activeWorkspace().data() || m_game_camera || not gizmoInteractionAllowed()) {
-			return false;
-		}
-		const bool pressed = e.action == event::window_input_pressed;
-		const bool tool_busy = m_voxel_tool.phase != VoxelToolState::Phase::idle;
-		if ((tool_busy || m_gizmo_hover == GizmoHandle::none) && m_gizmo_drag == GizmoHandle::none &&
-		    (pressed || e.action == event::window_input_released) && voxelToolMouseButton(e.button, pressed, e.mods)) {
-			return false;
-		}
-		if (e.button != 1) {
-			return false;
-		}
-		const bool level = m_root_node.exists() && reflect_cast<ProceduralVoxel>(&*m_root_node) == nullptr;
-		if (level && pressed) {
-			m_pick_press = m_gizmo_hover == GizmoHandle::none ? std::optional(m_gizmo_mouse_pos) : std::nullopt;
-		} else if (level && e.action == event::window_input_released && m_pick_press.has_value()) {
-			const bool click = glm::distance(*m_pick_press, m_gizmo_mouse_pos) < 4.0f && m_gizmo_drag == GizmoHandle::none;
-			m_pick_press.reset();
-			if (click) {
-				m_focused_node = pickNodeUnderMouse();
-				event::NodePicked picked;
-				picked.workspace_handle = m_handle.data();
-				picked.node = m_focused_node.exists() ? m_focused_node->uid() : UID {};
-				event::send<event::NodePicked>(picked);
-			}
-		}
-		if (e.action == event::window_input_pressed && m_gizmo_hover != GizmoHandle::none) {
-			gizmoBeginDrag(m_gizmo_hover);
-		} else if (e.action == event::window_input_released) {
-			gizmoEndDrag();
-		}
-		return false;
-	});
+	m_listener.subscribe<event::WindowMouseButton>(
+	    [this](const auto& e) {
+		    if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
+			    return false;
+		    }
+		    if (m_game_camera) {
+			    return false;
+		    }
+		    if (m_gizmo_tool == GizmoTool::ruler && rulerMouseButton(e.button, e.action, e.mods)) {
+			    return false;
+		    }
+		    const bool pressed = e.action == event::window_input_pressed;
+		    const bool tool_busy = m_voxel_tool.phase != VoxelToolState::Phase::idle;
+		    if ((tool_busy || m_gizmo_hover == GizmoHandle::none) && m_gizmo_drag == GizmoHandle::none &&
+				    (pressed || e.action == event::window_input_released) && voxelToolMouseButton(e.button, pressed, e.mods)) {
+			    return false;
+		    }
+		    if (e.button != 1) {
+			    return false;
+		    }
+		    const bool level = m_root_node.exists() && reflect_cast<ProceduralVoxel>(&*m_root_node) == nullptr;
+		    if (level && pressed) {
+			    m_pick_press = m_gizmo_hover == GizmoHandle::none ? std::optional(m_gizmo_mouse_pos) : std::nullopt;
+		    } else if (level && e.action == event::window_input_released && m_pick_press.has_value()) {
+			    const bool click = glm::distance(*m_pick_press, m_gizmo_mouse_pos) < 4.0f && m_gizmo_drag == GizmoHandle::none;
+			    m_pick_press.reset();
+			    if (click) {
+				    m_focused_node = pickNodeUnderMouse();
+				    event::NodePicked picked;
+				    picked.workspace_handle = m_handle.data();
+				    picked.node = m_focused_node.exists() ? m_focused_node->uid() : UID {};
+				    event::send<event::NodePicked>(picked);
+			    }
+		    }
+		    if (e.action == event::window_input_pressed && m_gizmo_hover != GizmoHandle::none) {
+			    gizmoBeginDrag(m_gizmo_hover);
+			    return m_gizmo_drag != GizmoHandle::none;
+		    }
+		    if (e.action == event::window_input_released) {
+			    const bool was_dragging = m_gizmo_drag != GizmoHandle::none;
+			    gizmoEndDrag();
+			    return was_dragging;
+		    }
+		    return false;
+	    },
+	    k_gizmo_input_priority
+	);
 
 	m_listener.subscribe<event::SetActiveWorkspace>([this](const auto& e) {
 		if (e.handle == m_handle.data()) {
@@ -2625,6 +2737,7 @@ void Workspace::tick() {
 	}
 
 	sendEnabledChanges();
+	rulerTick();
 
 	// Only the active workspace streams inspector data, and only while a node is focused
 	if (m_handle.data() != Engine::get()->activeWorkspace().data() || not m_focused_node.exists()) {
@@ -2738,10 +2851,32 @@ void Workspace::tick() {
 	event::send<event::InspectorLuaContent>(m_focused_node->uid().get(), lua_schema_version, std::move(cards));
 }
 
+void Workspace::collectOutlinedRids(std::vector<uint64_t>& rids) const {
+	rids.clear();
+	if (!m_focused_node.exists()) {
+		return;
+	}
+	std::vector<Box<Node>> pending {m_focused_node};
+	while (!pending.empty()) {
+		const Box<Node> node = std::move(pending.back());
+		pending.pop_back();
+		if (!node.exists()) {
+			continue;
+		}
+		rids.push_back(node->rid());
+		for (Box<Node>& child : node->childrenSnapshot()) {
+			pending.push_back(std::move(child));
+		}
+	}
+}
+
 auto Workspace::gizmoRenderState() const -> GizmoRenderState {
 	GizmoRenderState state;
+	if (m_game_camera) {
+		return state;
+	}
 	const bool has_node = m_focused_node.as<Node3D>().exists();
-	const bool interactive = gizmoInteractionAllowed() && has_node;
+	const bool interactive = has_node;
 
 	if (interactive) {
 		const auto [dots, count] = collectSizeHandles();

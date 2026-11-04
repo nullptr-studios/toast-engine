@@ -1,18 +1,8 @@
 #include "voxel_palette.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
 #include <sstream>
-#include <stdexcept>
-#include <string>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/assets.hpp>
 #include <toast/physics/material_defaults.hpp>
-#include <toast/uid.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace assets {
 
@@ -237,6 +227,14 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 
 			out.alpha = unit_or("alpha", 255);
 
+			if (const toml::node* ior = entry->get("ior")) {
+				const std::optional<double> value = ior->is_number() ? ior->value<double>() : std::nullopt;
+				if (!value || !(*value >= 1.0 && *value <= voxel::k_max_ior)) {
+					throw fail(std::format("ior must be a number from 1 to {:.2f}", voxel::k_max_ior));
+				}
+				out.ior = voxel::iorByte(static_cast<float>(*value));
+			}
+
 			if (const std::optional<int64_t> material = whole("material", 0, 255)) {
 				out.material = static_cast<uint8_t>(*material);
 			} else {
@@ -248,15 +246,15 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 				out.transforms_to = static_cast<uint8_t>(*becomes);
 			}
 
-			if (const toml::node* transparent = entry->get("transparent")) {
-				const std::optional<bool> value = transparent->value_exact<bool>();
-				if (!value) {
-					throw fail("transparent must be true or false");
-				}
-				if (*value) {
-					out.flags |= voxel::k_entry_transparent;
-				}
+			if (const std::optional<int64_t> layer = whole("detail_layer", 0, 255)) {
+				out.detail_layer = static_cast<uint8_t>(*layer);
 			}
+			if (const std::optional<int64_t> scale = whole("detail_scale", 0, 255)) {
+				out.detail_scale = static_cast<uint8_t>(*scale);
+			}
+			out.detail_albedo = unit("detail_albedo");
+			out.detail_roughness = unit("detail_roughness");
+			out.detail_bump = unit("detail_bump");
 
 			palette.entries[static_cast<size_t>(*index)] = out;
 		}
@@ -340,11 +338,20 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 		entry.insert("reflectivity", as_unit(e.reflectivity));
 		entry.insert("emissive", as_unit(e.emissive));
 		entry.insert("alpha", as_unit(e.alpha));
+		if (e.ior != 0) {
+			entry.insert("ior", static_cast<double>(voxel::iorOf(e)));
+		}
 		if (!is_defaulted) {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}
 		entry.insert("transforms_to", static_cast<int64_t>(e.transforms_to));
-		entry.insert("transparent", (e.flags & voxel::k_entry_transparent) != 0);
+		if (e.detail_layer != 0) {
+			entry.insert("detail_layer", static_cast<int64_t>(e.detail_layer));
+			entry.insert("detail_scale", static_cast<int64_t>(e.detail_scale));
+			entry.insert("detail_albedo", as_unit(e.detail_albedo));
+			entry.insert("detail_roughness", as_unit(e.detail_roughness));
+			entry.insert("detail_bump", as_unit(e.detail_bump));
+		}
 		list.push_back(std::move(entry));
 	}
 	root.insert("entries", std::move(list));

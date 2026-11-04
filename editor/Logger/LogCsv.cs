@@ -12,6 +12,8 @@ namespace editor.Logger;
 
 // Mirrors the CSV format written by the log_server
 internal static class LogCsv {
+	public const string Header = "Timestamp,Severity,Filepath,Line,Sink,Message,Details,Backtrace";
+
 	private static readonly string[] s_severityNames = ["TRACE", "INFO", "WARNING", "ERROR", "CRITICAL"];
 
 	private static readonly SearchValues<char> s_mustQuote = SearchValues.Create(",\"\r\n");
@@ -33,6 +35,10 @@ internal static class LogCsv {
 		AppendField(sb, entry.Sink);
 		sb.Append(',');
 		AppendField(sb, entry.Message);
+		sb.Append(',');
+		AppendField(sb, entry.Details);
+		sb.Append(',');
+		AppendField(sb, entry.Backtrace);
 		return sb.ToString();
 	}
 

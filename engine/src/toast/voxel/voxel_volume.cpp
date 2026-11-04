@@ -1,9 +1,6 @@
 #include "voxel_volume.hpp"
 
-#include <algorithm>
-#include <atomic>
 #include <cassert>
-#include <utility>
 
 namespace voxel {
 
@@ -41,6 +38,7 @@ Volume::~Volume() {
 Volume::Volume(Volume&& other) noexcept
     : m_pool(other.m_pool),
       m_brick_dims(other.m_brick_dims),
+      m_texture_origin(other.m_texture_origin),
       m_entries(std::move(other.m_entries)),
       m_revision(other.m_revision),
       m_id(other.m_id),
@@ -60,6 +58,7 @@ auto Volume::operator=(Volume&& other) noexcept -> Volume& {
 		releaseOwned();
 		m_pool = other.m_pool;
 		m_brick_dims = other.m_brick_dims;
+		m_texture_origin = other.m_texture_origin;
 		m_entries = std::move(other.m_entries);
 		m_revision = other.m_revision;
 		m_id = other.m_id;
@@ -80,9 +79,11 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 	assert(source.m_pool != nullptr);
 	Volume out(*source.m_pool, source.m_brick_dims);
 
+	out.m_texture_origin = source.m_texture_origin;
 	out.m_entries = source.m_entries;
 	for (BrickEntry& entry : out.m_entries) {
-		if (entry.tag() == BrickTag::owned) {
+		if (entry.isPooled()) {
+			source.m_pool->retain(entry.payload());
 			entry = BrickEntry::make(BrickTag::shared, entry.payload());
 		}
 	}
@@ -92,6 +93,8 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume {
 	assert(source.m_pool != nullptr);
 	Volume out(*source.m_pool, brick_dims);
+
+	out.m_texture_origin = source.m_texture_origin - (brick_offset * static_cast<int32_t>(k_brick_dim));
 
 	for (uint32_t index = 0; index < source.m_entries.size(); ++index) {
 		BrickEntry& entry = source.m_entries[index];
@@ -105,6 +108,9 @@ auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 br
 		}
 
 		out.m_entries[out.entryIndex(target)] = entry;
+		if (entry.isPooled()) {
+			source.m_pool->retain(entry.payload());
+		}
 		if (entry.tag() == BrickTag::owned) {
 			entry = BrickEntry::make(BrickTag::shared, entry.payload());
 		}
@@ -117,7 +123,7 @@ void Volume::releaseOwned() {
 		return;
 	}
 	for (BrickEntry& entry : m_entries) {
-		if (entry.tag() == BrickTag::owned) {
+		if (entry.isPooled()) {
 			m_pool->free(entry.payload());
 			entry = BrickEntry {};
 		}
@@ -188,7 +194,7 @@ auto Volume::neighbourhoodOf(glm::ivec3 brick) const noexcept -> BrickNeighbourh
 
 auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 	const BrickEntry entry = m_entries[entry_index];
-	if (entry.tag() == BrickTag::owned) {
+	if (entry.tag() == BrickTag::owned && m_pool->referenceCount(entry.payload()) == 1) {
 		return entry.payload();
 	}
 
@@ -205,6 +211,7 @@ auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 			m_pool->occupancy(id) = k_full_brick;
 			break;
 		}
+		case BrickTag::owned:
 		case BrickTag::shared: {
 			const uint32_t source_id = entry.payload();
 			std::span<const uint8_t, k_brick_material_bytes> source_bytes = m_pool->material(source_id);
@@ -216,6 +223,9 @@ auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 		default: break;
 	}
 
+	if (entry.isPooled()) {
+		m_pool->free(entry.payload());
+	}
 	m_entries[entry_index] = BrickEntry::make(BrickTag::owned, id);
 	return id;
 }
@@ -269,7 +279,7 @@ void Volume::setBrickUniform(glm::ivec3 brick, uint8_t material) {
 	if (m_entries[index] == next) {
 		return;
 	}
-	if (m_entries[index].tag() == BrickTag::owned) {
+	if (m_entries[index].isPooled()) {
 		m_pool->free(m_entries[index].payload());
 	}
 
@@ -285,7 +295,7 @@ auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
 
 	const uint32_t index = entryIndex(brick);
 	const BrickEntry entry = m_entries[index];
-	if (entry.tag() != BrickTag::owned) {
+	if (!entry.isPooled()) {
 		return false;
 	}
 
@@ -368,7 +378,7 @@ void Volume::adoptBrick(glm::ivec3 brick, BrickEntry entry) {
 
 	const uint32_t index = entryIndex(brick);
 	assert(m_entries[index].tag() == BrickTag::empty);
-	if (m_entries[index].tag() == BrickTag::owned) {
+	if (m_entries[index].isPooled()) {
 		m_pool->free(m_entries[index].payload());
 	}
 
@@ -390,7 +400,7 @@ auto Volume::clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool {
 
 	const uint32_t index = entryIndex(brick);
 	if (affected == *occupancy) {
-		if (m_entries[index].tag() == BrickTag::owned) {
+		if (m_entries[index].isPooled()) {
 			m_pool->free(m_entries[index].payload());
 		}
 		m_entries[index] = BrickEntry {};

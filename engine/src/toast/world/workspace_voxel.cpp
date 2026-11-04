@@ -3,11 +3,9 @@
 #include "workspace.hpp"
 #include "workspace_events.hpp"
 
-#include <algorithm>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/engine.hpp>
-#include <toast/log.hpp>
-#include <toast/renderer/editor_overlays.hpp>
+#include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/nodes/carve_volume.hpp>
@@ -16,8 +14,8 @@
 #include <toast/voxel/nodes/procedural_voxel.hpp>
 #include <toast/voxel/nodes/voxel_mesh.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace toast {
 
@@ -187,13 +185,8 @@ auto voxelCellOnPlane(const ShapeRay& ray, int axis, float coordinate) -> std::o
 
 [[nodiscard]]
 auto voxelShapeHit(ProceduralVoxel& shape, const ShapeRay& ray) -> std::optional<voxel::VolumeHit> {
-	const voxel::Volume* volume = shape.volume();
-	if (volume == nullptr) {
-		return std::nullopt;
-	}
-	std::optional<voxel::VolumeHit> hit = voxel::raycast(*volume, ray.origin - glm::vec3(shape.voxelOrigin()), ray.direction, 1e6f);
+	std::optional<voxel::VolumeHit> hit = shape.raycastVoxels(ray.origin, ray.direction, 1e6f);
 	if (hit.has_value()) {
-		hit->voxel += shape.voxelOrigin();
 		if (hit->normal == glm::ivec3(0)) {
 			hit->normal = -voxel::dominantAxis(ray.direction);
 		}
@@ -218,6 +211,15 @@ auto Workspace::voxelToolShape() -> ProceduralVoxel* {
 auto Workspace::VoxelToolState::box() const -> std::pair<glm::ivec3, glm::ivec3> {
 	glm::ivec3 min = glm::min(anchor, current);
 	glm::ivec3 max = glm::max(anchor, current);
+	if (snap_plane > 1) {
+		for (int a = 0; a < 3; ++a) {
+			if (a == axis) {
+				continue;
+			}
+			min[a] = static_cast<int32_t>(std::floor(static_cast<double>(min[a]) / snap_plane)) * snap_plane;
+			max[a] = ((static_cast<int32_t>(std::floor(static_cast<double>(max[a]) / snap_plane)) + 1) * snap_plane) - 1;
+		}
+	}
 	const int32_t first = depth > 0 ? surface + sign : surface;
 	const int32_t last = depth > 0 ? first + (sign * (depth - 1)) : first - (sign * (-depth - 1));
 	min[axis] = std::min(first, last);
@@ -256,6 +258,15 @@ auto Workspace::voxelWrapInGroup(Box<Node> node, std::string_view name) -> Box<N
 }
 
 namespace {
+
+template<typename S>
+[[nodiscard]]
+auto voxelSnapStep(const S& snap) -> int32_t {
+	if (!snap.enabled || snap.value <= 0.0001f) {
+		return 1;
+	}
+	return std::max<int32_t>(1, static_cast<int32_t>(std::lround(snap.value / voxel::k_voxel_size)));
+}
 
 struct BoxEntry {
 	glm::vec3 point;
@@ -369,6 +380,8 @@ void Workspace::voxelToolMouseMove() {
 		}
 
 		tool.phase = VoxelToolState::Phase::face;
+		tool.snap_plane = 1;
+		tool.snap_depth = voxelSnapStep(m_translate_snap);
 		tool.extrude_source = piece->uid();
 		tool.axis = entry->axis;
 		tool.sign = entry->sign;
@@ -443,14 +456,15 @@ void Workspace::voxelToolMouseMove() {
 		const float denominator = c - (b * b);
 		if (std::abs(denominator) > 1e-6f) {
 			const float along = ((b * glm::dot(local.direction, w)) - (c * glm::dot(line, w))) / denominator;
-			const auto layers = static_cast<int32_t>(std::lround(along));
+			const int32_t step = tool.snap_depth;
+			const auto layers = static_cast<int32_t>(std::lround(along / static_cast<float>(step))) * step;
 			if (tool.tool == k_tool_extrude) {
 				// Pulling out grows a new box, pushing in carves one
-				tool.depth = layers >= 0 ? std::max(1, layers) : std::min(-1, layers);
+				tool.depth = layers >= 0 ? std::max(step, layers) : std::min(-step, layers);
 			} else if (tool.tool == k_tool_buildup) {
-				tool.depth = std::max(1, layers);
+				tool.depth = std::max(step, layers);
 			} else {
-				tool.depth = std::min(-1, layers);
+				tool.depth = std::min(-step, layers);
 			}
 		}
 	}
@@ -679,8 +693,10 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 		m_voxel_tool.plane = 0.0f;
 		m_voxel_tool.anchor = *ground;
 	}
+	m_voxel_tool.snap_plane = voxelSnapStep(m_translate_snap);
+	m_voxel_tool.snap_depth = m_voxel_tool.snap_plane;
 	m_voxel_tool.current = m_voxel_tool.anchor;
-	m_voxel_tool.depth = tool == k_tool_buildup ? 1 : -1;
+	m_voxel_tool.depth = (tool == k_tool_buildup ? 1 : -1) * m_voxel_tool.snap_depth;
 	m_voxel_tool.dragging = true;
 	m_voxel_tool.phase = VoxelToolState::Phase::box;
 
@@ -976,8 +992,7 @@ void Workspace::subscribeVoxelEditing() {
 		if (shape == nullptr && target.exists()) {
 			shape = owningProceduralVoxel(*target);
 		}
-		const voxel::Volume* volume = shape != nullptr ? shape->volume() : nullptr;
-		if (volume == nullptr) {
+		if (shape == nullptr || !shape->solidBounds().has_value()) {
 			TOAST_WARN("Voxel", "Bucket needs a ProceduralVoxel with voxels");
 			return true;
 		}
@@ -987,12 +1002,12 @@ void Workspace::subscribeVoxelEditing() {
 		if (e.search && e.search_axis < 3) {
 			glm::ivec3 step(0);
 			step[e.search_axis] = e.search_step;
-			const int32_t limit = static_cast<int32_t>(volume->voxelDims()[e.search_axis]) + 1;
-			for (int32_t i = 0; i < limit && !volume->isSolidAt(seed - shape->voxelOrigin()); ++i) {
+			const int32_t limit = static_cast<int32_t>(shape->getSize()[e.search_axis]) + 1;
+			for (int32_t i = 0; i < limit && !shape->isSolidAtVoxel(seed); ++i) {
 				seed += step;
 			}
 		}
-		if (!volume->isSolidAt(seed - shape->voxelOrigin())) {
+		if (!shape->isSolidAtVoxel(seed)) {
 			return true;
 		}
 
@@ -1099,58 +1114,209 @@ void Workspace::subscribeVoxelEditing() {
 			return true;
 		}
 
-		shape->rebuild();
-		std::vector<VoxelPiece*> pieces;
-		pieces.reserve(shape->layout().size());
-		for (const ProceduralVoxel::PieceLayout& entry : shape->layout()) {
-			if (auto* piece = voxelPieceOf(entry.node)) {
-				pieces.push_back(piece);
+		// c# makes all of the files and c++ writes the contents
+		// dw bro give up if u can't make it
+		// alexey ahh algorithm
+		const auto give_up = [&](std::string_view reason) {
+			TOAST_WARN("Voxel", "Bake: {}", reason);
+			event::VoxelBakeCompleted done;
+			done.unused.push_back(e.path);
+			if (!e.base_path.empty()) {
+				done.unused.push_back(e.base_path);
 			}
+			for (const event::VoxelBakePiece& piece : e.pieces) {
+				done.unused.push_back(piece.path);
+			}
+			event::send<event::VoxelBakeCompleted>(done);
+		};
+
+		Box<Node> parent = target->parentInternal();
+		if (!parent.exists()) {
+			give_up("the root of a workspace cannot become a prefab");
+			return true;
 		}
 
 		try {
-			std::optional<ProceduralVoxel::Composed> composed = shape->composePieces(pieces);
-			if (!composed.has_value()) {
-				TOAST_WARN("Voxel", "Bake: the ProceduralVoxel draws nothing");
+			struct Written {
+				glm::ivec3 origin {0};
+				UID model;
+			};
+			// by piece
+			std::unordered_map<uint64_t, Written> written;
+
+			{
+				std::unordered_map<uint64_t, std::string_view> paths;
+				for (const event::VoxelBakePiece& piece : e.pieces) {
+					paths[piece.uid.data()] = piece.path;
+				}
+
+				std::vector<ProceduralVoxel::BakedPart> parts = shape->bakeParts();
+				for (const ProceduralVoxel::BakedPart& part : parts) {
+					std::string_view path;
+					if (part.key == 0) {
+						path = e.base_path;
+					} else if (const auto found = paths.find(part.key); found != paths.end()) {
+						path = found->second;
+					}
+					if (path.empty()) {
+						continue;
+					}
+
+					const std::vector<uint8_t> bytes =
+					    assets::VoxelModel::capture(*part.volume, shape->paletteUid())->serialize(assets::SaveMode::editor);
+					if (!assets::AssetManager::get().saveBytes(path, bytes)) {
+						TOAST_WARN("Voxel", "Bake could not write {}", path);
+						continue;
+					}
+					const std::optional<UID> model_uid = assets::resolveURI(path);
+					if (!model_uid.has_value()) {
+						TOAST_WARN("Voxel", "Bake: {} is not in the asset manifest", path);
+						continue;
+					}
+					written.emplace(part.key, Written {.origin = part.origin, .model = *model_uid});
+
+					event::VoxelBakeCompleted completed;
+					completed.path = std::string(path);
+					event::send<event::VoxelBakeCompleted>(completed);
+				}
+			}
+
+			if (written.empty()) {
+				give_up("the ProceduralVoxel draws nothing");
 				return true;
 			}
-			const std::vector<uint8_t> bytes =
-			    assets::VoxelModel::capture(composed->volume, shape->paletteUid())->serialize(assets::SaveMode::editor);
-			if (!assets::AssetManager::get().saveBytes(e.path, bytes)) {
-				TOAST_WARN("Voxel", "Bake could not write {}", e.path);
-				return true;
+
+			event::VoxelBakeCompleted leftovers;
+			if (!e.replace) {
+				leftovers.unused.push_back(e.path);
 			}
-			event::VoxelBakeCompleted completed;
-			completed.path = e.path;
-			event::send<event::VoxelBakeCompleted>(completed);
+			if (!e.base_path.empty() && !written.contains(0)) {
+				leftovers.unused.push_back(e.base_path);
+			}
+			for (const event::VoxelBakePiece& piece : e.pieces) {
+				if (!written.contains(piece.uid.data())) {
+					leftovers.unused.push_back(piece.path);
+				}
+			}
+			if (!leftovers.unused.empty()) {
+				event::send<event::VoxelBakeCompleted>(leftovers);
+			}
 			if (!e.replace) {
 				return true;
 			}
 
-			const std::optional<UID> model_uid = assets::resolveURI(e.path);
-			if (!model_uid.has_value()) {
-				TOAST_WARN("Voxel", "Bake: {} is not in the asset manifest", e.path);
-				return true;
-			}
+			const auto copy_fields = [](Node& from, Node& to) {
+				constexpr std::array<std::string_view, 9> k_skipped {
+				  "m_uid", "m_parent", "m_source_prefab", "m_name", "m_model", "position", "rotation", "scale", "m_script_group"
+				};
+				from.info()->forEachBaseType([&](const NodeInfo& level) {
+					for (const auto& f : level.all_fields) {
+						if (!f.get || f.hasAttribute("ReadOnly") || f.hasAttribute("NoSerialize") ||
+						    std::ranges::find(k_skipped, std::string_view(f.name)) != k_skipped.end()) {
+							continue;
+						}
+						const FieldInfo* destination = to.info()->getField(f.name);
+						if (destination != nullptr && destination->set && destination->value_type == f.value_type &&
+						    destination->is_array == f.is_array) {
+							destination->set(&to, f.get(&from));
+						}
+					}
+				});
+			};
 
-			recordHistory(voxelHistory(event::HistoryOperation::retype, target, "Baked"), [&] {
-				Box<Node> replacement = retypeNode(target, "toast::VoxelNode", true);
-				auto* voxel_node = replacement.exists() ? reflect_cast<VoxelNode>(&*replacement) : nullptr;
-				if (voxel_node == nullptr) {
+			recordHistory(voxelHistory(event::HistoryOperation::promote, target, "Baked"), [&] {
+				const auto here = std::ranges::find(parent->m_children, target);
+				const auto index = static_cast<size_t>(here - parent->m_children.begin());
+
+				shape->syncTransform();
+				Box<Node> root = requestRuntimeCreate(parent, "toast::Node3D");
+				auto* root_3d = root.exists() ? reflect_cast<Node3D>(&*root) : nullptr;
+				if (root_3d == nullptr) {
 					return;
 				}
+				root->name(shape->name());
+				root_3d->position = shape->position;
+				root_3d->rotation = shape->rotation;
+				root_3d->scale = shape->scale;
+				root_3d->syncTransform();
 
-				// The baked asset begins at zero
-				const glm::vec3 offset = glm::vec3(composed->origin) * voxel::k_voxel_size;
-				voxel_node->position += voxel_node->rotation * (voxel_node->scale * offset);
-				voxel_node->syncTransform();
-				voxel_node->setModel(assets::load<assets::VoxelModel>(*model_uid));
+				const auto make_model = [&](Box<Node> into, const glm::mat4& into_to_shape, std::string_view name, const Written& model) {
+					Box<Node> made = requestRuntimeCreate(into, "toast::VoxelNode");
+					auto* voxels = made.exists() ? reflect_cast<VoxelNode>(&*made) : nullptr;
+					if (voxels == nullptr) {
+						return;
+					}
+					made->name(name);
+					copy_fields(*shape, *voxels);
+					voxels->setModel(assets::load<assets::VoxelModel>(model.model));
 
-				// Retyping preserves compatible node fields
-				for (Box<Node>& child : replacement->m_children) {
-					destroyOwnedTree(child);
+					const glm::mat4 local =
+					    glm::inverse(into_to_shape) * glm::translate(glm::mat4(1.0f), glm::vec3(model.origin) * voxel::k_voxel_size);
+					voxels->position = glm::vec3(local[3]);
+					voxels->rotation = glm::normalize(glm::quat_cast(glm::mat3(local)));
+					voxels->scale = glm::vec3(1.0f);
+					voxels->syncTransform();
+				};
+
+				if (const auto base = written.find(0); base != written.end()) {
+					make_model(root, glm::mat4(1.0f), "Model", base->second);
 				}
-				replacement->m_children.clear();
+
+				// groups stay groups
+				// every other piece becomes a VoxelNode
+				const auto mirror = [&](this auto&& self, Node& source, Box<Node> into, const glm::mat4& into_to_shape) -> void {
+					std::vector<Box<Node>> others;
+					for (const Box<Node>& child_box : source.children()) {
+						if (!child_box.exists()) {
+							continue;
+						}
+						Node& child = const_cast<Node&>(*child_box);
+						if (auto* group = reflect_cast<VoxelGroup>(&child)) {
+							if (!child.enabled()) {
+								continue;
+							}
+							Box<Node> made = requestRuntimeCreate(into, "toast::Node3D");
+							auto* made_3d = made.exists() ? reflect_cast<Node3D>(&*made) : nullptr;
+							if (made_3d == nullptr) {
+								continue;
+							}
+							group->syncTransform();
+							made->name(group->name());
+							made_3d->position = group->position;
+							made_3d->rotation = group->rotation;
+							made_3d->scale = group->scale;
+							made_3d->syncTransform();
+							self(child, made, into_to_shape * group->getTransform());
+						} else if (auto* piece = reflect_cast<VoxelPiece>(&child)) {
+							if (!child.enabled()) {
+								continue;
+							}
+							if (piece->kind() == PieceKind::fill) {
+								if (const auto found = written.find(ProceduralVoxel::partKeyOf(*piece)); found != written.end()) {
+									make_model(into, into_to_shape, piece->name(), found->second);
+								}
+							}
+							self(child, into, into_to_shape);
+						} else if (reflect_cast<VoxelBucket>(&child) == nullptr) {
+							others.push_back(child_box);
+						}
+					}
+					for (Box<Node>& other : others) {
+						voxelReparent(other, into, into->m_children.size());
+					}
+				};
+				mirror(*shape, root, glm::mat4(1.0f));
+
+				std::erase(parent->m_children, target);
+				destroyOwnedTree(target);
+
+				// prefab replaces the shape
+				Box<Node> instance = promoteNode(root, e.path);
+				if (instance.exists()) {
+					auto& siblings = parent->m_children;
+					std::erase(siblings, instance);
+					siblings.insert(siblings.begin() + static_cast<std::ptrdiff_t>(std::min(index, siblings.size())), instance);
+				}
 			});
 			event::send<event::RequestHierarchyUpdate>();
 		} catch (const std::exception& error) { TOAST_WARN("Voxel", "Bake failed: {}", error.what()); }
@@ -1158,50 +1324,107 @@ void Workspace::subscribeVoxelEditing() {
 	});
 }
 
-auto Workspace::pickNodeUnderMouse() -> Box<Node> {
+namespace {
+
+/// Nearest two sided triangle hit before max_t with the ray in mesh space and skinned meshes in bind pose
+[[nodiscard]]
+auto meshRayHit(const assets::Mesh& mesh, glm::vec3 origin, glm::vec3 direction, float max_t) -> std::optional<float> {
+	const std::vector<renderer::Vertex>& vertices = mesh.vertices();
+	const std::vector<assets::Mesh::Index>& indices = mesh.indices();
+	std::optional<float> nearest;
+	for (size_t i = 0; i + 2 < indices.size(); i += 3) {
+		const glm::vec3 a = vertices[indices[i]].position;
+		const glm::vec3 ab = glm::vec3(vertices[indices[i + 1]].position) - a;
+		const glm::vec3 ac = glm::vec3(vertices[indices[i + 2]].position) - a;
+		const glm::vec3 p = glm::cross(direction, ac);
+		const float det = glm::dot(ab, p);
+		if (det == 0.0f) {
+			continue;
+		}
+		const float inverse = 1.0f / det;
+		const glm::vec3 s = origin - a;
+		const glm::vec3 q = glm::cross(s, ab);
+		const float u = glm::dot(s, p) * inverse;
+		const float v = glm::dot(direction, q) * inverse;
+		const float t = glm::dot(ac, q) * inverse;
+		// Phrased so NaN from a sliver triangle fails
+		if (u >= 0.0f && v >= 0.0f && u + v <= 1.0f && t >= 0.0f && t < max_t) {
+			max_t = t;
+			nearest = t;
+		}
+	}
+	return nearest;
+}
+
+/// Entry t of a unit ray into a world sphere or 0 from inside and none behind
+[[nodiscard]]
+auto raySphereEntry(const Ray& ray, glm::vec3 direction, glm::vec4 sphere) -> std::optional<float> {
+	const glm::vec3 to_centre = glm::vec3(sphere) - ray.origin;
+	const float along = glm::dot(to_centre, direction);
+	const float miss = glm::dot(to_centre, to_centre) - (along * along);
+	const float radius_squared = sphere.w * sphere.w;
+	if (miss > radius_squared) {
+		return std::nullopt;
+	}
+	const float half_chord = std::sqrt(radius_squared - miss);
+	if (along + half_chord < 0.0f) {
+		return std::nullopt;
+	}
+	return std::max(0.0f, along - half_chord);
+}
+
+}
+
+auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 	const std::optional<Ray> ray = voxelMouseRay(m_gizmo_mouse_pos);
 	if (!ray.has_value() || !m_root_node.exists()) {
-		return {};
+		return std::nullopt;
 	}
 	const glm::vec3 direction = glm::normalize(ray->direction);
 
-	Box<Node> best;
-	float best_t = std::numeric_limits<float>::max();
-	const auto consider = [&](const Box<Node>& node, float t) {
-		if (t >= 0.0f && t < best_t) {
-			best_t = t;
-			best = node;
-		}
+	struct Candidate {
+		Box<Node> node;
+		VoxelNode* voxels = nullptr;
+		const voxel::Volume* volume = nullptr;
+		MeshNode* mesh = nullptr;
+		glm::mat4 to_local {1.0f};
+		float entry = 0.0f;
 	};
+
+	std::vector<Candidate> candidates;
 
 	const auto visit = [&](const auto& self, Box<Node> node) -> void {
 		if (!node.exists() || !node->enabled()) {
 			return;
 		}
 		if (auto* voxels = reflect_cast<VoxelNode>(&*node)) {
-			if (const voxel::Volume* volume = voxels->volume()) {
-				voxels->syncTransform();
-				const glm::mat4 to_volume = glm::inverse(voxels->getWorldTransform() * voxels->volumeLocalTransform());
-				const glm::vec3 origin = glm::vec3(to_volume * glm::vec4(ray->origin, 1.0f)) / voxel::k_voxel_size;
-				const glm::vec3 step = glm::vec3(to_volume * glm::vec4(direction, 0.0f)) / voxel::k_voxel_size;
-				// Along step one unit is a world metre, so t compares with the meshes
-				if (const auto hit = voxel::raycast(*volume, origin, step, 1e6f)) {
-					consider(node, hit->t);
+			voxels->syncTransform();
+			const auto add = [&](const voxel::Volume* volume, const glm::mat4& model) {
+				if (const auto entry = raySphereEntry(*ray, direction, voxel::worldBoundingSphere(model, volume->brickDims()))) {
+					candidates.push_back(
+					    {.node = node, .voxels = voxels, .volume = volume, .to_local = glm::inverse(model), .entry = *entry}
+					);
 				}
+			};
+			if (voxels->usesParts()) {
+				for (const VoxelPart& part : voxels->parts()) {
+					if (part.volume != nullptr) {
+						add(part.volume.get(), voxels->getWorldTransform() * part.localTransform());
+					}
+				}
+			} else if (const voxel::Volume* volume = voxels->volume()) {
+				add(volume, voxels->getWorldTransform() * voxels->volumeLocalTransform());
 			}
 		} else if (auto* mesh = reflect_cast<MeshNode>(&*node); mesh != nullptr && mesh->getMesh().hasValue()) {
 			mesh->syncTransform();
 			const glm::mat4& world = mesh->getWorldTransform();
 			const glm::vec4 local = mesh->getMesh()->boundingSphere();
-			const glm::vec3 centre = glm::vec3(world * glm::vec4(glm::vec3(local), 1.0f));
 			const float radius =
 			    local.w *
 			    std::max({glm::length(glm::vec3(world[0])), glm::length(glm::vec3(world[1])), glm::length(glm::vec3(world[2]))});
-			const glm::vec3 to_centre = centre - ray->origin;
-			const float along = glm::dot(to_centre, direction);
-			const float miss = glm::dot(to_centre, to_centre) - (along * along);
-			if (miss <= radius * radius) {
-				consider(node, std::max(0.0f, along - std::sqrt((radius * radius) - miss)));
+			const glm::vec4 sphere(glm::vec3(world * glm::vec4(glm::vec3(local), 1.0f)), radius);
+			if (const auto entry = raySphereEntry(*ray, direction, sphere)) {
+				candidates.push_back({.node = node, .mesh = mesh, .to_local = glm::inverse(world), .entry = *entry});
 			}
 		}
 		for (const Box<Node>& child : node->children()) {
@@ -1210,6 +1433,69 @@ auto Workspace::pickNodeUnderMouse() -> Box<Node> {
 	};
 	visit(visit, m_root_node);
 
+	// Near bounds first so the exact tests stop once a hit beats the next bounds
+	std::ranges::sort(candidates, {}, &Candidate::entry);
+	uint32_t tested = 0;
+	const auto nearest = [&](bool voxels) -> std::pair<Box<Node>, float> {
+		Box<Node> best;
+		float best_t = std::numeric_limits<float>::max();
+		for (const Candidate& candidate : candidates) {
+			if ((candidate.voxels != nullptr) != voxels) {
+				continue;
+			}
+			if (candidate.entry >= best_t) {
+				break;
+			}
+			++tested;
+			// Along step one unit is a world metre
+			const glm::vec3 origin = glm::vec3(candidate.to_local * glm::vec4(ray->origin, 1.0f));
+			const glm::vec3 step = glm::vec3(candidate.to_local * glm::vec4(direction, 0.0f));
+			std::optional<float> t;
+			if (candidate.voxels != nullptr) {
+				if (const auto hit =
+				        voxel::raycast(*candidate.volume, origin / voxel::k_voxel_size, step / voxel::k_voxel_size, best_t)) {
+					t = hit->t;
+				}
+			} else {
+				t = meshRayHit(candidate.mesh->getMesh().get(), origin, step, best_t);
+			}
+			if (t.has_value() && *t < best_t) {
+				best_t = *t;
+				best = candidate.node;
+			}
+		}
+		return {best, best_t};
+	};
+
+	// Voxels outrank meshes so a mesh in front of or under a volume never takes its click
+	std::pair<Box<Node>, float> hit = nearest(true);
+	const bool voxel_hit = hit.first.exists();
+	if (!voxel_hit) {
+		hit = nearest(false);
+	}
+	if (!hit.first.exists()) {
+		return std::nullopt;
+	}
+	Box<Node> best = std::move(hit.first);
+	TOAST_TRACE(
+	    "World",
+	    "Pick tested {} of {} candidates and hit {} {} at {:.2f} m",
+	    tested,
+	    candidates.size(),
+	    voxel_hit ? "volume" : (best.exists() ? "mesh" : "nothing"),
+	    best,
+	    hit.second
+	);
+
+	return SceneHit {.node = std::move(best), .t = hit.second, .position = ray->origin + direction * hit.second};
+}
+
+auto Workspace::pickNodeUnderMouse() -> Box<Node> {
+	const std::optional<SceneHit> hit = pickSceneHit();
+	if (!hit.has_value()) {
+		return {};
+	}
+	Box<Node> best = hit->node;
 	// The hierarchy lists a prefab instance as one node
 	while (best.exists() && best->m_prefab_interior) {
 		best = best->parent();

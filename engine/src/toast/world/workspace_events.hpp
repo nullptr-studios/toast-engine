@@ -263,14 +263,23 @@ struct VoxelCollapsePieces : Event<VoxelCollapsePieces> {
 	std::string path;
 };
 
+/** Every separate mesh the baker bakes when baking the unbaked */
+struct VoxelBakePiece {
+	toast::UID uid;
+	std::string path;
+};
+
 struct VoxelBake : Event<VoxelBake> {
 	toast::UID target;
 	std::string path;
 	bool replace = false;
+	std::string base_path;
+	std::vector<VoxelBakePiece> pieces;
 };
 
 struct VoxelBakeCompleted : Event<VoxelBakeCompleted> {
 	std::string path;
+	std::vector<std::string> unused;
 };
 
 struct SetVoxelEditorOverlays : Event<SetVoxelEditorOverlays> {
@@ -285,6 +294,27 @@ struct SetVoxelCutPreview : Event<SetVoxelCutPreview> {
 	toast::UID root;
 	bool active = false;
 	glm::vec4 plane {0.0f};
+};
+
+struct RulerSegment {
+	glm::vec3 a {0.0f};
+	glm::vec3 b {0.0f};
+	glm::vec2 label {0.0f};
+	bool label_visible = false;
+};
+
+/// @brief Measurements the viewport ruler holds, label is in viewport pixels
+struct RulerChanged : Event<RulerChanged> {
+	uint64_t workspace_handle = 0;
+	std::vector<RulerSegment> segments;
+	RulerSegment preview;
+	bool has_preview = false;
+};
+
+/// @brief 0 clear all, 1 remove the last
+struct RulerCommand : Event<RulerCommand> {
+	uint64_t workspace_handle = 0;
+	uint32_t kind = 0;
 };
 
 struct NodePicked : Event<NodePicked> {

@@ -1,5 +1,5 @@
 // Must match renderer::shadows::k_max_shadow_views
-static const uint kMaxShadowViews = 20;
+static const uint kMaxShadowViews = 228;
 
 struct ShadowUBO
 {

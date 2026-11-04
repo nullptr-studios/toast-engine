@@ -3,8 +3,6 @@
 #include "../audio_system.hpp"
 #include "audio_listener.hpp"
 
-#include <algorithm>
-
 namespace toast {
 
 void AudioVolume::begin() {

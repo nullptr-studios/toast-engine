@@ -1,23 +1,11 @@
 import voxel_dda;
+import shadow_views;
 
-// Must match renderer::shadows::k_max_shadow_views
-static const uint kMaxShadowViews = 20;
+// Mirrors ShadowPass k_caster_bias_slope since SV_Depth bypasses the pipeline depth bias
+static const float kSlopeBias = 1.25;
 
-// Mirror ShadowPass depth_bias_slope since SV_Depth bypasses the pipeline depth bias
-static const float kSlopeBias = 3.0;
-
-// Derivatives across a silhouette see the miss lanes so the slope term is capped
-static const float kMaxSlopeBias = 0.005;
-
-/// shadow_depth.slang declares only the first array of the same buffer
-struct ShadowUBO
-{
-    float4x4 viewProjection[kMaxShadowViews];
-    float4x4 inverseViewProjection[kMaxShadowViews];
-};
-
-[[vk::binding(0, 0)]]
-ConstantBuffer<ShadowUBO> gShadow;
+/// World cap of the slope term so a grazing face never pushes its shadow further than this
+static const float kMaxSlopeBiasMeters = 0.1;
 
 /// Mirrors renderer::ShadowPass::VoxelShadowPush
 struct PushConstants
@@ -27,7 +15,8 @@ struct PushConstants
 
     /// Depth units of the rasterizer constant bias for this shadow format
     float constantBias;
-    uint pad0;
+    /// Nonzero for cascades whose rays march from behind the near plane
+    uint directional;
 };
 
 [[vk::push_constant]]
@@ -60,35 +49,78 @@ VSOutput vertexMain(uint vertexId : SV_VertexID, uint viewId : SV_ViewID)
     return output;
 }
 
+/// The view ray of an NDC point from the near plane where t = 1 reaches the far plane
+void viewRay(uint view, float2 ndc, out float3 nearWorld, out float3 worldDirection)
+{
+    const float4x4 inverseViewProjection = gShadow.inverseViewProjection[view];
+    const float4 nearPoint = mul(inverseViewProjection, float4(ndc, 0.0, 1.0));
+    const float4 farPoint = mul(inverseViewProjection, float4(ndc, 1.0, 1.0));
+    nearWorld = nearPoint.xyz / nearPoint.w;
+    worldDirection = farPoint.xyz / farPoint.w - nearWorld;
+}
+
+float shadowDepth(uint view, float3 world)
+{
+    const float4 clip = mul(gShadow.viewProjection[view], float4(world, 1.0));
+    return clip.z / clip.w;
+}
+
+/// Depth of a neighbour ray where it crosses the plane of the hit face
+float facePlaneDepth(uint view, float4x4 worldToVoxel, float2 ndc, uint axis, float plane)
+{
+    float3 nearWorld;
+    float3 worldDirection;
+    viewRay(view, ndc, nearWorld, worldDirection);
+    const float3 origin = mul(worldToVoxel, float4(nearWorld, 1.0)).xyz;
+    const float3 direction = mul(worldToVoxel, float4(worldDirection, 0.0)).xyz;
+    const float t = abs(direction[axis]) > 1e-8 ? (plane - origin[axis]) / direction[axis] : 0.0;
+    return shadowDepth(view, nearWorld + worldDirection * t);
+}
+
 /// False discards
 bool casterDepth(VSOutput input, out float biasedDepth)
 {
-    const VoxelInstance instance = gVoxelInstances[gPush.instanceIndex];
-    const float4x4 inverseViewProjection = gShadow.inverseViewProjection[input.view];
+    const float4x4 worldToVoxel = gVoxelInstances[gPush.instanceIndex].worldToVoxel;
+    const uint record = gVoxelInstances[gPush.instanceIndex].recordIndex;
 
-    // From the near plane so a box crossing it marches from where it is visible
+    // Rays leave from the near plane
     const float2 ndc = input.clip.xy / input.clip.w;
-    const float4 nearPoint = mul(inverseViewProjection, float4(ndc, 0.0, 1.0));
-    const float4 farPoint = mul(inverseViewProjection, float4(ndc, 1.0, 1.0));
-    const float3 nearWorld = nearPoint.xyz / nearPoint.w;
-    const float3 worldDirection = farPoint.xyz / farPoint.w - nearWorld;
+    // NDC is smooth across the box unlike the hit depth
+    const float2 ndcX = ndc + ddx(ndc);
+    const float2 ndcY = ndc + ddy(ndc);
 
-    // t = 1 is the far plane
-    const float3 origin = mul(instance.worldToVoxel, float4(nearWorld, 1.0)).xyz;
-    const float3 direction = mul(instance.worldToVoxel, float4(worldDirection, 0.0)).xyz;
-    const RayHit hit = marchRay(instance.recordIndex, origin, direction, 0.0, 1.0);
+    float3 nearWorld;
+    float3 worldDirection;
+    viewRay(input.view, ndc, nearWorld, worldDirection);
 
-    float depth = input.position.z;
-    if (hit.hit)
+    const float3 origin = mul(worldToVoxel, float4(nearWorld, 1.0)).xyz;
+    const float3 direction = mul(worldToVoxel, float4(worldDirection, 0.0)).xyz;
+    // A cascade clamps depth so a caster in front of its near plane still writes depth 0
+    const float tMin = gPush.directional != 0u ? -kFloatMax : 0.0;
+    const RayHit hit = marchRay(record, origin, direction, tMin, 1.0);
+
+    biasedDepth = input.position.z;
+    if (!hit.hit)
     {
-        const float4 clip = mul(gShadow.viewProjection[input.view], float4(nearWorld + worldDirection * hit.t, 1.0));
-        depth = clip.z / clip.w;
+        return false;
     }
 
-    // Before the caller discards since derivatives need uniform control flow
-    const float slope = max(abs(ddx(depth)), abs(ddy(depth)));
-    biasedDepth = saturate(depth + min(kSlopeBias * slope, kMaxSlopeBias) + gPush.constantBias);
-    return hit.hit;
+    const float3 hitWorld = nearWorld + worldDirection * hit.t;
+    const float depth = shadowDepth(input.view, hitWorld);
+
+    // The receiver plane slope of the hit face as the rasterizer bias of a quad would see it
+    float slopeBias = 0.0;
+    if (hit.axis >= 0)
+    {
+        const uint axis = uint(hit.axis);
+        const float plane = float(hit.voxel[axis]) + (direction[axis] > 0.0 ? 0.0 : 1.0);
+        const float slope = max(abs(facePlaneDepth(input.view, worldToVoxel, ndcX, axis, plane) - depth),
+                                abs(facePlaneDepth(input.view, worldToVoxel, ndcY, axis, plane) - depth));
+        const float cap = shadowDepth(input.view, hitWorld + normalize(worldDirection) * kMaxSlopeBiasMeters) - depth;
+        slopeBias = min(kSlopeBias * slope, cap);
+    }
+    biasedDepth = saturate(depth + slopeBias + gPush.constantBias);
+    return true;
 }
 
 // Front faces of a box wholly past the near plane so early depth rejects it behind earlier casters

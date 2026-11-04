@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.28)
 project(toast_engine C CXX)
 
 if (CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
@@ -41,6 +41,7 @@ find_package(tomlplusplus CONFIG REQUIRED)
 find_package(RmlUi CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(imgui CONFIG REQUIRED)
+find_package(cpptrace CONFIG REQUIRED)
 find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Array.h")
 
 # External paths
@@ -105,14 +106,19 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
-        imgui::imgui
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:imgui::imgui>
         RmlUi::RmlUi
+        cpptrace::cpptrace
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}
         PUBLIC
-        Tracy::TracyClient glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:Tracy::TracyClient> glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
 )
+
+# Release links without Tracy
+get_target_property(_tracy_headers Tracy::TracyClient INTERFACE_INCLUDE_DIRECTORIES)
+target_include_directories(toast_engine PUBLIC ${_tracy_headers})
 
 foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
     string(TOUPPER "${config}" config_upper)
@@ -126,28 +132,16 @@ endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 
-# windows.h min and max macros break std::numeric_limits<T>::max() in whatever unity TU they land in
 if (WIN32)
     target_compile_definitions(toast_engine PRIVATE NOMINMAX)
     target_link_libraries(toast_engine PRIVATE ole32 uuid comctl32 d3d11 dxgi)
 endif ()
 target_precompile_headers(toast_engine PRIVATE pch.h)
 # Defines VMA_IMPLEMENTATION so it must not use the PCH
-set_source_files_properties(src/toast/renderer/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
+set_source_files_properties(src/toast/renderer/core/vma.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 # Defines STB_IMAGE_IMPLEMENTATION
-set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/renderer/shared_texture_output_target.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON SKIP_UNITY_BUILD_INCLUSION ON)
-set_source_files_properties(src/toast/crash_handler.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-
-# protoc output uses file local symbol names
-file(GLOB _TOAST_PROTO_SOURCES "generated/*.pb.cc")
-set_source_files_properties(${_TOAST_PROTO_SOURCES} PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
-# OFF for clang-tidy since unity TUs leave compile_commands.json without per file entries
-option(TOAST_UNITY_BUILD "Merge engine sources into unity translation units" ON)
-if (TOAST_UNITY_BUILD)
-    set_target_properties(toast_engine PROPERTIES UNITY_BUILD ON UNITY_BUILD_BATCH_SIZE 8)
-endif ()
+set_source_files_properties(src/toast/assets/hdr_image.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+set_source_files_properties(src/toast/input/trackpad.cpp PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
 
 # Vulkan synchronization validation
 option(TOAST_SYNC_VALIDATION "Enable Vulkan synchronization validation in Debug builds" ON)
@@ -157,8 +151,24 @@ target_compile_definitions(toast_engine PUBLIC
         $<$<AND:$<CONFIG:Debug>,$<BOOL:${TOAST_SYNC_VALIDATION}>>:TOAST_SYNC_VALIDATION>
         $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:NDEBUG>
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TRACY_ENABLE>
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_DEV_TOOLS>
+        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:TOAST_BREAK_ON_ERROR>
         $<$<CONFIG:RelWithDebInfo>:TOAST_LUA_OWNERSHIP_CHECKS>
         GLM_FORCE_INTRINSICS
+)
+
+# Replaces global operator new and delete so Tracy lists every heap allocation, only active where Tracy is
+option(TOAST_TRACK_HEAP "Report C++ heap allocations to Tracy" ON)
+# 0 records no callstack, around 8 to 16 shows who allocates but slows allocation heavy code down a lot
+set(TOAST_HEAP_CALLSTACK_DEPTH 0 CACHE STRING "Callstack frames Tracy captures per heap allocation")    
+target_compile_definitions(toast_engine PRIVATE
+        $<$<AND:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,$<BOOL:${TOAST_TRACK_HEAP}>>:TOAST_TRACK_HEAP>
+        TOAST_HEAP_CALLSTACK_DEPTH=${TOAST_HEAP_CALLSTACK_DEPTH}
+)
+
+# Keep Slang's Debug profile for Linux builds that retain C++ debug information.
+target_compile_definitions(toast_engine PRIVATE
+        $<$<AND:$<PLATFORM_ID:Linux>,$<CONFIG:RelWithDebInfo>>:TOAST_SLANG_DEBUG_DEFAULT>
 )
 
 # Baseline ISA of Release builds on x86_64 GCC/Clang. CI runs on virtual machines whose CPU has no AVX2, so it passes a lower one
@@ -177,7 +187,10 @@ if (MSVC)
             $<$<CONFIG:Release>:/O2;/Ob2;/Oi;/Ot;/GL;/Gy;/Gw;/fp:fast;/Qpar>
             $<$<CONFIG:Release>:/GS->
     )
-    target_link_options(toast_engine PRIVATE $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>)
+    target_link_options(toast_engine PRIVATE
+            $<$<CONFIG:Release>:/LTCG;/OPT:REF;/OPT:ICF>
+            $<$<CONFIG:Debug,RelWithDebInfo>:/INCREMENTAL;/OPT:NOREF;/OPT:NOICF>
+    )
 else ()
     if (ARCH STREQUAL "x86_64")
         target_compile_options(toast_engine PUBLIC $<$<CONFIG:Release>:-march=${TOAST_X86_MARCH}>)
@@ -234,6 +247,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E rm -rf "${TOAST_ENGINE_OUTPUT_ROOT}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/.clang-format" "${TOAST_ENGINE_OUTPUT_ROOT}/.clang-format"
         # Generated reflection headers
         COMMAND ${CMAKE_COMMAND} "-DSRC_DIR=${CMAKE_CURRENT_SOURCE_DIR}/generated" "-DDST_DIR=${TOAST_ENGINE_OUTPUT_ROOT}/include" -P "${CMAKE_SOURCE_DIR}/cmake/copy_generated_headers.cmake"
         # Dependencies
@@ -260,7 +274,7 @@ add_custom_command(TARGET toast_engine POST_BUILD
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
     add_custom_command(TARGET toast_engine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different "${CMAKE_CURRENT_SOURCE_DIR}/assets" "${TOAST_ENGINE_BIN_DIR}/assets"
             COMMENT "Copying assets"
             VERBATIM
     )
@@ -283,5 +297,14 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMENT "Copying log server"
         VERBATIM
 )
+
+if (WIN32)
+    add_custom_command(TARGET toast_engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:log_server> "${TOAST_ENGINE_BIN_DIR}"
+            COMMENT "Copying log server runtime DLLs"
+            COMMAND_EXPAND_LISTS
+            VERBATIM
+    )
+endif ()
 
 install(TARGETS toast_engine RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)

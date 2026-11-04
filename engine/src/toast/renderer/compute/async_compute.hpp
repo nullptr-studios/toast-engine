@@ -1,0 +1,122 @@
+/// @file async_compute.hpp
+/// @author dario
+/// @date 09/10/2026
+
+#pragma once
+
+#include <array>
+#include <atomic>
+#include <cstdint>
+#include <functional>
+#include <limits>
+#include <mutex>
+#include <string_view>
+#include <toast/export.hpp>
+#include <vector>
+#include <vulkan/vulkan_raii.hpp>
+
+namespace renderer {
+
+class TOAST_API AsyncCompute {
+public:
+	/// Timeline value so completing one completes every earlier one
+	using Ticket = uint64_t;
+
+	static constexpr Ticket k_no_ticket = 0;
+
+	enum class Timing : uint8_t {
+		now,
+		/// Held until the render thread submits its next frame so it runs next to that frame graphics
+		/// Also goes out with the next submit of any timing so a paused renderer never strands it
+		after_frame,
+	};
+
+	/// @param queue_mutex non null when another subsystem submits to the same VkQueue
+	AsyncCompute(const vk::raii::Device& device, uint32_t queue_family_index, vk::Queue queue, std::mutex* queue_mutex);
+
+	~AsyncCompute();
+
+	AsyncCompute(const AsyncCompute&) = delete;
+	auto operator=(const AsyncCompute&) -> AsyncCompute& = delete;
+	AsyncCompute(AsyncCompute&&) = delete;
+	auto operator=(AsyncCompute&&) -> AsyncCompute& = delete;
+
+	/// Thread safe and records outside the lock so threads record in parallel
+	/// An exception from @p record propagates and no ticket is handed out
+	auto submit(const std::function<void(vk::CommandBuffer)>& record, std::string_view debug_name = {}, Timing timing = Timing::now)
+	    -> Ticket;
+
+	/// Render thread right after its frame submit though any thread may call it
+	void flushDeferred();
+
+	[[nodiscard]]
+	auto isComplete(Ticket ticket) const -> bool;
+
+	/// Flushes deferred jobs first since they never complete otherwise
+	/// @return false on timeout or a lost device
+	auto wait(Ticket ticket, uint64_t timeout_ns = std::numeric_limits<uint64_t>::max()) -> bool;
+
+	[[nodiscard]]
+	auto completedTicket() const -> Ticket;
+
+	[[nodiscard]]
+	auto lastSubmittedTicket() const -> Ticket;
+
+	[[nodiscard]]
+	auto queueFamilyIndex() const noexcept -> uint32_t {
+		return m_queue_family_index;
+	}
+
+	/// Never wait on it from a frame submit or the frame couples to async work again
+	[[nodiscard]]
+	auto timeline() const noexcept -> vk::Semaphore {
+		return *m_timeline;
+	}
+
+	/// For eConcurrent create infos with count entries since one family repeats
+	struct SharedFamilies {
+		std::array<uint32_t, 2> indices {};
+		uint32_t count = 0;
+	};
+
+	[[nodiscard]]
+	auto sharedFamilies(uint32_t graphics_family) const noexcept -> SharedFamilies;
+
+private:
+	struct Slot {
+		vk::raii::CommandPool pool = nullptr;
+		vk::raii::CommandBuffer cmd = nullptr;
+		Ticket ticket = k_no_ticket;
+	};
+
+	/// Caller holds m_mutex
+	void reclaimLocked();
+	/// Caller holds m_mutex
+	void submitLocked(Slot&& slot);
+	/// Caller holds m_mutex
+	void flushDeferredLocked();
+	auto acquireSlot() -> Slot;
+
+	/// Timeline value or the last one read once the device is gone
+	/// Never throws since the tick that reaches this is noexcept
+	[[nodiscard]]
+	auto counterValue() const -> Ticket;
+
+	const vk::raii::Device* m_device = nullptr;
+	uint32_t m_queue_family_index = 0;
+	vk::Queue m_queue = nullptr;
+	std::mutex* m_queue_mutex = nullptr;
+
+	vk::raii::Semaphore m_timeline = nullptr;
+
+	mutable std::atomic<Ticket> m_last_completed {k_no_ticket};
+
+	mutable std::mutex m_mutex;
+	Ticket m_last_submitted = k_no_ticket;
+	std::vector<Slot> m_in_flight;
+	std::vector<Slot> m_free;
+	/// Ticket order and not on the queue yet
+	std::vector<Slot> m_deferred;
+};
+
+}

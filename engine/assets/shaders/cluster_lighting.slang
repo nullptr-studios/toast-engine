@@ -18,6 +18,9 @@ struct GpuLight
     float4 coneAngles;      // x cos outer y cos inner z shadow near w shadow far
     float4 shadowAtlas;     // x fraction of the shadow layer rendered
     float4x4 shadowViewProjection;
+    /// y plus z bounds the emitter extent past the attenuation range
+    float4 shape;
+    float4 shapeTangent;
 };
 
 struct ClusterAABB
@@ -169,7 +172,7 @@ void lightCullMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     for (uint lightIndex = 0; lightIndex < gParams.lightCounts.x; ++lightIndex)
     {
         float3 lightViewPos = gLights[lightIndex].viewPosType.xyz;
-        float radius = gLights[lightIndex].worldPosRange.w;
+        float radius = gLights[lightIndex].worldPosRange.w + gLights[lightIndex].shape.y + gLights[lightIndex].shape.z;
 
         if (sqDistPointAABB(lightViewPos, aabbMin, aabbMax) > (radius * radius))
         {

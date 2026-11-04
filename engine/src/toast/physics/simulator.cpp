@@ -13,30 +13,18 @@
 #include "nodes/sphere_collider.hpp"
 #include "nodes/trigger.hpp"
 #include "physics_settings.hpp"
+#include "query_snapshot.hpp"
 #include "shatter.hpp"
 #include "toast/physics/body.hpp"
 #include "voxel_data_lock.hpp"
 #include "voxel_smash.hpp"
 
-#include <algorithm>
-#include <atomic>
-#include <chrono>
-#include <cmath>
 #include <deque>
-#include <functional>
-#include <glm/gtc/matrix_transform.hpp>
-#include <limits>
-#include <mutex>
-#include <span>
 #include <thread>
-#include <toast/assets/assets.hpp>
-#include <toast/thread_pool.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/world/world_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
 
 namespace physics {
 
@@ -236,6 +224,7 @@ Simulator::Simulator() {
 	TOAST_ASSERT(not instance, "Physics", "Simulator can only be created once");
 	TOAST_INFO("Physics", "Simulator created");
 	instance = this;
+	published_query_snapshot.store(std::make_shared<const QuerySnapshot>(), std::memory_order_release);
 
 	m_listener.subscribe<event::VoxelPaletteAssetReloaded>([this](event::VoxelPaletteAssetReloaded& e) {
 		refreshPalette(e.uid.data());
@@ -281,6 +270,7 @@ void Simulator::resetWind() {
 
 Simulator::~Simulator() {
 	TOAST_INFO("Physics", "Simulator destroyed");
+	published_query_snapshot.store(nullptr, std::memory_order_release);
 	clearDebris();
 	instance = nullptr;
 	// Finish all requests before destroying
@@ -288,6 +278,60 @@ Simulator::~Simulator() {
 	std::scoped_lock lock(all.mutex);
 	all.queue.clear();
 	all.pending.store(0, std::memory_order_release);
+}
+
+auto Simulator::querySnapshot() -> std::shared_ptr<const QuerySnapshot> {
+	return published_query_snapshot.load(std::memory_order_acquire);
+}
+
+void Simulator::publishQuerySnapshot() {
+	ZoneScopedN("physics::PublishQuerySnapshot");
+	auto snapshot = std::make_shared<QuerySnapshot>();
+	snapshot->tree = m_broad_phase.snapshotTree();
+	snapshot->bodies = m_bodies;
+	snapshot->shapes = m_shapes;
+	snapshot->fat_margin = tunables().broadphase_fat_margin;
+	snapshot->tick = m_tick_index;
+	snapshot->collider_nodes.resize(m_shapes.size());
+	snapshot->body_nodes.resize(m_bodies.size());
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
+		snapshot->voxels.reserve(m_voxel_shapes.size());
+		for (const VoxelShapeSlot& source : m_voxel_shapes) {
+			VoxelShapeSlot copy;
+			copy.generation = source.generation;
+			if (source.data) {
+				VoxelShapeData& data = copy.data.emplace();
+				data.surface = source.data->surface;
+				data.palette = source.data->palette;
+				data.materials = source.data->materials;
+				if (source.data->volume) {
+					data.owned_volume = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*source.data->volume));
+					data.volume = data.owned_volume.get();
+				}
+			}
+			snapshot->voxels.push_back(std::move(copy));
+		}
+	}
+	for (const NodeBinding& binding : m_node_bindings) {
+		if (binding.body.slot < snapshot->body_nodes.size()) {
+			snapshot->body_nodes[binding.body.slot] = binding.node;
+		}
+		for (const ColliderBinding& collider : binding.colliders) {
+			if (collider.shape.slot < snapshot->collider_nodes.size()) {
+				snapshot->collider_nodes[collider.shape.slot] = collider.node;
+			}
+		}
+	}
+	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
+		if (binding.body.slot < snapshot->body_nodes.size()) {
+			snapshot->body_nodes[binding.body.slot] = binding.node;
+		}
+		if (binding.shape.slot < snapshot->collider_nodes.size()) {
+			snapshot->collider_nodes[binding.shape.slot] = binding.node;
+		}
+	}
+	published_query_snapshot.store(std::move(snapshot), std::memory_order_release);
 }
 
 void Simulator::registerRigidbody(Rigidbody& node) {
@@ -459,48 +503,71 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 	node.syncWorldTransform();
 	const BodyType body_type = bodyTypeOf(node.simulation_type);
 	const bool dynamic_body = body_type == BodyType::dynamic_body;
-	const BodyID body = instance->createBody(
-	    BodyDescriptor {
-	      .type = body_type,
-	      .allow_sleep = node.allow_sleep,
-	      .position = node.world_position,
-	      .rotation = node.world_rotation,
-	      .mass = 1.0f, // calculated later
-	      .gravity_scale = node.gravity_scale,
-	      .linear_damping = node.linear_damping,
-	      .angular_damping = node.angular_damping,
-	      .drag_scale = node.drag_scale,
-	      .layers = {.included = node.included, .excluded = node.excluded},
-	}
-	);
-	if (not instance->valid(body)) {
-		return;
-	}
 
-	const ShapeID shape = instance->createVoxelShape(body, node);
-	if (not instance->valid(shape)) {
-		instance->destroyBody(body);
-		return;
-	}
-	if (Shape* stored_shape = instance->tryGetShape(shape)) {
-		stored_shape->material = material;
-	}
+	const auto add_body = [&](toast::VoxelPart* part) {
+		const BodyID body = instance->createBody(
+		    BodyDescriptor {
+		      .type = body_type,
+		      .allow_sleep = node.allow_sleep,
+		      .position = node.world_position,
+		      .rotation = node.world_rotation,
+		      .mass = 1.0f, // calculated later
+		      .gravity_scale = node.gravity_scale,
+		      .linear_damping = node.linear_damping,
+		      .angular_damping = node.angular_damping,
+		      .drag_scale = node.drag_scale,
+		      .layers = {.included = node.included, .excluded = node.excluded},
+		}
+		);
+		if (not instance->valid(body)) {
+			return;
+		}
 
-	node.assignBody(body);
-	node.assignShape(shape);
-	setBodyEnabled(body, node.enabled());
-	setShapeEnabled(shape, node.enabled());
-	instance->m_voxel_bindings.push_back({
-	  .body = body,
-	  .shape = shape,
-	  .node = node.box().as<toast::VoxelNode>(),
-	  .source_revision = node.revision(),
-	  .source_model = node.getModel().uid().data(),
-	  .source_palette = node.paletteUid(),
-	});
+		const ShapeID shape = instance->createVoxelShape(body, node, part);
+		if (not instance->valid(shape)) {
+			instance->destroyBody(body);
+			return;
+		}
+		if (Shape* stored_shape = instance->tryGetShape(shape)) {
+			stored_shape->material = material;
+		}
 
-	if (dynamic_body) {
-		instance->rebuildMassProperties(body);
+		if (part != nullptr) {
+			part->body = body;
+			part->shape = shape;
+			part->has_pose = false;
+		} else {
+			node.assignBody(body);
+			node.assignShape(shape);
+		}
+		setBodyEnabled(body, node.enabled());
+		setShapeEnabled(shape, node.enabled());
+		instance->m_voxel_bindings.push_back({
+		  .body = body,
+		  .shape = shape,
+		  .node = node.box().as<toast::VoxelNode>(),
+		  .is_part = part != nullptr,
+		  .part_key = part != nullptr ? part->key : 0,
+		  .source_revision = part != nullptr ? part->revision : node.revision(),
+		  .source_model = node.getModel().uid().data(),
+		  .source_palette = node.paletteUid(),
+		});
+
+		if (dynamic_body) {
+			instance->rebuildMassProperties(body);
+		}
+	};
+
+	if (node.usesParts()) {
+		// Every part is its own body
+		// They won't fall apart unless they are dynamic so it's fine (mostly) (i think)
+		for (toast::VoxelPart& part : node.m_parts) {
+			if (part.volume != nullptr) {
+				add_body(&part);
+			}
+		}
+	} else {
+		add_body(nullptr);
 	}
 }
 
@@ -538,6 +605,12 @@ void Simulator::unregisterVoxelNode(toast::VoxelNode& node) {
 
 	std::scoped_lock voxel_lock {voxelDataMutex()};
 	node.m_retired_volumes.clear();
+	for (toast::VoxelPart& part : node.m_parts) {
+		part.body = {};
+		part.shape = {};
+		part.has_pose = false;
+		part.retired.clear();
+	}
 }
 
 void Simulator::registerTrigger(Trigger& node) {
@@ -669,6 +742,7 @@ void Simulator::tick() {
 
 	reapFragments();
 	syncEnabledState();
+	syncJointNodes();
 	applyDamageCommands();
 	const auto after_damage = std::chrono::steady_clock::now();
 	m_profile.damage_apply_ms = elapsed_ms(tick_start, after_damage);
@@ -681,15 +755,19 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
+	checkJointAnchors();
 	integrate(dt);
 	checkTriggers();
 
 	{
 		PhaseScope worker_phase {*this, SimulationPhase::mutation, SimulationPhase::worker_execution};
-		const CollisionWorldView world {.bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes};
+		const CollisionWorldView world {
+		  .bodies = m_bodies, .shapes = m_shapes, .voxel_shapes = m_voxel_shapes, .excluded_pairs = m_excluded_pairs
+		};
 		const auto candidates = m_broad_phase.findPairs(world);
 		m_manifolds = generateManifoldsAsync(world, candidates);
 	}
+	adjustJointContacts(m_manifolds);
 	const auto after_narrow = std::chrono::steady_clock::now();
 	m_profile.narrow_phase_ms = elapsed_ms(after_connectivity, after_narrow);
 
@@ -698,20 +776,23 @@ void Simulator::tick() {
 	m_profile.cache_update_ms = elapsed_ms(after_narrow, after_cache);
 
 	wakeDisturbedSleepers(dt);
+	wakeJointPartners();
 	unlockDisturbedFragments();
 	const auto after_wake = std::chrono::steady_clock::now();
 	m_profile.wake_groups_ms = elapsed_ms(after_cache, after_wake);
 
 	// resolve
-	auto constraints = prepareConstraints(m_manifolds);
+	auto& constraints = prepareConstraints(m_manifolds);
+	prepareJoints(dt);
 	const auto after_prepare = std::chrono::steady_clock::now();
 	m_profile.prepare_constraints_ms = elapsed_ms(after_wake, after_prepare);
 
-	auto islands = buildIslands(m_manifolds, constraints);
+	auto& islands = buildIslands(m_manifolds, constraints);
 	const auto after_islands = std::chrono::steady_clock::now();
 	m_profile.build_islands_ms = elapsed_ms(after_prepare, after_islands);
 
 	solveIslands(islands);
+	breakOverloadedJoints(dt);
 	const auto after_solve = std::chrono::steady_clock::now();
 	m_profile.island_solve_ms = elapsed_ms(after_islands, after_solve);
 
@@ -739,7 +820,9 @@ void Simulator::tick() {
 
 	// push poses after simulation settles
 	publishTransforms();
+	publishJoints();
 	publishVoxelRenderRecords();
+	publishQuerySnapshot();
 	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
 	FrameMarkNamed("PhysicsStep");
@@ -780,9 +863,7 @@ void Simulator::clearFragmentFromSource(
 	++data.surface_revision;
 
 	if (data.solid_voxel_count == 0) {
-		if (toast::VoxelNode* node = voxelNodeFor(shape_id)) {
-			node->m_pending_events.emptied = true;
-		}
+		noteVoxelShapeEmptied(shape_id);
 	}
 
 	auto* shape = tryGetShape(shape_id);
@@ -799,11 +880,49 @@ void Simulator::clearFragmentFromSource(
 		retireVoxelBody(shape->owner);
 		return;
 	}
+	if (debrisIfSmall(shape_id)) {
+		return;
+	}
 	rebuildMassProperties(shape->owner);
 }
 
+auto Simulator::debrisIfSmall(ShapeID shape_id) -> bool {
+	const Shape* shape = tryGetShape(shape_id);
+	VoxelShapeData* data = shape != nullptr && shape->type == ShapeType::voxel ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (data == nullptr || data->volume == nullptr || body == nullptr || body->type != BodyType::dynamic_body) {
+		return false;
+	}
+
+	// Too few voxels to be worth a rigidbody
+	// convert them to debris
+	const uint32_t solid = data->volume->solidVoxelCount();
+	if (solid == 0 || solid >= tunables().min_fragment_voxels) {
+		return false;
+	}
+
+	DetachedComponent whole;
+	whole.voxel_count = solid;
+	for (uint32_t index = 0; index < data->volume->brickCount(); ++index) {
+		const glm::ivec3 brick = data->volume->brickAtIndex(index);
+		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(brick);
+		if (occupancy != nullptr && not voxel::isEmpty(*occupancy)) {
+			whole.pieces.push_back({.brick = brick, .voxels = *occupancy});
+		}
+	}
+
+	emitComponentDebris(shape_id, whole, nullptr);
+	shape = tryGetShape(shape_id);
+	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data != nullptr && data->volume != nullptr) {
+		clearFragmentFromSource(shape_id, *data, *data->volume, whole);
+	}
+	return true;
+}
+
 void Simulator::emitDebris(
-    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
+    bool together
 ) {
 	ZoneScopedN("physics::EmitDebris");
 
@@ -825,7 +944,8 @@ void Simulator::emitDebris(
 	const glm::ivec3 jitter {
 	  static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2)), static_cast<int32_t>(rng.below(2))
 	};
-	std::vector<DebrisCluster> clusters = clusterDebris(voxels, jitter, rng, tunables().fracture_debris_split_chance);
+	std::vector<DebrisCluster> clusters =
+	    together ? std::vector<DebrisCluster> {wholeDebris(voxels)} : clusterDebris(voxels, jitter);
 
 	// past the cap a random subset is kept and the rest is deleted
 	const size_t room = cap - m_debris_spawns.size();
@@ -850,14 +970,16 @@ void Simulator::emitDebris(
 	m_debris_spawns.reserve(m_debris_spawns.size() + clusters.size());
 	for (const DebrisCluster& cluster : clusters) {
 		// the block is 2 voxels wide
-		const glm::vec3 local = (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
+		const glm::vec3 local =
+		    cluster.whole ? cluster.centre * voxel::k_voxel_size : (glm::vec3(cluster.origin) + 1.0f) * voxel::k_voxel_size;
 		const glm::vec3 position =
 		    body->position + (body->rotation * (shape->voxel.local_center + (shape->voxel.local_rotation * local)));
 
 		const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, cluster.material);
 		const voxel::PaletteEntry& look = data->palette.entries[cluster.material];
-		const float mass = static_cast<float>(std::popcount(cluster.mask)) *
-		                   static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
+		const float mass =
+		    static_cast<float>(cluster.whole ? cluster.voxel_count : static_cast<uint32_t>(std::popcount(cluster.mask))) *
+		    static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
 
 		// starts with the speed of the point it broke off from
 		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
@@ -868,7 +990,11 @@ void Simulator::emitDebris(
 			const float outward_length = glm::length(outward);
 			const glm::vec3 axis_local = outward_length > 1.0e-4f ? outward / outward_length : rng.direction();
 			const glm::vec3 axis = body->rotation * (shape->voxel.local_rotation * axis_local);
-			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * debrisSpeed(energy_each, mass, speed_scale);
+			float speed = debrisSpeed(energy_each, mass, speed_scale);
+			if (blast->max_speed > 0.0f) {
+				speed = std::min(speed, blast->max_speed);
+			}
+			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
 		}
 		if (push != nullptr && push_length > 1.0e-6f && mass > 0.0f) {
 			const float speed = std::min({push->speed, push->max_impulse / mass, k_max_debris_speed});
@@ -882,13 +1008,17 @@ void Simulator::emitDebris(
 		      .position = position,
 		      .rotation = lattice_rotation,
 		      .velocity = velocity,
-		      .angular_velocity = rng.direction() * rng.range(0.0f, k_debris_max_spin),
+		      .angular_velocity = together ? body->angular_velocity : rng.direction() * rng.range(0.0f, k_debris_max_spin),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
 					                    (static_cast<uint32_t>(look.albedo_b) << 16u) | (static_cast<uint32_t>(look.roughness) << 24u),
 		      .metallic = look.metallic,
 		      .reflectivity = look.reflectivity,
+		      .glass = voxel::isGlass(look),
+		      .alpha = look.alpha,
+		      .ior = look.ior,
+		      .scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f),
 		    }
 		);
 	}
@@ -926,7 +1056,7 @@ void Simulator::emitComponentDebris(ShapeID shape_id, const DetachedComponent& c
 	}
 
 	const uint64_t seed = fractureSeed(shape->owner, shape_id, glm::vec3(voxels.front().voxel) * voxel::k_voxel_size, m_tick_index);
-	emitDebris(shape_id, voxels, nullptr, push, seed);
+	emitDebris(shape_id, voxels, nullptr, push, seed, true);
 }
 
 auto Simulator::takeDebrisSpawns() -> std::vector<DebrisSpawn> {
@@ -1081,6 +1211,7 @@ void Simulator::refreshPalette(uint64_t palette_uid) {
 void Simulator::reapFragments() {
 	ZoneScopedN("physics::ReapFragments");
 
+	const size_t fragment_count = m_fragments.size();
 	for (const BodyID id : m_doomed_fragments) {
 		destroyFragmentRecord(id);
 	}
@@ -1096,7 +1227,10 @@ void Simulator::reapFragments() {
 		++m_profile.fragments_evicted;
 	}
 
-	rebuildFragmentIndex();
+	// Records are only ever removed here, so an unchanged count leaves every index valid
+	if (m_fragments.size() != fragment_count) {
+		rebuildFragmentIndex();
+	}
 }
 
 void Simulator::queuePendingFragments(std::span<const ConnectivityResult> results) {
@@ -1256,11 +1390,6 @@ void Simulator::spawnBudgetedFragments() {
 }
 
 namespace {
-
-/// Sleeping bodies are immovable in the solver
-auto movable(const Body& body) -> bool {
-	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
-}
 
 /// Approach speed into a sleeper that wakes it in sleep thresholds
 constexpr float k_wake_approach = 0.75f;
@@ -1764,19 +1893,31 @@ void Simulator::syncEnabledState() {
 
 		body->enabled = binding.node->enabled();
 
+		toast::VoxelPart* part = partOf(binding);
+		if (binding.is_part && part == nullptr) {
+			continue;
+		}
+		const uint32_t current_revision = part != nullptr ? part->revision : binding.node->revision();
 		const uint64_t model = binding.node->getModel().uid().data();
 		const uint64_t palette = binding.node->paletteUid();
-		if (binding.source_revision != binding.node->revision() || binding.source_model != model ||
-		    binding.source_palette != palette) {
+		if (binding.source_revision != current_revision || binding.source_model != model || binding.source_palette != palette) {
 			destroyShape(binding.shape);
-			binding.shape = createVoxelShape(binding.body, *binding.node);
-			binding.node->assignShape(binding.shape);
-			binding.source_revision = binding.node->revision();
+			binding.shape = createVoxelShape(binding.body, *binding.node, part);
+			if (part != nullptr) {
+				part->shape = binding.shape;
+			} else {
+				binding.node->assignShape(binding.shape);
+			}
+			binding.source_revision = current_revision;
 			binding.source_model = model;
 			binding.source_palette = palette;
 			{
 				std::scoped_lock voxel_lock {voxelDataMutex()};
-				binding.node->m_retired_volumes.clear();
+				if (part != nullptr) {
+					part->retired.clear();
+				} else {
+					binding.node->m_retired_volumes.clear();
+				}
 			}
 			if (body->type == BodyType::dynamic_body) {
 				rebuildMassProperties(binding.body);
@@ -1880,6 +2021,19 @@ void Simulator::wakeBodiesTouching(BodyID id) {
 			wakeBody(manifold.pair.a.body);
 		}
 	}
+
+	if (m_joint_count > 0) {
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			if (slot.joint.descriptor.body_a == id) {
+				wakeBody(slot.joint.descriptor.body_b);
+			} else if (slot.joint.descriptor.body_b == id) {
+				wakeBody(slot.joint.descriptor.body_a);
+			}
+		}
+	}
 }
 
 void Simulator::wakeBodiesTouching(ShapeID id) {
@@ -1902,6 +2056,59 @@ void Simulator::markSupportedBodies() {
 		}
 		m_body_supported[manifold.pair.a.body.slot] = 1;
 		m_body_supported[manifold.pair.b.body.slot] = 1;
+	}
+
+	// A joint holds up what hangs from it
+	const auto holds_up = [this](BodyID id) {
+		const Body* body = tryGetBody(id);
+		return body == nullptr || body->type != BodyType::dynamic_body || m_body_supported[id.slot] != 0;
+	};
+	bool changed = m_joint_count > 0;
+	for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+		changed = false;
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			const BodyID a = slot.joint.descriptor.body_a;
+			const BodyID b = slot.joint.descriptor.body_b;
+			const Body* body_a = tryGetBody(a);
+			const Body* body_b = tryGetBody(b);
+			if (body_a != nullptr && body_a->type == BodyType::dynamic_body && m_body_supported[a.slot] == 0 && holds_up(b)) {
+				m_body_supported[a.slot] = 1;
+				changed = true;
+			}
+			if (body_b != nullptr && body_b->type == BodyType::dynamic_body && m_body_supported[b.slot] == 0 && holds_up(a)) {
+				m_body_supported[b.slot] = 1;
+				changed = true;
+			}
+		}
+	}
+}
+
+void Simulator::wakeJointPartners() {
+	if (m_joint_count == 0) {
+		return;
+	}
+
+	// A chain of joints wakes from one end to the other
+	bool changed = true;
+	for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+		changed = false;
+		for (const JointSlot& slot : m_joints) {
+			if (not slot.occupied) {
+				continue;
+			}
+			const Body* body_a = tryGetBody(slot.joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(slot.joint.descriptor.body_b);
+			if (body_a == nullptr || body_b == nullptr || body_a->type != BodyType::dynamic_body ||
+			    body_b->type != BodyType::dynamic_body || not body_a->enabled || not body_b->enabled ||
+			    body_a->awake == body_b->awake) {
+				continue;
+			}
+			wakeBody(body_a->awake ? slot.joint.descriptor.body_b : slot.joint.descriptor.body_a);
+			changed = true;
+		}
 	}
 }
 
@@ -2135,19 +2342,77 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 		return false;
 	}
 
+	toast::VoxelPart* part = partOf(binding);
+	if (binding.is_part && part == nullptr) {
+		return true;
+	}
+
 	if (body->type == BodyType::dynamic_body) {
-		if (body->enabled) {
-			binding.node->applyPhysicsTransform(body->position, body->rotation);
+		if (part == nullptr) {
+			if (body->enabled) {
+				binding.node->applyPhysicsTransform(body->position, body->rotation);
+			}
+			binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+		} else {
+			// The parts fall on their own
+			if (body->enabled) {
+				part->has_pose = true;
+				part->pose_position = body->position;
+				part->pose_rotation = body->rotation;
+			}
+			if (binding.node->m_parts.front().key == part->key) {
+				binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
+			}
 		}
-		binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
 	}
 
 	if (const Shape* shape = tryGetShape(binding.shape); shape != nullptr && shape->type == ShapeType::voxel) {
 		if (const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data); voxel_data != nullptr) {
-			binding.node->mass = voxel::resolveMass(voxel_data->moments);
+			const float mass = voxel::resolveMass(voxel_data->moments);
+			if (part == nullptr) {
+				binding.node->mass = mass;
+			} else {
+				part->mass = mass;
+				float total = 0.0f;
+				for (const toast::VoxelPart& other : binding.node->m_parts) {
+					total += other.mass;
+				}
+				binding.node->mass = total;
+			}
 		}
 	}
 	return true;
+}
+
+auto Simulator::partOf(const VoxelNodeBinding& binding) -> toast::VoxelPart* {
+	if (not binding.is_part || not binding.node.exists()) {
+		return nullptr;
+	}
+	auto& parts = const_cast<toast::VoxelNode&>(*binding.node).m_parts;
+	const auto found = std::ranges::find(parts, binding.part_key, &toast::VoxelPart::key);
+	return found != parts.end() ? &*found : nullptr;
+}
+
+void Simulator::recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum) {
+	const auto binding = std::ranges::find(m_voxel_bindings, shape, &VoxelNodeBinding::shape);
+	if (binding == m_voxel_bindings.end() || not binding->node.exists()) {
+		return;
+	}
+	const toast::VoxelPart* part = partOf(*binding);
+	binding->node->recordDamage(count, index_sum, part != nullptr ? part->origin : binding->node->voxelOrigin());
+}
+
+void Simulator::noteVoxelShapeEmptied(ShapeID shape) {
+	toast::VoxelNode* node = voxelNodeFor(shape);
+	if (node == nullptr) {
+		return;
+	}
+	for (const toast::VoxelPart& part : node->m_parts) {
+		if (part.volume != nullptr && part.volume->solidVoxelCount() > 0) {
+			return;
+		}
+	}
+	node->m_pending_events.emptied = true;
 }
 
 namespace {
@@ -2261,6 +2526,10 @@ auto Simulator::renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4 {
 	return renderPoseDelta(node.bodyID());
 }
 
+auto Simulator::renderPoseDelta(const toast::VoxelPart& part) -> glm::mat4 {
+	return renderPoseDelta(part.body);
+}
+
 auto Simulator::renderPoseDeltaFor(const toast::Node& node) -> glm::mat4 {
 	if (instance == nullptr) {
 		return {1.0f};
@@ -2296,7 +2565,7 @@ void Simulator::rebuildRenderPoseLookup() {
 		}
 	}
 	for (const VoxelNodeBinding& binding : m_voxel_bindings) {
-		if (binding.node.exists()) {
+		if (binding.node.exists() && not binding.is_part) {
 			add_driver(*binding.node, binding.body);
 		}
 	}
@@ -2361,7 +2630,11 @@ auto Simulator::solveNormal(Constraint& constraint, Body& body_a, Body& body_b) 
 		return false;
 	}
 
-	float impulse_delta = (constraint.restitution_bias - normal_speed) * constraint.normal_mass;
+	if (constraint.closing_speed > 0.0f && constraint.restitution_bias > 0.0f && normal_speed < -constraint.closing_speed) {
+		constraint.closing_speed = 0.0f;
+	}
+	const float target_speed = constraint.closing_speed > 0.0f ? -constraint.closing_speed : constraint.restitution_bias;
+	float impulse_delta = (target_speed - normal_speed) * constraint.normal_mass;
 	float old_impulse = constraint.accumulated_normal_impulse;
 	constraint.accumulated_normal_impulse = std::max(0.0f, old_impulse + impulse_delta);
 	float applied_impulse = constraint.accumulated_normal_impulse - old_impulse;
@@ -2816,6 +3089,30 @@ void Simulator::updateSleeping(float dt) {
 				m_contact_supported[cached.pair.b.body.slot] = 1;
 			}
 		}
+
+		const auto holds_up = [this](BodyID id) {
+			const Body* body = tryGetBody(id);
+			return body == nullptr || body->type != BodyType::dynamic_body || m_contact_supported[id.slot] != 0;
+		};
+		bool changed = m_joint_count > 0;
+		for (size_t pass = 0; changed && pass <= m_joint_count; ++pass) {
+			changed = false;
+			for (const JointSlot& slot : m_joints) {
+				if (not slot.occupied) {
+					continue;
+				}
+				for (const auto& [end, other] : {
+				       std::pair {slot.joint.descriptor.body_a, slot.joint.descriptor.body_b},
+				       std::pair {slot.joint.descriptor.body_b, slot.joint.descriptor.body_a}
+				}) {
+					const Body* body = tryGetBody(end);
+					if (body != nullptr && body->type == BodyType::dynamic_body && m_contact_supported[end.slot] == 0 && holds_up(other)) {
+						m_contact_supported[end.slot] = 1;
+						changed = true;
+					}
+				}
+			}
+		}
 	}
 
 	m_sleep_ready.assign(m_bodies.size(), 0);
@@ -2884,6 +3181,51 @@ void Simulator::updateSleeping(float dt) {
 		}
 	}
 
+	if (m_joint_count > 0) {
+		// Bodies in a joint sleep only when everyone is ready
+		std::vector<size_t> parents(m_bodies.size());
+		std::iota(parents.begin(), parents.end(), size_t {0});
+		const auto find_root = [&parents](size_t index) {
+			while (parents[index] != index) {
+				parents[index] = parents[parents[index]];
+				index = parents[index];
+			}
+			return index;
+		};
+		const auto jointed_dynamic = [this](const JointSlot& slot) {
+			const Body* body_a = tryGetBody(slot.joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(slot.joint.descriptor.body_b);
+			return slot.occupied && body_a != nullptr && body_b != nullptr && body_a->type == BodyType::dynamic_body &&
+			       body_b->type == BodyType::dynamic_body;
+		};
+
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot)) {
+				parents[find_root(slot.joint.descriptor.body_a.slot)] = find_root(slot.joint.descriptor.body_b.slot);
+			}
+		}
+
+		std::vector<uint8_t> group_ready(m_bodies.size(), 1);
+		const auto vote = [&](BodyID id) {
+			const Body* body = tryGetBody(id);
+			if (body != nullptr && body->enabled && body->awake && (m_sleep_ready[id.slot] == 0 || m_sleep_blocked[id.slot] != 0)) {
+				group_ready[find_root(id.slot)] = 0;
+			}
+		};
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot)) {
+				vote(slot.joint.descriptor.body_a);
+				vote(slot.joint.descriptor.body_b);
+			}
+		}
+		for (const JointSlot& slot : m_joints) {
+			if (jointed_dynamic(slot) && group_ready[find_root(slot.joint.descriptor.body_a.slot)] == 0) {
+				m_sleep_ready[slot.joint.descriptor.body_a.slot] = 0;
+				m_sleep_ready[slot.joint.descriptor.body_b.slot] = 0;
+			}
+		}
+	}
+
 	for (size_t index = 0; index < m_bodies.size(); ++index) {
 		if (m_sleep_ready[index] != 0 && m_sleep_blocked[index] == 0) {
 			sleepBody(BodyID {.slot = static_cast<uint32_t>(index), .generation = m_bodies[index].generation});
@@ -2895,7 +3237,8 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 	ZoneScopedN("physics::UpdateContactCache");
 	ZoneValue(static_cast<uint64_t>(manifolds.size()));
 
-	std::vector<CachedManifold> next_cache;
+	std::vector<CachedManifold>& next_cache = m_cached_manifolds_next;
+	next_cache.clear();
 	next_cache.reserve(manifolds.size());
 
 	for (const Manifold& manifold : manifolds) {
@@ -2990,7 +3333,7 @@ void Simulator::updateCache(std::span<const Manifold> manifolds) {
 	std::ranges::sort(next_cache, [](const CachedManifold& lhs, const CachedManifold& rhs) {
 		return cachedManifoldLess(lhs, rhs);
 	});
-	m_cached_manifolds = std::move(next_cache);
+	m_cached_manifolds.swap(next_cache);
 	ZoneValue(static_cast<uint64_t>(m_cached_manifolds.size()));
 }
 
@@ -3316,6 +3659,15 @@ void Simulator::destroyBody(BodyID body) {
 		return;
 	}
 
+	if (m_joint_count > 0) {
+		for (uint32_t index = 0; index < m_joints.size(); ++index) {
+			const JointSlot& joint_slot = m_joints[index];
+			if (joint_slot.occupied && (joint_slot.joint.descriptor.body_a == body || joint_slot.joint.descriptor.body_b == body)) {
+				destroyJoint({.slot = index, .generation = joint_slot.generation});
+			}
+		}
+	}
+
 	for (uint32_t index = 0; index < m_shapes.size(); ++index) {
 		ShapeSlot& shape_slot = m_shapes[index];
 		if (shape_slot.occupied && shape_slot.shape.owner == body) {
@@ -3331,6 +3683,231 @@ void Simulator::destroyBody(BodyID body) {
 		++slot.generation;
 	}
 	m_free_body_slots.emplace_back(body.slot);
+}
+
+auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
+	ZoneScopedN("physics::CreateJoint");
+	if (not mainThreadMutationAllowed()) {
+		return {};
+	}
+
+	// An end without a body is the world
+	JointDescriptor made = descriptor;
+	const bool a_is_body = valid(made.body_a);
+	const bool b_is_body = valid(made.body_b);
+	if (not a_is_body && not b_is_body) {
+		TOAST_WARN("Physics", "Rejected joint without a valid body");
+		return {};
+	}
+	const bool holds_world = not(a_is_body && b_is_body);
+	if (holds_world) {
+		made.body_b = a_is_body ? made.body_a : made.body_b;
+		made.body_a = {};
+	} else if (made.body_a == made.body_b) {
+		TOAST_WARN("Physics", "Rejected joint between a body and itself");
+		return {};
+	} else if (tryGetBody(made.body_a)->type == BodyType::dynamic_body && tryGetBody(made.body_b)->type != BodyType::dynamic_body) {
+		std::swap(made.body_a, made.body_b);
+	}
+
+	const float frame_length_squared = glm::dot(made.frame, made.frame);
+	if (not std::isfinite(frame_length_squared) || frame_length_squared <= 0.0f || not std::isfinite(made.anchor.x) ||
+	    not std::isfinite(made.anchor.y) || not std::isfinite(made.anchor.z)) {
+		TOAST_WARN("Physics", "Rejected joint with a non-finite anchor or a zero-length frame");
+		return {};
+	}
+	made.frame = glm::normalize(made.frame);
+
+	Body* body_a = holds_world ? &m_world_body : tryGetBody(made.body_a);
+	Body* body_b = tryGetBody(made.body_b);
+
+	Joint made_joint = _detail::makeJoint(made, *body_a, *body_b);
+	if (not holds_world) {
+		made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
+	}
+	made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
+	JointSlot joint_slot {.joint = made_joint, .occupied = true};
+	JointID id;
+	if (not m_free_joint_slots.empty()) {
+		id.slot = m_free_joint_slots.back();
+		m_free_joint_slots.pop_back();
+		joint_slot.generation = m_joints[id.slot].generation;
+		m_joints[id.slot] = joint_slot;
+	} else {
+		id.slot = static_cast<uint32_t>(m_joints.size());
+		m_joints.emplace_back(joint_slot);
+	}
+	id.generation = m_joints[id.slot].generation;
+	++m_joint_count;
+
+	if (made.exclude_collision && not holds_world) {
+		addExclusion(made.body_a, made.body_b);
+	}
+	wakeBody(made.body_a);
+	wakeBody(made.body_b);
+	return id;
+}
+
+void Simulator::destroyJoint(JointID joint) {
+	ZoneScopedN("physics::DestroyJoint");
+	if (not mainThreadMutationAllowed() || not valid(joint)) {
+		return;
+	}
+
+	JointSlot& slot = m_joints[joint.slot];
+	const JointDescriptor descriptor = slot.joint.descriptor;
+	slot.occupied = false;
+	slot.joint = {};
+	++slot.generation;
+	if (slot.generation == 0) {
+		++slot.generation;
+	}
+	m_free_joint_slots.emplace_back(joint.slot);
+	--m_joint_count;
+
+	if (descriptor.exclude_collision && valid(descriptor.body_a) && valid(descriptor.body_b)) {
+		removeExclusion(descriptor.body_a, descriptor.body_b);
+	}
+	// What hung from it falls
+	wakeBody(descriptor.body_a);
+	wakeBody(descriptor.body_b);
+}
+
+auto Simulator::valid(JointID joint) const -> bool {
+	return joint.slot < m_joints.size() && m_joints[joint.slot].occupied && m_joints[joint.slot].generation == joint.generation;
+}
+
+auto Simulator::jointState(JointID joint) const -> std::optional<JointState> {
+	if (not valid(joint)) {
+		return std::nullopt;
+	}
+	const Joint& value = m_joints[joint.slot].joint;
+	return JointState {.angle = value.hinge_angle, .position = value.slider_position};
+}
+
+auto Simulator::setJointParams(JointID joint, const JointParams& params) -> bool {
+	if (not valid(joint)) {
+		return false;
+	}
+	JointParams& current = m_joints[joint.slot].joint.descriptor.params;
+	if (current.index() != params.index()) {
+		return false;
+	}
+	current = params;
+	wakeBody(m_joints[joint.slot].joint.descriptor.body_a);
+	wakeBody(m_joints[joint.slot].joint.descriptor.body_b);
+	return true;
+}
+
+void Simulator::addExclusion(BodyID a, BodyID b) {
+	const uint64_t key = bodyPairKey(a, b);
+	m_excluded_pairs.insert(std::upper_bound(m_excluded_pairs.begin(), m_excluded_pairs.end(), key), key);
+}
+
+void Simulator::removeExclusion(BodyID a, BodyID b) {
+	const uint64_t key = bodyPairKey(a, b);
+	const auto found = std::lower_bound(m_excluded_pairs.begin(), m_excluded_pairs.end(), key);
+	if (found != m_excluded_pairs.end() && *found == key) {
+		m_excluded_pairs.erase(found);
+	}
+}
+
+// The ends of a joint that collide with each other
+// - A hinge or a pin turns in a knuckle around its pin, so the two ends it holds never press on each other right there. A
+//   contact between them that close to the pin fights the joint, the joint pulls the ends back in and the contact pushes
+//   them out, and each push lifts the bodies a little for free, which keeps them swinging forever
+// - The other end is a stop like the limits, a hinge or a slider bounces off it at least as much as off its limits
+void Simulator::adjustJointContacts(std::vector<Manifold>& manifolds) {
+	if (m_joint_count == 0 || manifolds.empty()) {
+		return;
+	}
+
+	for (const JointSlot& slot : m_joints) {
+		const Joint& joint = slot.joint;
+		if (not slot.occupied || joint.descriptor.exclude_collision || std::holds_alternative<FixedParams>(joint.descriptor.params)) {
+			continue;
+		}
+		const bool hinge = std::holds_alternative<HingeParams>(joint.descriptor.params);
+		const bool knuckle = hinge || std::holds_alternative<PinParams>(joint.descriptor.params);
+		float restitution = 0.0f;
+		if (const auto* hinge_params = std::get_if<HingeParams>(&joint.descriptor.params); hinge_params != nullptr) {
+			restitution = hinge_params->limit_restitution;
+		} else if (const auto* slider_params = std::get_if<SliderParams>(&joint.descriptor.params); slider_params != nullptr) {
+			restitution = slider_params->limit_restitution;
+		}
+		const Body* body_a = tryGetBody(joint.descriptor.body_a);
+		const Body* body_b = tryGetBody(joint.descriptor.body_b);
+		if (body_a == nullptr || body_b == nullptr) {
+			continue;
+		}
+
+		const glm::vec3 anchor = body_a->position + (body_a->rotation * joint.frame_a.position);
+		const glm::vec3 axis = body_a->rotation * joint.frame_a.rotation * glm::vec3(0.0f, 0.0f, 1.0f);
+		const auto in_knuckle = [&](const ContactPoint& contact) {
+			const glm::vec3 offset = contact.position - anchor;
+			const float distance = hinge ? glm::length(glm::cross(offset, axis)) : glm::length(offset);
+			return knuckle && distance < k_joint_knuckle_radius;
+		};
+
+		for (Manifold& manifold : manifolds) {
+			const bool between = (manifold.pair.a.body == joint.descriptor.body_a && manifold.pair.b.body == joint.descriptor.body_b) ||
+			                     (manifold.pair.a.body == joint.descriptor.body_b && manifold.pair.b.body == joint.descriptor.body_a);
+			if (not between) {
+				continue;
+			}
+			uint8_t kept = 0;
+			for (uint8_t index = 0; index < manifold.contact_count; ++index) {
+				ContactPoint& contact = manifold.contacts[index];
+				if (not in_knuckle(contact)) {
+					contact.material.restitution = std::max(contact.material.restitution, restitution);
+					manifold.contacts[kept++] = contact;
+				}
+			}
+			manifold.contact_count = kept;
+		}
+	}
+	std::erase_if(manifolds, [](const Manifold& manifold) { return manifold.contact_count == 0; });
+}
+
+void Simulator::jointBodies(const Joint& joint, Body*& body_a, Body*& body_b) {
+	body_a = tryGetBody(joint.descriptor.body_a);
+	body_b = tryGetBody(joint.descriptor.body_b);
+	if (body_a == nullptr) {
+		body_a = &m_world_body;
+	}
+	if (body_b == nullptr) {
+		body_b = &m_world_body;
+	}
+}
+
+void Simulator::prepareJoints(float dt) {
+	m_joint_rows.resize(m_joints.size());
+	m_joint_active.assign(m_joints.size(), 0);
+	if (m_joint_count == 0) {
+		return;
+	}
+	ZoneScopedN("physics::PrepareJoints");
+
+	const auto awake_dynamic = [](const Body* body) {
+		return body->type == BodyType::dynamic_body && body->enabled && body->awake;
+	};
+	for (size_t index = 0; index < m_joints.size(); ++index) {
+		JointSlot& slot = m_joints[index];
+		if (not slot.occupied) {
+			continue;
+		}
+
+		Body* body_a = nullptr;
+		Body* body_b = nullptr;
+		jointBodies(slot.joint, body_a, body_b);
+		if (body_a == nullptr || not body_a->enabled || not body_b->enabled || not(awake_dynamic(body_a) || awake_dynamic(body_b))) {
+			continue;
+		}
+
+		m_joint_rows[index] = _detail::prepareJoint(slot.joint, *body_a, *body_b, dt);
+		m_joint_active[index] = 1;
+		++m_profile.joint_count;
+	}
 }
 
 auto Simulator::createSphere(BodyID owner, const SphereShape& sphere, PhysicsMaterial material) -> ShapeID {
@@ -3652,7 +4229,7 @@ void Simulator::checkTriggers() {
 	}
 }
 
-auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID {
+auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::VoxelPart* part) -> ShapeID {
 	const voxel::Palette* palette = node.resolvedPalette();
 	if (palette == nullptr) {
 		palette = &voxel::defaultPalette();
@@ -3675,24 +4252,26 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeI
 	voxel::Volume* volume = nullptr;
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		volume = node.volume();
+		volume = part != nullptr ? part->volume.get() : node.volume();
 	}
 	if (volume == nullptr) {
 		TOAST_WARN("Physics", "Voxel node '{}' has no instantiated volume to collide against", node.name());
 		return {};
 	}
 
-	const VoxelShape voxel_shape {.local_center = glm::vec3(node.voxelOrigin()) * voxel::k_voxel_size};
+	const glm::ivec3 origin = part != nullptr ? part->origin : node.voxelOrigin();
+	const VoxelShape voxel_shape {.local_center = glm::vec3(origin) * voxel::k_voxel_size};
 
 	const ShapeID shape = createVoxelShape(owner, voxel_shape, *volume, *palette, *materials);
 	const Shape* stored_shape = tryGetShape(shape);
 	if (stored_shape != nullptr) {
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
-			data->source_revision = node.revision();
+			data->source_revision = part != nullptr ? part->revision : node.revision();
 			data->palette_uid = node.paletteUid();
-			if (node.m_split_pending) {
+			bool& split_pending = part != nullptr ? part->split_pending : node.m_split_pending;
+			if (split_pending) {
 				data->connectivity_dirty = true;
-				node.m_split_pending = false;
+				split_pending = false;
 			}
 		}
 	}
@@ -3798,6 +4377,154 @@ auto dragBoxAreaAxis(const glm::vec3& h) -> glm::vec3 {
 	return 4.0f * glm::vec3 {h.y * h.z, h.x * h.z, h.x * h.y};
 }
 
+struct PrimitiveMass {
+	float volume = 0.0f;
+	glm::vec3 center = {};
+	glm::mat3 unit_inertia = {0.0f};
+	glm::vec3 half_extents = {};
+	float radius = 0.0f;
+};
+
+[[nodiscard]]
+auto primitiveMass(const Shape& shape) -> std::optional<PrimitiveMass> {
+	PrimitiveMass part;
+	part.center = shape.getLocalCenter();
+
+	glm::vec3 unit_diagonal = {};
+	glm::vec3 local_half = {};
+	switch (shape.type) {
+		case ShapeType::sphere: {
+			const float radius = shape.sphere.radius;
+			part.volume = (4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius;
+			// I = 2/5 m r2
+			unit_diagonal = glm::vec3 {0.4f * radius * radius};
+			local_half = glm::vec3 {radius};
+			part.radius = radius;
+			break;
+		}
+		case ShapeType::box: {
+			const glm::vec3 size = shape.box.size;
+			part.volume = size.x * size.y * size.z;
+			// Ix = 1/12 m (h2 + d2)
+			unit_diagonal =
+			    glm::vec3 {
+			      (size.y * size.y) + (size.z * size.z),
+			      (size.x * size.x) + (size.z * size.z),
+			      (size.x * size.x) + (size.y * size.y),
+			    } /
+			    12.0f;
+			local_half = size * 0.5f;
+			part.radius = 0.5f * glm::length(size);
+			break;
+		}
+		case ShapeType::capsule: {
+			const float radius = shape.capsule.radius;
+			const float height = shape.capsule.height;
+			part.volume = (glm::pi<float>() * radius * radius * height) + ((4.0f / 3.0f) * glm::pi<float>() * radius * radius * radius);
+			const float diameter_sq = 4.0f * radius * radius;
+			const float side = (diameter_sq + (height * height)) / 12.0f;
+			unit_diagonal = glm::vec3 {side, side, (diameter_sq + diameter_sq) / 12.0f};
+			local_half = glm::vec3 {radius, radius, (0.5f * height) + radius};
+			part.radius = (0.5f * height) + radius;
+			break;
+		}
+		default: return std::nullopt;
+	}
+
+	const auto usable = [](float value) { return std::isfinite(value) && value > 0.0f; };
+	if (not usable(part.volume) || not usable(unit_diagonal.x) || not usable(unit_diagonal.y) || not usable(unit_diagonal.z)) {
+		return std::nullopt;
+	}
+
+	glm::mat3 diagonal = {0.0f};
+	diagonal[0][0] = unit_diagonal.x;
+	diagonal[1][1] = unit_diagonal.y;
+	diagonal[2][2] = unit_diagonal.z;
+	const glm::mat3 rotation = glm::mat3_cast(shape.getLocalRotation());
+	part.unit_inertia = rotation * diagonal * glm::transpose(rotation);
+
+	const glm::mat3 absolute_rotation {glm::abs(rotation[0]), glm::abs(rotation[1]), glm::abs(rotation[2])};
+	part.half_extents = absolute_rotation * local_half;
+	return part;
+}
+
+[[nodiscard]]
+auto combinePrimitiveMass(Body& body, std::span<const Shape* const> shapes) -> bool {
+	std::vector<PrimitiveMass> parts;
+	parts.reserve(shapes.size());
+	float total_volume = 0.0f;
+	for (const Shape* shape : shapes) {
+		std::optional<PrimitiveMass> part = primitiveMass(*shape);
+		if (not part) {
+			TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid or unknown shape");
+			return false;
+		}
+		total_volume += part->volume;
+		parts.push_back(*part);
+	}
+
+	const float mass = 1.0f / body.inverse_mass;
+	glm::vec3 center = {};
+	for (const PrimitiveMass& part : parts) {
+		center += part.center * (part.volume / total_volume);
+	}
+
+	// its own inertia plus steiner
+	glm::mat3 inertia = {0.0f};
+	for (const PrimitiveMass& part : parts) {
+		const glm::vec3 offset = part.center - center;
+		const float part_mass = mass * part.volume / total_volume;
+		inertia +=
+		    part_mass * (part.unit_inertia + (glm::dot(offset, offset) * glm::mat3 {1.0f}) - glm::outerProduct(offset, offset));
+	}
+
+	const glm::mat3 inverse_inertia = glm::inverse(inertia);
+	if (not std::isfinite(inverse_inertia[0][0]) || not std::isfinite(inverse_inertia[1][1]) ||
+	    not std::isfinite(inverse_inertia[2][2])) {
+		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: singular inertia");
+		return false;
+	}
+
+	body.local_center_of_mass = center;
+	body.inverse_inertia_local = inverse_inertia;
+	const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+	body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+
+	body.extent_radius = 0.0f;
+	glm::vec3 box_min = glm::vec3 {std::numeric_limits<float>::max()};
+	glm::vec3 box_max = glm::vec3 {std::numeric_limits<float>::lowest()};
+	for (const PrimitiveMass& part : parts) {
+		body.extent_radius = std::max(body.extent_radius, glm::length(part.center - center) + part.radius);
+		box_min = glm::min(box_min, part.center - part.half_extents);
+		box_max = glm::max(box_max, part.center + part.half_extents);
+	}
+
+	// Drag
+	if (shapes.size() == 1) {
+		const Shape& shape = *shapes[0];
+		switch (shape.type) {
+			case ShapeType::sphere:
+				body.drag_area_base = glm::pi<float>() * shape.sphere.radius * shape.sphere.radius;
+				body.drag_coefficient = 0.47f;
+				break;
+			case ShapeType::box:
+				body.drag_area_axis = dragBoxAreaAxis(shape.box.size * 0.5f);
+				body.drag_coefficient = 1.05f;
+				break;
+			case ShapeType::capsule:
+				// just treat like a box ngl
+				body.drag_area_axis = dragBoxAreaAxis({shape.capsule.radius, shape.capsule.radius, 0.5f * shape.capsule.height});
+				body.drag_coefficient = 0.82f;
+				break;
+			default: break;
+		}
+	} else {
+		body.drag_area_axis = dragBoxAreaAxis((box_max - box_min) * 0.5f);
+		body.drag_coefficient = 1.05f;
+	}
+	return true;
+}
+
 }
 
 void Simulator::rebuildMassProperties(BodyID id) {
@@ -3844,8 +4571,6 @@ void Simulator::rebuildMassProperties(BodyID id) {
 		return;
 	}
 
-	// TODO: Add support to multishapes
-	// right now just pick the first one
 	auto* shape = tryGetShape(shapes[0]);
 	if (not shape) {
 		TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid shape");
@@ -3853,68 +4578,6 @@ void Simulator::rebuildMassProperties(BodyID id) {
 	}
 
 	switch (shape->type) {
-		case ShapeType::sphere: {
-			float radius_sq = shape->sphere.radius * shape->sphere.radius;
-			if (not std::isfinite(radius_sq) || radius_sq <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid sphere inertia denominator");
-				return;
-			}
-
-			// I = 2/5 m r2
-			// inv(I) = 5/(2 m r2)
-			float inverse_inertia = 2.5f * body->inverse_mass / radius_sq;
-			body->inverse_inertia_local = {inverse_inertia};
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->sphere.local_center) + shape->sphere.radius;
-
-			// drag
-			body->drag_area_base = glm::pi<float>() * radius_sq;
-			body->drag_coefficient = 0.47f;
-
-			break;
-		}
-		case ShapeType::box: {
-			float width_sq = shape->box.size.x * shape->box.size.x;
-			float height_sq = shape->box.size.y * shape->box.size.y;
-			float depth_sq = shape->box.size.z * shape->box.size.z;
-			float denominator_x = height_sq + depth_sq;
-			float denominator_y = width_sq + depth_sq;
-			float denominator_z = width_sq + height_sq;
-			if (not std::isfinite(denominator_x) || denominator_x <= 0.0f || not std::isfinite(denominator_y) ||
-			    denominator_y <= 0.0f || not std::isfinite(denominator_z) || denominator_z <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid box inertia denominator");
-				return;
-			}
-
-			// Ix = 1/12 m (h2 + d2)
-			// inv(Ix) = 12/(m (h2 + d2))
-			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_x;
-			// Iy = 1/12 m (w2 + d2)
-			// inv(Iy) = 12/(m (w2 + d2))
-			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_y;
-			// Iz = 1/12 m (w2 + h2)
-			// inv(Iz) = 12/(m (w2 + h2))
-			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
-
-			glm::mat3 inverse_inertia = {0.0f};
-			inverse_inertia[0][0] = inverse_inertia_x;
-			inverse_inertia[1][1] = inverse_inertia_y;
-			inverse_inertia[2][2] = inverse_inertia_z;
-			glm::mat3 local_rotation = glm::mat3_cast(shape->box.local_rotation);
-			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->box.local_center) + (0.5f * glm::length(shape->box.size));
-
-			// Drag
-			body->drag_area_axis = dragBoxAreaAxis(shape->box.size * 0.5f);
-			body->drag_coefficient = 1.05f;
-
-			break;
-		}
 		case ShapeType::voxel: {
 			const VoxelShapeData* voxel_data = tryGetVoxelData(shape->voxel.data);
 			if (voxel_data == nullptr || voxel_data->volume == nullptr) {
@@ -3971,50 +4634,21 @@ void Simulator::rebuildMassProperties(BodyID id) {
 
 			break;
 		}
-		case ShapeType::capsule: {
-			// Conservative approximation using a box with dimensions (2r, 2r, height)
-			float diameter = 2.0f * shape->capsule.radius;
-			float diameter_sq = diameter * diameter;
-			float height_sq = shape->capsule.height * shape->capsule.height;
-			float denominator_xy = diameter_sq + height_sq;
-			float denominator_z = diameter_sq + diameter_sq;
-			if (not std::isfinite(denominator_xy) || denominator_xy <= 0.0f || not std::isfinite(denominator_z) ||
-			    denominator_z <= 0.0f) {
-				TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid capsule inertia denominator");
+		default: {
+			std::vector<const Shape*> primitives;
+			primitives.reserve(shapes.size());
+			for (const ShapeID shape_id : shapes) {
+				const Shape* primitive = tryGetShape(shape_id);
+				if (not primitive) {
+					TOAST_WARN("Physics", "rebuildMassProperties() was aborted: invalid shape");
+					return;
+				}
+				primitives.push_back(primitive);
+			}
+			if (not combinePrimitiveMass(*body, primitives)) {
 				return;
 			}
-
-			// Ix = 1/12 m (d2 + h2)
-			// inv(Ix) = 12/(m (d2 + h2))
-			float inverse_inertia_x = 12.0f * body->inverse_mass / denominator_xy;
-			// Iy = 1/12 m (d2 + h2)
-			// inv(Iy) = 12/(m (d2 + h2))
-			float inverse_inertia_y = 12.0f * body->inverse_mass / denominator_xy;
-			// Iz = 1/12 m (d2 + d2)
-			// inv(Iz) = 12/(m (d2 + d2))
-			float inverse_inertia_z = 12.0f * body->inverse_mass / denominator_z;
-
-			glm::mat3 inverse_inertia = {0.0f};
-			inverse_inertia[0][0] = inverse_inertia_x;
-			inverse_inertia[1][1] = inverse_inertia_y;
-			inverse_inertia[2][2] = inverse_inertia_z;
-			glm::mat3 local_rotation = glm::mat3_cast(shape->capsule.local_rotation);
-			body->inverse_inertia_local = local_rotation * inverse_inertia * glm::transpose(local_rotation);
-			glm::mat3 rotation = glm::mat3_cast(body->rotation);
-			body->inverse_inertia_world = rotation * body->inverse_inertia_local * glm::transpose(rotation);
-
-			body->extent_radius = glm::length(shape->capsule.local_center) + (0.5f * shape->capsule.height) + shape->capsule.radius;
-
-			// Drag
-			// just treat like a box ngl
-			body->drag_area_axis = dragBoxAreaAxis({shape->capsule.radius, shape->capsule.radius, 0.5f * shape->capsule.height});
-			body->drag_coefficient = 0.82;
-
 			break;
-		}
-		default: {
-			TOAST_WARN("Physics", "rebuildMassProperties() was aborted: unknown shape");
-			return;
 		}
 	}
 
@@ -4041,7 +4675,22 @@ auto Simulator::state(BodyID body) const -> std::optional<BodyState> {
 	  .previous_position = value->previous_position,
 	  .previous_rotation = value->previous_rotation,
 	  .linear_velocity = value->linear_velocity,
-	  .angular_velocity = value->angular_velocity
+	  .angular_velocity = value->angular_velocity,
+	  .inverse_mass = value->inverse_mass,
+	  .local_center_of_mass = value->local_center_of_mass
+	};
+}
+
+auto Simulator::massProperties(BodyID body) const -> std::optional<BodyMassProperties> {
+	const Body* value = tryGetBody(body);
+	if (not value) {
+		return std::nullopt;
+	}
+
+	return BodyMassProperties {
+	  .mass = value->inverse_mass > 0.0f ? 1.0f / value->inverse_mass : 0.0f,
+	  .local_center_of_mass = value->local_center_of_mass,
+	  .inverse_inertia_local = value->inverse_inertia_local,
 	};
 }
 
@@ -4259,57 +4908,60 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			return false;
 		};
 
-		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
-			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
-				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
-					const glm::ivec3 brick {bx, by, bz};
-					if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
-						continue;
-					}
+		{
+			ZoneNamedN(scan_zone, "physics::ApplyDamage::Scan", true);    // NOLINT
+			for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
+				for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
+					for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
+						const glm::ivec3 brick {bx, by, bz};
+						if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
+							continue;
+						}
 
-					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
-					const glm::ivec3 brick_last = glm::min(last, brick * brick_dim + (brick_dim - 1));
-					for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
-						for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
-							for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
-								const glm::ivec3 v {x, y, z};
+						const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
+						const glm::ivec3 brick_last = glm::min(last, brick * brick_dim + (brick_dim - 1));
+						for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
+							for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
+								for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
+									const glm::ivec3 v {x, y, z};
 
-								const uint8_t palette_index = volume.materialAt(v);
-								if (palette_index == voxel::k_empty_palette_index) {
-									continue;
-								}
+									const uint8_t palette_index = volume.materialAt(v);
+									if (palette_index == voxel::k_empty_palette_index) {
+										continue;
+									}
 
-								const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
-								const float distance_squared = pointSegmentDistanceSquared(voxel_center, crater.start, crater.end);
-								// cheap reject before paying for 8 noise taps
-								if (distance_squared > reach_squared) {
-									continue;
-								}
-								const float outer = craterRadiusAt(crater, voxel_center);
-								const float inner = shell > 0.0f ? glm::max(outer - shell, 0.0f) : 0.0f;
-								if (distance_squared > outer * outer) {
-									continue;
-								}
-								const bool in_core =
-								    distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v));
-								if (not damageReaches(
-								        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
-								    )) {
-									continue;
-								}
+									const glm::vec3 voxel_center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
+									const float distance_squared = pointSegmentDistanceSquared(voxel_center, crater.start, crater.end);
+									// cheap reject before paying for 8 noise taps
+									if (distance_squared > reach_squared) {
+										continue;
+									}
+									const float outer = craterRadiusAt(crater, voxel_center);
+									const float inner = shell > 0.0f ? glm::max(outer - shell, 0.0f) : 0.0f;
+									if (distance_squared > outer * outer) {
+										continue;
+									}
+									const bool in_core =
+									    distance_squared < inner * inner && not(distance_squared >= seal_floor_squared && touches_outside(v));
+									if (not damageReaches(
+									        crater.reachable, volume, v, closestPointOnSegment(voxel_center, crater.start, crater.end), voxel_center
+									    )) {
+										continue;
+									}
 
-								const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-								const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
-								if (not material.breakableBy(c.max_hardness)) {
-									continue;
-								}
+									const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+									const voxel::PhysicalMaterial& material = data->materials.materials[material_index];
+									if (not hitBreaks(material, c.energy_density, c.max_hardness)) {
+										continue;
+									}
 
-								if (in_core) {
-									// stays in the wall for now
-									core.push_back({.voxel = v, .center = voxel_center});
-									continue;
+									if (in_core) {
+										// stays in the wall for now
+										core.push_back({.voxel = v, .center = voxel_center});
+										continue;
+									}
+									doomed.push_back({.voxel = v, .brick = brick, .density = material.density, .material = palette_index});
 								}
-								doomed.push_back({.voxel = v, .brick = brick, .density = material.density, .material = palette_index});
 							}
 						}
 					}
@@ -4335,37 +4987,40 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			}
 			debris_voxels.push_back({.voxel = v, .material = palette_index});
 		};
-		for (const Doomed& d : doomed) {
-			carve(d.voxel, d.material, d.density);
-		}
-
-		// fragmenting
-		const CoreSplit core_split = planCoreSplit(core, crater);
-		TOAST_INFO(
-		    "Physics",
-		    "Fragment: energy {:.3f} kJ density {:.2f} kJ/m3 core_voxels {} parts {} cracks {}",
-		    crater.fragment_energy,
-		    core_split.density,
-		    core.size(),
-		    core_split.parts,
-		    core_split.crack.size()
-		);
-		for (const glm::ivec3& v : core_split.crack) {
-			const uint8_t palette_index = volume.materialAt(v);
-			if (palette_index == voxel::k_empty_palette_index) {
-				continue;
+		{
+			ZoneNamedN(carve_zone, "physics::ApplyDamage::Carve", true);    // NOLINT
+			for (const Doomed& d : doomed) {
+				carve(d.voxel, d.material, d.density);
 			}
-			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-			carve(v, palette_index, data->materials.materials[material_index].density);
-		}
 
-		for (const glm::ivec3& v : shatter.crack) {
-			const uint8_t palette_index = volume.materialAt(v);
-			if (palette_index == voxel::k_empty_palette_index) {
-				continue;
+			// fragmenting
+			const CoreSplit core_split = planCoreSplit(core, crater);
+			TOAST_INFO(
+			    "Physics",
+			    "Fragment: energy {:.3f} kJ density {:.2f} kJ/m3 core_voxels {} parts {} cracks {}",
+			    crater.fragment_energy,
+			    core_split.density,
+			    core.size(),
+			    core_split.parts,
+			    core_split.crack.size()
+			);
+			for (const glm::ivec3& v : core_split.crack) {
+				const uint8_t palette_index = volume.materialAt(v);
+				if (palette_index == voxel::k_empty_palette_index) {
+					continue;
+				}
+				const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+				carve(v, palette_index, data->materials.materials[material_index].density);
 			}
-			const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
-			carve(v, palette_index, data->materials.materials[material_index].density);
+
+			for (const glm::ivec3& v : shatter.crack) {
+				const uint8_t palette_index = volume.materialAt(v);
+				if (palette_index == voxel::k_empty_palette_index) {
+					continue;
+				}
+				const uint32_t material_index = voxel::resolveMaterialIndex(data->palette, data->materials, palette_index);
+				carve(v, palette_index, data->materials.materials[material_index].density);
+			}
 		}
 
 		if (dirty_bricks.empty()) {
@@ -4380,7 +5035,9 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		// whatever the hit can break that was stuck to what it cannot comes off whole
 		const UnglueRegion& region = crater.unglue;
 		if (not region.empty()) {
-			unglued = collectBrokenPieces(
+			// shards for a material that shatters
+			const std::vector<glm::vec3> seeds = shardSeeds(region, crater);
+			unglued = collectCellPieces(
 			    volume,
 			    data->palette,
 			    data->materials,
@@ -4388,6 +5045,9 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			    region.high,
 			    [&](const glm::vec3& center, const voxel::PhysicalMaterial&) {
 				    return region.keys.contains(voxelKey(glm::ivec3(glm::floor(center / voxel::k_voxel_size))));
+			    },
+			    [&](const glm::ivec3& v) {
+				    return seeds.empty() ? 0u : nearestSeed(seeds, (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size);
 			    }
 			);
 		}
@@ -4415,11 +5075,17 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		if (binding.shape != c.shape || not binding.node.exists()) {
 			continue;
 		}
-		++binding.node->m_revision;
-		binding.source_revision = binding.node->revision();
-		binding.node->recordDamage(removed, removed_sum);
+		if (toast::VoxelPart* part = partOf(binding)) {
+			++part->revision;
+			binding.source_revision = part->revision;
+			binding.node->recordDamage(removed, removed_sum, part->origin);
+		} else {
+			++binding.node->m_revision;
+			binding.source_revision = binding.node->revision();
+			binding.node->recordDamage(removed, removed_sum);
+		}
 		if (data->solid_voxel_count == 0) {
-			binding.node->m_pending_events.emptied = true;
+			noteVoxelShapeEmptied(c.shape);
 		}
 		break;
 	}
@@ -4427,7 +5093,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 	if (body->type == BodyType::dynamic_body) {
 		if (volume.solidVoxelCount() == 0) {
 			retireVoxelBody(shape->owner);
-		} else {
+		} else if (not debrisIfSmall(c.shape)) {
 			rebuildMassProperties(shape->owner);
 		}
 	}
@@ -4537,11 +5203,12 @@ auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
 	if (not mainThreadMutationAllowed()) {
 		return 0;
 	}
-	if (not std::isfinite(explosion.force) || explosion.force <= 0.0f || not std::isfinite(glm::length(explosion.point))) {
+	if (not std::isfinite(explosion.force) || explosion.force <= 0.0f || not std::isfinite(glm::length(explosion.point)) ||
+	    not std::isfinite(explosion.max_radius) || explosion.max_radius <= 0.0f) {
 		return 0;
 	}
 
-	const float max_radius = tunables().explosion_max_radius;
+	const float max_radius = explosion.max_radius;
 	const AABB bounds {.min = explosion.point - glm::vec3(max_radius), .max = explosion.point + glm::vec3(max_radius)};
 
 	uint32_t moved = 0;
@@ -4551,14 +5218,20 @@ auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
 		if (shape == nullptr || not shape->enabled) {
 			continue;
 		}
-		if (shape->type == ShapeType::voxel) {
-			moved += explodeShape(shape_id, explosion);
-			continue;
-		}
 
 		const BodyID owner = shape->owner;
+		if (shape->type == ShapeType::voxel) {
+			moved += explodeShape(shape_id, explosion);
+			// add impulseeeeeeeee
+			shape = tryGetShape(shape_id);
+			if (shape == nullptr || not shape->enabled || shape->owner != owner) {
+				continue;
+			}
+		}
+
 		const Body* body = tryGetBody(owner);
-		if (body == nullptr || body->type != BodyType::dynamic_body || std::ranges::find(pushed, owner) != pushed.end()) {
+		if (body == nullptr || not body->enabled || body->type != BodyType::dynamic_body ||
+		    std::ranges::find(pushed, owner) != pushed.end()) {
 			continue;
 		}
 		const glm::vec3 offset = body->worldCenterOfMass() - explosion.point;
@@ -4574,7 +5247,7 @@ auto Simulator::explode(const ExplosionDamage& explosion) -> uint32_t {
 		const float pressure =
 		    k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
 		const float impulse = pressure * area * static_cast<float>(Accumulator::fixedDelta());
-		pushBody(owner, body->worldCenterOfMass(), away, std::numeric_limits<float>::infinity(), impulse);
+		pushBody(owner, body->worldCenterOfMass(), away, tunables().explosion_max_speed, impulse);
 	}
 	return moved;
 }
@@ -4749,6 +5422,8 @@ auto Simulator::smashShape(ShapeID shape_id, const SmashVolume& volume, const Ca
 }
 
 auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t {
+	ZoneScopedN("physics::ExplodeShape");
+
 	const Shape* shape = tryGetShape(shape_id);
 	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
 	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
@@ -4756,98 +5431,407 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		return 0;
 	}
 
-	const glm::quat to_volume = glm::inverse(shape->voxel.local_rotation) * glm::inverse(body->rotation);
 	const glm::vec3 local_point = glm::inverse(shape->voxel.local_rotation) *
 	                              ((glm::inverse(body->rotation) * (explosion.point - body->position)) - shape->voxel.local_center);
-	const glm::quat to_world = glm::inverse(to_volume);
+	const uint32_t solid_before = data->solid_voxel_count;
+	const uint64_t seed = fractureSeed(BodyID {}, shape_id, local_point, m_tick_index);
 
-	SmashPieces picked;
+	struct BrickMask {
+		glm::ivec3 brick {0};
+		voxel::BrickOccupancy mask {};
+	};
+
+	std::vector<DebrisVoxel> debris_voxels;
+	std::unordered_map<uint64_t, BrickMask> debris_bricks;
+	std::unordered_map<uint64_t, std::unordered_map<uint64_t, BrickMask>> chunk_cells;
+	glm::vec3 debris_index_sum {0.0f};
+	glm::vec3 chunk_index_sum {0.0f};
+	uint32_t chunk_voxels = 0;
+	uint32_t crack_voxels = 0;
+	float debris_energy = 0.0f;
 	float reach = 0.0f;
+
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
+		ZoneNamedN(scan_zone, "physics::ExplodeShape::Scan", true);    // NOLINT
+		const voxel::Volume& volume = *data->volume;
+		const voxel::MaterialLibrary& materials = data->materials;
+		if (materials.materials.empty()) {
+			return 0;
+		}
 		reach = explosionReach(
-		    explosion.force,
-		    explosion.falloff,
-		    weakestToughness(data->materials, explosion.max_hardness),
-		    tunables().explosion_max_radius
+		    explosion.force, explosion.falloff, weakestToughness(materials, explosion.max_hardness), explosion.max_radius
 		);
 		if (not(reach > 0.0f)) {
 			return 0;
 		}
-		picked = collectBrokenPieces(
-		    *data->volume,
-		    data->palette,
-		    data->materials,
-		    local_point - glm::vec3(reach),
-		    local_point + glm::vec3(reach),
-		    [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
-			    const float distance = glm::length(center - local_point);
-			    return distance <= reach &&
-					       hitBreaks(material, explosionDensityAt(explosion.force, distance, explosion.falloff), explosion.max_hardness);
-		    }
+
+		const std::optional<voxel::PhysicalMaterial> hit = hitMaterial(volume, data->palette, materials, local_point, reach);
+		const FractureValues profile = hit.has_value() ? hit->fracture_profile.unpack() : FractureValues {};
+		Crater edge {.start = local_point, .end = local_point, .radius = reach, .seed = seed};
+		if (hit.has_value()) {
+			edge.edge_noise = std::clamp(profile.edge_noise, 0.0f, k_max_edge_noise);
+			edge.edge_noise_scale = std::max(profile.edge_noise_scale, 0.0f) * voxel::k_voxel_size;
+			edge.edge_lobes = std::clamp(profile.edge_lobes, 0.0f, k_max_edge_noise);
+		}
+		const bool cracks_around = hit.has_value() && patternShatters(hit->fracture_pattern);
+		const float band_width = cracks_around ? std::max(tunables().explosion_shatter_width, 0.0f) : 0.0f;
+		const float scan = craterMaxRadius(edge) + band_width;
+
+		const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
+		glm::ivec3 first = glm::ivec3(glm::floor((local_point - glm::vec3(scan)) / voxel::k_voxel_size));
+		glm::ivec3 last = glm::ivec3(glm::ceil((local_point + glm::vec3(scan)) / voxel::k_voxel_size)) - 1;
+		first = glm::clamp(first, glm::ivec3(0), voxel_dims - 1);
+		last = glm::clamp(last, glm::ivec3(0), voxel_dims - 1);
+		if (first.x > last.x || first.y > last.y || first.z > last.z) {
+			return 0;
+		}
+
+		// Voronoi
+		const float cell_size = std::max(tunables().explosion_chunk_size, 2.0f * voxel::k_voxel_size);
+		const float crack_gap = crackThickness();
+		const float debris_ratio = std::max(tunables().explosion_debris_ratio, 1.0f);
+		const float release = hit.has_value() ? std::clamp(profile.shatter_release, 0.0f, 1.0f) : 0.0f;
+		const uint64_t jitter_seed = streamSeed(seed, FractureStream::shatter_points);
+		const uint64_t release_seed = streamSeed(seed, FractureStream::granular);
+		const auto released = [&](const glm::ivec3& cell) { return hash01(release_seed, cell) < release; };
+		constexpr uint64_t k_coarse_bit = 1ull << 63;
+		const auto cell_key = [](const glm::ivec3& cell, bool coarse) {
+			return voxelKey(cell + glm::ivec3(1 << 19)) | (coarse ? k_coarse_bit : 0ull);
+		};
+
+		// seed points in a flat grid over the scan box
+		struct SeedGrid {
+			float size = 0.0f;
+			uint64_t seed = 0;
+			glm::ivec3 low {0};
+			glm::ivec3 dims {0};
+			std::vector<glm::vec3> points;
+			std::vector<uint8_t> ready;
+		};
+
+		const auto make_seed_grid = [&](float size, uint64_t level_seed) {
+			SeedGrid grid {.size = size, .seed = level_seed};
+			grid.low = glm::ivec3(glm::floor(((glm::vec3 {first} + 0.5f) * voxel::k_voxel_size) / size)) - 1;
+			const glm::ivec3 high = glm::ivec3(glm::floor(((glm::vec3 {last} + 0.5f) * voxel::k_voxel_size) / size)) + 1;
+			grid.dims = high - grid.low + 1;
+			const size_t count = static_cast<size_t>(grid.dims.x) * static_cast<size_t>(grid.dims.y) * static_cast<size_t>(grid.dims.z);
+			grid.points.resize(count);
+			grid.ready.assign(count, 0);
+			return grid;
+		};
+		SeedGrid fine_seeds = make_seed_grid(cell_size, jitter_seed);
+		SeedGrid coarse_seeds = make_seed_grid(2.0f * cell_size, jitter_seed + 8);
+		const auto seed_point = [](SeedGrid& grid, const glm::ivec3& cell) -> const glm::vec3& {
+			const glm::ivec3 i = cell - grid.low;
+			const size_t index = (((static_cast<size_t>(i.z) * static_cast<size_t>(grid.dims.y)) + static_cast<size_t>(i.y)) *
+			                      static_cast<size_t>(grid.dims.x)) +
+			                     static_cast<size_t>(i.x);
+			if (grid.ready[index] == 0) {
+				grid.ready[index] = 1;
+				const glm::vec3 jitter {
+				  0.2f + (0.6f * hash01(grid.seed + 1, cell)),
+				  0.2f + (0.6f * hash01(grid.seed + 2, cell)),
+				  0.2f + (0.6f * hash01(grid.seed + 3, cell)),
+				};
+				grid.points[index] = (glm::vec3(cell) + jitter) * grid.size;
+			}
+			return grid.points[index];
+		};
+
+		// everything that depends on the material
+		struct ExplodedMaterial {
+			const voxel::PhysicalMaterial* material = nullptr;
+			float crack_reach = 0.0f;
+			bool breakable = false;
+		};
+
+		std::array<ExplodedMaterial, voxel::k_palette_size> exploded_materials {};
+		for (uint32_t index = 0; index < voxel::k_palette_size; ++index) {
+			const voxel::PhysicalMaterial& material =
+			    materials.materials[voxel::resolveMaterialIndex(data->palette, materials, static_cast<uint8_t>(index))];
+			const float hole =
+			    material.toughness > 0.0f ? std::pow(explosion.force / material.toughness, 1.0f / explosion.falloff) : reach;
+			exploded_materials[index] = {
+			  .material = &material,
+			  .crack_reach = std::min(hole, reach) + band_width,
+			  .breakable = material.breakableBy(explosion.max_hardness),
+			};
+		}
+
+		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
+		const glm::ivec3 first_brick = first / brick_dim;
+		const glm::ivec3 last_brick = last / brick_dim;
+		const auto mark = [&](BrickMask& entry, const glm::ivec3& v, const glm::ivec3& brick) {
+			entry.brick = brick;
+			const glm::ivec3 local = v - (brick * brick_dim);
+			voxel::setSolid(
+			    entry.mask, static_cast<uint32_t>(local.x), static_cast<uint32_t>(local.y), static_cast<uint32_t>(local.z), true
+			);
+		};
+
+		for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
+			for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
+				for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {
+					const glm::ivec3 brick {bx, by, bz};
+					const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
+					if (occupancy == nullptr) {
+						continue;
+					}
+
+					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
+					const glm::ivec3 brick_last = glm::min(last, (brick * brick_dim) + (brick_dim - 1));
+					BrickMask* brick_debris = nullptr;
+					BrickMask* chunk_mask = nullptr;
+					uint64_t chunk_mask_key = 0;
+					for (int32_t z = brick_first.z; z <= brick_last.z; ++z) {
+						for (int32_t y = brick_first.y; y <= brick_last.y; ++y) {
+							for (int32_t x = brick_first.x; x <= brick_last.x; ++x) {
+								const glm::ivec3 v {x, y, z};
+								const glm::ivec3 local = v - (brick * brick_dim);
+								if (not voxel::isSolid(
+								        *occupancy, static_cast<uint32_t>(local.x), static_cast<uint32_t>(local.y), static_cast<uint32_t>(local.z)
+								    )) {
+									continue;
+								}
+
+								const glm::vec3 center = (glm::vec3 {v} + 0.5f) * voxel::k_voxel_size;
+								const glm::vec3 from_point = center - local_point;
+								const float distance_squared = glm::dot(from_point, from_point);
+								if (distance_squared > scan * scan) {
+									continue;
+								}
+
+								const uint8_t palette_index = volume.materialAt(v);
+								const ExplodedMaterial& exploded = exploded_materials[palette_index];
+								if (not exploded.breakable) {
+									continue;
+								}
+								const voxel::PhysicalMaterial& material = *exploded.material;
+
+								const float distance = std::sqrt(distance_squared);
+								const float edge_radius = craterRadiusAt(edge, center);
+								const float reached = distance * (reach / std::max(edge_radius, 1.0e-4f));
+								const float density = explosionDensityAt(explosion.force, reached, explosion.falloff);
+								const bool broken = density >= material.toughness;
+								// cracks just past the hole
+								if (not broken && not(reached <= exploded.crack_reach)) {
+									continue;
+								}
+
+								bool debris = broken && (material.toughness > 0.0f ? density >= debris_ratio * material.toughness : true);
+								glm::ivec3 chunk {0};
+								bool coarse = false;
+								if (not debris) {
+									coarse = broken && reached > 0.5f * reach;
+									SeedGrid& seeds = coarse ? coarse_seeds : fine_seeds;
+									const glm::ivec3 home = glm::ivec3(glm::floor(center / seeds.size));
+									// squared distances until the two nearest are known
+									float nearest = std::numeric_limits<float>::max();
+									float second = nearest;
+									glm::ivec3 next {0};
+									for (int32_t dz = -1; dz <= 1; ++dz) {
+										for (int32_t dy = -1; dy <= 1; ++dy) {
+											for (int32_t dx = -1; dx <= 1; ++dx) {
+												const glm::ivec3 cell = home + glm::ivec3 {dx, dy, dz};
+												const glm::vec3 offset = center - seed_point(seeds, cell);
+												const float d = glm::dot(offset, offset);
+												if (d < nearest) {
+													second = nearest;
+													next = chunk;
+													nearest = d;
+													chunk = cell;
+												} else if (d < second) {
+													second = d;
+													next = cell;
+												}
+											}
+										}
+									}
+
+									// the hole needs no cracks
+									if (not broken) {
+										const bool loose = released(chunk);
+										if (std::sqrt(second) - std::sqrt(nearest) < crack_gap) {
+											if (not(loose || released(next))) {
+												continue;
+											}
+											debris = true;
+											++crack_voxels;
+										} else if (not loose) {
+											continue;
+										}
+									}
+								}
+
+								if (debris) {
+									if (brick_debris == nullptr) {
+										brick_debris = &debris_bricks[voxelKey(brick)];
+									}
+									mark(*brick_debris, v, brick);
+									debris_voxels.push_back({.voxel = v, .material = palette_index});
+									debris_index_sum += glm::vec3(v);
+									debris_energy += std::max(density - material.toughness, 0.0f) * k_voxel_volume;
+								} else {
+									const uint64_t key = cell_key(chunk, coarse);
+									if (chunk_mask == nullptr || key != chunk_mask_key) {
+										chunk_mask = &chunk_cells[key][voxelKey(brick)];
+										chunk_mask_key = key;
+									}
+									mark(*chunk_mask, v, brick);
+									chunk_index_sum += glm::vec3(v);
+									++chunk_voxels;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (debris_voxels.empty() && chunk_voxels == 0) {
+		return 0;
+	}
+
+	constexpr float k_explosion_debris_share = 0.2f;
+	if (not debris_voxels.empty()) {
+		ZoneNamedN(debris_zone, "physics::ExplodeShape::Debris", true);    // NOLINT
+		const DebrisBlast blast {
+		  .start = local_point,
+		  .end = local_point,
+		  .energy = debris_energy * k_explosion_debris_share,
+		  .max_speed = tunables().explosion_max_speed,
+		};
+		emitDebris(shape_id, debris_voxels, &blast, nullptr, seed);
+		for (const auto& [key, entry] : debris_bricks) {
+			shape = tryGetShape(shape_id);
+			data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+			if (data == nullptr || data->volume == nullptr) {
+				break;
+			}
+			DetachedComponent piece {.component = 0, .voxel_count = voxel::popCount(entry.mask)};
+			piece.pieces.push_back(voxel::BrickPiece {.brick = entry.brick, .voxels = entry.mask, .component = 0});
+			clearFragmentFromSource(shape_id, *data, *data->volume, piece);
+		}
+	}
+
+	const AABB bounds {.min = explosion.point - glm::vec3(reach), .max = explosion.point + glm::vec3(reach)};
+	size_t chunk_count = 0;
+	{
+		ZoneNamedN(chunks_zone, "physics::ExplodeShape::Chunks", true);    // NOLINT
+		SmashPieces chunks;
+		chunks.index_sum = chunk_index_sum;
+		chunks.voxels = chunk_voxels;
+		for (const auto& [cell, bricks] : chunk_cells) {
+			DetachedComponent piece;
+			piece.component = static_cast<uint32_t>(chunks.pieces.size());
+			for (const auto& [key, entry] : bricks) {
+				piece.voxel_count += voxel::popCount(entry.mask);
+				piece.pieces.push_back(voxel::BrickPiece {.brick = entry.brick, .voxels = entry.mask, .component = piece.component});
+			}
+			chunks.pieces.push_back(std::move(piece));
+		}
+		chunk_count = chunks.pieces.size();
+		breakPieces(
+		    shape_id,
+		    chunks,
+		    true,
+		    [&](const DetachedComponent& piece) -> std::optional<FragmentPush> { return explosionPush(shape_id, piece, explosion); },
+		    bounds,
+		    tunables().explosion_max_fragments
 		);
 	}
 
-	// every piece flies straight away from the blast
-	const glm::vec3 lattice_origin = body->position + (body->rotation * shape->voxel.local_center);
-	const float dt = static_cast<float>(Accumulator::fixedDelta());
-	return breakPieces(
-	    shape_id,
-	    picked,
-	    true,
-	    [&](const DetachedComponent& piece) -> std::optional<FragmentPush> {
-		    glm::vec3 index_sum {0.0f};
-		    uint32_t count = 0;
-		    for (const voxel::BrickPiece& brick_piece : piece.pieces) {
-			    const glm::ivec3 base = brick_piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
-			    for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
-				    const voxel::BrickCoord coord = voxel::localFromIndex(i);
-				    if (voxel::isSolid(brick_piece.voxels, coord.x, coord.y, coord.z)) {
-					    index_sum += glm::vec3(base) + glm::vec3(coord.x, coord.y, coord.z);
-					    ++count;
-				    }
-			    }
-		    }
-		    if (count == 0) {
-			    return std::nullopt;
-		    }
-		    const glm::vec3 local_center = ((index_sum / static_cast<float>(count)) + 0.5f) * voxel::k_voxel_size;
-		    const glm::vec3 world_center = lattice_origin + (to_world * local_center);
-		    const glm::vec3 offset = world_center - explosion.point;
-		    const float distance = glm::length(offset);
+	shape = tryGetShape(shape_id);
+	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data == nullptr) {
+		return solid_before;
+	}
+	data->connectivity_dirty = true;
+	if (not debris_voxels.empty()) {
+		recordVoxelDamage(shape_id, static_cast<uint32_t>(debris_voxels.size()), debris_index_sum);
+	}
+	unlockSleep(shape->owner);
+	wakeBodiesInBounds(bounds);
 
-		    // pressure on the side of the piece facing the blast
-		    const float area = std::pow(static_cast<float>(count), 2.0f / 3.0f) * voxel::k_voxel_size * voxel::k_voxel_size;
-		    const float pressure =
-		        k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
-		    return FragmentPush {
-		      .point = explosion.point,
-		      .direction = distance > 1.0e-4f ? offset / distance : glm::vec3 {0.0f, 0.0f, 1.0f},
-		      .speed = std::numeric_limits<float>::infinity(),
-		      .max_impulse = pressure * area * dt,
-		    };
-	    },
-	    AABB {.min = explosion.point - glm::vec3(reach), .max = explosion.point + glm::vec3(reach)}
+	TOAST_INFO(
+	    "Physics",
+	    "Explosion: force {:.1f} reach {:.2f} m debris_voxels {} (cracks {}) chunk_voxels {} chunks {} debris_energy {:.3f} kJ",
+	    explosion.force,
+	    reach,
+	    debris_voxels.size(),
+	    crack_voxels,
+	    chunk_voxels,
+	    chunk_count,
+	    debris_energy
 	);
+
+	const uint32_t solid_after = data->solid_voxel_count;
+	return solid_before - std::min(solid_before, solid_after);
+}
+
+auto Simulator::explosionPush(ShapeID shape_id, const DetachedComponent& piece, const ExplosionDamage& explosion)
+    -> std::optional<FragmentPush> {
+	const Shape* shape = tryGetShape(shape_id);
+	const Body* body = shape != nullptr ? tryGetBody(shape->owner) : nullptr;
+	if (body == nullptr) {
+		return std::nullopt;
+	}
+
+	glm::vec3 index_sum {0.0f};
+	uint32_t count = 0;
+	for (const voxel::BrickPiece& brick_piece : piece.pieces) {
+		const glm::ivec3 base = brick_piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
+		for (uint32_t i = 0; i < voxel::k_brick_voxel_count; ++i) {
+			const voxel::BrickCoord coord = voxel::localFromIndex(i);
+			if (voxel::isSolid(brick_piece.voxels, coord.x, coord.y, coord.z)) {
+				index_sum += glm::vec3(base) + glm::vec3(coord.x, coord.y, coord.z);
+				++count;
+			}
+		}
+	}
+	if (count == 0) {
+		return std::nullopt;
+	}
+
+	const glm::vec3 local_center = ((index_sum / static_cast<float>(count)) + 0.5f) * voxel::k_voxel_size;
+	const glm::vec3 lattice_origin = body->position + (body->rotation * shape->voxel.local_center);
+	const glm::vec3 world_center = lattice_origin + (body->rotation * (shape->voxel.local_rotation * local_center));
+	const glm::vec3 offset = world_center - explosion.point;
+	const float distance = glm::length(offset);
+
+	// pressure on the side of the piece facing the blast
+	const float area = std::pow(static_cast<float>(count), 2.0f / 3.0f) * voxel::k_voxel_size * voxel::k_voxel_size;
+	const float pressure =
+	    k_joules_per_kilojoule * explosionDensityAt(explosion.force, std::max(distance, 0.5f), explosion.falloff);
+	return FragmentPush {
+	  .point = explosion.point,
+	  .direction = distance > 1.0e-4f ? offset / distance : glm::vec3 {0.0f, 0.0f, 1.0f},
+	  .speed = tunables().explosion_max_speed,
+	  .max_impulse = pressure * area * static_cast<float>(Accumulator::fixedDelta()),
+	};
 }
 
 auto Simulator::breakPieces(
     ShapeID shape_id, SmashPieces& picked, bool chunks,
-    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds,
+    uint32_t max_spawns
 ) -> uint32_t {
+	ZoneScopedN("physics::BreakPieces");
 	const Shape* shape = tryGetShape(shape_id);
 	VoxelShapeData* data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
 	if (data == nullptr || picked.pieces.empty()) {
 		return 0;
 	}
 	const uint32_t solid_before = data->solid_voxel_count;
+	const size_t spawn_cap = max_spawns != 0 ? max_spawns : tunables().max_fragment_spawns_per_step;
 
 	std::ranges::sort(picked.pieces, std::greater {}, &DetachedComponent::voxel_count);
 
 	size_t flown = 0;
 	for (const DetachedComponent& piece : picked.pieces) {
-		const bool may_fly =
-		    chunks && flown < tunables().max_fragment_spawns_per_step && piece.voxel_count >= tunables().min_fragment_voxels;
+		const bool may_fly = chunks && flown < spawn_cap && piece.voxel_count >= tunables().min_fragment_voxels;
 		if (may_fly) {
 			const std::optional<FragmentPush> push = push_for(piece);
 			const size_t before = m_fragments.size();
@@ -4857,7 +5841,8 @@ auto Simulator::breakPieces(
 			}
 		}
 
-		if (piece.voxel_count < tunables().min_fragment_voxels) {
+		const bool wanted_body = chunks && piece.voxel_count >= tunables().min_fragment_voxels;
+		if (piece.voxel_count < tunables().min_fragment_voxels || wanted_body) {
 			const std::optional<FragmentPush> debris_push = push_for(piece);
 			emitComponentDebris(shape_id, piece, debris_push.has_value() ? &*debris_push : nullptr);
 		}
@@ -4878,8 +5863,8 @@ auto Simulator::breakPieces(
 	data->connectivity_dirty = true;
 
 	const uint32_t moved = solid_before - std::min(solid_before, data->solid_voxel_count);
-	if (toast::VoxelNode* node = voxelNodeFor(shape_id); node != nullptr && moved > 0) {
-		node->recordDamage(moved, picked.index_sum);
+	if (moved > 0) {
+		recordVoxelDamage(shape_id, moved, picked.index_sum);
 	}
 	unlockSleep(shape->owner);
 
@@ -5167,10 +6152,11 @@ auto Simulator::findCachedContact(
 	return contact != contacts.end() ? &*contact : nullptr;
 }
 
-auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint> {
+auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>& {
 	ZoneScopedN("physics::PrepareConstraints");
 
-	std::vector<const Manifold*> active_manifolds;
+	std::vector<const Manifold*>& active_manifolds = m_prepare_active_manifolds;
+	active_manifolds.clear();
 	active_manifolds.reserve(manifolds.size());
 	size_t contact_count = 0;
 	for (const Manifold& manifold : manifolds) {
@@ -5181,11 +6167,6 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 		contact_count += std::min<size_t>(manifold.contact_count, manifold.contacts.size());
 	}
 
-	struct PreparedChunk {
-		std::vector<Constraint> constraints;
-		size_t rejected = 0;
-	};
-
 	const size_t minimum_manifolds_per_job = tunables().min_manifolds_per_job;
 	const size_t worker_count = std::max(toast::ThreadPool::workerCount(), static_cast<size_t>(1));
 	const size_t maximum_job_count = worker_count * 3;
@@ -5194,7 +6175,12 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 	        ? 0
 	        : std::min(maximum_job_count, std::max(active_manifolds.size() / minimum_manifolds_per_job, size_t {1}));
 
-	std::vector<std::future<PreparedChunk>> futures;
+	if (m_prepare_chunks.size() < job_count) {
+		m_prepare_chunks.resize(job_count);
+		m_prepare_chunk_rejected.resize(job_count);
+	}
+
+	std::vector<std::future<void>> futures;
 	futures.reserve(job_count);
 
 	{
@@ -5206,32 +6192,41 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 			const size_t end = (job_index + 1) * active_manifolds.size() / job_count;
 			auto batch = std::span<const Manifold* const> {active_manifolds}.subspan(begin, end - begin);
 
-			futures.emplace_back(toast::ThreadPool::push([this, batch] {
+			futures.emplace_back(toast::ThreadPool::push([this, batch, job_index] {
 				ZoneScopedN("physics::PrepareConstraintsBatch");    // NOLINT
-				PreparedChunk chunk;
+				std::vector<Constraint>& chunk = m_prepare_chunks[job_index];
+				chunk.clear();
+				size_t batch_contact_count = 0;
+				for (const Manifold* manifold : batch) {
+					batch_contact_count += std::min<size_t>(manifold->contact_count, manifold->contacts.size());
+				}
+				chunk.reserve(batch_contact_count);
+
+				size_t rejected = 0;
 				for (const Manifold* manifold : batch) {
 					const size_t valid_contact_count = std::min<size_t>(manifold->contact_count, manifold->contacts.size());
 					for (size_t contact_index = 0; contact_index < valid_contact_count; ++contact_index) {
 						if (auto constraint = prepareConstraint(*manifold, manifold->contacts[contact_index])) {
-							chunk.constraints.emplace_back(*constraint);
+							chunk.emplace_back(*constraint);
 						} else {
-							++chunk.rejected;
+							++rejected;
 						}
 					}
 				}
-				return chunk;
+				m_prepare_chunk_rejected[job_index] = rejected;
 			}));
 		}
 	}
 
 	// Gathered in dispatch order so this matches the order a serial pass would produce, buildIslands relies on it
-	std::vector<Constraint> constraints;
+	std::vector<Constraint>& constraints = m_constraints;
+	constraints.clear();
 	constraints.reserve(contact_count);
 	size_t rejected_contact_count = 0;
-	for (auto& future : futures) {
-		PreparedChunk chunk = future.get();
-		rejected_contact_count += chunk.rejected;
-		constraints.insert_range(constraints.end(), std::move(chunk.constraints));
+	for (size_t job_index = 0; job_index < futures.size(); ++job_index) {
+		futures[job_index].get();
+		rejected_contact_count += m_prepare_chunk_rejected[job_index];
+		constraints.insert(constraints.end(), m_prepare_chunks[job_index].begin(), m_prepare_chunks[job_index].end());
 	}
 
 	if (rejected_contact_count > 0) {
@@ -5249,7 +6244,7 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 }
 
 auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
-    -> std::vector<SimulationIsland> {
+    -> std::vector<SimulationIsland>& {
 	ZoneScopedN("physics::BuildIslands");
 
 	m_island_parents.resize(m_bodies.size());
@@ -5298,9 +6293,47 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		}
 	}
 
+	// Force all objects in a joint in one island
+	for (size_t joint_index = 0; joint_index < m_joints.size(); ++joint_index) {
+		if (m_joint_active[joint_index] == 0) {
+			continue;
+		}
+
+		const Joint& joint = m_joints[joint_index].joint;
+		const BodyID id_a = joint.descriptor.body_a;
+		const BodyID id_b = joint.descriptor.body_b;
+		const bool a_is_dynamic = is_active_dynamic(tryGetBody(id_a));
+		const bool b_is_dynamic = is_active_dynamic(tryGetBody(id_b));
+		if (a_is_dynamic) {
+			m_island_participates[id_a.slot] = true;
+		}
+		if (b_is_dynamic) {
+			m_island_participates[id_b.slot] = true;
+		}
+		if (a_is_dynamic && b_is_dynamic) {
+			const size_t root_a = find_root(id_a.slot);
+			const size_t root_b = find_root(id_b.slot);
+			if (root_a < root_b) {
+				m_island_parents[root_b] = root_a;
+			} else if (root_b < root_a) {
+				m_island_parents[root_a] = root_b;
+			}
+		}
+	}
+
 	const size_t no_island = m_bodies.size();
 	m_island_by_root.assign(m_bodies.size(), no_island);
-	std::vector<SimulationIsland> islands;
+	for (SimulationIsland& previous : m_islands) {
+		previous.dynamic_bodies.clear();
+		previous.constraints.clear();
+		previous.manifold_indices.clear();
+		previous.batch_offsets.clear();
+		previous.joint_indices.clear();
+		previous.joint_batch_offsets.clear();
+		m_island_spares.emplace_back(std::move(previous));
+	}
+	m_islands.clear();
+	std::vector<SimulationIsland>& islands = m_islands;
 
 	for (size_t body_index = 0; body_index < m_bodies.size(); ++body_index) {
 		if (not m_island_participates[body_index]) {
@@ -5311,11 +6344,13 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		if (m_island_by_root[root] == no_island) {
 			const BodySlot& root_slot = m_bodies[root];
 			m_island_by_root[root] = islands.size();
-			islands.emplace_back(
-			    SimulationIsland {
-			      .sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation},
+			SimulationIsland island;
+			if (not m_island_spares.empty()) {
+				island = std::move(m_island_spares.back());
+				m_island_spares.pop_back();
 			}
-			);
+			island.sort_key = BodyID {.slot = static_cast<uint32_t>(root), .generation = root_slot.generation};
+			islands.emplace_back(std::move(island));
 		}
 
 		const BodySlot& slot = m_bodies[body_index];
@@ -5353,6 +6388,20 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 		const size_t island_index = island_for_pair(constraint.pair);
 		if (island_index != no_island) {
 			islands[island_index].constraints.emplace_back(constraint);
+		}
+	}
+
+	for (size_t joint_index = 0; joint_index < m_joints.size(); ++joint_index) {
+		if (m_joint_active[joint_index] == 0) {
+			continue;
+		}
+
+		const Joint& joint = m_joints[joint_index].joint;
+		const bool a_is_dynamic = is_active_dynamic(tryGetBody(joint.descriptor.body_a));
+		const BodyID anchor_body = a_is_dynamic ? joint.descriptor.body_a : joint.descriptor.body_b;
+		const size_t island_index = m_island_by_root[find_root(anchor_body.slot)];
+		if (island_index != no_island) {
+			islands[island_index].joint_indices.emplace_back(static_cast<uint32_t>(joint_index));
 		}
 	}
 
@@ -5432,6 +6481,55 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			m_island_reordered_scratch[m_island_batch_cursor[m_island_constraint_batch[i]]++] = island.constraints[i];
 		}
 		island.constraints.swap(m_island_reordered_scratch);
+	}
+
+	// one joint at a time
+	m_joint_next_free_batch.assign(m_bodies.size(), 0);
+	for (SimulationIsland& island : islands) {
+		if (island.joint_indices.empty()) {
+			continue;
+		}
+
+		std::ranges::sort(island.joint_indices);
+		std::vector<uint32_t> batch_of(island.joint_indices.size(), 0);
+		uint32_t batch_count = 1;
+		for (size_t position = 0; position < island.joint_indices.size(); ++position) {
+			const Joint& joint = m_joints[island.joint_indices[position]].joint;
+			const Body* body_a = tryGetBody(joint.descriptor.body_a);
+			const Body* body_b = tryGetBody(joint.descriptor.body_b);
+			const bool a_moves = body_a != nullptr && movable(*body_a);
+			const bool b_moves = body_b != nullptr && movable(*body_b);
+
+			uint32_t batch = 0;
+			if (a_moves) {
+				batch = std::max(batch, m_joint_next_free_batch[joint.descriptor.body_a.slot]);
+			}
+			if (b_moves) {
+				batch = std::max(batch, m_joint_next_free_batch[joint.descriptor.body_b.slot]);
+			}
+			batch_of[position] = batch;
+			batch_count = std::max(batch_count, batch + 1);
+			if (a_moves) {
+				m_joint_next_free_batch[joint.descriptor.body_a.slot] = batch + 1;
+			}
+			if (b_moves) {
+				m_joint_next_free_batch[joint.descriptor.body_b.slot] = batch + 1;
+			}
+		}
+
+		island.joint_batch_offsets.assign(batch_count + 1, 0);
+		for (const uint32_t batch : batch_of) {
+			++island.joint_batch_offsets[batch + 1];
+		}
+		for (size_t i = 1; i < island.joint_batch_offsets.size(); ++i) {
+			island.joint_batch_offsets[i] += island.joint_batch_offsets[i - 1];
+		}
+		std::vector<uint32_t> reordered(island.joint_indices.size());
+		std::vector<size_t> cursor(island.joint_batch_offsets.begin(), island.joint_batch_offsets.end() - 1);
+		for (size_t position = 0; position < island.joint_indices.size(); ++position) {
+			reordered[cursor[batch_of[position]]++] = island.joint_indices[position];
+		}
+		island.joint_indices.swap(reordered);
 	}
 
 	std::ranges::sort(islands, [](const SimulationIsland& lhs, const SimulationIsland& rhs) {
@@ -5623,15 +6721,67 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	}
 	m_profile.max_constraint_batches = max_batches;
 
+	// Runs the function on every joint wave by wave
+	size_t max_joint_batches = 0;
+	for (const SimulationIsland& island : islands) {
+		max_joint_batches =
+		    std::max(max_joint_batches, island.joint_batch_offsets.empty() ? size_t {0} : island.joint_batch_offsets.size() - 1);
+	}
+	const auto run_joint_waves = [&](const auto& per_joint) {
+		for (size_t wave = 0; wave < max_joint_batches; ++wave) {
+			m_joint_wave.clear();
+			for (const SimulationIsland& island : islands) {
+				if (wave + 1 < island.joint_batch_offsets.size()) {
+					m_joint_wave.insert(
+					    m_joint_wave.end(),
+					    island.joint_indices.begin() + static_cast<std::ptrdiff_t>(island.joint_batch_offsets[wave]),
+					    island.joint_indices.begin() + static_cast<std::ptrdiff_t>(island.joint_batch_offsets[wave + 1])
+					);
+				}
+			}
+			if (m_joint_wave.empty()) {
+				continue;
+			}
+
+			const size_t chunk_count = std::min(worker_count, m_joint_wave.size());
+			if (m_joint_wave.size() < tunables().min_wave_joints_for_dispatch || chunk_count <= 1) {
+				for (const uint32_t joint_index : m_joint_wave) {
+					per_joint(joint_index);
+				}
+				continue;
+			}
+
+			const size_t per_chunk = (m_joint_wave.size() + chunk_count - 1) / chunk_count;
+			std::atomic<size_t> chunks_remaining {chunk_count};
+			for (size_t chunk = 0; chunk < chunk_count; ++chunk) {
+				const size_t begin = chunk * per_chunk;
+				const size_t end = std::min(m_joint_wave.size(), begin + per_chunk);
+				toast::ThreadPool::pushRaw([this, begin, end, &per_joint, &chunks_remaining] {
+					ZoneScopedN("physics::JointWaveChunk");    // NOLINT
+					for (size_t position = begin; position < end; ++position) {
+						per_joint(m_joint_wave[position]);
+					}
+					chunks_remaining.fetch_sub(1, std::memory_order_acq_rel);
+				});
+			}
+			while (chunks_remaining.load(std::memory_order_acquire) != 0) {
+				std::this_thread::yield();
+			}
+		}
+	};
+
+	std::vector<size_t> plain_islands;
+	std::vector<size_t> jointed_islands;
+	for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+		(islands[island_index].joint_indices.empty() ? plain_islands : jointed_islands).push_back(island_index);
+	}
+
 	size_t invalid_constraint_count = 0;
 	std::vector<std::span<Constraint>> wave_spans;
 	std::vector<size_t> active_islands;
-	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
-		ZoneScopedN("iteration");
-		ZoneValue(static_cast<uint64_t>(iteration));
-
+	const auto solve_contact_waves = [&](std::span<const size_t> island_set) {
 		active_islands.clear();
-		for (size_t island_index = 0; island_index < islands.size(); ++island_index) {
+		for (const size_t island_index : island_set) {
 			if (islands[island_index].batch_offsets.size() > 1) {
 				active_islands.push_back(island_index);
 			}
@@ -5693,6 +6843,131 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 				invalid_constraint_count += invalid;
 			}
 		}
+	};
+
+	for (uint32_t iteration = 0; iteration < solver_iterations; ++iteration) {
+		ZoneScopedN("iteration");
+		ZoneValue(static_cast<uint64_t>(iteration));
+		solve_contact_waves(plain_islands);
+	}
+
+	std::vector<glm::vec3> predicted_centers;
+	if (not jointed_islands.empty()) {
+		ZoneScopedN("physics::JointSubsteps");
+		const uint32_t substeps = std::max(tunables().joint_substeps, 1u);
+		const float substep_dt = static_cast<float>(Accumulator::fixedDelta()) / static_cast<float>(substeps);
+		const uint32_t substep_iterations = std::max((solver_iterations + substeps - 1) / substeps, 1u);
+
+		const auto settle_inertia = [](Body& body) {
+			const glm::mat3 rotation = glm::mat3_cast(body.rotation);
+			body.inverse_inertia_world = rotation * body.inverse_inertia_local * glm::transpose(rotation);
+		};
+		const auto advance = [&settle_inertia, substep_dt](Body& body) {
+			for (int axis = 0; axis < 3; ++axis) {
+				if (body.lock_position[axis]) {
+					body.linear_velocity[axis] = 0.0f;
+				}
+				if (body.lock_rotation[axis]) {
+					body.angular_velocity[axis] = 0.0f;
+				}
+			}
+			const glm::vec3 center = body.worldCenterOfMass() + (body.linear_velocity * substep_dt);
+			const glm::quat spin {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
+			const glm::quat next = body.rotation + ((0.5f * substep_dt) * (spin * body.rotation));
+			const float length_squared = glm::dot(next, next);
+			if (std::isfinite(length_squared) && length_squared > 1.0e-10f) {
+				body.rotation = glm::normalize(next);
+			}
+			body.position = center - (body.rotation * body.local_center_of_mass);
+			settle_inertia(body);
+		};
+		const auto for_each_jointed_body = [&](const auto& per_body) {
+			for (const size_t island_index : jointed_islands) {
+				for (const BodyID id : islands[island_index].dynamic_bodies) {
+					if (Body* body = tryGetBody(id); body != nullptr) {
+						per_body(id, *body);
+					}
+				}
+			}
+		};
+
+		for_each_jointed_body([&](BodyID, Body& body) {
+			predicted_centers.push_back(body.worldCenterOfMass());
+			body.position = body.previous_position;
+			body.rotation = body.previous_rotation;
+			settle_inertia(body);
+		});
+
+		if (m_position_shift.size() < m_bodies.size()) {
+			m_position_shift.resize(m_bodies.size(), glm::vec3(0.0f));
+		}
+		const auto measure_shift = [&] {
+			size_t body_index = 0;
+			for_each_jointed_body([&](BodyID id, Body& body) {
+				m_position_shift[id.slot] = body.worldCenterOfMass() - predicted_centers[body_index++];
+			});
+		};
+		const auto open_contacts = [&](bool first) {
+			for (const size_t island_index : jointed_islands) {
+				for (Constraint& constraint : islands[island_index].constraints) {
+					const float separation =
+					    -constraint.penetration +
+					    glm::dot(m_position_shift[constraint.body_b.slot] - m_position_shift[constraint.body_a.slot], constraint.normal);
+					const float closing = std::max(separation, 0.0f) / substep_dt;
+					constraint.closing_speed = first ? closing : std::min(constraint.closing_speed, closing);
+				}
+			}
+		};
+		measure_shift();
+
+		for (uint32_t substep = 0; substep < substeps; ++substep) {
+			run_joint_waves([this, substep, substep_dt](uint32_t joint_index) {
+				JointSlot& slot = m_joints[joint_index];
+				Body* body_a = nullptr;
+				Body* body_b = nullptr;
+				jointBodies(slot.joint, body_a, body_b);
+				const _detail::JointRow previous = m_joint_rows[joint_index];
+				m_joint_rows[joint_index] = _detail::prepareJoint(slot.joint, *body_a, *body_b, substep_dt);
+				if (substep == 0) {
+					_detail::warmStartJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+				} else {
+					m_joint_rows[joint_index].bounce_lower = std::min(m_joint_rows[joint_index].bounce_lower, previous.bounce_lower);
+					m_joint_rows[joint_index].bounce_upper = std::min(m_joint_rows[joint_index].bounce_upper, previous.bounce_upper);
+				}
+			});
+
+			open_contacts(substep == 0);
+			for (uint32_t iteration = 0; iteration < substep_iterations; ++iteration) {
+				run_joint_waves([this](uint32_t joint_index) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::solveJoint(m_joint_rows[joint_index], slot.joint, *body_a, *body_b);
+				});
+				solve_contact_waves(jointed_islands);
+			}
+
+			for_each_jointed_body([&](BodyID, Body& body) { advance(body); });
+
+			const uint32_t passes = substep + 1 == substeps ? tunables().position_iterations : 1u;
+			for (uint32_t pass = 0; pass < passes; ++pass) {
+				run_joint_waves([this](uint32_t joint_index) {
+					JointSlot& slot = m_joints[joint_index];
+					Body* body_a = nullptr;
+					Body* body_b = nullptr;
+					jointBodies(slot.joint, body_a, body_b);
+					_detail::correctJointPositions(slot.joint, *body_a, *body_b);
+				});
+			}
+			measure_shift();
+		}
+
+		for (const size_t island_index : jointed_islands) {
+			for (Constraint& constraint : islands[island_index].constraints) {
+				constraint.closing_speed = 0.0f;
+			}
+		}
 	}
 
 	if (invalid_constraint_count > 0) {
@@ -5704,6 +6979,13 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	size_t position_correction_count = 0;
 	for (SimulationIsland& island : islands) {
 		position_correction_count += correctPositions(island.manifold_indices);
+	}
+	if (not predicted_centers.empty()) {
+		for (const size_t island_index : jointed_islands) {
+			for (const BodyID id : islands[island_index].dynamic_bodies) {
+				m_position_shift[id.slot] = glm::vec3(0.0f);
+			}
+		}
 	}
 	m_profile.position_corrections = position_correction_count;
 
@@ -5735,6 +7017,35 @@ auto Simulator::solveConstraint(Constraint& constraint) -> bool {
 		return solveRolling(constraint, *body_a, *body_b);
 	}
 	return true;
+}
+
+void Simulator::addForce(BodyID body, glm::vec3 force, glm::vec3 offset) {
+	if (not onSimulatorThread()) {
+		request([body, force, offset] { addForce(body, force, offset); });
+		return;
+	}
+	runPendingRequests();
+
+	if (not instance || not instance->mainThreadMutationAllowed()) {
+		return;
+	}
+
+	Body* b = instance->tryGetBody(body);
+	if (b == nullptr || not b->enabled || b->type != BodyType::dynamic_body || b->inverse_mass <= 0.0f) {
+		return;
+	}
+	if (not std::isfinite(glm::dot(force, force)) || not std::isfinite(glm::dot(offset, offset))) {
+		return;
+	}
+
+	if (b->sleep_locked) {
+		instance->unlockSleep(body);
+	}
+	wakeBody(body);
+
+	const glm::vec3 impulse = force * static_cast<float>(Accumulator::fixedDelta());
+	b->linear_velocity += impulse * b->inverse_mass;
+	b->angular_velocity += b->inverse_inertia_world * glm::cross(offset, impulse);
 }
 
 }

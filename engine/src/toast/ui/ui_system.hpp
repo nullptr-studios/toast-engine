@@ -61,7 +61,7 @@ public:
 
 	/// @note Must run once the renderer exists
 	void initializeRenderer(const renderer::VulkanCore& core);
-	void buildDrawFrame(renderer::VulkanRenderer::RenderFrame& frame);
+	void buildDrawFrame(renderer::RenderFrame& frame);
 
 	[[nodiscard]]
 	auto createContext(std::string_view name, glm::ivec2 dimensions, std::optional<float> fixed_dp_ratio = std::nullopt)

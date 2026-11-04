@@ -3,7 +3,7 @@
 #include <cassert>
 #include <cstring>
 #include <string>
-#include <toast/renderer/spirv_entry_points.hpp>
+#include <toast/renderer/shaders/spirv_entry_points.hpp>
 #include <vector>
 
 namespace {

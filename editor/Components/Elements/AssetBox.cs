@@ -59,6 +59,8 @@ public sealed class AssetBox : TemplatedControl {
 
 	private readonly MenuItem m_selectItem;
 
+	private Border? m_pickerButton;
+
 	private string? m_displayName;
 
 	private bool m_hasAsset;
@@ -175,8 +177,15 @@ public sealed class AssetBox : TemplatedControl {
 	protected override void OnPointerPressed(PointerPressedEventArgs e) {
 		base.OnPointerPressed(e);
 		if (!IsEnabled || !e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-		OpenPicker();
+		var onButton = m_pickerButton is { } button && new Rect(button.Bounds.Size).Contains(e.GetPosition(button));
+		if (HasAsset && !onButton) ShowInBrowser();
+		else OpenPicker();
 		e.Handled = true;
+	}
+
+	protected override void OnApplyTemplate(TemplateAppliedEventArgs e) {
+		base.OnApplyTemplate(e);
+		m_pickerButton = e.NameScope.Find<Border>("PART_Button");
 	}
 
 	protected override void OnPointerEntered(PointerEventArgs e) {
@@ -272,13 +281,19 @@ public sealed class AssetBox : TemplatedControl {
 		if (!IsEnabled || (TopLevel.GetTopLevel(this) as Window ?? App.MainWindow) is not { } owner) return;
 		var normalized = NormalizeAssetType(AssetType);
 		// A material picker should also show material instances
-		var extra = normalized == "material" ? "material_instance" : null;
+		var extra = normalized switch {
+			"material" => "material_instance",
+			"voxel_model" => "node",
+			_ => null
+		};
 		var picked = await new AssetList(normalized, extra).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
 
 	private void ShowInBrowser() {
-		if (!string.IsNullOrEmpty(Value)) AssetBrowserViewModel.Current?.RevealAsset(Value!);
+		if (string.IsNullOrEmpty(Value)) return;
+		MainWindowViewModel.Current?.ShowAssetBrowser();
+		AssetBrowserViewModel.Current?.RevealAsset(Value!);
 	}
 
 	private void Clear() {
@@ -294,8 +309,10 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private static bool IsCompatibleType(string boxType, string dragged) {
-		return string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
-			&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase);
+		return (string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
+				&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase))
+			|| (string.Equals(boxType, "voxel_model", StringComparison.OrdinalIgnoreCase)
+				&& string.Equals(dragged, "node", StringComparison.OrdinalIgnoreCase));
 	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {

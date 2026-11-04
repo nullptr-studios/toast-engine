@@ -89,6 +89,15 @@ struct TOAST_API FieldInfo {
 	FieldGetterPtr get;
 	FieldSetterPtr set;
 
+	[[nodiscard]]
+	auto isNodeReference() const -> bool {
+		std::string_view bare = type;
+		if (bare.starts_with("toast::")) {
+			bare.remove_prefix(std::string_view("toast::").size());
+		}
+		return value_type == FieldType::uid_t && not is_array && bare.starts_with("Box<");
+	}
+
 	/**
 	 * @brief Returns the generated attribute objectpr
 	 */

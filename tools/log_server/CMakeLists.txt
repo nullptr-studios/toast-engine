@@ -1,25 +1,64 @@
-project(log_server NONE)
+project(log_server CXX)
 
-set(CARGO_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(CARGO_TARGET_DIR "${OUTPUT_ROOT}/$<CONFIG>/cargo")
-set(CARGO_PROFILE_NAME "$<IF:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,release,debug>")
-set(CARGO_PROFILE_FLAG "$<IF:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,release,dev>")
+find_package(protobuf CONFIG REQUIRED)
+find_package(asio CONFIG REQUIRED)
+find_package(Threads REQUIRED)
+find_package(CURL REQUIRED)
+find_package(ZLIB REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
-find_program(CARGO_EXECUTABLE cargo REQUIRED)
-message(STATUS "Found cargo: ${CARGO_EXECUTABLE}")
-message(STATUS "Build configuration: ${CARGO_PROFILE_NAME}")
-message(STATUS "Cargo target directory: ${CARGO_TARGET_DIR}")
+set(LOG_SERVER_PROTO "${CMAKE_SOURCE_DIR}/protos/logging.proto")
+set(LOG_SERVER_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(LOG_SERVER_PROTO_SOURCES "${LOG_SERVER_GENERATED_DIR}/logging.pb.cc" "${LOG_SERVER_GENERATED_DIR}/logging.pb.h")
 
-add_custom_target(log_server ALL
-        COMMAND ${CARGO_EXECUTABLE} build --profile "${CARGO_PROFILE_FLAG}" --target-dir "${CARGO_TARGET_DIR}"
-        COMMAND ${CMAKE_COMMAND}
-            -DCARGO_TARGET_DIR=${CARGO_TARGET_DIR}
-            -DPROFILE_NAME=${CARGO_PROFILE_NAME}
-            "-DBINARY_NAMES=log_server"
-            -DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
-            -DDEST_DIR=${OUTPUT_ROOT}/$<CONFIG>/log_server
-            -P ${CMAKE_SOURCE_DIR}/cmake/install_cargo_output.cmake
-        WORKING_DIRECTORY ${CARGO_PROJECT_DIR}
-        COMMENT "[cargo] Building log_server (${CARGO_PROFILE_NAME})..."
+add_custom_command(
+        OUTPUT ${LOG_SERVER_PROTO_SOURCES}
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${LOG_SERVER_GENERATED_DIR}"
+        COMMAND $<TARGET_FILE:protobuf::protoc>
+            "--proto_path=${CMAKE_SOURCE_DIR}/protos"
+            "--cpp_out=${LOG_SERVER_GENERATED_DIR}"
+            "${LOG_SERVER_PROTO}"
+        DEPENDS "${LOG_SERVER_PROTO}"
+        COMMENT "[protoc] Generating log_server protobuf sources..."
         VERBATIM
 )
+
+set(LOG_SERVER_CORE_SOURCES
+        src/server.cpp
+        src/storage.cpp
+        src/upload.cpp
+)
+set(LOG_SERVER_SOURCES src/main.cpp ${LOG_SERVER_CORE_SOURCES})
+
+add_executable(log_server ${LOG_SERVER_SOURCES} ${LOG_SERVER_PROTO_SOURCES})
+target_include_directories(log_server PRIVATE src "${LOG_SERVER_GENERATED_DIR}")
+target_link_libraries(log_server PRIVATE protobuf::libprotobuf asio::asio Threads::Threads CURL::libcurl ZLIB::ZLIB nlohmann_json::nlohmann_json)
+target_compile_definitions(log_server PRIVATE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+
+if (MSVC)
+    target_compile_definitions(log_server PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN NOGDI _CRT_SECURE_NO_WARNINGS)
+    target_link_options(log_server PRIVATE /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup)
+    set_source_files_properties(${LOG_SERVER_SOURCES} PROPERTIES COMPILE_OPTIONS "/W4;/utf-8")
+else ()
+    set_source_files_properties(${LOG_SERVER_SOURCES} PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra")
+endif ()
+
+foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER "${config}" config_upper)
+    set_target_properties(log_server PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${OUTPUT_ROOT}/${config}/log_server")
+endforeach ()
+
+add_executable(log_server_checks EXCLUDE_FROM_ALL checks/checks.cpp ${LOG_SERVER_CORE_SOURCES} ${LOG_SERVER_PROTO_SOURCES})
+target_include_directories(log_server_checks PRIVATE src "${LOG_SERVER_GENERATED_DIR}")
+target_link_libraries(log_server_checks PRIVATE protobuf::libprotobuf asio::asio Threads::Threads CURL::libcurl ZLIB::ZLIB nlohmann_json::nlohmann_json)
+target_compile_definitions(log_server_checks PRIVATE ASIO_STANDALONE ASIO_NO_DEPRECATED)
+if (MSVC)
+    target_compile_definitions(log_server_checks PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN NOGDI _CRT_SECURE_NO_WARNINGS)
+    set_source_files_properties(checks/checks.cpp PROPERTIES COMPILE_OPTIONS "/W4;/utf-8")
+else ()
+    set_source_files_properties(checks/checks.cpp PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra")
+endif ()
+foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+    string(TOUPPER "${config}" config_upper)
+    set_target_properties(log_server_checks PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${OUTPUT_ROOT}/${config}/log_server")
+endforeach ()

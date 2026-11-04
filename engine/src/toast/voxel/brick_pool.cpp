@@ -1,6 +1,5 @@
 #include "brick_pool.hpp"
 
-#include <algorithm>
 #include <cassert>
 
 namespace voxel {
@@ -27,8 +26,9 @@ constexpr auto headTag(uint64_t head) noexcept -> uint32_t {
 BrickPool::BrickPool(uint32_t capacity)
     : m_capacity(capacity),
       m_free_head(packHead(k_invalid_brick, 0)),
-      m_next_free(std::make_unique<std::atomic<uint32_t>[]>(capacity)),    // NOLINT(modernize-avoid-c-arrays)
-      m_is_free(std::make_unique<std::atomic<bool>[]>(capacity)) {         // NOLINT(modernize-avoid-c-arrays)
+      m_next_free(std::make_unique<std::atomic<uint32_t>[]>(capacity)),      // NOLINT(modernize-avoid-c-arrays)
+      m_is_free(std::make_unique<std::atomic<bool>[]>(capacity)),            // NOLINT(modernize-avoid-c-arrays)
+      m_references(std::make_unique<std::atomic<uint32_t>[]>(capacity)) {    // NOLINT(modernize-avoid-c-arrays)
 	assert(capacity < k_invalid_brick);
 
 	// allocate clears every brick
@@ -36,6 +36,9 @@ BrickPool::BrickPool(uint32_t capacity)
 	    static_cast<size_t>(capacity) * k_brick_material_bytes
 	);    // NOLINT(modernize-avoid-c-arrays)
 	m_occupancy.assign(capacity, BrickOccupancy {});
+	for (uint32_t id = 0; id < capacity; ++id) {
+		m_references[id].store(0, std::memory_order_relaxed);
+	}
 }
 
 auto BrickPool::allocate() -> uint32_t {
@@ -45,6 +48,7 @@ auto BrickPool::allocate() -> uint32_t {
 		const uint32_t next = m_next_free[id].load(std::memory_order_relaxed);
 		if (m_free_head.compare_exchange_weak(head, packHead(next, headTag(head) + 1), std::memory_order_acquire)) {
 			m_is_free[id].store(false, std::memory_order_relaxed);
+			m_references[id].store(1, std::memory_order_release);
 			m_allocated.fetch_add(1, std::memory_order_relaxed);
 			clearBrick(id);
 			return id;
@@ -59,12 +63,18 @@ auto BrickPool::allocate() -> uint32_t {
 	} while (!m_next_unused.compare_exchange_weak(unused, unused + 1, std::memory_order_acq_rel));
 
 	m_allocated.fetch_add(1, std::memory_order_relaxed);
+	m_references[unused].store(1, std::memory_order_release);
 	clearBrick(unused);
 	return unused;
 }
 
 void BrickPool::free(uint32_t id) {
 	assert(isValid(id));
+	const uint32_t previous = m_references[id].fetch_sub(1, std::memory_order_acq_rel);
+	assert(previous != 0 && "brick released without an owner");
+	if (previous != 1) {
+		return;
+	}
 	assert(!m_is_free[id].exchange(true, std::memory_order_relaxed) && "brick freed twice");
 
 	uint64_t head = m_free_head.load(std::memory_order_relaxed);
@@ -72,6 +82,17 @@ void BrickPool::free(uint32_t id) {
 		m_next_free[id].store(headId(head), std::memory_order_relaxed);
 	} while (!m_free_head.compare_exchange_weak(head, packHead(id, headTag(head) + 1), std::memory_order_release));
 	m_allocated.fetch_sub(1, std::memory_order_relaxed);
+}
+
+void BrickPool::retain(uint32_t id) {
+	assert(isValid(id));
+	const uint32_t previous = m_references[id].fetch_add(1, std::memory_order_acq_rel);
+	assert(previous != 0 && "cannot retain a freed brick");
+}
+
+auto BrickPool::referenceCount(uint32_t id) const noexcept -> uint32_t {
+	assert(isValid(id));
+	return m_references[id].load(std::memory_order_acquire);
 }
 
 void BrickPool::clearBrick(uint32_t id) {

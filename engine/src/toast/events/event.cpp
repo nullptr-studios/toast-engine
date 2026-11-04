@@ -2,19 +2,8 @@
 
 #include "proto_event.hpp"
 
-#include <array>
-#include <atomic>
 #include <cassert>
-#include <cstddef>
-#include <cstdint>
-#include <map>
-#include <memory>
 #include <memory_resource>
-#include <mutex>
-#include <string>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 namespace event {
 

@@ -41,6 +41,7 @@ struct BroadPhaseStats {
 	size_t rejected_invalid_bodies = 0;
 	size_t rejected_immovable_bodies = 0;
 	size_t rejected_layers = 0;
+	size_t rejected_joint_excluded = 0;
 	size_t tree_nodes = 0;
 };
 
@@ -67,6 +68,11 @@ public:
 	auto debugNodes() const -> std::vector<AABBTreeDebugNode>;
 	[[nodiscard]]
 	auto stats() const -> const BroadPhaseStats&;
+
+	[[nodiscard]]
+	auto snapshotTree() const -> AABBTree {
+		return m_tree;
+	}
 
 private:
 	struct ShapeLeaf {

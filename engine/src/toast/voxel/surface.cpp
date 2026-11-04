@@ -1,10 +1,6 @@
 #include "surface.hpp"
 
-#include <algorithm>
 #include <cassert>
-#include <tracy/Tracy.hpp>
-#include <tuple>
-#include <utility>
 
 namespace voxel {
 

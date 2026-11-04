@@ -14,36 +14,22 @@
 #include "toast/physics/simulator.hpp"
 #include "ui_binds_proxy.hpp"
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <cstdint>
-#include <format>
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <iterator>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <memory>
-#include <optional>
 #include <toast/assets/asset_registry.hpp>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/data_schema_codegen.hpp>
 #include <toast/engine.hpp>
 #include <toast/events/defer.hpp>
 #include <toast/input/action.hpp>
-#include <toast/log.hpp>
-#include <toast/reflect/reflect_node.hpp>
-#include <toast/time.hpp>
 #include <toast/ui/ui_system.hpp>
 #include <toast/voxel/voxel_edit.hpp>
-#include <tracy/Tracy.hpp>
 #include <tracy/TracyLua.hpp>
-#include <utility>
 
 namespace scripting {
 
@@ -507,7 +493,12 @@ LuaState::LuaState() : m_pool_size(1 + toast::ThreadPool::workerCount()), m_entr
 		lua_atpanic(entry.state, [](auto* state) -> int {
 			const char* message = lua_tostring(state, -1);
 			luaL_traceback(state, state, message ? message : "(non-string error)", 0);
-			TOAST_ERROR("Lua", "Panic: {}\n{}", message ? message : "(non-string error)", lua_tostring(state, -1));
+			TOAST_MESSAGE(
+			    logging::Severity::error,
+			    "Lua",
+			    std::format("Panic: {}", message ? message : "(non-string error)"),
+			    std::string_view(lua_tostring(state, -1))
+			);
 			return 0;
 		});
 

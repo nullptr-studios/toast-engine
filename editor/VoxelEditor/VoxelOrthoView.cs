@@ -467,11 +467,12 @@ public sealed class VoxelOrthoView : Control {
 		switch (editor.ActiveTool) {
 			case VoxelTool.Buildup or VoxelTool.Carve or VoxelTool.Paint:
 				m_drag = Drag.Box;
-				m_dragBox = (cell.Item1, cell.Item2, cell.Item1, cell.Item2);
+				m_dragBox = SnapBox(cell.Item1, cell.Item2, cell.Item1, cell.Item2);
 				break;
 			case VoxelTool.Split or VoxelTool.Slice:
 				m_drag = Drag.Cut;
-				m_cutLine = (point.Position, point.Position);
+				var cutStart = SnapPoint(point.Position);
+				m_cutLine = (cutStart, cutStart);
 				break;
 			case VoxelTool.Bucket:
 				BucketAt(editor, cell);
@@ -482,6 +483,27 @@ public sealed class VoxelOrthoView : Control {
 		}
 
 		InvalidateVisual();
+	}
+
+	private int SnapStep => m_editor is { SnapToUnit: true } ? VoxelEditorViewModel.UnitVoxels : 1;
+
+	private int SnapEdge(int boundary) {
+		var step = SnapStep;
+		return step > 1 ? (int)Math.Round(boundary / (double)step) * step : boundary;
+	}
+
+	private (int H0, int V0, int H1, int V1) SnapBox(int h0, int v0, int h1, int v1) {
+		var step = SnapStep;
+		int Lo(int x) => step > 1 ? (int)Math.Floor(x / (double)step) * step : x;
+		int Hi(int x) => step > 1 ? ((int)Math.Floor(x / (double)step) + 1) * step - 1 : x;
+		return (Lo(Math.Min(h0, h1)), Lo(Math.Min(v0, v1)), Hi(Math.Max(h0, h1)), Hi(Math.Max(v0, v1)));
+	}
+
+	private Point SnapPoint(Point at) {
+		var step = SnapStep;
+		if (step <= 1) return at;
+		var (h, v) = ToVoxel(at);
+		return ToScreen(Math.Round(h / step) * step, Math.Round(v / step) * step);
 	}
 
 	private void StartSelectOrHandle(VoxelEditorViewModel editor, Point at, (int H, int V) cell) {
@@ -544,14 +566,14 @@ public sealed class VoxelOrthoView : Control {
 			case Drag.Box: {
 				var (h, v) = ToVoxel(at);
 				var (h0, v0) = ToVoxel(m_pressed);
-				m_dragBox = (Math.Min((int)Math.Floor(h0), (int)Math.Floor(h)), Math.Min((int)Math.Floor(v0), (int)Math.Floor(v)),
-					Math.Max((int)Math.Floor(h0), (int)Math.Floor(h)), Math.Max((int)Math.Floor(v0), (int)Math.Floor(v)));
+				m_dragBox = SnapBox((int)Math.Floor(h0), (int)Math.Floor(v0), (int)Math.Floor(h), (int)Math.Floor(v));
 				break;
 			}
 			case Drag.Cut when m_cutLine is { } line:
-				m_cutLine = (line.A, at);
-				if (m_editor.ActiveTool is VoxelTool.Split or VoxelTool.Slice && Distance(line.A, at) > 4)
-					editor.PreviewCut(CutPlane(line.A, at));
+				var cutEnd = SnapPoint(at);
+				m_cutLine = (line.A, cutEnd);
+				if (m_editor.ActiveTool is VoxelTool.Split or VoxelTool.Slice && Distance(line.A, cutEnd) > 4)
+					editor.PreviewCut(CutPlane(line.A, cutEnd));
 				break;
 			case Drag.Move or Drag.EdgeMinH or Drag.EdgeMaxH or Drag.EdgeMinV or Drag.EdgeMaxV or Drag.Extrude
 				when m_dragPiece is { } piece:
@@ -570,19 +592,21 @@ public sealed class VoxelOrthoView : Control {
 		var dh = (int)Math.Round(h - ph);
 		var dv = (int)Math.Round(v - pv);
 		var (h0, v0, h1, v1) = BoxOf(piece);
+		var moveH = SnapEdge(h0 + dh) - h0;
+		var moveV = SnapEdge(v0 + dv) - v0;
 
 		var box = m_drag switch {
-			Drag.Move => (h0 + dh, v0 + dv, h1 + dh, v1 + dv),
-			Drag.EdgeMinH => (Math.Min(h0 + dh, h1), v0, h1, v1),
-			Drag.EdgeMaxH => (h0, v0, Math.Max(h1 + dh, h0), v1),
-			Drag.EdgeMinV => (h0, Math.Min(v0 + dv, v1), h1, v1),
-			Drag.EdgeMaxV => (h0, v0, h1, Math.Max(v1 + dv, v0)),
+			Drag.Move => (h0 + moveH, v0 + moveV, h1 + moveH, v1 + moveV),
+			Drag.EdgeMinH => (Math.Min(SnapEdge(h0 + dh), h1), v0, h1, v1),
+			Drag.EdgeMaxH => (h0, v0, Math.Max(SnapEdge(h1 + 1 + dh) - 1, h0), v1),
+			Drag.EdgeMinV => (h0, Math.Min(SnapEdge(v0 + dv), v1), h1, v1),
+			Drag.EdgeMaxV => (h0, v0, h1, Math.Max(SnapEdge(v1 + 1 + dv) - 1, v0)),
 			// Extrude grows a new box off the edge it was pulled from
 			Drag.Extrude => m_extrudeEdge switch {
-				0 => (h0 + Math.Min(dh, -1), v0, h0 - 1, v1),
-				1 => (h1 + 1, v0, h1 + Math.Max(dh, 1), v1),
-				2 => (h0, v0 + Math.Min(dv, -1), h1, v0 - 1),
-				_ => (h0, v1 + 1, h1, v1 + Math.Max(dv, 1))
+				0 => (Math.Min(SnapEdge(h0 + dh), h0 - 1), v0, h0 - 1, v1),
+				1 => (h1 + 1, v0, Math.Max(SnapEdge(h1 + 1 + dh) - 1, h1 + 1), v1),
+				2 => (h0, Math.Min(SnapEdge(v0 + dv), v0 - 1), h1, v0 - 1),
+				_ => (h0, v1 + 1, h1, Math.Max(SnapEdge(v1 + 1 + dv) - 1, v1 + 1))
 			},
 			_ => m_dragBox
 		};

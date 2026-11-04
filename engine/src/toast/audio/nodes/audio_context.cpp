@@ -2,8 +2,6 @@
 
 #include "../audio_system.hpp"
 
-#include <algorithm>
-
 namespace toast {
 void AudioContext::updateInspectorMessages() {
 	static const NodeMessage message {

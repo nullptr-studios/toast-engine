@@ -28,8 +28,15 @@ private:
 	std::unordered_set<int> m_ui_buttons;
 	std::unordered_set<int> m_ui_keys;
 
+	void updateCursorLock();
+
 	float m_dp_ratio = 1.0f;
 	int m_mods = 0;
+	bool m_overlay_mouse = false;
+	bool m_game_mouse_locked = false;
+	bool m_overlay_cursor = false;
+	/// A locked cursor is a virtual point that wanders with the look so panels must not hit test it
+	bool m_cursor_locked = false;
 };
 
 }

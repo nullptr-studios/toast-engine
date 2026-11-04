@@ -2,10 +2,6 @@
 
 #include "../audio_system.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <toast/time.hpp>
-
 namespace toast {
 
 void AmbienceVolume::updateInspectorMessages() {

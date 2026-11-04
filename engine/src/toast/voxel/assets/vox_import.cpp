@@ -1,15 +1,5 @@
 #include "vox_import.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstring>
-#include <stdexcept>
-#include <string>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <utility>
-
 namespace assets {
 
 using voxel::BrickPool;
@@ -278,6 +268,9 @@ struct VoxMaterial {
 	float metallic = 0.0f;
 	float reflectivity = 0.0f;
 	float emission = 0.0f;
+	float opacity = 1.0f;
+	/// 0 leaves the palette default
+	float ior = 0.0f;
 	bool transparent = false;
 };
 
@@ -313,6 +306,8 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 
 	VoxScene scene;
 	bool has_rgba = false;
+	std::array<uint8_t, 256> imap {};
+	bool has_imap = false;
 	std::unordered_map<uint32_t, VoxMaterial> materials;
 
 	struct RawNode {
@@ -406,10 +401,15 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				entry.albedo_g = g;
 				entry.albedo_b = b;
 				if (a < 255) {
-					entry.flags |= voxel::k_entry_transparent;
+					entry.alpha = a;
 				}
 			}
 			has_rgba = true;
+		} else if (is("IMAP")) {
+			for (uint8_t& value : imap) {
+				value = reader.u8();
+			}
+			has_imap = true;
 		} else if (is("MATL")) {
 			const int32_t index = reader.i32();
 			const VoxDict attributes = reader.dict();
@@ -431,8 +431,19 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				}
 				// _flux multiplies the emission by 2^flux
 				material.emission = voxDictFloat(attributes, "_emit", 0.0f) * std::pow(2.0f, voxDictFloat(attributes, "_flux", 0.0f));
-				material.transparent = type == "_glass" || voxDictFloat(attributes, "_alpha", 1.0f) < 1.0f ||
-				                       (type == "_blend" && voxDictFloat(attributes, "_trans", 0.0f) > 0.0f);
+				// _trans is the 0.99 transparency slider and _alpha what older files wrote
+				if (attributes.contains("_trans")) {
+					material.opacity = 1.0f - voxDictFloat(attributes, "_trans", 0.0f);
+				} else {
+					material.opacity = voxDictFloat(attributes, "_alpha", 1.0f);
+				}
+				material.transparent = type == "_glass" || material.opacity < 1.0f;
+				// _ri is the index itself and _ior what older files wrote as the index minus one
+				if (attributes.contains("_ri")) {
+					material.ior = voxDictFloat(attributes, "_ri", 0.0f);
+				} else if (attributes.contains("_ior")) {
+					material.ior = 1.0f + voxDictFloat(attributes, "_ior", 0.0f);
+				}
 				materials.insert_or_assign(static_cast<uint32_t>(index), material);
 			}
 		} else if (is("nTRN")) {
@@ -523,7 +534,7 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 				    "node " + std::to_string(node_id) + " holds " + std::to_string(count) + " model frames; only the first is imported"
 				);
 			}
-		} else if (is("PACK") || is("LAYR") || is("rOBJ") || is("rCAM") || is("NOTE") || is("IMAP")) {
+		} else if (is("PACK") || is("LAYR") || is("rOBJ") || is("rCAM") || is("NOTE")) {
 		} else {
 			scene.warnings.push_back(
 			    "unknown chunk '" + std::string(id.data(), 4) + "' skipped, which is how a newer MagicaVoxel adds things"
@@ -555,19 +566,75 @@ auto importVox(std::span<const uint8_t> data) -> VoxScene {
 	}
 	scene.palette.max_emissive = brightest > 0.0f ? brightest : 1.0f;
 
+	std::array<bool, k_palette_size> empty {};
+	for (uint32_t i = 1; i < k_palette_size; ++i) {
+		const PaletteEntry& entry = scene.palette.entries[i];
+		empty[i] = has_rgba && entry.albedo_r == 0 && entry.albedo_g == 0 && entry.albedo_b == 0;
+	}
+
 	// An index with no MATL chunk is MagicaVoxel diffuse too
 	for (uint32_t i = 1; i < k_palette_size; ++i) {
-		scene.palette.entries[i].roughness = voxByteFromUnit(VoxMaterial {}.roughness);
+		if (!empty[i]) {
+			scene.palette.entries[i].roughness = voxByteFromUnit(VoxMaterial {}.roughness);
+		}
 	}
 
 	for (const auto& [index, material] : materials) {
+		if (empty[index]) {
+			continue;
+		}
 		PaletteEntry& entry = scene.palette.entries[index];
 		entry.roughness = voxByteFromUnit(material.roughness);
 		entry.metallic = voxByteFromUnit(material.metallic);
 		entry.reflectivity = voxByteFromUnit(material.reflectivity);
 		entry.emissive = voxByteFromUnit(material.emission / scene.palette.max_emissive);
 		if (material.transparent) {
-			entry.flags |= voxel::k_entry_transparent;
+			entry.alpha = std::min(entry.alpha, voxByteFromUnit(material.opacity));
+		}
+		if (material.ior > 1.0f) {
+			entry.ior = voxel::iorByte(material.ior);
+		}
+	}
+
+	for (uint32_t i = 1; i < k_palette_size; ++i) {
+		if (empty[i]) {
+			scene.palette.entries[i] = PaletteEntry {};
+		}
+	}
+
+	std::array<uint8_t, 256> id_of_internal {};
+	for (uint32_t i = 0; i < 256; ++i) {
+		id_of_internal[i] = static_cast<uint8_t>(i);
+	}
+	if (has_imap) {
+		std::array<bool, 256> seen {};
+		bool is_permutation = true;
+		for (uint8_t value : imap) {
+			is_permutation = is_permutation && !seen[value];
+			seen[value] = true;
+		}
+
+		if (is_permutation) {
+			for (uint32_t slot = 0; slot < 256; ++slot) {
+				id_of_internal[imap[slot]] = static_cast<uint8_t>((slot + 1) & 255u);
+			}
+		} else {
+			scene.warnings.emplace_back("the IMAP chunk is not a permutation of 0..255; the palette order was left as stored");
+		}
+	}
+
+	if (has_imap) {
+		const auto internal_entries = scene.palette.entries;
+		for (uint32_t i = 1; i < k_palette_size; ++i) {
+			scene.palette.entries[i] = PaletteEntry {};
+		}
+		for (uint32_t i = 1; i < k_palette_size; ++i) {
+			scene.palette.entries[id_of_internal[i]] = internal_entries[i];
+		}
+		for (VoxModel& model : scene.models) {
+			for (VoxVoxel& voxel : model.voxels) {
+				voxel.palette_index = id_of_internal[voxel.palette_index];
+			}
 		}
 	}
 

@@ -289,7 +289,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	[ObservableProperty] private string m_externalSourcePath = string.Empty;
 
 	[ObservableProperty] private bool m_isExternal;
-
+	[ObservableProperty] private bool m_keepFolderStructure;
 	[ObservableProperty] private string m_locationPath = "assets://";
 	[ObservableProperty] private bool m_moveToArtwork = true;
 	[ObservableProperty] private string m_searchText = string.Empty;
@@ -486,10 +486,16 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 		var tasks = new List<LoaderTask>();
 
-		foreach (var file in freshFiles)
+		var baseDir = ProjectContext.Resolve(LocationPath);
+		var commonDir = KeepFolderStructure ? CommonDirectory(freshFiles) : null;
+		foreach (var file in freshFiles) {
+			var fileDir = commonDir is null
+				? baseDir
+				: Path.GetFullPath(Path.Combine(baseDir, Path.GetRelativePath(commonDir, Path.GetDirectoryName(file)!)));
 			tasks.Add(LoaderTask.DoWithProgress(
 				Path.GetFileName(file),
-				(log, progress) => ImportSingleFile(file, log, progress)));
+				(log, progress) => ImportSingleFile(file, fileDir, log, progress)));
+		}
 
 		foreach (var file in reimportFiles) {
 			var sourceVirtual = ProjectContext.ToVirtual(file);
@@ -523,7 +529,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 		var task = LoaderTask.DoWithProgress(Path.GetFileName(realSourcePath), async (log, progress) => {
 			if (MoveToArtwork) {
-				await ImportSingleFile(realSourcePath, log, progress);
+				await ImportSingleFile(realSourcePath, ProjectContext.Resolve(LocationPath), log, progress);
 			} else {
 				// Import in-place without artwork-DB tracking
 				log("Note: source is outside the project — reimport won't be available.");
@@ -552,7 +558,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 	}
 
 
-	private async Task ImportSingleFile(string realSourcePath, Action<string> log, Action<double>? progress = null) {
+	private async Task ImportSingleFile(
+		string realSourcePath, string destDir, Action<string> log, Action<double>? progress = null) {
 		try {
 			var sourceVirtual = ProjectContext.ToVirtual(realSourcePath)
 				?? throw new InvalidOperationException(
@@ -564,12 +571,10 @@ public partial class ImportWindowViewModel : ViewModelBase {
 				return;
 			}
 
-			var destDir = ProjectContext.Resolve(LocationPath);
-			var ext = Path.GetExtension(realSourcePath).ToLowerInvariant();
 			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
-			var ctx = new ImportContext { DestDir = destDir, SourceVirtualPath = sourceVirtual };
-			var uids = await importer.Import(realSourcePath, ctx, log, progress);
-			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, uids);
+			var outputs = await ArtworkImport.RunAsync(importer, realSourcePath, sourceVirtual, destDir,
+				AssetDatabase.GetArtworkOutputs(sourceVirtual), log, progress);
+			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, outputs);
 			log("Done.");
 		} catch (Exception ex) {
 			log($"ERROR: {ex.Message}");
@@ -610,6 +615,24 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		}
 
 		return result;
+	}
+
+	private static string? CommonDirectory(IReadOnlyList<string> files) {
+		if (files.Count == 0) return null;
+		var common = Path.GetDirectoryName(files[0])!;
+		foreach (var file in files.Skip(1))
+			while (!IsInside(common, Path.GetDirectoryName(file)!)) {
+				var parent = Path.GetDirectoryName(common);
+				if (parent is null) return null;
+				common = parent;
+			}
+
+		return common;
+	}
+
+	private static bool IsInside(string folder, string path) {
+		var relative = Path.GetRelativePath(folder, path);
+		return relative == "." || (!relative.StartsWith("..", StringComparison.Ordinal) && !Path.IsPathRooted(relative));
 	}
 
 	private static (List<string> fresh, List<string> reimport) GetSelectedFiles(IEnumerable<ImportNodeViewModel> nodes) {

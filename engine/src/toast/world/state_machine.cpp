@@ -1,8 +1,6 @@
 #include "state_machine.hpp"
 
-#include <format>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <toast/log.hpp>
 #include <toast/scripting/lua_callback.hpp>
 #include <toast/scripting/lua_state.hpp>
 

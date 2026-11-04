@@ -3,8 +3,6 @@
 #include "node.hpp"
 #include "node_owner.hpp"
 
-#include <toast/log.hpp>
-
 namespace toast {
 
 namespace {

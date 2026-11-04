@@ -2,12 +2,6 @@
 
 #include "voxel_query.hpp"
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <optional>
-#include <tracy/Tracy.hpp>
-
 namespace physics {
 
 namespace {

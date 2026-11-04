@@ -65,6 +65,7 @@ struct Meta {
 	std::vector<std::string> options;    ///< Non-empty makes an integer setting a combo box indexing this
 	bool requires_restart = false;       ///< Editor marks it; the value still applies to the next run
 	bool hidden = false;                 ///< Persisted and scriptable, but not shown
+	std::string asset_type;              ///< Makes a string setting an asset picker of this type holding the asset UID
 };
 
 /// @brief One registered setting. Held by the registry; `Setting<T>` is a handle to it
@@ -122,7 +123,9 @@ public:
 	///
 	/// A value of the wrong alternative is converted when the conversion is lossless-ish (int to double, bool
 	/// to int) and rejected otherwise, so a caller cannot silently turn a float setting into a string
-	auto setValue(std::string_view key, const Value& value) -> bool;
+	///
+	/// @p override_higher_layers clears the layers above the active one in memory and leaves their files alone
+	auto setValue(std::string_view key, const Value& value, bool override_higher_layers = false) -> bool;
 
 	/// @brief Drops @p key's override in the active layer, exposing whatever is underneath
 	auto reset(std::string_view key) -> bool;

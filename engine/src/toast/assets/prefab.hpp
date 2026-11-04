@@ -42,7 +42,7 @@ constexpr std::string_view vec3_str = "vec3";
 constexpr std::string_view vec4_str = "vec4";
 constexpr std::string_view quaternion_str = "quat";
 
-constexpr uint16_t format_version = 4;    ///< current binary layout version
+constexpr uint16_t format_version = 5;    ///< current binary layout version
 
 struct TOAST_API NodeFileBinaryHeader {
 	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
@@ -222,6 +222,12 @@ public:
 		std::vector<SignalConnection> connections;
 	};
 
+	/// Field values on one node inside a nested instance layered over the inner prefab when it loads
+	struct InteriorOverride {
+		toast::UID target;
+		std::vector<Field> fields;
+	};
+
 	/**
 	 * @brief One node entry in a prefab file
 	 *
@@ -235,8 +241,9 @@ public:
 
 		std::vector<Field> fields;
 		std::vector<Group> groups;
-		std::vector<LuaVarOverride> lua_vars;    ///< empty for old files or nodes with no edited Lua vars
-		std::vector<Signal> signals;             ///< empty for old files or nodes with no signal connections
+		std::vector<LuaVarOverride> lua_vars;      ///< empty for old files or nodes with no edited Lua vars
+		std::vector<Signal> signals;               ///< empty for old files or nodes with no signal connections
+		std::vector<InteriorOverride> interior;    ///< only on nested instance chunks and empty before format 5
 
 		[[nodiscard]]
 		auto find(std::string_view name) const -> std::optional<Field> {
@@ -286,6 +293,9 @@ private:
 
 	auto fieldEquals(toast::FieldType type, bool is_array, const std::any& a, const std::any& b) const -> bool;
 	auto flattenedRootFields(const Handle<Prefab>& source) const -> std::optional<BasicNode>;
+	/// What a node inside a nested instance looks like straight out of its own prefab
+	auto interiorBase(const toast::Node& node) const -> std::optional<BasicNode>;
+	void collectInteriorOverrides(const toast::Node& instance, BasicNode& out) const;
 
 	toast::UID m_self_uid;    ///< if this prefab embeds itself, this UID breaks the recursion during instantiation
 	Purpose m_purpose = Purpose::asset_definition;

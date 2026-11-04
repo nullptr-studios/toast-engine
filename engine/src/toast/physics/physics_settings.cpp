@@ -2,8 +2,6 @@
 
 #include "layers.hpp"
 
-#include <algorithm>
-#include <string>
 #include <toast/settings/settings.hpp>
 
 namespace physics {
@@ -95,6 +93,17 @@ void registerPhysicsSettings() {
 			 .max = 16.0,
 			 .step = 1.0},
 	    &Tunables::position_iterations
+	);
+	uint_setting(
+	    "physics.solver.joint_substeps",
+	    4,
+	    {.label = "Joint substeps",
+			 .category = "Solver",
+			 .description = "Times a step is split for bodies held by joints so swinging keeps its speed",
+			 .min = 1.0,
+			 .max = 16.0,
+			 .step = 1.0},
+	    &Tunables::joint_substeps
 	);
 	flt("physics.solver.penetration_slop",
 	    0.005,
@@ -364,7 +373,7 @@ void registerPhysicsSettings() {
 	    8.0,
 	    {.label = "Explosion max radius",
 	     .category = "Fracture",
-	     .description = "Meters an explosion can break or push things at",
+	     .description = "Meters an explosion can break or push things at, unless it sets its own radius",
 	     .min = 0.0,
 	     .max = 64.0,
 	     .step = 0.5},
@@ -378,6 +387,53 @@ void registerPhysicsSettings() {
 	     .max = 8.0,
 	     .step = 0.25},
 	    &Tunables::explosion_falloff);
+	flt("physics.fracture.explosion_chunk_size",
+	    1.0,
+	    {.label = "Explosion chunk size",
+	     .category = "Fracture",
+	     .description = "Meters across the chunks an explosion breaks material into",
+	     .min = 0.2,
+	     .max = 4.0,
+	     .step = 0.1},
+	    &Tunables::explosion_chunk_size);
+	flt("physics.fracture.explosion_debris_ratio",
+	    8.0,
+	    {.label = "Explosion debris ratio",
+	     .category = "Fracture",
+	     .description = "Material hit by a blast this many times its toughness turns to debris instead of chunks",
+	     .min = 1.0,
+	     .max = 64.0,
+	     .step = 0.5},
+	    &Tunables::explosion_debris_ratio);
+	flt("physics.fracture.explosion_shatter_width",
+	    0.6,
+	    {.label = "Explosion shatter width",
+	     .category = "Fracture",
+	     .description = "Meters of cracked material around the hole an explosion leaves, 0 for none",
+	     .min = 0.0,
+	     .max = 4.0,
+	     .step = 0.1},
+	    &Tunables::explosion_shatter_width);
+	flt("physics.fracture.explosion_max_speed",
+	    20.0,
+	    {.label = "Explosion max speed",
+	     .category = "Fracture",
+	     .description = "Fastest an explosion throws a chunk, debris or body, in m/s. Faster tunnels through thin colliders",
+	     .min = 1.0,
+	     .max = 100.0,
+	     .step = 1.0},
+	    &Tunables::explosion_max_speed);
+	uint_setting(
+	    "physics.fracture.explosion_max_fragments",
+	    48,
+	    {.label = "Explosion max fragments",
+			 .category = "Fracture",
+			 .description = "Chunks one explosion can promote to their own bodies per shape; the rest become debris",
+			 .min = 0.0,
+			 .max = 256.0,
+			 .step = 1.0},
+	    &Tunables::explosion_max_fragments
+	);
 	uint_setting(
 	    "physics.fracture.impact_max_hardness",
 	    1,
@@ -399,10 +455,6 @@ void registerPhysicsSettings() {
 	    {.label = "Max unglue voxels", .category = "Fracture", .min = 0.0, .max = 1000000.0, .step = 64.0},
 	    &Tunables::fracture_max_unglue_voxels
 	);
-	flt("physics.fracture.debris_split_chance",
-	    0.35,
-	    {.label = "Debris split chance", .category = "Shatter", .min = 0.0f, .max = 1.0f, .step = 0.05f},
-	    &Tunables::fracture_debris_split_chance);
 	uint_setting(
 	    "physics.fracture.max_shatter_cells",
 	    128,
@@ -424,13 +476,28 @@ void registerPhysicsSettings() {
 	    {.label = "Speed scale", .category = "Debris", .min = 0.0f, .max = 8.0f, .step = 0.1f},
 	    &Tunables::debris_speed_scale);
 	flt("physics.debris.lifetime",
-	    60.0,
+	    12.0,
 	    {.label = "Lifetime", .category = "Debris", .min = 0.5, .max = 600.0, .step = 0.5},
 	    &Tunables::debris_lifetime);
+	flt("physics.debris.lifetime_jitter",
+	    0.3,
+	    {.label = "Lifetime jitter",
+	     .category = "Debris",
+	     .description = "Each piece lives lifetime times one plus or minus this so a burst does not vanish at once",
+	     .min = 0.0,
+	     .max = 0.9,
+	     .step = 0.05},
+	    &Tunables::debris_lifetime_jitter);
 	uint_setting(
 	    "physics.debris.max_particles",
 	    16384,
-	    {.label = "Max particles", .category = "Debris", .min = 256.0, .max = 262144.0, .step = 1024.0, .requires_restart = true},
+	    {.label = "Max particles",
+			 .category = "Debris",
+			 .description = "Past this the oldest pieces shrink away to make room for new ones",
+			 .min = 256.0,
+			 .max = 262144.0,
+			 .step = 1024.0,
+			 .requires_restart = true},
 	    &Tunables::debris_max_particles
 	);
 	flt("physics.debris.restitution",
@@ -507,6 +574,17 @@ void registerPhysicsSettings() {
 			 .max = 65536.0,
 			 .step = 1.0},
 	    &Tunables::min_wave_constraints_for_dispatch
+	);
+	uint_setting(
+	    "physics.jobs.min_wave_joints_for_dispatch",
+	    64,
+	    {.label = "Min wave joints per dispatch",
+			 .category = "Jobs",
+			 .description = "Joint waves below this size solve inline",
+			 .min = 1.0,
+			 .max = 65536.0,
+			 .step = 1.0},
+	    &Tunables::min_wave_joints_for_dispatch
 	);
 	uint_setting(
 	    "physics.jobs.box_voxel_split_min_voxels",

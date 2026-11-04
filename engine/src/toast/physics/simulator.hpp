@@ -13,6 +13,8 @@
 #include "damage_command.hpp"
 #include "debris.hpp"
 #include "fragment_extraction.hpp"
+#include "joint.hpp"
+#include "joint_solver.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
 #include "physics_material.hpp"
@@ -27,6 +29,7 @@
 #include <deque>
 #include <functional>
 #include <glm/glm.hpp>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <span>
@@ -47,8 +50,11 @@ class Trigger;
 class Rigidbody;
 class DynamicRigidbody;
 class Collider;
+class Joint3D;
+struct SimulatorTestAccess;
 struct SmashVolume;
 struct SmashPieces;
+struct QuerySnapshot;
 
 }
 
@@ -59,6 +65,7 @@ class TOAST_API Simulator {
 	friend class Rigidbody;
 	friend class DynamicRigidbody;
 	friend class toast::VoxelNode;
+	friend struct SimulatorTestAccess;
 
 public:
 	struct DebugDirtyBrick {
@@ -85,6 +92,27 @@ public:
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);
 
+	[[nodiscard]]
+	auto createJoint(const JointDescriptor& descriptor) -> JointID;
+	void destroyJoint(JointID joint);
+
+	[[nodiscard]]
+	auto valid(JointID joint) const -> bool;
+	[[nodiscard]]
+
+	auto jointState(JointID joint) const -> std::optional<JointState>;
+	auto setJointParams(JointID joint, const JointParams& params) -> bool;
+
+	[[nodiscard]]
+	auto jointCount() const -> size_t {
+		return m_joint_count;
+	}
+
+	static void registerJointNode(Joint3D& node);
+	static void unregisterJointNode(Joint3D& node);
+	static void breakJointNode(Joint3D& node);
+	static void repairJointNode(Joint3D& node);
+
 	/// @param layers Only bodies including one of these layers are hit
 	static auto raycast(
 	    glm::vec3 origin, glm::vec3 direction, float max_distance = -1.0f, BodyID ignored = {}, uint32_t layers = k_all_layers
@@ -95,6 +123,8 @@ public:
 	) -> std::vector<RayHit>;
 	static auto linecast(glm::vec3 from, glm::vec3 to, int max_hits = -1, BodyID ignored = {}, uint32_t layers = k_all_layers)
 	    -> std::vector<RayHit>;
+	[[nodiscard]]
+	static auto querySnapshot() -> std::shared_ptr<const QuerySnapshot>;
 
 	[[nodiscard]]
 	static auto bodyFor(const toast::Node& node) -> BodyID;
@@ -103,6 +133,8 @@ public:
 	auto valid(BodyID body) const -> bool;
 	[[nodiscard]]
 	auto state(BodyID body) const -> std::optional<BodyState>;
+	[[nodiscard]]
+	auto massProperties(BodyID body) const -> std::optional<BodyMassProperties>;
 
 	auto setTransform(BodyID body, const glm::vec3& position, const glm::quat& rotation) -> bool;
 	auto setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool;
@@ -175,6 +207,8 @@ public:
 		size_t island_jobs = 0;
 		size_t invalid_constraints = 0;
 		size_t position_corrections = 0;
+		size_t joint_count = 0;
+		size_t joints_broken = 0;
 
 		double tick_ms = 0.0;
 		double damage_apply_ms = 0.0;
@@ -248,6 +282,8 @@ public:
 	static auto renderPoseDelta(BodyID id) -> glm::mat4;
 	[[nodiscard]]
 	static auto renderPoseDelta(const toast::VoxelNode& node) -> glm::mat4;
+	[[nodiscard]]
+	static auto renderPoseDelta(const toast::VoxelPart& part) -> glm::mat4;
 
 	/// Delta of the dynamic body a node sits below and identity when it follows none
 	[[nodiscard]]
@@ -289,6 +325,9 @@ public:
 	static void registerTrigger(Trigger& node);
 	static void unregisterTrigger(Trigger& node);
 
+	/// Force over one fixed step, offset is world space from the center of mass, from any thread
+	static void addForce(BodyID body, glm::vec3 force, glm::vec3 offset);
+
 	[[nodiscard]]
 	auto overlapCapsule(
 	    BodyID ignored, const CapsuleShape& capsule, const glm::vec3& position, const glm::quat& rotation, float min_penetration,
@@ -297,7 +336,8 @@ public:
 	/// Tests a world-space sphere against enabled physics shapes.
 	[[nodiscard]]
 	auto overlapSphere(
-	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts
+	    const SphereShape& sphere, const glm::vec3& position, float min_penetration, std::vector<QueryContact>& contacts,
+	    std::optional<LayerFilter> layers = std::nullopt
 	) const -> bool;
 	/// Tests a world-space axis-aligned box against enabled physics shapes.
 	[[nodiscard]]
@@ -365,6 +405,8 @@ private:
 		BodyID body;
 		ShapeID shape;
 		toast::Box<toast::VoxelNode> node;
+		bool is_part = false;
+		uint64_t part_key = 0;
 		uint32_t source_revision = 0;
 		uint64_t source_model = 0;
 		uint64_t source_palette = 0;
@@ -375,6 +417,8 @@ private:
 		std::vector<BodyID> dynamic_bodies;
 		std::vector<Constraint> constraints;
 		std::vector<size_t> manifold_indices;
+		std::vector<uint32_t> joint_indices;
+		std::vector<size_t> joint_batch_offsets;
 
 		/// constraints[batch_offsets[i] .. batch_offsets[i + 1]) only share a dynamic body within one body pair run
 		/// and each body pair run is contiguous, so a batch can be split anywhere except inside a run
@@ -417,6 +461,8 @@ private:
 
 	template<typename OnContact>
 	auto castRay(const RayQuery& query, OnContact&& on_contact) const -> uint32_t;
+	template<typename Source, typename OnContact>
+	static auto castRayUsing(const Source& source, const RayQuery& query, OnContact&& on_contact) -> uint32_t;
 
 	/// @returns true if a static body is within @p distance of @p position along @p toward
 	[[nodiscard]]
@@ -462,7 +508,7 @@ private:
 	    const voxel::MaterialLibrary& materials
 	) -> ShapeID;
 	[[nodiscard]]
-	auto createVoxelShape(BodyID owner, toast::VoxelNode& node) -> ShapeID;
+	auto createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::VoxelPart* part) -> ShapeID;
 
 	void destroyShape(ShapeID shape);
 	[[nodiscard]]
@@ -519,6 +565,23 @@ private:
 	void releaseSleeper(BodyID sleeper, BodyID other, const glm::vec3& normal_to_other);
 	void wakeBodiesTouching(BodyID id);
 	void wakeBodiesTouching(ShapeID id);
+	void wakeJointPartners();
+	void prepareJoints(float dt);
+	void syncJointNodes();
+	void checkJointAnchors();
+	void breakOverloadedJoints(float dt);
+	void breakJoint(JointID joint, JointBreakReason reason);
+	void publishJoints();
+	[[nodiscard]]
+	auto findVoxelShape(BodyID body) const -> ShapeID;
+	[[nodiscard]]
+	auto voxelEndOf(BodyID body, const JointFrame& frame, const VoxelAnchorSettings& settings) const -> JointVoxelEnd;
+	[[nodiscard]]
+	auto countSolidAround(ShapeID shape, const glm::vec3& body_local, int radius_voxels) const -> std::optional<uint32_t>;
+	void jointBodies(const Joint& joint, Body*& body_a, Body*& body_b);
+	void addExclusion(BodyID a, BodyID b);
+	void removeExclusion(BodyID a, BodyID b);
+	void adjustJointContacts(std::vector<Manifold>& manifolds);
 	void wakeBodiesInBounds(const AABB& bounds);
 	void convertImpulsesToDamage(std::span<const SimulationIsland> islands);
 	void wakeDisturbedSleepers(float dt);
@@ -540,12 +603,14 @@ private:
 	auto generateManifoldsAsync(CollisionWorldView world, std::span<const BroadPhasePair> candidates) -> std::vector<Manifold>;
 
 	[[nodiscard]]
-	auto prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>;
+	/// Returns m_constraints, valid until the next call
+	auto prepareConstraints(const std::vector<Manifold>& manifolds) -> std::vector<Constraint>&;
 	[[nodiscard]]
 	auto prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint>;
 	[[nodiscard]]
+	/// Returns m_islands, valid until the next call
 	auto buildIslands(std::span<const Manifold> manifolds, const std::vector<Constraint>& constraints)
-	    -> std::vector<SimulationIsland>;
+	    -> std::vector<SimulationIsland>&;
 	void updateCache(std::span<const Manifold> manifolds);
 	[[nodiscard]]
 	auto findCachedContact(const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b)
@@ -592,7 +657,8 @@ private:
 	);
 
 	void emitDebris(
-	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed
+	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
+	    bool together = false
 	);
 
 	void emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push);
@@ -601,9 +667,13 @@ private:
 	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
 	auto explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t;
+	[[nodiscard]]
+	auto explosionPush(ShapeID shape_id, const DetachedComponent& piece, const ExplosionDamage& explosion)
+	    -> std::optional<FragmentPush>;
 	auto breakPieces(
 	    ShapeID shape_id, SmashPieces& picked, bool chunks,
-	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds
+	    const std::function<std::optional<FragmentPush>(const DetachedComponent&)>& push_for, const AABB& wake_bounds,
+	    uint32_t max_spawns = 0
 	) -> uint32_t;
 	[[nodiscard]]
 	auto marchVoxelRay(const glm::vec3& origin, const glm::vec3& direction, float max_distance) -> std::optional<VoxelRayHit>;
@@ -611,10 +681,17 @@ private:
 	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);
 	void retireVoxelBody(BodyID id);
+	auto debrisIfSmall(ShapeID shape) -> bool;
 	void destroyFragmentsOf(BodyID origin);
 
 	[[nodiscard]]
 	auto voxelNodeFor(ShapeID shape) -> toast::VoxelNode*;
+
+	[[nodiscard]]
+	static auto partOf(const VoxelNodeBinding& binding) -> toast::VoxelPart*;
+
+	void recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum);
+	void noteVoxelShapeEmptied(ShapeID shape);
 
 	void reapFragments();
 	void destroyFragmentRecord(BodyID id);
@@ -640,6 +717,7 @@ private:
 	) const;
 
 	inline static Simulator* instance = nullptr;
+	inline static std::atomic<std::shared_ptr<const QuerySnapshot>> published_query_snapshot;
 
 	std::mutex m_wind_mutex;
 	std::optional<glm::vec3> m_level_wind;
@@ -649,6 +727,30 @@ private:
 
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
+
+	std::vector<JointSlot> m_joints;
+	std::deque<uint32_t> m_free_joint_slots;
+	size_t m_joint_count = 0;
+	std::vector<_detail::JointRow> m_joint_rows;
+	std::vector<uint8_t> m_joint_active;
+	std::vector<uint32_t> m_joint_next_free_batch;
+	std::vector<uint32_t> m_joint_wave;
+	std::vector<uint64_t> m_excluded_pairs;
+	Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};
+
+	struct JointBinding {
+		JointID joint;
+		toast::Box<Joint3D> node;
+		bool broken = false;
+	};
+
+	struct BrokenJoint {
+		JointID joint;
+		JointBreakReason reason = JointBreakReason::requested;
+	};
+
+	std::vector<JointBinding> m_joint_bindings;
+	std::vector<BrokenJoint> m_broken_joints;
 	std::vector<NodeBinding> m_node_bindings;
 	std::vector<VoxelNodeBinding> m_voxel_bindings;
 
@@ -670,6 +772,14 @@ private:
 	std::vector<uint32_t> m_island_constraint_batch;
 	std::vector<size_t> m_island_batch_cursor;
 	std::vector<Constraint> m_island_reordered_scratch;
+	/// prepareConstraints storage kept across ticks, one chunk vector and reject count per job
+	std::vector<const Manifold*> m_prepare_active_manifolds;
+	std::vector<std::vector<Constraint>> m_prepare_chunks;
+	std::vector<size_t> m_prepare_chunk_rejected;
+	std::vector<Constraint> m_constraints;
+	/// Islands of the last tick, spares keep the capacity of their vectors for the next one
+	std::vector<SimulationIsland> m_islands;
+	std::vector<SimulationIsland> m_island_spares;
 
 	/// Reused across waves instead of a fresh vector every iteration x wave x tick
 	std::vector<size_t> m_wave_chunk_invalid_counts;
@@ -681,6 +791,8 @@ private:
 	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
+	/// Swapped with m_cached_manifolds every updateCache so neither side reallocates
+	std::vector<CachedManifold> m_cached_manifolds_next;
 	mutable PhysicsStepProfile m_profile;
 	PhysicsStepProfile m_published_profile;
 
@@ -695,6 +807,7 @@ private:
 
 	uint64_t m_next_fragment_sequence = 1;
 	uint64_t m_tick_index = 0;
+	void publishQuerySnapshot();
 	std::vector<FragmentRecord> m_fragments;
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;

@@ -7,7 +7,9 @@
 #pragma once
 #include "voxel_constants.hpp"
 
+#include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <toast/physics/fracture_profile.hpp>
 #include <toast/physics/hardness.hpp>
@@ -19,8 +21,6 @@ namespace voxel {
 inline constexpr uint32_t k_max_physical_materials = 256;
 
 inline constexpr uint8_t k_default_material = 0;
-
-inline constexpr uint8_t k_entry_transparent = 1u << 0;
 
 /// @brief 16 bytes and the offsets are a shader contract
 struct PaletteEntry {
@@ -40,20 +40,52 @@ struct PaletteEntry {
 
 	uint8_t material = k_default_material;
 
-	uint8_t flags = 0;
-
 	/// 0 burns away and only read for flammable materials
 	uint8_t transforms_to = 0;
 
 	uint8_t alpha = 255;
 
-	std::array<uint8_t, 5> reserved {};
+	/// 0 for k_default_ior and otherwise 1 + ior / 100
+	uint8_t ior = 0;
+
+	/// Layer of the detail library, 0 for none
+	uint8_t detail_layer = 0;
+
+	/// Texels per voxel edge, 0 for k_default_detail_scale
+	uint8_t detail_scale = 0;
+
+	/// Strengths where 255 is a full swing of the texture
+	uint8_t detail_albedo = 0;
+	uint8_t detail_roughness = 0;
+	uint8_t detail_bump = 0;
 
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
 };
 
 static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be sixteen bytes - the shader indexes it that way");
+
+inline constexpr uint32_t k_default_detail_scale = 4;
+
+/// Mirrors voxel_dda.slang glassEntry
+[[nodiscard]]
+constexpr auto isGlass(const PaletteEntry& entry) noexcept -> bool {
+	return entry.alpha < 255;
+}
+
+/// Window glass and the IOR of an entry without one
+inline constexpr float k_default_ior = 1.5f;
+inline constexpr float k_max_ior = 1.0f + (255.0f / 100.0f);
+
+[[nodiscard]]
+constexpr auto iorOf(const PaletteEntry& entry) noexcept -> float {
+	return entry.ior == 0 ? k_default_ior : 1.0f + (static_cast<float>(entry.ior) / 100.0f);
+}
+
+[[nodiscard]]
+inline auto iorByte(float ior) noexcept -> uint8_t {
+	return static_cast<uint8_t>(std::clamp(std::lround((ior - 1.0f) * 100.0f), 1L, 255L));
+}
 
 /// @brief Entry 0 is the empty voxel and must stay all zero
 struct Palette {

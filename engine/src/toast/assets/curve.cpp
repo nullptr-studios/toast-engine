@@ -1,12 +1,6 @@
 #include "curve.hpp"
 
-#include <algorithm>
-#include <array>
 #include <sstream>
-#include <stdexcept>
-#include <string_view>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace assets {
 

@@ -9,23 +9,16 @@
 #include "toast/physics/raycast.hpp"
 #include "ui_binds_proxy.hpp"
 
-#include <algorithm>
-#include <format>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <optional>
 #include <toast/input/action.hpp>
-#include <toast/log.hpp>
 #include <toast/reflect/reflect.hpp>
-#include <toast/reflect/reflect_node.hpp>
 #include <toast/voxel/voxel_edit.hpp>
 #include <toast/world/node.hpp>
 #include <toast/world/node_3d.hpp>
-#include <utility>
 
 namespace scripting {
 
@@ -405,12 +398,19 @@ auto proxyMethodDispatch(lua_State* l) -> int;
 
 // Strips the outer "Box<" ... ">" from a field.type string and returns the inner type name
 auto innerBoxType(std::string_view type) -> std::string_view {
+	constexpr std::string_view toast_prefix = "toast::";
 	constexpr std::string_view prefix = "Box<";
+	if (type.starts_with(toast_prefix)) {
+		type.remove_prefix(toast_prefix.size());
+	}
 	if (!type.starts_with(prefix) || !type.ends_with('>')) {
 		return {};
 	}
 	type.remove_prefix(prefix.size());
 	type.remove_suffix(1);
+	if (type.starts_with(toast_prefix)) {
+		type.remove_prefix(toast_prefix.size());
+	}
 	return type;
 }
 
@@ -1598,7 +1598,7 @@ auto nodeProxyNewindex(NodeProxy& proxy, const luabridge::LuaRef& key, const lua
 		case FieldType::uid_t: {
 			const std::string_view type_str = f->type;
 
-			if (!f->is_array && type_str.starts_with("Box<")) {
+			if (f->isNodeReference()) {
 				if (!value.isInstance<NodeProxy>()) {
 					luaL_error(l, "Field '%s' expects Node", key_str.c_str());
 				}

@@ -16,3 +16,9 @@ float4 fragmentMain(VSOutput input) : SV_Target0
 {
     return float4(gSource.Sample(input.uv).rgb, 1.0);
 }
+
+[shader("fragment")]
+float depthMain(VSOutput input) : SV_Depth
+{
+    return gSource.SampleLevel(input.uv, 0.0).r;
+}

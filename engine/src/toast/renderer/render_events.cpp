@@ -1,14 +1,10 @@
-#include "render_events.hpp"
+#include "toast/renderer/render_events.hpp"
 
-#include "shader_cache.hpp"
-#include "vulkan_renderer.hpp"
+#include "toast/renderer/shaders/shader_cache.hpp"
+#include "toast/renderer/vulkan_renderer.hpp"
 
-#include <format>
 #include <generated/render_events.pb.h>
-#include <toast/events/listener.hpp>
 #include <toast/events/proto_event.hpp>
-#include <toast/log.hpp>
-#include <toast/uid.hpp>
 
 namespace event {
 

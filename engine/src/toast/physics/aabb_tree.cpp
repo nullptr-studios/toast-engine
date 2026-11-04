@@ -2,14 +2,6 @@
 
 #include "physics_settings.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <limits>
-#include <stdexcept>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
-
 namespace physics {
 
 auto AABBTree::fatMargin() -> float {

@@ -5,7 +5,7 @@ struct SsaoParams
 {
     float4x4 viewProjection;
     float4x4 inverseViewProjection;
-    // xy target size zw reciprocal
+    // xy target size z frame index for the noise
     float4 screenSize;
     // x sample radius y strength z depth cutoff w sample count
     float4 tuning;
@@ -49,9 +49,11 @@ float3 worldPositionFromDepth(float2 uv, float depth)
     return world.xyz / world.w;
 }
 
-float hash(float2 p)
+/// Walked per frame so TAA averages it
+float rotationNoise(float2 pixel)
 {
-    return frac(sin(dot(p, float2(12.9898, 78.233))) * 43758.5453);
+    const float2 shifted = pixel + 5.588238 * gParams.screenSize.z;
+    return frac(52.9829189 * frac(dot(shifted, float2(0.06711056, 0.00583715))));
 }
 
 float3 hemisphereSample(uint index, uint count, float rotation)
@@ -60,7 +62,9 @@ float3 hemisphereSample(uint index, uint count, float rotation)
     float angle = float(index) * golden + rotation;
     float radius = sqrt((float(index) + 0.5) / float(count));
 
-    float2 disk = float2(cos(angle), sin(angle)) * radius;
+    float s, c;
+    sincos(angle, s, c);
+    float2 disk = float2(c, s) * radius;
     float height = sqrt(max(1.0 - dot(disk, disk), 0.0));
     return float3(disk, height);
 }
@@ -68,15 +72,14 @@ float3 hemisphereSample(uint index, uint count, float rotation)
 [shader("fragment")]
 float4 aoMain(VSOutput input) : SV_Target0
 {
-    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
-
-    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
+    float depth = gDepth.Sample(input.uv).r;
+    if (isFarDepth(depth))
     {
         return float4(1.0, kNoSurfaceDistance, 0.0, 1.0);
     }
 
-    float depth = gDepth.Sample(input.uv).r;
-    if (isFarDepth(depth))
+    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
+    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
     {
         return float4(1.0, kNoSurfaceDistance, 0.0, 1.0);
     }
@@ -94,7 +97,7 @@ float4 aoMain(VSOutput input) : SV_Target0
     float3 T = normalize(cross(helper, N));
     float3 B = cross(N, T);
 
-    float rotation = hash(input.uv * gParams.screenSize.xy) * 6.2831853;
+    float rotation = rotationNoise(input.position.xy) * 6.2831853;
 
     float occlusion = 0.0;
     float validSamples = 0.0;
@@ -152,6 +155,7 @@ float4 aoMain(VSOutput input) : SV_Target0
     return float4(ao, surfaceDistance, 0.0, 1.0);
 }
 
+/// 4 by 4 texels kept on the surface by camera distance
 float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 {
     uint width;
@@ -161,23 +165,22 @@ float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 
     float2 texel = uv * lowSize - 0.5;
     float2 base = floor(texel);
-    float2 fraction = texel - base;
 
     float weighted = 0.0;
     float weightSum = 0.0;
     float nearestAo = 1.0;
     float nearestError = 1e30;
 
-    for (int y = 0; y < 2; ++y)
+    for (int y = -1; y <= 2; ++y)
     {
-        for (int x = 0; x < 2; ++x)
+        for (int x = -1; x <= 2; ++x)
         {
             float2 offset = float2(float(x), float(y));
             float4 texelValue = gOcclusion.SampleLevel((base + offset + 0.5) / lowSize, 0.0);
 
-            float2 bilinear = lerp(1.0 - fraction, fraction, offset);
+            float2 fromCentre = base + offset - texel;
             float error = abs(texelValue.g - pixelDistance);
-            float weight = bilinear.x * bilinear.y * exp(-error / tolerance);
+            float weight = exp(-dot(fromCentre, fromCentre) * 0.5 - error / tolerance);
 
             weighted += texelValue.r * weight;
             weightSum += weight;
@@ -196,27 +199,26 @@ float upsampleOcclusion(float2 uv, float pixelDistance, float tolerance)
 [shader("fragment")]
 float4 compositeMain(VSOutput input) : SV_Target0
 {
-    float3 sceneColor = gSceneColor.Sample(input.uv).rgb;
-    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
-
+    float depth = gDepth.Sample(input.uv).r;
     uint renderMode = uint(gParams.misc.x);
     bool aoOnly = (renderMode == 15);
 
-    // fwidth before any early return
-    float depth = gDepth.Sample(input.uv).r;
+    if (isFarDepth(depth))
+    {
+        float3 sceneColor = aoOnly ? float3(1.0, 1.0, 1.0) : gSceneColor.Sample(input.uv).rgb;
+        return float4(sceneColor, 1.0);
+    }
+
+    float4 normalRoughness = gNormalRoughness.Sample(input.uv);
+    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
+    {
+        float3 sceneColor = aoOnly ? float3(1.0, 1.0, 1.0) : gSceneColor.Sample(input.uv).rgb;
+        return float4(sceneColor, 1.0);
+    }
+
     float3 worldPosition = worldPositionFromDepth(input.uv, depth);
     float pixelDistance = length(worldPosition - gParams.misc.yzw);
     float tolerance = clamp(2.0 * fwidth(pixelDistance), pixelDistance * 0.01, pixelDistance * 0.25);
-
-    if (dot(normalRoughness.xyz, normalRoughness.xyz) < 1e-4)
-    {
-        return float4(aoOnly ? float3(1.0, 1.0, 1.0) : sceneColor, 1.0);
-    }
-
-    if (isFarDepth(depth))
-    {
-        return float4(aoOnly ? float3(1.0, 1.0, 1.0) : sceneColor, 1.0);
-    }
 
     float ao = upsampleOcclusion(input.uv, pixelDistance, tolerance);
 
@@ -225,6 +227,7 @@ float4 compositeMain(VSOutput input) : SV_Target0
         return float4(ao, ao, ao, 1.0);
     }
 
+    float3 sceneColor = gSceneColor.Sample(input.uv).rgb;
     // Clamped since blended surfaces scaled the opaque term by 1 - alpha
     float3 indirect = gIndirectDiffuse.Sample(input.uv).rgb;
     return float4(max(sceneColor - indirect + indirect * ao, float3(0.0, 0.0, 0.0)), 1.0);

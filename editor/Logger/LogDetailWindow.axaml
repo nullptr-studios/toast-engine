@@ -10,7 +10,7 @@
         x:DataType="vm:LogEntry"
         Width="700"
         MinHeight="260"
-        MaxHeight="640"
+        MaxHeight="900"
         SizeToContent="Height"
         CanResize="False"
         CanMaximize="False"
@@ -39,7 +39,8 @@
 			<Border Background="{Binding Severity, Converter={StaticResource SeverityBarColorConverter}}"
 			        Width="6"
 			        Height="28"
-			        CornerRadius="3" />
+			        CornerRadius="3"
+			        VerticalAlignment="Center"/>
 			<TextBlock Text="{Binding SeverityName}"
 			           FontFamily="FiraCode Nerd Font,Consolas,monospace"
 			           FontWeight="Bold"
@@ -61,18 +62,22 @@
 			<TextBlock Grid.Row="0"
 			           Grid.Column="0"
 			           Text="Timestamp"
+			           VerticalAlignment="Center"
 			           Foreground="{StaticResource TextMuted}" />
 			<TextBlock Grid.Row="0"
 			           Grid.Column="1"
 			           Text="{Binding AbsoluteTimestamp}"
+			           VerticalAlignment="Center"
 			           FontFamily="FiraCode Nerd Font,Consolas,monospace" />
 			<TextBlock Grid.Row="1"
 			           Grid.Column="0"
 			           Text="File"
+			           VerticalAlignment="Center"
 			           Foreground="{StaticResource TextMuted}" />
 			<TextBlock Grid.Row="1"
 			           Grid.Column="1"
 			           Text="{Binding FileLine}"
+			           VerticalAlignment="Center"
 			           FontFamily="FiraCode Nerd Font,Consolas,monospace"
 			           TextWrapping="Wrap" />
 		</Grid>
@@ -81,17 +86,56 @@
 		        CornerRadius="8"
 		        Padding="8"
 		        MaxHeight="300">
+				<ScrollViewer VerticalScrollBarVisibility="Auto">
+					<StackPanel>
+						<SelectableTextBlock Text="{Binding Message}"
+						                     TextWrapping="Wrap"
+						                     FontFamily="FiraCode Nerd Font,Consolas,monospace"
+						                     Foreground="{StaticResource Text}" />
+						<Border Background="{StaticResource Bg2}"
+						        Height="3"
+						        Width="150"
+						        CornerRadius="100"
+						        IsVisible="{Binding HasDetails}"
+						        Margin="0, 8, 0, 4"/>
+						<SelectableTextBlock Text="{Binding Details}"
+						                     IsVisible="{Binding HasDetails}"
+						                     TextWrapping="Wrap"
+						                     FontFamily="FiraCode Nerd Font,Consolas,monospace"
+						                     Foreground="{StaticResource TextMuted}" />
+					</StackPanel>
+				</ScrollViewer>
+		</Border>
+
+		<Border Background="{StaticResource Bg1}"
+		        CornerRadius="8"
+		        Padding="8"
+		        MaxHeight="240"
+		        IsVisible="{Binding HasBacktrace}">
 			<ScrollViewer VerticalScrollBarVisibility="Auto">
-				<SelectableTextBlock Text="{Binding Message}"
+				<SelectableTextBlock Text="{Binding Backtrace}"
 				                     TextWrapping="Wrap"
 				                     FontFamily="FiraCode Nerd Font,Consolas,monospace"
 				                     Foreground="{StaticResource Text}" />
 			</ScrollViewer>
 		</Border>
-
-		<Grid ColumnDefinitions="*,Auto,Auto,Auto"
+		<Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto"
 		      ColumnSpacing="8">
 			<Button Grid.Column="1"
+			        Click="OnCopyBacktrace"
+			        IsVisible="{Binding HasBacktrace}"
+			        CornerRadius="6"
+			        Background="{StaticResource Bg4}"
+			        HorizontalContentAlignment="Center">
+				<StackPanel Orientation="Horizontal"
+				            Spacing="4">
+					<LucideIcon Kind="Layers"
+					            Size="16"
+					            StrokeWidth="2.5" />
+					<TextBlock Text="Copy backtrace" />
+				</StackPanel>
+			</Button>
+			<Button Grid.Column="2"
 			        Click="OnCopyMessage"
 			        CornerRadius="6"
 			        Background="{StaticResource Bg4}"
@@ -104,7 +148,7 @@
 					<TextBlock Text="Copy message" />
 				</StackPanel>
 			</Button>
-			<Button Grid.Column="2"
+			<Button Grid.Column="3"
 			        Click="OnCopy"
 			        CornerRadius="6"
 			        Background="{StaticResource Bg4}"
@@ -117,7 +161,7 @@
 					<TextBlock Text="Copy" />
 				</StackPanel>
 			</Button>
-			<Button Grid.Column="3"
+			<Button Grid.Column="4"
 			        Classes="primary"
 			        Click="OnClose"
 			        CornerRadius="6"

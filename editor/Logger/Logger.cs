@@ -18,6 +18,7 @@ namespace editor.Logger;
 public class LogClient {
 	private TcpClient? m_client;
 	private CancellationTokenSource? m_cts;
+	private readonly Dictionary<string, string> m_backtraces = []; // listenLoop only
 	public event Action<List<LogEntry>>? OnLogReceived;
 
 	public void start() {
@@ -61,7 +62,9 @@ public class LogClient {
 						log_data.Filepath,
 						log_data.LineNumber,
 						log_data.Sink,
-						log_data.Message);
+						log_data.Message,
+						log_data.Details,
+						internBacktrace(log_data.Backtrace));
 					batch.Add(entry);
 				}
 
@@ -74,6 +77,13 @@ public class LogClient {
 		} finally {
 			m_client?.Close();
 		}
+	}
+
+	private string internBacktrace(string backtrace) {
+		if (backtrace.Length == 0) return backtrace;
+		if (m_backtraces.TryGetValue(backtrace, out var existing)) return existing;
+		m_backtraces.Add(backtrace, backtrace);
+		return backtrace;
 	}
 
 	private static async Task readExactlyAsync(

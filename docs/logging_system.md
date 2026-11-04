@@ -6,8 +6,8 @@
 >
 
 The logging system provides an easy way to write logs and visualize them after the program
-execution has finished. It contains a C++ implementation for producing messages, a Rust
-server for receiving, processing and storing messages, and a Rust TUI for easily reading
+execution has finished. It contains a C++ implementation for producing messages, a C++
+server for receiving, processing and storing messages, and a TUI for easily reading
 and searching for information after reading.
 
 To use this system you can simply just include `<Toast/Log.hpp>` and call any of the toast

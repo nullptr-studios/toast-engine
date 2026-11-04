@@ -3,25 +3,55 @@
 import voxel;
 import voxel_dda;
 import voxel_mesh_common;
+import voxel_task_payload;
 import lighting;
 
-groupshared QuadTaskPayload sPayload;
-/// Each thread lists its slices here before the scan gives them their place in the payload
-groupshared uint sStaged[kMaxEntries];
-groupshared uint sEntryBase[kTaskBricks];
-groupshared uint sQuadBase[kTaskBricks];
+/// gPush.bucket picks the list since the near and late near lists share these entry points
+static const uint kMeshEarly = 0u;
 
-struct CountSink : IQuadSink
+struct CameraBrickView : IBrickView
 {
-    [mutating]
-    void quad(uint packedQuad) { }
+    float4x4 voxelToClip;
+    /// Only the late pyramid is final so the early list never drops a brick for occlusion
+    bool testsPyramid;
+
+    bool sees(float3 low, float3 high)
+    {
+        if (outsideFrustum(voxelToClip, low, high))
+        {
+            return false;
+        }
+        return !(testsPyramid && boxHiddenByHiz(voxelToClip, low, high));
+    }
+}
+
+/// Brick of a cell for the n th thread so the bricks nearest the eye come first and early depth rejects the rest
+/// The axis the eye is farthest from the cell along orders slowest and an axis flips when the eye sits on its high side
+uint nearToFarBrick(uint linear, float3 eyeToCell)
+{
+    const float3 distance = abs(eyeToCell);
+    const uint major = distance.x >= distance.y ? (distance.x >= distance.z ? 0u : 2u) : (distance.y >= distance.z ? 1u : 2u);
+    const uint minor = distance.x < distance.y ? (distance.x < distance.z ? 0u : 2u) : (distance.y < distance.z ? 1u : 2u);
+    const uint middle = 3u - major - minor;
+
+    uint digits[3];
+    digits[major] = (linear >> 4) & 3u;
+    digits[middle] = (linear >> 2) & 3u;
+    digits[minor] = linear & 3u;
+    for (uint axis = 0u; axis < 3u; ++axis)
+    {
+        if (eyeToCell[axis] > 0.0)
+        {
+            digits[axis] = 3u - digits[axis];
+        }
+    }
+    return digits[0] | (digits[1] << 2) | (digits[2] << 4);
 }
 
 [shader("amplification")]
 [numthreads(kTaskBricks, 1, 1)]
 void quadTaskMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex)
 {
-    const uint brickInCell = group.y * kTaskBricks + thread;
     // The late near list fills downwards so its cursor ends on its first entry
     const uint entryIndex = (gPush.bucket == kMeshEarly ? gVoxelCellArgs[kCellOffsetsWord + kNearList]
                                                          : gVoxelCellArgs[kCellCursorsWord + kLateNearList]) +
@@ -29,88 +59,13 @@ void quadTaskMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex)
 
     const uint2 cell = gVoxelCells[entryIndex];
     const VoxelInstance instance = gVoxelInstances[cellEntryInstance(cell.x)];
-    const int3 brick = int3(brickOfCell(cell, brickInCell));
-    const uint brickEntry = brickEntryAt(instance.recordIndex, brick);
+    const float4 eye = mul(instance.worldToVoxel, float4(gCamera.position, 1.0));
+    const uint3 cellCoordinates = unpackCell(cell.y);
+    const float3 cellCenter = float3(cellCoordinates * kCoarseBricks * kBrickDim) + 0.5 * float(kCoarseBricks * kBrickDim);
+    const uint brickInCell = nearToFarBrick(group.y * kTaskBricks + thread, eye.xyz - cellCenter);
+    const int3 brick = int3(brickOfCell(cellCoordinates, brickInCell));
+    const CameraBrickView view = { mul(gCamera.viewProjection, instance.voxelToWorld), gPush.bucket != kMeshEarly && gPush.hizLevels > 0u };
 
-    const int3 brickMin = brick * int(kBrickDim);
-    const float3 brickLow = float3(brickMin);
-    const bool visible = (brickEntry & 3u) != kTagEmpty &&
-                         !outsideFrustum(mul(gCamera.viewProjection, instance.voxelToWorld), brickLow, brickLow + float(kBrickDim));
-
-    const uint staged = thread * kBrickEntries;
-    uint entries = 0u;
-    uint quads = 0u;
-    if (visible)
-    {
-        uint occupancy[16];
-        loadBrickSlices(brickEntry, occupancy);
-        const float3 camera = mul(instance.worldToVoxel, float4(gCamera.position, 1.0)).xyz;
-
-        CountSink sink;
-        for (uint direction = 0u; direction < 6u; ++direction)
-        {
-            const uint axis = direction >> 1;
-            const bool positive = (direction & 1u) == 0u;
-            if (!sliceFacesCamera(camera, brickMin, axis, positive, positive ? 0u : 7u))
-            {
-                continue;
-            }
-
-            const uint neighbourEntry = brickEntryAt(instance.recordIndex, brick + directionStep(direction));
-            uint neighbour[16];
-            loadBrickSlices(neighbourEntry, neighbour);
-
-            uint faces[16];
-            exposedFaces(occupancy, neighbour, direction, faces);
-            for (uint slice = 0u; slice < 8u; ++slice)
-            {
-                if (!sliceFacesCamera(camera, brickMin, axis, positive, slice))
-                {
-                    continue;
-                }
-                uint rows[8];
-                sliceRows(faces, axis, slice, rows);
-                const uint count = greedySlice(rows, direction, slice, brickInCell, sink);
-                if (count != 0u)
-                {
-                    sStaged[staged + entries] = (direction * 8u + slice) | (count << 6);
-                    ++entries;
-                    quads += count;
-                }
-            }
-        }
-    }
-    sEntryBase[thread] = entries;
-    sQuadBase[thread] = quads;
-    GroupMemoryBarrierWithGroupSync();
-
-    if (thread == 0u)
-    {
-        uint entryTotal = 0u;
-        uint quadTotal = 0u;
-        for (uint i = 0u; i < kTaskBricks; ++i)
-        {
-            const uint threadEntries = sEntryBase[i];
-            const uint threadQuads = sQuadBase[i];
-            sEntryBase[i] = entryTotal;
-            sQuadBase[i] = quadTotal;
-            entryTotal += threadEntries;
-            quadTotal += threadQuads;
-        }
-        sPayload.entryIndex = entryIndex;
-        sPayload.entryCount = entryTotal;
-        sPayload.quadCount = quadTotal;
-    }
-    GroupMemoryBarrierWithGroupSync();
-
-    uint firstQuad = sQuadBase[thread];
-    for (uint i = 0u; i < entries; ++i)
-    {
-        const uint slice = sStaged[staged + i];
-        sPayload.entries[sEntryBase[thread] + i] = brickInCell | ((slice & 63u) << 6) | (firstQuad << 12);
-        firstQuad += slice >> 6;
-    }
-    GroupMemoryBarrierWithGroupSync();
-
+    buildTaskPayload(thread, brickInCell, entryIndex, instance.recordIndex, brick, eye, view);
     DispatchMesh((sPayload.quadCount + kMeshletQuads - 1u) / kMeshletQuads, 1u, 1u, sPayload);
 }

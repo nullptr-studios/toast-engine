@@ -68,12 +68,25 @@ private:
 
 	std::unordered_set<int> m_keys_down;
 	std::unordered_set<int> m_mouse_down;
+	/// Presses since the last tick so a tap released before the tick still samples down once
+	std::unordered_set<int> m_keys_pressed;
+	std::unordered_set<int> m_mouse_pressed;
 	ModifierKey m_mods = ModifierKey::none;
 
 	glm::vec2 m_mouse_position {0.0f};
 	glm::vec2 m_prev_mouse_position {0.0f};
 	glm::vec2 m_mouse_delta {0.0f};
 	glm::vec2 m_scroll {0.0f};
+
+	/// Every event still arrives and only gameplay stops seeing what ImGui takes
+	bool m_overlay_cursor = false;
+	bool m_overlay_mouse = false;
+	bool m_overlay_keyboard = false;
+	bool m_game_mouse_locked = false;
+
+	/// Added to raw positions so a locked cursor resumes where the game left it
+	glm::vec2 m_cursor_offset {0.0f};
+	bool m_resync_cursor = false;
 
 	glm::vec2 m_viewport_position {0.0f};
 	glm::vec2 m_viewport_size {0.0f};

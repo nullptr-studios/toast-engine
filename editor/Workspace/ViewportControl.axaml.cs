@@ -30,6 +30,8 @@ public partial class ViewportControl : UserControl {
 	private const double PanScale = 40.0;
 	private const float PinchZoomScale = 100f;
 	private const float WheelZoomScale = 20f;
+	private static readonly bool s_forceViewportReadback =
+		Environment.GetEnvironmentVariable("TOAST_VIEWPORT_READBACK") == "1";
 
 	public static readonly StyledProperty<bool> PlayModeProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(PlayMode));
@@ -43,6 +45,8 @@ public partial class ViewportControl : UserControl {
 	private static readonly MethodInfo? s_setCursor =
 		typeof(ITopLevelImpl).GetMethod(
 			"SetCursor", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+	private static IntPtr s_x11Display;
+	private static bool s_x11DisplayChecked;
 
 	private ulong m_trackpadHandle;
 	private int m_trackpadX = int.MinValue, m_trackpadY, m_trackpadW, m_trackpadH;
@@ -54,6 +58,7 @@ public partial class ViewportControl : UserControl {
 
 	private bool m_captured;
 	private bool m_gameInput;
+	private bool m_overlayCursor;
 	private readonly HashSet<int> m_heldButtons = [];
 	private readonly HashSet<Key> m_heldKeys = [];
 	private bool m_mouseLockRequested;
@@ -132,7 +137,8 @@ public partial class ViewportControl : UserControl {
 	public static bool AnyEditorFlying => s_attached.Any(v => v.m_editorFlyActive);
 	private bool GameOwnsInput => PlayMode && !CanControlEditorCamera; 
 	private bool ShouldForward => GameOwnsInput ? m_gameInput : IsFocused;
-	private bool ShouldForwardPointer => !GameOwnsInput || m_gameInput;
+	// The overlay needs the pointer and the input system drops what ImGui takes
+	private bool ShouldForwardPointer => !GameOwnsInput || m_gameInput || m_overlayCursor;
 	private bool MouseLocked => m_captured && !m_editorFlyActive;
 	
 	protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change) {
@@ -143,6 +149,7 @@ public partial class ViewportControl : UserControl {
 			ReleaseHeldInput();
 			m_gameInput = false;
 			m_mouseLockRequested = false;
+			m_overlayCursor = false;
 			UpdateCapture();
 		} else if (m_mouseLockRequested) {
 			// the game locks the mouse as it starts
@@ -179,10 +186,18 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void UpdateCapture() {
-		var capture = m_editorFlyActive || (GameOwnsInput && m_gameInput && m_mouseLockRequested);
+		var capture = m_editorFlyActive || (GameOwnsInput && m_gameInput && m_mouseLockRequested && !m_overlayCursor);
 		if (capture == m_captured) return;
 		if (capture) BeginCapture();
 		else ReleaseCapture();
+	}
+
+	// The debug overlay frees the cursor under a game lock
+	private void SyncOverlayCursor() {
+		var owned = PlayMode && ToastEngine.DebugOverlayOwnsCursor;
+		if (owned == m_overlayCursor) return;
+		m_overlayCursor = owned;
+		UpdateCapture();
 	}
 
 	private void BeginCapture() {
@@ -195,7 +210,10 @@ public partial class ViewportControl : UserControl {
 		// can't steal clicks or focus
 		m_pointer?.Capture(Surface);
 		ForceHiddenCursor();
-		if (m_editorFlyActive) return;
+		if (m_editorFlyActive) {
+			RecenterLockedPointer();
+			return;
+		}
 
 		m_lockPoint = m_lastPointerPoint;
 		// resume from what the engine last saw or delta cursor actions read the gap as a flick
@@ -205,18 +223,45 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void RecenterLockedPointer() {
-		if (!OperatingSystem.IsWindows()) return;
+		if (!OperatingSystem.IsWindows() && !OperatingSystem.IsLinux()) return;
 		var center = new Point(Bounds.Width / 2, Bounds.Height / 2);
-		if (Math.Abs(m_lockPoint.X - center.X) < Bounds.Width / 4 &&
-		    Math.Abs(m_lockPoint.Y - center.Y) < Bounds.Height / 4) return;
+		var point = m_editorFlyActive ? m_lastFlyPoint : m_lockPoint;
+		if (Math.Abs(point.X - center.X) < Bounds.Width / 4 &&
+		    Math.Abs(point.Y - center.Y) < Bounds.Height / 4) return;
 
 		var screen = this.PointToScreen(center);
-		if (SetCursorPos(screen.X, screen.Y)) m_lockPoint = center;
+		if (!WarpPointer(screen.X, screen.Y)) return;
+		if (m_editorFlyActive) m_lastFlyPoint = center;
+		else m_lockPoint = center;
+	}
+
+	private static bool WarpPointer(int x, int y) {
+		if (OperatingSystem.IsWindows()) return SetCursorPos(x, y);
+		if (!OperatingSystem.IsLinux()) return false;
+		if (!s_x11DisplayChecked) {
+			s_x11DisplayChecked = true;
+			try { s_x11Display = XOpenDisplay(IntPtr.Zero); }
+			catch (DllNotFoundException) { return false; }
+			catch (EntryPointNotFoundException) { return false; }
+		}
+		if (s_x11Display == IntPtr.Zero) return false;
+		XWarpPointer(s_x11Display, IntPtr.Zero, XDefaultRootWindow(s_x11Display), 0, 0, 0, 0, x, y);
+		XFlush(s_x11Display);
+		return true;
 	}
 
 	[LibraryImport("user32.dll", EntryPoint = "SetCursorPos")]
 	[return: MarshalAs(UnmanagedType.Bool)]
 	private static partial bool SetCursorPos(int x, int y);
+	[LibraryImport("libX11.so.6", EntryPoint = "XOpenDisplay")]
+	private static partial IntPtr XOpenDisplay(IntPtr name);
+	[LibraryImport("libX11.so.6", EntryPoint = "XDefaultRootWindow")]
+	private static partial IntPtr XDefaultRootWindow(IntPtr display);
+	[LibraryImport("libX11.so.6", EntryPoint = "XWarpPointer")]
+	private static partial int XWarpPointer(IntPtr display, IntPtr source, IntPtr destination,
+		int sourceX, int sourceY, uint sourceWidth, uint sourceHeight, int destinationX, int destinationY);
+	[LibraryImport("libX11.so.6", EntryPoint = "XFlush")]
+	private static partial int XFlush(IntPtr display);
 
 	private void ReleaseCapture() {
 		m_captured = false;
@@ -328,6 +373,7 @@ public partial class ViewportControl : UserControl {
 
 	private void OnWindowDeactivated(object? sender, EventArgs e) {
 		// alt-tabbing
+		if (m_editorFlyActive) EndEditorFly();
 		ReleaseHeldInput();
 		ReleaseFlyKeys();
 	}
@@ -338,6 +384,8 @@ public partial class ViewportControl : UserControl {
 	}
 
 	private void OnTick(object? sender, EventArgs e) {
+		SyncOverlayCursor();
+
 		// re-grab the pointer even while the mouse sits still
 		if (m_captured && m_pointer is { } pointer && pointer.Captured != Surface) {
 			pointer.Capture(Surface);
@@ -373,11 +421,15 @@ public partial class ViewportControl : UserControl {
 
 		SendResizeIfChanged();
 
-		if (m_shared is null) {
-			m_shared = new SharedViewportPresenter(SurfaceHost, m_engine);
+		if (m_shared is null && !GraphicsDebuggerDetector.IsAttached && !s_forceViewportReadback) {
+			m_shared = new SharedViewportPresenter(
+				SurfaceHost, m_engine,
+				() => (DataContext as WorkspaceViewModel)?.NotePresentedFrame(),
+				() => m_frameLoopActive && IsEffectivelyVisible && OwnsEngineFrame
+			);
 			m_shared.Start();
 		}
-		if (!m_shared.Failed) {
+		if (m_shared is { Failed: false }) {
 			if (!m_shared.Active) return;
 			if (Surface.IsVisible) {
 				Surface.IsVisible = false;
@@ -389,8 +441,10 @@ public partial class ViewportControl : UserControl {
 		}
 		Surface.IsVisible = true;
 
-		var peek =m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
+		var peek = m_engine.TryGetViewportFrame(IntPtr.Zero, 0, out var dims);
 		if (peek == 0 || dims.width == 0 || dims.height == 0)
+			return;
+		if (m_bitmap is not null && dims.frame_id == m_lastFrameId)
 			return;
 
 		if (m_bitmap is null
@@ -594,6 +648,7 @@ public partial class ViewportControl : UserControl {
 			m_lastFlyPoint = point;
 			if (m_engine is not null && (dx != 0f || dy != 0f))
 				Events.Send(new EditorCameraLook { Dx = dx, Dy = dy });
+			RecenterLockedPointer();
 			return;
 		}
 
@@ -718,7 +773,7 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
-		if (!ShouldForward || m_engine is null) return;
+		if ((!ShouldForward && !m_overlayCursor) || m_engine is null) return;
 
 		Events.Send(new WindowMouseScroll {
 			X = (float)e.Delta.X,
@@ -793,9 +848,12 @@ public partial class ViewportControl : UserControl {
 		SendKey(e, e.RoutedEvent == KeyDownEvent ? ActionPressed : ActionReleased);
 	}
 
+	// F3 still reaches the engine after the backtick freed the mouse
+	private bool IsOverlayKey(Key key) => PlayMode && key == Key.F3;
+
 	private bool SendKey(KeyEventArgs e, int action) {
 		var wasHeld = action == ActionReleased && m_heldKeys.Remove(e.Key);
-		if ((!wasHeld && !ShouldForward) || m_engine is null) return false;
+		if ((!wasHeld && !ShouldForward && !IsOverlayKey(e.Key)) || m_engine is null) return false;
 		if (action == ActionPressed) m_heldKeys.Add(e.Key);
 
 		var (key, _) = MapKey(e.Key);

@@ -13,6 +13,7 @@
 #include "editor_camera.hpp"
 #include "gizmo_layout.hpp"
 #include "node_owner.hpp"
+#include "ruler.hpp"
 #include "workspace_history.hpp"
 
 #include <atomic>
@@ -177,8 +178,6 @@ protected:
 	auto gizmoOrientation() const -> glm::quat;
 	[[nodiscard]]
 	auto gizmoScale() const -> float;
-	[[nodiscard]]
-	auto gizmoInteractionAllowed() const -> bool;
 
 	[[nodiscard]]
 	auto collectSizeHandles() const -> std::pair<std::array<SizeHandlePoint, k_max_size_handles>, uint32_t>;
@@ -222,6 +221,8 @@ protected:
 		float plane = 0.0f;          ///< Where along axis the mouse ray is cut to find the rectangle
 		int32_t sign = 1;            ///< Which way is out of the face
 		int32_t depth = 1;
+		int32_t snap_plane = 1;
+		int32_t snap_depth = 1;
 		glm::ivec3 anchor {0};
 		glm::ivec3 current {0};
 		glm::ivec3 face_min {std::numeric_limits<int32_t>::min()};    ///< Extrude keeps the footprint on its face
@@ -253,8 +254,34 @@ protected:
 	auto pickNodeUnderMouse() -> Box<Node>;
 	std::optional<glm::vec2> m_pick_press;
 
+	struct SceneHit {
+		Box<Node> node;
+		float t = 0.0f;
+		glm::vec3 position {0.0f};
+	};
+
+	/// Nearest voxel or mesh surface under the mouse
+	[[nodiscard]]
+	auto pickSceneHit() -> std::optional<SceneHit>;
+
+	Ruler m_ruler;
+	bool m_ruler_axis_lock = false;
+	bool m_ruler_hover_dirty = true;
+	std::optional<glm::vec2> m_ruler_press;
+	glm::vec2 m_ruler_hover_mouse {-1.0f};
+	glm::vec3 m_ruler_hover_eye {0.0f};
+	glm::vec3 m_ruler_hover_forward {0.0f};
+	event::RulerChanged m_ruler_sent;
+
+	/// Surface point under the mouse or the ground plane, snapped like the translate tool
+	[[nodiscard]]
+	auto rulerPoint() -> std::optional<glm::vec3>;
+	auto rulerMouseButton(int button, int action, int mods) -> bool;
+	void rulerKey(int key, int action);
+	void rulerTick();
+
 	auto retypeNode(Box<Node>& target, std::string_view type, bool keep_fields) -> Box<Node>;
-	void promoteNode(Box<Node>& target, std::string_view path);
+	auto promoteNode(Box<Node>& target, std::string_view path) -> Box<Node>;
 
 	template<typename F>
 	void recordHistory(WorkspaceHistory::Context context, F&& mutation) {
@@ -326,5 +353,8 @@ public:
 	/// @note See docs/renderer.md RenderFrame pattern
 	[[nodiscard]]
 	auto gizmoRenderState() const -> GizmoRenderState;
+
+	/// Rids of the focused node and its descendants for the selection outline
+	void collectOutlinedRids(std::vector<uint64_t>& rids) const;
 };
 }

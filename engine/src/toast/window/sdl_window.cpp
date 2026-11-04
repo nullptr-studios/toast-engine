@@ -1,9 +1,6 @@
 #include "sdl_window.hpp"
 
 #include <SDL3/SDL_vulkan.h>
-#include <glm/glm.hpp>
-#include <string_view>
-#include <tracy/Tracy.hpp>
 
 namespace {
 
@@ -56,9 +53,19 @@ void forwardUtf8(std::string_view text) {
 
 namespace toast {
 
+auto SDLWindow::queryDisplayHdr(SDL_Window* window) -> DisplayHdr {
+	const SDL_PropertiesID props = SDL_GetWindowProperties(window);
+	return {
+	  .enabled = SDL_GetBooleanProperty(props, SDL_PROP_WINDOW_HDR_ENABLED_BOOLEAN, false),
+	  .sdr_white = SDL_GetFloatProperty(props, SDL_PROP_WINDOW_SDR_WHITE_LEVEL_FLOAT, 1.0f),
+	  .headroom = SDL_GetFloatProperty(props, SDL_PROP_WINDOW_HDR_HEADROOM_FLOAT, 1.0f),
+	};
+}
+
 SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_t flags) {
 	ZoneScoped;
-	TOAST_ASSERT(SDL_Init(SDL_INIT_VIDEO) == true, "Window", "SDL cannot be initialized");
+	const bool sdl_initialized = SDL_Init(SDL_INIT_VIDEO);
+	TOAST_ASSERT(sdl_initialized, "Window", "SDL cannot be initialized");
 
 	if ((flags & SDL_WINDOW_VULKAN) != 0) {
 		const char* video_driver = SDL_GetCurrentVideoDriver();
@@ -79,7 +86,13 @@ SDLWindow::SDLWindow(const char* title, unsigned width, unsigned height, uint64_
 		return false;
 	});
 	m.event_listener.subscribe<event::WindowMouseLock>([this](const event::WindowMouseLock& e) {
-		applyMouseLock(e.locked);
+		m.lock_requested = e.locked;
+		applyMouseLock(m.lock_requested && !m.overlay_cursor);
+		return false;
+	});
+	m.event_listener.subscribe<event::DebugOverlayCursor>([this](const event::DebugOverlayCursor& e) {
+		m.overlay_cursor = e.owned;
+		applyMouseLock(m.lock_requested && !m.overlay_cursor);
 		return false;
 	});
 
@@ -107,11 +120,26 @@ auto SDLWindow::nativeHandle() const -> void* {
 void SDLWindow::pollEvents() {
 	ZoneScoped;
 
+	// Motion is coalesced into one position per poll since every listener hit tests it
+	// Flushed before any other event so a click still lands where the cursor was
+	std::optional<glm::vec2> pending_mouse;
+	const auto flush_mouse = [&pending_mouse] {
+		if (pending_mouse) {
+			event::send<event::WindowMousePosition>(pending_mouse->x, pending_mouse->y);
+			pending_mouse.reset();
+		}
+	};
+
+	const SDL_WindowID window_id = SDL_GetWindowID(m.sdl_window.get());
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		ZoneScopedN("SDLWindow::event");
 
-		if (event.window.windowID != SDL_GetWindowID(m.sdl_window.get())) {
+		// Quit carries no window id
+		if (event.type != SDL_EVENT_QUIT && event.window.windowID != window_id) {
 			continue;
+		}
+		if (event.type != SDL_EVENT_MOUSE_MOTION) {
+			flush_mouse();
 		}
 
 		switch (event.type) {
@@ -152,9 +180,9 @@ void SDLWindow::pollEvents() {
 				const float density = SDL_GetWindowPixelDensity(m.sdl_window.get());
 				if (m.cursor_locked) {
 					m.virtual_mouse_position += glm::vec2 {event.motion.xrel, event.motion.yrel} * density;
-					event::send<event::WindowMousePosition>(m.virtual_mouse_position.x, m.virtual_mouse_position.y);
+					pending_mouse = m.virtual_mouse_position;
 				} else {
-					event::send<event::WindowMousePosition>(event.motion.x * density, event.motion.y * density);
+					pending_mouse = glm::vec2 {event.motion.x, event.motion.y} * density;
 				}
 				break;
 			}
@@ -200,6 +228,12 @@ void SDLWindow::pollEvents() {
 				break;
 			}
 
+			case SDL_EVENT_WINDOW_HDR_STATE_CHANGED: {
+				const DisplayHdr hdr = queryDisplayHdr(m.sdl_window.get());
+				event::send<event::WindowHdr>(hdr.enabled, hdr.sdr_white, hdr.headroom);
+				break;
+			}
+
 			case SDL_EVENT_WINDOW_FOCUS_GAINED: {
 				event::send<event::WindowFocus>(true);
 				break;
@@ -213,6 +247,7 @@ void SDLWindow::pollEvents() {
 			default: break;
 		}
 	}
+	flush_mouse();
 }
 
 void SDLWindow::swapFramebuffers() {

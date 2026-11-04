@@ -49,6 +49,11 @@ auto toast_settings_get_desc(int32_t index, toast_setting_desc* out) noexcept ->
 	return 1;
 }
 
+auto toast_settings_get_asset_type(int32_t index) noexcept -> const char* {
+	const Entry* entry = entryAt(index);
+	return entry != nullptr ? entry->meta.asset_type.c_str() : "";
+}
+
 auto toast_settings_get_option(int32_t index, int32_t option) noexcept -> const char* {
 	const Entry* entry = entryAt(index);
 	if (entry == nullptr || option < 0 || static_cast<size_t>(option) >= entry->meta.options.size()) {

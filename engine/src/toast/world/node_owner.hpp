@@ -163,6 +163,10 @@ protected:
 
 	/// Copies reflected field values from the serialized BasicNode onto the live node; skips fields absent from NodeInfo
 	void applyFields(Node& node, const assets::Prefab::BasicNode& data);
+	/// applyFields without the rename
+	void applyFieldValues(Node& node, const assets::Prefab::BasicNode& data);
+	/// Interior overrides of a nested instance chunk onto the nodes of the instance just built from it
+	void applyInteriorOverrides(Node& instance_root, const assets::Prefab::BasicNode& chunk);
 
 	/**
 	 * @brief Restores edited Lua script variables saved in the prefab

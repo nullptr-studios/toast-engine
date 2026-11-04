@@ -1,6 +1,7 @@
-﻿cmake_minimum_required(VERSION 3.21)
+﻿cmake_minimum_required(VERSION 3.28)
 project(my_game CXX)
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 if (NOT TOAST_PATH)
   message(FATAL_ERROR "TOAST_PATH not defined! Please pass -DTOAST_PATH=\"path/to/toast/engine\"")
@@ -68,6 +69,18 @@ target_compile_options(my_game PRIVATE
 
 if (MSVC)
   target_compile_options(my_game PRIVATE /MP)
+endif ()
+
+find_program(CLANG_FORMAT NAMES clang-format)
+if (CLANG_FORMAT AND EXISTS "${TOAST_PATH}/.clang-format")
+  file(GLOB_RECURSE FORMAT_FILES "src/*.h" "src/*.hpp" "src/*.cpp" "src/*.inl")
+  add_custom_target(my_game_format
+          COMMAND "${CLANG_FORMAT}" -i --style=file:${TOAST_PATH}/.clang-format ${FORMAT_FILES}
+          WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+          COMMENT "Formatting game sources"
+          VERBATIM
+  )
+  add_dependencies(my_game my_game_format)
 endif ()
 
 target_link_libraries(my_game PUBLIC toast_engine)

@@ -25,6 +25,7 @@
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/voxel/voxel_volume.hpp>
+#include <tracy/Tracy.hpp>
 #include <unordered_set>
 #include <vector>
 
@@ -223,6 +224,7 @@ inline auto reachesThroughMaterial(const voxel::Volume& volume, const glm::vec3&
 [[nodiscard]]
 inline auto reachableMaterial(const voxel::Volume& volume, const glm::vec3& start, const glm::vec3& end, float radius)
     -> std::unordered_set<uint64_t> {
+	ZoneScopedN("physics::ReachableMaterial");
 	std::unordered_set<uint64_t> out;
 
 	// voxel closest to the hit
@@ -278,7 +280,7 @@ inline auto damageReaches(
 
 [[nodiscard]]
 constexpr auto hitBreaks(const voxel::PhysicalMaterial& material, float energy_density, Hardness max_hardness) -> bool {
-	return material.breakableBy(max_hardness) && material.toughness <= energy_density;
+	return material.breakableBy(max_hardness) /* && material.toughness <= energy_density */;
 }
 
 [[nodiscard]]
@@ -327,7 +329,7 @@ inline auto fractureCandidates(
 		FractureCandidate candidate {
 		  .distance = distance,
 		  .cost = voxelBreakEnergy(material),
-		  .breakable = material.breakableBy(request.max_hardness),
+		  .breakable = hitBreaks(material, request.energy_density, request.max_hardness),
 		};
 
 		if (distance <= radius) {
@@ -461,6 +463,7 @@ inline auto planCrater(
     const voxel::Volume& volume, const voxel::Palette& palette, const voxel::MaterialLibrary& materials,
     const FractureRequest& request
 ) -> Crater {
+	ZoneScopedN("physics::PlanCrater");
 	Crater out {
 	  .start = request.point,
 	  .end = request.point,
@@ -472,7 +475,7 @@ inline auto planCrater(
 
 	// a hit never breaks anything of if the voxel is too tough or too hard
 	const std::optional<voxel::PhysicalMaterial> hit = hitMaterial(volume, palette, materials, request.point, request.radius);
-	if (not hit.has_value() || not hit->breakableBy(request.max_hardness)) {
+	if (not hit.has_value() || not hitBreaks(*hit, request.energy_density, request.max_hardness)) {
 		return out;
 	}
 

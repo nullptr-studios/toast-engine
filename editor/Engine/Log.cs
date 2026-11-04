@@ -31,6 +31,14 @@ public static partial class Log {
 		Dispatch(toast_critical, message, Path.GetFileName(fileName), (uint)lineNumber);
 	}
 
+	public static void InvalidateBacktraceCache() {
+		try {
+			toast_log_invalidate_backtraces();
+		} catch (DllNotFoundException) {
+			// Nothing was resolved without the engine
+		}
+	}
+
 	// Fallback to the console if toast-engine is not loaded
 	private static void Dispatch(
 		Action<string, string, string, uint> sink, string message, string fileName, uint lineNumber) {
@@ -56,4 +64,7 @@ public static partial class Log {
 
 	[LibraryImport("toast_engine", StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_critical(string sink, string message, string fileName, uint lineNumber);
+
+	[LibraryImport("toast_engine")]
+	private static partial void toast_log_invalidate_backtraces();
 }

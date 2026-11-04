@@ -8,19 +8,12 @@
 #include "wave_executor.hpp"
 #include "workspace.hpp"
 
-#include <algorithm>
 #include <charconv>
 #include <future>
-#include <memory>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/scripting/lua_state.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/thread_pool.hpp>
 #include <toast/world/workspace_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
 
 namespace toast {
 
@@ -514,7 +507,38 @@ void INodeOwner::applyFields(Node& node, const assets::Prefab::BasicNode& data) 
 
 	std::string proper_name = snakeToNormalCase(data.name);
 	node.name(proper_name);
+	applyFieldValues(node, data);
+}
 
+void INodeOwner::applyInteriorOverrides(Node& instance_root, const assets::Prefab::BasicNode& chunk) {
+	ZoneScoped;
+	for (const auto& entry : chunk.interior) {
+		Node* target = nullptr;
+		auto find = [&](this auto&& self, Node& node) -> void {
+			for (auto& child : node.m_children) {
+				if (target != nullptr) {
+					return;
+				}
+				if (child->uid().data() == entry.target.data()) {
+					target = &*child;
+					return;
+				}
+				self(*child);
+			}
+		};
+		find(instance_root);
+		// The inner prefab dropped that node since this file was saved
+		if (target == nullptr) {
+			continue;
+		}
+		assets::Prefab::BasicNode values;
+		values.fields = entry.fields;
+		applyFieldValues(*target, values);
+	}
+}
+
+void INodeOwner::applyFieldValues(Node& node, const assets::Prefab::BasicNode& data) {
+	ZoneScoped;
 	const NodeInfo* info = node.info();
 	if (not info) {
 		return;
@@ -648,6 +672,37 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 #endif
 			root = node;
 		}
+	}
+
+	for (size_t i = 0; i < nodes.size(); ++i) {
+		const NodeInfo* info = nodes[i]->info();
+		if (not info) {
+			continue;
+		}
+		const auto& data = file->nodes[i];
+		info->forEachBaseType([&](const NodeInfo& level) {
+			for (const auto& field : level.all_fields) {
+				if (not field.isNodeReference() || not field.set || field.name == "m_parent" || field.hasAttribute("ReadOnly") ||
+				    field.hasAttribute("NoSerialize")) {
+					continue;
+				}
+
+				const auto stored = data.find(field.name);
+				const auto* uid = stored.has_value() ? std::any_cast<UID>(&stored->value) : nullptr;
+				if (uid == nullptr || uid->data() == 0) {
+					continue;
+				}
+
+				const auto target = uid_map.find(uid->data());
+				if (target == uid_map.end()) {
+					TOAST_WARN(
+					    "World", "Field '{}' of '{}' references UID {} which is not in this prefab", field.name, nodes[i]->name(), *uid
+					);
+					continue;
+				}
+				field.set(&*nodes[i], std::any {target->second});
+			}
+		});
 	}
 
 	// Signals are restored after every node has been allocated and indexed, so connection targets
@@ -895,6 +950,7 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 		}
 
 		applyFields(*sub_root, *chunk);
+		applyInteriorOverrides(*sub_root, *chunk);
 		sub_root->m_source_prefab = sub;
 
 		// Everything below an instance root is interior to that instance

@@ -48,11 +48,17 @@ public static class AssetDatabase {
 	}
 
 	public static void UpdateArtworkDatabase(
-		string sourceVirtualPath, string hash, IEnumerable<string> outputUids) {
+		string sourceVirtualPath, string hash, IEnumerable<ArtworkOutput> artworkOutputs) {
 		var db = LoadArtworkDatabase();
 
 		var outputs = new JsonArray();
-		foreach (var uid in outputUids) outputs.Add(uid);
+		foreach (var output in artworkOutputs)
+			outputs.Add(new JsonObject {
+				["uid"] = output.Uid,
+				["name"] = output.Name,
+				["hash"] = output.Hash,
+				["uri"] = output.Uri
+			});
 
 		db[sourceVirtualPath] = new JsonObject {
 			["last_hash"] = hash,
@@ -60,6 +66,27 @@ public static class AssetDatabase {
 		};
 
 		SaveArtworkDatabase(db);
+	}
+
+	public static IReadOnlyList<ArtworkOutput> GetArtworkOutputs(string sourceVirtualPath) {
+		if (LoadArtworkDatabase()[sourceVirtualPath] is not JsonObject entry) return [];
+		return ReadOutputs(entry);
+	}
+
+	private static List<ArtworkOutput> ReadOutputs(JsonObject entry) {
+		var result = new List<ArtworkOutput>();
+		if (entry["outputs"] is not JsonArray outputs) return result;
+
+		foreach (var node in outputs)
+			if (node is JsonObject obj && obj["uid"]?.GetValue<string>() is { } uid)
+				result.Add(new ArtworkOutput(uid, obj["name"]?.GetValue<string>() ?? "", obj["hash"]?.GetValue<string>(),
+					obj["uri"]?.GetValue<string>() ?? ""));
+			else if (node?.GetValue<string>() is { } legacyUid) {
+				var uri = TryResolve(legacyUid, out var path, out _) ? path : "";
+				result.Add(new ArtworkOutput(legacyUid, Path.GetFileName(uri), null, uri));
+			}
+
+		return result;
 	}
 
 	// full re-scan of all .meta files; writes one <db>.json per content database + core.json
@@ -357,9 +384,8 @@ public static class AssetDatabase {
 			return;
 		}
 
-		var uids = (entry["outputs"] as JsonArray)?
-			.Select(n => n!.GetValue<string>())
-			.ToList() ?? [];
+		var previous = ReadOutputs(entry);
+		var uids = previous.Select(o => o.Uid).ToList();
 
 		// find where the existing outputs live + the settings they were imported with
 		var (destDir, textureSection, psdSection, gltfSection, voxSection) = LocateOutputs(uids);
@@ -379,15 +405,10 @@ public static class AssetDatabase {
 			_ => new TextureImporter(textureSettings)
 		};
 
-		var ctx = new ImportContext {
-			DestDir = destDir ?? ProjectContext.AssetsPath,
-			SourceVirtualPath = sourceVirtualPath,
-			ReuseUids = uids
-		};
-
 		log($"Reimporting {sourceVirtualPath}...");
-		var newUids = await importer.Import(realSource, ctx, log, progress);
-		UpdateArtworkDatabase(sourceVirtualPath, ComputeHash(realSource), newUids);
+		var outputs = await ArtworkImport.RunAsync(importer, realSource, sourceVirtualPath,
+			destDir ?? ProjectContext.AssetsPath, previous, log, progress);
+		UpdateArtworkDatabase(sourceVirtualPath, ComputeHash(realSource), outputs);
 		log("Reimport done.");
 	}
 
@@ -615,7 +636,8 @@ public static class AssetDatabase {
 			if (db[key] is not JsonObject entry) continue;
 			if (entry["outputs"] is not JsonArray outputs) continue;
 			for (var i = outputs.Count - 1; i >= 0; i--) {
-				if (outputs[i]?.GetValue<string>() is not { } output || !targets.Contains(output)) continue;
+				var output = outputs[i] is JsonObject record ? record["uid"]?.GetValue<string>() : outputs[i]?.GetValue<string>();
+				if (output is null || !targets.Contains(output)) continue;
 				outputs.RemoveAt(i);
 				changed = true;
 			}

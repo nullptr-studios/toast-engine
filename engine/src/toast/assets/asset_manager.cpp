@@ -7,9 +7,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <sstream>
-#include <toast/log.hpp>
 #include <toast/project_settings.hpp>
-#include <tracy/Tracy.hpp>
+#include <toast/voxel/brush_composer.hpp>
 
 namespace assets {
 
@@ -787,6 +786,9 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 			event::send<event::MaterialAssetReloaded>(asset.uid);
 		} else if (type == "data" || AssetRegistry::hasSchemaToml(type)) {
 			event::send<event::DataAssetReloaded>(asset.uid);
+		}
+		if (type == "node" || type == "script" || type == "voxel_model" || type == "voxel_palette") {
+			voxel::invalidateBrushes();
 		}
 	}
 	return reloaded;

@@ -48,6 +48,9 @@ TOAST_C_API int32_t toast_settings_count(void) NOEXCEPT;
 /// @return 1 when @p index named a setting and @p out was filled
 TOAST_C_API int32_t toast_settings_get_desc(int32_t index, toast_setting_desc* out) NOEXCEPT;
 
+/// @return the asset type a string setting picks, or an empty string for a plain one
+TOAST_C_API const char* toast_settings_get_asset_type(int32_t index) NOEXCEPT;
+
 /// @return option @p option of setting @p index, or NULL when either is out of range
 TOAST_C_API const char* toast_settings_get_option(int32_t index, int32_t option) NOEXCEPT;
 

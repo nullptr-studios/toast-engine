@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <cmath>
-#include <toast/renderer/post_process_settings.hpp>
+#include <toast/renderer/settings/post_process_settings.hpp>
 
 namespace {
 

@@ -4,14 +4,10 @@
 #include "node_proxy.hpp"
 #include "script_context.hpp"
 
-#include <format>
-#include <glm/glm.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/curve.hpp>
 #include <toast/assets/data.hpp>
-#include <toast/log.hpp>
 #include <toast/world/node.hpp>
 
 namespace scripting {

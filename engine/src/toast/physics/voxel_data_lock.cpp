@@ -4,7 +4,7 @@
 
 namespace physics {
 
-auto voxelDataMutex() -> std::mutex& {
+auto voxelDataMutex() -> std::recursive_mutex& {
 	return voxel::runtimePoolMutex();
 }
 

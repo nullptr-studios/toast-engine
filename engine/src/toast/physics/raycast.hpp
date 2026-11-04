@@ -58,9 +58,12 @@ struct SphereHit {
 	glm::vec3 position;
 	glm::vec3 normal;
 	float penetration;
+	ShapeType shape_type = ShapeType::sphere;
 };
 
-TOAST_API auto sphereOverlap(glm::vec3 position, float radius) -> std::optional<SphereHit>;
+/// The optional layer filter limits which bodies can overlap the sphere.
+TOAST_API auto sphereOverlap(glm::vec3 position, float radius, std::optional<LayerFilter> layers = std::nullopt)
+    -> std::optional<SphereHit>;
 
 /// Tests a world-space axis-aligned box against enabled physics shapes.
 TOAST_API auto overlapAABB(glm::vec3 min, glm::vec3 max) -> bool;

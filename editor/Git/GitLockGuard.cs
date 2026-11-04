@@ -8,15 +8,33 @@ using editor.Workspace;
 
 namespace editor.Git;
 
+public enum OpenLockKind {
+	None,
+	Mine,
+	Other
+}
+
+public readonly record struct OpenLockState(OpenLockKind Kind, string? Owner);
+
 public static class GitLockGuard {
 	private static GitService? Usable => GitService.Current is { IsAvailable: true, HasLfs: true } git ? git : null;
 
 	public static async Task LockOnOpenAsync(string realPath) {
-		if (Usable is not { } git) return;
-		if (git.GetLock(realPath) is not null || !git.IsLockable(realPath)) return;
+		await AcquireOnOpenAsync(realPath);
+	}
 
-		var result = await git.LockAsync(realPath);
-		if (!result.Ok) Log.Warn($"Git: could not lock {Path.GetFileName(realPath)} on open ({result.Message})");
+	public static async Task<OpenLockState> AcquireOnOpenAsync(string realPath) {
+		if (Usable is not { } git || !git.IsLockable(realPath)) return default;
+
+		var held = git.GetLock(realPath);
+		if (held is null) {
+			var result = await git.LockAsync(realPath);
+			if (!result.Ok) Log.Warn($"Git: could not lock {Path.GetFileName(realPath)} on open ({result.Message})");
+			held = git.GetLock(realPath);
+		}
+
+		if (held is null) return default;
+		return new OpenLockState(held.OwnedByMe ? OpenLockKind.Mine : OpenLockKind.Other, held.Owner);
 	}
 
 	public static async Task<LockedSaveChoice> CheckSaveAsync(string realPath) {

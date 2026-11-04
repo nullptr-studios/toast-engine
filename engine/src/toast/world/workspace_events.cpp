@@ -1,9 +1,5 @@
 #include "workspace_events.hpp"
 
-#include <cstring>
-#include <generated/workspace_events.pb.h>
-#include <limits>
-#include <toast/assets/assets.hpp>
 #include <toast/events/proto_event.hpp>
 #include <toast/world/node.hpp>
 
@@ -1369,6 +1365,12 @@ struct ProtoTraits<VoxelBake> {
 		p.set_target(e.target);
 		p.set_path(e.path);
 		p.set_replace(e.replace);
+		p.set_base_path(e.base_path);
+		for (const VoxelBakePiece& piece : e.pieces) {
+			proto::events::VoxelBakePiece* out = p.add_pieces();
+			out->set_uid(piece.uid);
+			out->set_path(piece.path);
+		}
 		return p;
 	}
 
@@ -1377,6 +1379,10 @@ struct ProtoTraits<VoxelBake> {
 		e.target = toast::UID::fromString(p.target());
 		e.path = p.path();
 		e.replace = p.replace();
+		e.base_path = p.base_path();
+		for (const proto::events::VoxelBakePiece& piece : p.pieces()) {
+			e.pieces.push_back({.uid = toast::UID::fromString(piece.uid()), .path = piece.path()});
+		}
 		return e;
 	}
 };
@@ -1391,12 +1397,18 @@ struct ProtoTraits<VoxelBakeCompleted> {
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
 		p.set_path(e.path);
+		for (const std::string& unused : e.unused) {
+			p.add_unused(unused);
+		}
 		return p;
 	}
 
 	static auto fromProto(const Proto& p) -> Event {
 		Event e;
 		e.path = p.path();
+		for (const std::string& unused : p.unused()) {
+			e.unused.push_back(unused);
+		}
 		return e;
 	}
 };
@@ -1511,6 +1523,89 @@ struct ProtoTraits<SetVoxelTool> {
 };
 
 TOAST_PROTO_EVENT(SetVoxelTool);
+
+template<>
+struct ProtoTraits<RulerSegment> {
+	using Proto = proto::events::RulerSegment;
+	using Event = RulerSegment;
+
+	static void write(const Event& e, Proto& p) {
+		p.set_ax(e.a.x);
+		p.set_ay(e.a.y);
+		p.set_az(e.a.z);
+		p.set_bx(e.b.x);
+		p.set_by(e.b.y);
+		p.set_bz(e.b.z);
+		p.set_label_x(e.label.x);
+		p.set_label_y(e.label.y);
+		p.set_label_visible(e.label_visible);
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		return {
+		  .a = {p.ax(), p.ay(), p.az()},
+		  .b = {p.bx(), p.by(), p.bz()},
+		  .label = {p.label_x(), p.label_y()},
+		  .label_visible = p.label_visible(),
+		};
+	}
+};
+
+template<>
+struct ProtoTraits<RulerChanged> {
+	using Proto = proto::events::RulerChanged;
+	using Event = RulerChanged;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		for (const RulerSegment& segment : e.segments) {
+			ProtoTraits<RulerSegment>::write(segment, *p.add_segments());
+		}
+		p.set_preview_active(e.has_preview);
+		if (e.has_preview) {
+			ProtoTraits<RulerSegment>::write(e.preview, *p.mutable_preview());
+		}
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		for (const auto& segment : p.segments()) {
+			e.segments.push_back(ProtoTraits<RulerSegment>::fromProto(segment));
+		}
+		e.has_preview = p.preview_active();
+		if (e.has_preview) {
+			e.preview = ProtoTraits<RulerSegment>::fromProto(p.preview());
+		}
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(RulerChanged);
+
+template<>
+struct ProtoTraits<RulerCommand> {
+	using Proto = proto::events::RulerCommand;
+	using Event = RulerCommand;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_workspace_handle(e.workspace_handle);
+		p.set_kind(e.kind);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event {
+		Event e;
+		e.workspace_handle = p.workspace_handle();
+		e.kind = p.kind();
+		return e;
+	}
+};
+
+TOAST_PROTO_EVENT(RulerCommand);
 
 template<>
 struct ProtoTraits<NodePicked> {

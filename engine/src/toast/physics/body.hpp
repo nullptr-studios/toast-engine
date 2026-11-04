@@ -55,6 +55,14 @@ struct BodyState {
 	glm::quat previous_rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 	glm::vec3 linear_velocity = {};
 	glm::vec3 angular_velocity = {};
+	float inverse_mass = 1.0f;
+	glm::vec3 local_center_of_mass = {};    ///< Relative to the body position
+};
+
+struct BodyMassProperties {
+	float mass = 0.0f;
+	glm::vec3 local_center_of_mass = {};
+	glm::mat3 inverse_inertia_local = {0.0f};
 };
 
 struct Body {
@@ -94,6 +102,11 @@ struct Body {
 		return position + rotation * local_center_of_mass;
 	}
 };
+
+[[nodiscard]]
+inline auto movable(const Body& body) -> bool {
+	return body.inverse_mass > 0.0f && (body.awake || body.type != BodyType::dynamic_body);
+}
 
 struct BodySlot {
 	Body body;

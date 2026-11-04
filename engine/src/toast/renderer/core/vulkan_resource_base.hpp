@@ -1,0 +1,82 @@
+/// @file vulkan_resource_base.hpp
+/// @author dario
+/// @date 6/27/2026
+
+#pragma once
+
+#include "toast/renderer/core/vulkan_common.hpp"
+#include "toast/renderer/core/vulkan_core.hpp"
+
+namespace renderer {
+
+class IVulkanResource {
+public:
+	enum class UploadState : std::uint8_t {
+		uploading,
+		ready,
+		failed_load,
+		failed_gpu
+	};
+
+	virtual ~IVulkanResource() = default;
+
+	void markUploading() { m_state = UploadState::uploading; }
+
+	void markReady() { m_state = UploadState::ready; }
+
+	void markFailed(UploadState reason) { m_state = reason; }
+
+	[[nodiscard]]
+	auto isReady() const -> bool {
+		return m_state == UploadState::ready;
+	}
+
+	[[nodiscard]]
+	auto hasFailed() const -> bool {
+		return m_state == UploadState::failed_load || m_state == UploadState::failed_gpu;
+	}
+
+	[[nodiscard]]
+	auto state() const -> UploadState {
+		return m_state;
+	}
+
+private:
+	UploadState m_state = UploadState::uploading;
+};
+
+class PendingResourceUpload {
+public:
+	virtual ~PendingResourceUpload() = default;
+
+	virtual auto resource() -> IVulkanResource* = 0;
+
+	virtual void build(const VulkanCore& core) = 0;
+
+	virtual void record(vk::CommandBuffer cmd) = 0;
+
+	/// False while another upload has to be recorded first
+	[[nodiscard]]
+	virtual auto canRecord() const -> bool {
+		return true;
+	}
+
+	virtual void finished() {
+		if (!resource()->hasFailed()) {
+			resource()->markReady();
+		}
+	}
+
+	/// Before record(). The default keeps one queue and record() ends in a plain barrier
+	void setQueueHandoff(const sync::QueueHandoff& handoff) noexcept { m_handoff = handoff; }
+
+	/// On the consuming queue after the upload fence signalled. No op for an upload that stayed on one queue
+	virtual void recordAcquire(sync::BarrierBatch& batch) { (void)batch; }
+
+	vk::DeviceSize host_bytes = 0;
+
+protected:
+	sync::QueueHandoff m_handoff;
+};
+
+}

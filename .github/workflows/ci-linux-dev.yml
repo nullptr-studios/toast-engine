@@ -27,6 +27,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
@@ -60,6 +61,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
@@ -89,6 +91,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.head_ref }}
           fetch-depth: 1
+          submodules: true
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6

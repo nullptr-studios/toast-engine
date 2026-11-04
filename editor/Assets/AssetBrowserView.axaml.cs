@@ -46,14 +46,30 @@ public partial class AssetBrowserView : UserControl {
 
 		AssetBrowserViewModel? subscribed = null;
 		DataContextChanged += (_, _) => {
-			if (subscribed is not null) subscribed.PropertyChanged -= OnViewModelPropertyChanged;
+			if (subscribed is not null) {
+				subscribed.PropertyChanged -= OnViewModelPropertyChanged;
+				subscribed.ItemRevealed -= OnItemRevealed;
+			}
+
 			subscribed = DataContext as AssetBrowserViewModel;
-			if (subscribed is not null) subscribed.PropertyChanged += OnViewModelPropertyChanged;
+			if (subscribed is not null) {
+				subscribed.PropertyChanged += OnViewModelPropertyChanged;
+				subscribed.ItemRevealed += OnItemRevealed;
+			}
+
 			ApplyCardSize();
 		};
 	}
 
 	private AssetBrowserViewModel Vm => (AssetBrowserViewModel)DataContext!;
+
+	private void OnItemRevealed(object item) {
+		Avalonia.Threading.Dispatcher.UIThread.Post(() => {
+			var index = Vm.CurrentItems.IndexOf(item);
+			if (index < 0) return;
+			AssetRepeater.GetOrCreateElement(index).BringIntoView();
+		}, Avalonia.Threading.DispatcherPriority.Loaded);
+	}
 
 	private void OnSelectTemplateKey(object? sender, SelectTemplateEventArgs e) {
 		e.TemplateKey = e.DataContext is AssetFolder ? "folder" : "file";

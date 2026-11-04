@@ -1,3 +1,5 @@
+import fullscreen;
+
 struct CameraUBO {
     float4x4 view;
     float4x4 projection;
@@ -15,6 +17,9 @@ Sampler2D gPanelTexture;
 
 struct WorldPush {
     float4x4 model;
+
+    // x paper white scale for the overlay layer, 0 elsewhere
+    float4 hdr;
 };
 
 [[vk::push_constant]]
@@ -48,5 +53,5 @@ VSOutput vertexMain(uint vertex_id : SV_VertexID) {
 float4 fragmentMain(VSOutput input) : SV_Target0 {
     const float4 color = gPanelTexture.Sample(input.uv);
     clip(color.a - 0.001);
-    return color;
+    return uiToDisplay(color, gWorldPush.hdr.x);
 }

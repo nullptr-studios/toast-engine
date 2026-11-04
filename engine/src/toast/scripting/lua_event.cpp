@@ -7,20 +7,15 @@
 #include "node_proxy.hpp"
 #include "script_runtime.hpp"
 
-#include <atomic>
 #include <glm/common.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <iterator>
-#include <mutex>
 #include <toast/input/action.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/contact_events.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/world/node.hpp>
-#include <unordered_map>
 
 namespace scripting {
 

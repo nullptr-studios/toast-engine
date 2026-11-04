@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:editor.Workspace"
              xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:elements="using:editor.Components.Elements"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
@@ -84,6 +85,11 @@
 				               Increment="{Binding Increment}"
 				               HorizontalAlignment="Stretch" />
 			</Panel>
+		</DataTemplate>
+
+		<DataTemplate DataType="vm:AssetSettingRow">
+			<elements:AssetBox Value="{Binding Value, Mode=TwoWay}"
+			                   AssetType="{Binding AssetType}" />
 		</DataTemplate>
 
 		<DataTemplate DataType="vm:StringSettingRow">

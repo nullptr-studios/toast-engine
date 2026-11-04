@@ -20,6 +20,15 @@ namespace toast {
 
 class SDLWindow : public IBaseWindow {
 public:
+	struct DisplayHdr {
+		bool enabled = false;
+		float sdr_white = 1.0f;
+		float headroom = 1.0f;
+	};
+
+	/// Main thread only
+	static auto queryDisplayHdr(SDL_Window* window) -> DisplayHdr;
+
 	SDLWindow(const char* title, unsigned width = 1080, unsigned height = 720, uint64_t flags = 0);
 
 	~SDLWindow() override = default;
@@ -42,6 +51,8 @@ private:
 		event::Listener event_listener;
 		bool should_close = false;
 		bool cursor_locked = false;
+		bool lock_requested = false;
+		bool overlay_cursor = false;
 		glm::vec2 virtual_mouse_position {0.0f};
 	} m;
 };

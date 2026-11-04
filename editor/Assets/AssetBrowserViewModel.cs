@@ -338,12 +338,18 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 
 	public new event PropertyChangedEventHandler? PropertyChanged;
 
+	public event Action<object>? ItemRevealed;
+
 	public void RevealAsset(string uid) {
 		foreach (var root in Folders)
 		foreach (var file in GetAllFiles(root)) {
 			if (file.Uid != uid) continue;
 			SearchText = "";
 			SelectedFolder = FindParentFolder(root, file);
+			var card = CurrentItems.OfType<AssetFile>().FirstOrDefault(f => f.Uid == uid);
+			if (card is null) return;
+			SelectItem(card, KeyModifiers.None);
+			ItemRevealed?.Invoke(card);
 			return;
 		}
 	}
