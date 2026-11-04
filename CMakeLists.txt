@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.28)
 project(engine)
 
 include(CTest)
@@ -6,6 +6,7 @@ include(CTest)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 set(OUTPUT_ROOT "${CMAKE_SOURCE_DIR}/out")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_ROOT}")
@@ -26,7 +27,22 @@ if (MSVC)
 	# Enable multi-processor compilation
 	add_compile_options(/MP)
 	if (CMAKE_GENERATOR MATCHES "Visual Studio")
-		set(CMAKE_VS_GLOBALS "UseMultiToolTask=true")
+		cmake_host_system_information(RESULT TOAST_CPU_COUNT QUERY NUMBER_OF_LOGICAL_CORES)
+		set(CMAKE_VS_GLOBALS "UseMultiToolTask=true" "EnforceProcessCountAcrossBuilds=true" "CL_MPCount=${TOAST_CPU_COUNT}")
+	endif()
+	foreach(cfg IN ITEMS DEBUG RELWITHDEBINFO)
+		string(REGEX REPLACE "/INCREMENTAL:NO" "/INCREMENTAL" CMAKE_SHARED_LINKER_FLAGS_${cfg} "${CMAKE_SHARED_LINKER_FLAGS_${cfg}}")
+		string(REGEX REPLACE "/INCREMENTAL:NO" "/INCREMENTAL" CMAKE_EXE_LINKER_FLAGS_${cfg} "${CMAKE_EXE_LINKER_FLAGS_${cfg}}")
+	endforeach()
+endif()
+
+if (NOT CMAKE_GENERATOR MATCHES "Visual Studio")
+	find_program(TOAST_COMPILER_CACHE NAMES sccache ccache)
+	if (TOAST_COMPILER_CACHE)
+		set(CMAKE_CXX_COMPILER_LAUNCHER "${TOAST_COMPILER_CACHE}")
+		set(CMAKE_C_COMPILER_LAUNCHER "${TOAST_COMPILER_CACHE}")
+		# Launchers cannot cache /Zi pdb output
+		set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<$<CONFIG:Debug,RelWithDebInfo>:Embedded>")
 	endif()
 endif()
 

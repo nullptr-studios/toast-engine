@@ -1,13 +1,5 @@
 #include "fragment_extraction.hpp"
 
-#include <algorithm>
-#include <bit>
-#include <limits>
-#include <tracy/Tracy.hpp>
-#include <tuple>
-#include <utility>
-#include <vector>
-
 namespace physics {
 
 namespace {

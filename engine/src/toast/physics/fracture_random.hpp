@@ -24,6 +24,7 @@ enum class FractureStream : uint8_t {
 	debris = 4,
 	edge_lobes = 6,
 	core_split = 7,
+	shard_points = 8,
 };
 
 [[nodiscard]]

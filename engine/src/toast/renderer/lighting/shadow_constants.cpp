@@ -1,8 +1,5 @@
 #include "toast/renderer/lighting/shadow_constants.hpp"
 
-#include <algorithm>
-#include <atomic>
-
 namespace renderer::shadows {
 namespace {
 

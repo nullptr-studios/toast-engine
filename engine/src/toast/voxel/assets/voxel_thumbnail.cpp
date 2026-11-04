@@ -3,23 +3,8 @@
 #include "voxel_model.hpp"
 #include "voxel_palette.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <cstring>
-#include <filesystem>
 #include <fstream>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <limits>
-#include <memory>
-#include <optional>
-#include <stdexcept>
-#include <string>
-#include <toast/log.hpp>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
-#include <vector>
 
 namespace {
 

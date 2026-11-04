@@ -3,13 +3,8 @@
 #include "workspace.hpp"
 #include "workspace_events.hpp"
 
-#include <algorithm>
-#include <array>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/engine.hpp>
-#include <toast/log.hpp>
 #include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
@@ -21,8 +16,6 @@
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
 
 namespace toast {
 

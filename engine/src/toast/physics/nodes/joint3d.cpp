@@ -2,7 +2,6 @@
 
 #include "rigidbody.hpp"
 
-#include <glm/gtc/quaternion.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/renderer/debug/debug_draw.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>

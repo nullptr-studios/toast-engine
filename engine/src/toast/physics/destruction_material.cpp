@@ -2,12 +2,6 @@
 
 #include "material_defaults.hpp"
 
-#include <algorithm>
-#include <cstdint>
-#include <optional>
-#include <string>
-#include <toast/log.hpp>
-
 assets::DestructionMaterial::DestructionMaterial(const toml::table& table, Handle<Schema> schema)
     : Data(table, std::move(schema), Data::keep_all_keys) {
 	readFields();

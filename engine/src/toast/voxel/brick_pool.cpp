@@ -1,6 +1,5 @@
 #include "brick_pool.hpp"
 
-#include <algorithm>
 #include <cassert>
 
 namespace voxel {

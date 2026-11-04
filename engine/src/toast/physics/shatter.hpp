@@ -272,6 +272,8 @@ inline auto planShatter(
 
 	std::vector<Owner> owners(band.size());
 	std::vector<uint32_t> cell_voxels(seeds.size(), 0);
+	std::vector<glm::ivec3> cell_low(seeds.size(), glm::ivec3 {std::numeric_limits<int32_t>::max()});
+	std::vector<glm::ivec3> cell_high(seeds.size(), glm::ivec3 {std::numeric_limits<int32_t>::min()});
 	for (size_t b = 0; b < band.size(); ++b) {
 		float d1 = std::numeric_limits<float>::max();
 		float d2 = std::numeric_limits<float>::max();
@@ -290,14 +292,22 @@ inline auto planShatter(
 		}
 		owner.gap = std::sqrt(d2) - std::sqrt(d1);
 		++cell_voxels[owner.nearest];
+		cell_low[owner.nearest] = glm::min(cell_low[owner.nearest], band[b].voxel);
+		cell_high[owner.nearest] = glm::max(cell_high[owner.nearest], band[b].voxel);
 	}
 
-	const uint32_t min_cell_voxels = minChunkVoxels(threshold);
+	// a thin pane never fits the cube minimum so a cell only needs to be as thick as its material
+	const float min_side = (2.0f * threshold) / voxel::k_voxel_size;
+	const auto min_cell_voxels = [&](size_t i) {
+		const glm::ivec3 extent = cell_high[i] - cell_low[i] + 1;
+		const float thickness = std::min(static_cast<float>(std::min({extent.x, extent.y, extent.z})), min_side);
+		return static_cast<uint32_t>(std::ceil(min_side * min_side * thickness));
+	};
 	const float release = std::clamp(values.shatter_release, 0.0f, 1.0f);
 	std::vector<bool> released(seeds.size(), false);
 	std::vector<size_t> eligible;
 	for (size_t i = 0; i < seeds.size(); ++i) {
-		if (cell_voxels[i] >= min_cell_voxels) {
+		if (cell_voxels[i] > 0 && cell_voxels[i] >= min_cell_voxels(i)) {
 			eligible.push_back(i);
 			released[i] = rng.chance(release);
 		}
@@ -405,6 +415,58 @@ inline auto planCoreSplit(std::span<const CoreVoxel> core, const Crater& crater)
 		}
 	}
 	return out;
+}
+
+/// Empty when the region comes off whole
+[[nodiscard]]
+inline auto shardSeeds(const UnglueRegion& region, const Crater& crater) -> std::vector<glm::vec3> {
+	ZoneScopedN("physics::ShardSeeds");
+	std::vector<glm::vec3> seeds;
+	if (region.empty() || not patternShatters(crater.pattern)) {
+		return seeds;
+	}
+
+	// set order is not stable so the same hit could pick other seeds
+	std::vector<uint64_t> keys(region.keys.begin(), region.keys.end());
+	std::ranges::sort(keys);
+
+	const float gap = std::max(crater.profile.shatter_cell_size, crackThickness());
+	const float gap_squared = gap * gap;
+	const uint32_t max_cells = std::max(tunables().fracture_max_shatter_cells, 1u);
+	constexpr uint64_t k_axis_mask = (1ull << 21) - 1ull;    // voxelKey packs 21 bits per axis
+	Rng rng {streamSeed(crater.seed, FractureStream::shard_points)};
+	for (uint32_t attempt = 0; attempt < max_cells * 12 && seeds.size() < max_cells; ++attempt) {
+		const uint64_t key = keys[rng.below(static_cast<uint32_t>(keys.size()))];
+		const glm::vec3 voxel {
+		  static_cast<float>(key >> 42),
+		  static_cast<float>((key >> 21) & k_axis_mask),
+		  static_cast<float>(key & k_axis_mask),
+		};
+		const glm::vec3 point = (voxel + 0.5f) * voxel::k_voxel_size;
+		const bool crowded = std::ranges::any_of(seeds, [&](const glm::vec3& s) {
+			const glm::vec3 offset = s - point;
+			return glm::dot(offset, offset) < gap_squared;
+		});
+		if (not crowded) {
+			seeds.push_back(point);
+		}
+	}
+	return seeds;
+}
+
+[[nodiscard]]
+inline auto nearestSeed(std::span<const glm::vec3> seeds, const glm::vec3& point) -> uint32_t {
+	uint32_t best = 0;
+	float best_squared = std::numeric_limits<float>::max();
+	for (size_t i = 0; i < seeds.size(); ++i) {
+		const glm::vec3 offset = seeds[i] - point;
+		const float squared = glm::dot(offset, offset);
+		if (squared < best_squared) {
+			best_squared = squared;
+			best = static_cast<uint32_t>(i);
+		}
+	}
+	return best;
 }
 
 }

@@ -1,8 +1,5 @@
 #include "schema.hpp"
 
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace assets {
 
 Schema::Schema(std::string_view json_content) {

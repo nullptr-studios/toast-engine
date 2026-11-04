@@ -2,23 +2,14 @@
 
 #include "tree_lock.hpp"
 
-#include <algorithm>
-#include <atomic>
 #include <cstdlib>
-#include <functional>
 #include <future>
-#include <memory>
-#include <mutex>
-#include <optional>
 #include <queue>
 #include <stack>
 #include <thread>
-#include <toast/log.hpp>
 #include <toast/scripting/lua_state.hpp>
 #include <toast/scripting/script_dispatch.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/thread_pool.hpp>
-#include <unordered_set>
 
 namespace toast {
 

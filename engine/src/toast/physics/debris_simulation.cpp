@@ -3,16 +3,9 @@
 #include "physics_settings.hpp"
 #include "simulator.hpp"
 
-#include <algorithm>
-#include <atomic>
-#include <cmath>
-#include <limits>
-#include <toast/log.hpp>
 #include <toast/renderer/voxel/voxel_gpu_storage.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/voxel_constants.hpp>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 namespace physics {
 

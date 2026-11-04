@@ -7,10 +7,8 @@
 #include <fstream>
 #include <nlohmann/json.hpp>
 #include <sstream>
-#include <toast/log.hpp>
 #include <toast/project_settings.hpp>
 #include <toast/voxel/brush_composer.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace assets {
 

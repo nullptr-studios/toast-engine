@@ -4,14 +4,9 @@
 #include "nodes/audio_listener.hpp"
 #include "nodes/audio_volume.hpp"
 
-#include <array>
 #include <ffi/audio.h>
-#include <filesystem>
 #include <fmod/fmod_errors.h>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/core_types.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace {
 

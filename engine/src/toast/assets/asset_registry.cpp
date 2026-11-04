@@ -2,8 +2,6 @@
 
 #include "types.hpp"
 
-#include <tracy/Tracy.hpp>
-
 namespace assets {
 
 std::unordered_map<std::string, AssetRegistry::RawLoader> AssetRegistry::s_raw;

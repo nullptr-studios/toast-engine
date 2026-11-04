@@ -1,14 +1,5 @@
 #include "animation.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstring>
-#include <glm/gtc/quaternion.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
-
 namespace assets {
 
 namespace {

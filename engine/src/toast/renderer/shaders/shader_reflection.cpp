@@ -4,10 +4,7 @@
 
 #include "toast/renderer/shaders/shader_reflection.hpp"
 
-#include <algorithm>
 #include <slang-com-ptr.h>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

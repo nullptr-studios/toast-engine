@@ -3,9 +3,6 @@
 
 #include "toast/renderer/core/vulkan_sampler.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
 namespace renderer {
 
 VulkanSampler::VulkanSampler(const VulkanCore& core, const vk::SamplerCreateInfo& info, std::string_view debug_name)

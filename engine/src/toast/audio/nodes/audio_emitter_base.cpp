@@ -5,13 +5,7 @@
 #include "audio_capsule_emitter.hpp"
 #include "audio_sphere_emitter.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <limits>
-#include <toast/assets/assets.hpp>
 #include <toast/audio/audio_event.hpp>
-#include <toast/log.hpp>
-#include <toast/time.hpp>
 
 namespace toast {
 

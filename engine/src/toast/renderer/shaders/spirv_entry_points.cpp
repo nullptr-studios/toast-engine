@@ -6,10 +6,6 @@
 
 #include "toast/renderer/shaders/spirv_entry_points.hpp"
 
-#include <algorithm>
-#include <cstring>
-#include <toast/log.hpp>
-
 namespace renderer::spirv {
 
 namespace {

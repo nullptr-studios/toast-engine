@@ -1,13 +1,8 @@
 #include "document_preprocess.hpp"
 
-#include "../log.hpp"
 #include "ui_event_listener.hpp"
 
-#include <algorithm>
-#include <array>
 #include <cctype>
-#include <format>
-#include <tracy/Tracy.hpp>
 
 namespace ui {
 

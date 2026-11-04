@@ -9,20 +9,12 @@
 #include "toast/renderer/core/descriptor_writer.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/gpu_timer.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/voxel/voxel_blas_cache.hpp"
 #include "toast/renderer/voxel/voxel_gpu_storage.hpp"
 #include "toast/renderer/voxel/voxel_trace_scene.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
-
-#include <algorithm>
-#include <format>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

@@ -5,17 +5,12 @@
 #include "toast/world/node.hpp"
 
 #include <any>
-#include <cstdint>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <string>
-#include <string_view>
 #include <toast/events/signal_types.hpp>
-#include <vector>
 
 namespace scripting {
 namespace {

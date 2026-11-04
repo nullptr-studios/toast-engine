@@ -1,19 +1,8 @@
 #include "voxel_palette.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <format>
 #include <sstream>
-#include <stdexcept>
-#include <string>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/physics/assets.hpp>
 #include <toast/physics/material_defaults.hpp>
-#include <toast/uid.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace assets {
 

@@ -1,7 +1,5 @@
 #include "listener.hpp"
 
-#include "event.hpp"
-
 namespace event {
 
 Listener::Listener() {

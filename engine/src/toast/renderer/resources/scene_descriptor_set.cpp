@@ -1,8 +1,6 @@
 #include "toast/renderer/resources/scene_descriptor_set.hpp"
 
 #include "toast/renderer/core/descriptor_writer.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/passes/lighting/cluster_lighting_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
 #include "toast/renderer/passes/lighting/gi_pass.hpp"
@@ -10,11 +8,6 @@
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
 #include "toast/renderer/raytracing/ray_tracing_scene.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
-
-#include <algorithm>
-#include <format>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

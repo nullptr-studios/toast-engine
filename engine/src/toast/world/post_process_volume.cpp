@@ -1,8 +1,6 @@
 #include "post_process_volume.hpp"
 
-#include <algorithm>
 #include <glm/common.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 

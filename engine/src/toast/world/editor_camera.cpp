@@ -2,10 +2,6 @@
 
 #include "workspace_events.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <glm/gtc/quaternion.hpp>
-
 namespace toast {
 
 void EditorCameraController::setEnabled(bool enabled) noexcept {

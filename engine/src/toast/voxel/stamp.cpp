@@ -1,10 +1,6 @@
 #include "stamp.hpp"
 
-#include <algorithm>
 #include <cassert>
-#include <tracy/Tracy.hpp>
-#include <unordered_set>
-#include <utility>
 
 namespace voxel {
 

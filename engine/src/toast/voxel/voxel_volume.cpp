@@ -1,9 +1,6 @@
 #include "voxel_volume.hpp"
 
-#include <algorithm>
-#include <atomic>
 #include <cassert>
-#include <utility>
 
 namespace voxel {
 

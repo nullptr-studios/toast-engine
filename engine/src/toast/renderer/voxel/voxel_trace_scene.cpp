@@ -5,19 +5,8 @@
 #include "toast/renderer/voxel/voxel_trace_scene.hpp"
 
 #include "toast/renderer/core/gpu_sync.hpp"
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
 #include "toast/renderer/raytracing/ray_tracing_scene.hpp"
 #include "toast/renderer/voxel/voxel_blas_cache.hpp"
-
-#include <algorithm>
-#include <bit>
-#include <cmath>
-#include <cstring>
-#include <format>
-#include <glm/gtc/matrix_transform.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace renderer {
 

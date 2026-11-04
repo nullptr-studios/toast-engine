@@ -5,14 +5,6 @@
 #include "simulator.hpp"
 #include "voxel_query.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <limits>
-#include <optional>
-#include <span>
-#include <tracy/Tracy.hpp>
-
 namespace physics {
 
 namespace {

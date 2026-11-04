@@ -5,9 +5,7 @@
 #include "script_context.hpp"
 #include "script_dispatch.hpp"
 
-#include <toast/log.hpp>
 #include <toast/world/node.hpp>
-#include <utility>
 
 namespace scripting {
 

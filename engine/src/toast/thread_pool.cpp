@@ -1,7 +1,5 @@
 #include "thread_pool.hpp"
 
-#include "log.hpp"
-
 namespace toast {
 
 ThreadPool::ThreadPool() {

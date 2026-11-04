@@ -2,16 +2,7 @@
 
 #include "lua_state.hpp"
 
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <mutex>
-#include <toast/thread_pool.hpp>
 #include <toast/world/wave_executor.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace scripting {
 

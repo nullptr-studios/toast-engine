@@ -1,9 +1,6 @@
 #include "material_instance.hpp"
 
-#include "assets.hpp"
-
 #include <sstream>
-#include <toast/log.hpp>
 
 namespace assets {
 

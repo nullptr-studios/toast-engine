@@ -1,11 +1,4 @@
-#include "log.hpp"
-
-#include <array>
-#include <atomic>
-#include <cstddef>
-#include <cstdint>
 #include <cstdlib>
-#include <string_view>
 
 #ifdef _WIN32
 #include <windows.h>

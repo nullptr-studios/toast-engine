@@ -6,13 +6,6 @@
 
 #include "toast/renderer/resources/post_process_target.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-#include "toast/renderer/core/vulkan_debug.hpp"
-
-#include <array>
-#include <format>
-#include <tracy/Tracy.hpp>
-
 namespace renderer {
 
 void PostProcessTarget::create(const VulkanCore& core, vk::Extent2D extent, vk::Format format, std::string_view debug_name) {

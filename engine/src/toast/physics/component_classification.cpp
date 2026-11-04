@@ -1,10 +1,5 @@
 #include "component_classification.hpp"
 
-#include <algorithm>
-#include <limits>
-#include <tracy/Tracy.hpp>
-#include <tuple>
-
 namespace physics {
 
 namespace {

@@ -1,12 +1,7 @@
 #include "pack.hpp"
 
-#include <cstring>
 #include <fstream>
 #include <lz4.h>
-#include <stdexcept>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace assets {
 

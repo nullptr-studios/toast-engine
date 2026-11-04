@@ -1,23 +1,13 @@
 #include "logger.hpp"
 
 #include "ffi/log.h"    // ffi
-#include "generated/logging.pb.h"
-#include "log.hpp"      // public functions
-#include "thread_pool.hpp"
 
-#include <array>
-#include <chrono>
 #include <cstdlib>
-#include <filesystem>
 #include <future>
 #include <google/protobuf/io/coded_stream.h>
 #include <iostream>
 #include <iterator>
-#include <print>
-#include <string>
 #include <thread>
-#include <tracy/Tracy.hpp>
-#include <vector>
 
 #ifdef __linux__
 #include <unistd.h>

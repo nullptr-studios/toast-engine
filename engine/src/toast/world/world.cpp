@@ -6,18 +6,13 @@
 #include "workspace_events.hpp"
 #include "world_test_access.hpp"
 
-#include <chrono>
 #include <sstream>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/types.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/scripting/script_dispatch.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/thread_pool.hpp>
 #include <toast/uri_handler.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace toast {
 

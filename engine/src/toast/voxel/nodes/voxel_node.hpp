@@ -402,6 +402,13 @@ public:
 	[[nodiscard]]
 	auto raycastVoxels(glm::vec3 origin, glm::vec3 direction, float max_t) -> std::optional<voxel::VolumeHit>;
 
+	[[nodiscard]]
+	auto getSimulationType() const -> SimulationType {
+		return simulation_type;
+	}
+
+	void addForce(glm::vec3 force, glm::vec3 offset = {0.0, 0.0, 0.0});
+
 protected:
 	/**
 	 * Runs right before editShape on every rebuild, subclasses build their shape here

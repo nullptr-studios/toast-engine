@@ -12,17 +12,11 @@
 
 #include <RmlUi/Core.h>
 #include <RmlUi/Core/Factory.h>
-#include <algorithm>
 #include <cassert>
 #include <cctype>
-#include <span>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
 #include <toast/engine.hpp>
-#include <toast/log.hpp>
 #include <toast/project_settings.hpp>
-#include <toast/renderer/core/vulkan_core.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace ui {
 

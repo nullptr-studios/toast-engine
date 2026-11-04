@@ -2,29 +2,15 @@
 
 #include "voxel_node_utils.hpp"
 
-#include <algorithm>
-#include <array>
-#include <bit>
 #include <bitset>
-#include <chrono>
-#include <cmath>
-#include <cstring>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <limits>
-#include <ranges>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/hash.hpp>
-#include <toast/log.hpp>
 #include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
-#include <toast/thread_pool.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/world/node_owner.hpp>
 #include <toast/world/workspace_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
 
 namespace toast {
 

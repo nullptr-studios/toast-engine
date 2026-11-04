@@ -1,7 +1,5 @@
 #include "bind.hpp"
 
-#include <toast/log.hpp>
-
 namespace input {
 
 auto Bind::fromToml(const toml::table& table, ValueType vt) -> Bind {

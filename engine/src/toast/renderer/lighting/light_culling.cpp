@@ -6,8 +6,6 @@
 
 #include "toast/renderer/lighting/clustered_lighting_constants.hpp"
 
-#include <algorithm>
-#include <cmath>
 #include <glm/gtc/constants.hpp>
 
 namespace renderer::light_culling {

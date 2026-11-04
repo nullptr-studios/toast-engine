@@ -2,17 +2,6 @@
 
 #include "voxel_query.hpp"
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
-#include <limits>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-#include <utility>
-#include <vector>
-
 namespace physics {
 namespace _detail {
 
@@ -624,7 +613,11 @@ auto incidentFaceVertices(const WorldBox& box, const glm::vec3& reference_normal
 /// Collapses a bucket through reduceContacts at this size instead of once at the end so dedup stays O(n) not O(n^2)
 constexpr size_t k_contact_reduce_batch_size = 32;
 
-auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& normal) -> std::vector<ContactCandidate> {
+/// A bucket reduces at the batch size and one voxel pair adds at most 8 so this holds it without regrowing
+constexpr size_t k_contact_bucket_reserve = k_contact_reduce_batch_size + 8;
+
+/// Keeps the capacity of candidates so thread local buckets never regrow from scratch
+void reduceContactsInPlace(std::vector<ContactCandidate>& candidates, const glm::vec3& normal) {
 	std::erase_if(candidates, [](const ContactCandidate& candidate) {
 		const bool position_is_finite =
 		    std::isfinite(candidate.position.x) && std::isfinite(candidate.position.y) && std::isfinite(candidate.position.z);
@@ -653,33 +646,36 @@ auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& n
 	};
 	std::ranges::sort(candidates, contact_less);
 
-	std::vector<ContactCandidate> unique_candidates;
-	unique_candidates.reserve(candidates.size());
-	for (const ContactCandidate& candidate : candidates) {
-		auto duplicate = std::ranges::find_if(unique_candidates, [&](const ContactCandidate& existing) {
+	// the kept prefix never passes the read position so this compacts in place
+	size_t unique_count = 0;
+	for (size_t read = 0; read < candidates.size(); ++read) {
+		const ContactCandidate candidate = candidates[read];
+		const auto kept_end = candidates.begin() + static_cast<std::ptrdiff_t>(unique_count);
+		auto duplicate = std::find_if(candidates.begin(), kept_end, [&](const ContactCandidate& existing) {
 			glm::vec3 difference = existing.position - candidate.position;
 			return glm::dot(difference, difference) <= duplicate_point_epsilon_sq;
 		});
-		if (duplicate == unique_candidates.end()) {
-			unique_candidates.emplace_back(candidate);
+		if (duplicate == kept_end) {
+			candidates[unique_count++] = candidate;
 		} else {
 			duplicate->penetration = std::max(duplicate->penetration, candidate.penetration);
 		}
 	}
-	candidates = std::move(unique_candidates);
+	candidates.erase(candidates.begin() + static_cast<std::ptrdiff_t>(unique_count), candidates.end());
 
 	if (candidates.size() <= 4) {
-		return candidates;
+		return;
 	}
 
-	std::vector<size_t> selected;
-	selected.reserve(4);
+	std::array<size_t, 4> selected {};
+	size_t selected_count = 0;
 
 	auto choose = [&](auto score) {
 		size_t best_index = 0;
 		float best_score = -std::numeric_limits<float>::infinity();
 		for (size_t index = 0; index < candidates.size(); ++index) {
-			if (std::ranges::find(selected, index) != selected.end()) {
+			if (std::find(selected.begin(), selected.begin() + static_cast<std::ptrdiff_t>(selected_count), index) !=
+			    selected.begin() + static_cast<std::ptrdiff_t>(selected_count)) {
 				continue;
 			}
 			float candidate_score = score(index);
@@ -688,7 +684,7 @@ auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& n
 				best_index = index;
 			}
 		}
-		selected.emplace_back(best_index);
+		selected[selected_count++] = best_index;
 	};
 
 	choose([&](size_t index) { return candidates[index].penetration; });
@@ -712,13 +708,17 @@ auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& n
 		       triangle_area(selected[2], selected[0], index);
 	});
 
-	std::vector<ContactCandidate> result;
-	result.reserve(4);
-	for (size_t index : selected) {
-		result.emplace_back(candidates[index]);
+	std::array<ContactCandidate, 4> picked;
+	for (size_t i = 0; i < picked.size(); ++i) {
+		picked[i] = candidates[selected[i]];
 	}
-	std::ranges::sort(result, contact_less);
-	return result;
+	candidates.assign(picked.begin(), picked.end());
+	std::ranges::sort(candidates, contact_less);
+}
+
+auto reduceContacts(std::vector<ContactCandidate> candidates, const glm::vec3& normal) -> std::vector<ContactCandidate> {
+	reduceContactsInPlace(candidates, normal);
+	return candidates;
 }
 
 struct BoxSatContacts {
@@ -1884,6 +1884,9 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 			const ContactFeatureID ref_feature = voxelFeature(ref_f_type, ref_c.brick_slot, ref_c.local_index, ref_c.normal_index);
 
 			std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[group];
+			if (bucket.capacity() == 0) {
+				bucket.reserve(_detail::k_contact_bucket_reserve);
+			}
 			for (_detail::ContactCandidate& raw : sat->candidates) {
 				raw.feature_a = probe_feature;
 				raw.feature_b = ref_feature;
@@ -1900,8 +1903,8 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 
 			// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
 			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-				bucket = _detail::reduceContacts(
-				    std::move(bucket), _detail::blendedGroupNormal(partial.normal_sum_per_group[group], partial.normal_per_group[group])
+				_detail::reduceContactsInPlace(
+				    bucket, _detail::blendedGroupNormal(partial.normal_sum_per_group[group], partial.normal_per_group[group])
 				);
 			}
 
@@ -2122,8 +2125,8 @@ void collideVoxelVoxel(
 
 				// Same reasoning as collideBoxVoxel bounds a bucket to a batch at a time
 				if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-					bucket = _detail::reduceContacts(
-					    std::move(bucket), _detail::blendedGroupNormal(normal_sum_per_group[group], normal_per_group[group])
+					_detail::reduceContactsInPlace(
+					    bucket, _detail::blendedGroupNormal(normal_sum_per_group[group], normal_per_group[group])
 					);
 				}
 
@@ -2143,7 +2146,7 @@ void collideVoxelVoxel(
 			}
 
 			glm::vec3 local_normal = _detail::blendedGroupNormal(normal_sum_per_group[i], normal_per_group[i]);
-			bucket = _detail::reduceContacts(std::move(bucket), local_normal);
+			_detail::reduceContactsInPlace(bucket, local_normal);
 			const std::vector<_detail::ContactCandidate>& reduced = bucket;
 			glm::vec3 world_normal = ref_basis * local_normal;
 
@@ -2434,6 +2437,9 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 		    voxelFeature(type, candidate.brick_slot, candidate.local_index, candidate.normal_index);
 
 		std::vector<_detail::ContactCandidate>& bucket = partial.candidates_per_normal[group];
+		if (bucket.capacity() == 0) {
+			bucket.reserve(_detail::k_contact_bucket_reserve);
+		}
 		for (_detail::ContactCandidate& raw : sat->candidates) {
 			raw.feature_b = voxel_feature;
 			bucket.push_back(raw);
@@ -2449,8 +2455,8 @@ auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> 
 
 		// Same reasoning as collideBoxVoxel bounds one region bucket to a batch at a time
 		if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-			bucket = _detail::reduceContacts(
-			    std::move(bucket), _detail::blendedGroupNormal(partial.normal_sum_per_group[group], partial.normal_per_group[group])
+			_detail::reduceContactsInPlace(
+			    bucket, _detail::blendedGroupNormal(partial.normal_sum_per_group[group], partial.normal_per_group[group])
 			);
 		}
 	});
@@ -2606,9 +2612,7 @@ void collideBoxVoxel(
 
 			// Bounds this to a batch worth of candidates at a time survivors compete again next batch
 			if (bucket.size() >= _detail::k_contact_reduce_batch_size) {
-				bucket = _detail::reduceContacts(
-				    std::move(bucket), _detail::blendedGroupNormal(normal_sum_per_group[group], normal_per_group[group])
-				);
+				_detail::reduceContactsInPlace(bucket, _detail::blendedGroupNormal(normal_sum_per_group[group], normal_per_group[group]));
 			}
 		});
 	}

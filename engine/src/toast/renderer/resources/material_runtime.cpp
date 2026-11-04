@@ -1,16 +1,5 @@
 #include "toast/renderer/resources/material_runtime.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-
-#include <algorithm>
-#include <array>
-#include <cstring>
-#include <format>
-#include <glm/glm.hpp>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
-#include <tracy/Tracy.hpp>
-
 namespace renderer {
 
 using assets::DataType;

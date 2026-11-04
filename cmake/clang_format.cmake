@@ -21,13 +21,37 @@ file(GLOB_RECURSE FORMAT_FILES
     "${FFI_DIR}/*.h" "${FFI_DIR}/*.hpp" "${FFI_DIR}/*.cpp" "${FFI_DIR}/*.inl"
 )
 
-foreach(fmt_file IN LISTS FORMAT_FILES)
-    execute_process(
-        COMMAND "${CLANG_FORMAT}" -i "${fmt_file}"
-        RESULT_VARIABLE fmt_result
-    )
+cmake_host_system_information(RESULT _jobs QUERY NUMBER_OF_LOGICAL_CORES)
+list(LENGTH FORMAT_FILES _count)
+if(_count EQUAL 0)
+    return()
+endif()
+if(_jobs GREATER _count)
+    set(_jobs ${_count})
+endif()
+
+# One clang-format per chunk, the commands of a single execute_process run concurrently
+set(_commands "")
+foreach(_i RANGE 1 ${_jobs})
+    set(_chunk "")
+    set(_idx ${_i})
+    math(EXPR _idx "${_idx} - 1")
+    while(_idx LESS _count)
+        list(GET FORMAT_FILES ${_idx} _f)
+        list(APPEND _chunk "${_f}")
+        math(EXPR _idx "${_idx} + ${_jobs}")
+    endwhile()
+    list(APPEND _commands COMMAND "${CLANG_FORMAT}" -i ${_chunk})
+endforeach()
+
+execute_process(
+    ${_commands}
+    RESULTS_VARIABLE fmt_results
+    OUTPUT_QUIET
+)
+foreach(fmt_result IN LISTS fmt_results)
     if(NOT fmt_result EQUAL 0)
-        message(WARNING "clang_format: clang-format failed for ${fmt_file}")
+        message(WARNING "clang_format: clang-format failed (${fmt_result})")
     endif()
 endforeach()
 

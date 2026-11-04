@@ -6,7 +6,6 @@
 
 #include "toast/renderer/vulkan_renderer.hpp"
 
-#include <toast/assets/assets.hpp>
 #include <toast/assets/mesh.hpp>
 #include <toast/assets/texture.hpp>
 #include <toast/world/camera.hpp>

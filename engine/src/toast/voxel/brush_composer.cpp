@@ -1,17 +1,10 @@
 #include "brush_composer.hpp"
 
-#include <atomic>
-#include <exception>
-#include <mutex>
-#include <toast/assets/assets.hpp>
 #include <toast/assets/prefab.hpp>
-#include <toast/log.hpp>
 #include <toast/reflect/reflect.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/nodes/procedural_voxel.hpp>
 #include <toast/world/node_owner.hpp>
-#include <unordered_map>
-#include <vector>
 
 namespace voxel {
 

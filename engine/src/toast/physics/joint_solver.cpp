@@ -1,9 +1,5 @@
 #include "joint_solver.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <limits>
-
 namespace physics::_detail {
 
 namespace {

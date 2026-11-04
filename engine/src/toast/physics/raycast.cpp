@@ -5,17 +5,6 @@
 #include "toast/physics/simulator.hpp"
 #include "toast/physics/voxel_query.hpp"
 
-#include <algorithm>
-#include <cmath>
-#include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <limits>
-#include <optional>
-#include <tracy/Tracy.hpp>
-#include <type_traits>
-#include <utility>
-#include <vector>
-
 namespace {
 using namespace physics;
 

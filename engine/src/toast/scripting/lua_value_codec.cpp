@@ -4,12 +4,8 @@
 #include "lua_types.hpp"
 
 #include <charconv>
-#include <glm/glm.hpp>
 #include <sstream>
-#include <toast/assets/assets.hpp>
-#include <toast/uid.hpp>
 #include <toast/world/node.hpp>
-#include <vector>
 
 namespace scripting {
 

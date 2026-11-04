@@ -1,6 +1,5 @@
 #include "ui_event_listener.hpp"
 
-#include "../log.hpp"
 #include "../world/node.hpp"
 #include "ui_system.hpp"
 

@@ -1,8 +1,6 @@
 #include "project_settings.hpp"
 
-#include <toast/log.hpp>
 #include <toml++/toml.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace toast {
 

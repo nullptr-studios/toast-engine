@@ -8,19 +8,12 @@
 #include "wave_executor.hpp"
 #include "workspace.hpp"
 
-#include <algorithm>
 #include <charconv>
 #include <future>
-#include <memory>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/assets/assets.hpp>
-#include <toast/log.hpp>
 #include <toast/scripting/lua_state.hpp>
 #include <toast/scripting/script_runtime.hpp>
-#include <toast/thread_pool.hpp>
 #include <toast/world/workspace_events.hpp>
-#include <tracy/Tracy.hpp>
-#include <unordered_map>
 
 namespace toast {
 

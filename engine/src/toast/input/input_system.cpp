@@ -15,13 +15,8 @@
 #include <SDL3/SDL_keycode.h>
 #include <SDL3/SDL_mouse.h>
 #include <SDL3/SDL_sensor.h>
-#include <chrono>
-#include <toast/assets/assets.hpp>
-#include <toast/events/event.hpp>
 #include <toast/input/assets/input_action.hpp>
-#include <toast/log.hpp>
 #include <toast/window/window_events.hpp>
-#include <tracy/Tracy.hpp>
 
 namespace input {
 

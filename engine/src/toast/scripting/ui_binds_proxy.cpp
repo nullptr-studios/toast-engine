@@ -3,7 +3,6 @@
 #include <RmlUi/Core/Variant.h>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
-#include <toast/log.hpp>
 #include <toast/ui/ui_binds.hpp>
 #include <toast/world/node.hpp>
 

@@ -2,11 +2,6 @@
 
 #include "toast/renderer/core/gpu_timer.hpp"
 
-#include "toast/renderer/core/vulkan_core.hpp"
-
-#include <algorithm>
-#include <toast/log.hpp>
-
 namespace renderer {
 
 namespace {
