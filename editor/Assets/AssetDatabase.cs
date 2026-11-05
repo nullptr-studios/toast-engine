@@ -615,10 +615,20 @@ public static class AssetDatabase {
 
 	public static void TryDelete(string path) {
 		try {
-			if (File.Exists(path)) File.Delete(path);
+			if (!File.Exists(path)) return;
+			// git-lfs locks are read only so remove that
+			File.SetAttributes(path, File.GetAttributes(path) & ~FileAttributes.ReadOnly);
+			File.Delete(path);
 		} catch {
 			/* ignore */
 		}
+	}
+
+	public static void DeleteDirectory(string path) {
+		if (!Directory.Exists(path)) return;
+		foreach (var file in Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
+			File.SetAttributes(file, File.GetAttributes(file) & ~FileAttributes.ReadOnly);
+		Directory.Delete(path, true);
 	}
 
 	public static void RemoveArtworkOutputs(string uid) {
