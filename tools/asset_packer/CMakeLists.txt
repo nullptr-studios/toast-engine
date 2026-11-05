@@ -1,30 +1,23 @@
-project(asset_packer NONE)
+project(asset_packer CXX)
+add_subdirectory(pack)
 
-set(CARGO_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-set(CARGO_TARGET_DIR "${OUTPUT_ROOT}/$<CONFIG>/cargo")
-set(CARGO_PROFILE_NAME "$<IF:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,release,debug>")
-set(CARGO_PROFILE_FLAG "$<IF:$<OR:$<CONFIG:Release>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>,release,dev>")
+find_package(indicators CONFIG REQUIRED)
 
-find_program(CARGO_EXECUTABLE cargo REQUIRED)
+set(PACKER_TOOLS packer unpacker pack_viewer)
+foreach (tool IN LISTS PACKER_TOOLS)
+    add_executable(${tool} src/${tool}.cpp)
+    target_link_libraries(${tool} PRIVATE toast_pack indicators::indicators)
+    target_include_directories(${tool} PRIVATE src)
 
-# One cargo build for all three [[bin]] entries of the crate
-add_custom_target(packer ALL
-        COMMAND ${CARGO_EXECUTABLE} build --profile "${CARGO_PROFILE_FLAG}" --target-dir "${CARGO_TARGET_DIR}"
-        COMMAND ${CMAKE_COMMAND}
-            -DCARGO_TARGET_DIR=${CARGO_TARGET_DIR}
-            -DPROFILE_NAME=${CARGO_PROFILE_NAME}
-            "-DBINARY_NAMES=packer;unpacker;pack_viewer"
-            -DEXE_SUFFIX=${CMAKE_EXECUTABLE_SUFFIX}
-            -DDEST_DIR=${OUTPUT_ROOT}/$<CONFIG>/packer
-            -P ${CMAKE_SOURCE_DIR}/cmake/install_cargo_output.cmake
-        WORKING_DIRECTORY ${CARGO_PROJECT_DIR}
-        COMMENT "[cargo] Building asset packer/unpacker/pack_viewer (${CARGO_PROFILE_NAME})..."
-        VERBATIM
-)
+    if (MSVC)
+        target_compile_definitions(${tool} PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN _CRT_SECURE_NO_WARNINGS)
+        target_compile_options(${tool} PRIVATE /W4 /utf-8)
+    else ()
+        target_compile_options(${tool} PRIVATE -Wall -Wextra)
+    endif ()
 
-# Name only targets so add_dependencies(editor unpacker) still resolves
-add_custom_target(unpacker ALL)
-add_dependencies(unpacker packer)
-
-add_custom_target(pack_viewer ALL)
-add_dependencies(pack_viewer packer)
+    foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
+        string(TOUPPER "${config}" config_upper)
+        set_target_properties(${tool} PROPERTIES RUNTIME_OUTPUT_DIRECTORY_${config_upper} "${OUTPUT_ROOT}/${config}/packer")
+    endforeach ()
+endforeach ()

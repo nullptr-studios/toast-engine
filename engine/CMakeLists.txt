@@ -106,6 +106,7 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
+        toast_pack
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:imgui::imgui>
         RmlUi::RmlUi
         cpptrace::cpptrace

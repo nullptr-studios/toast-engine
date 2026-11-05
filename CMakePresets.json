@@ -72,9 +72,22 @@
       "description": "Ninja, MSVC, Debug",
       "inherits": "windows",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/Ninja",
+      "binaryDir": "${sourceDir}/build/Debug",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      }
+    },
+    {
+      "name": "winja-rwd",
+      "displayName": "Ninja",
+      "description": "Ninja, MSVC, Debug",
+      "inherits": "windows",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/ReleaseWithDebInfo",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
         "CMAKE_C_COMPILER": "cl",
         "CMAKE_CXX_COMPILER": "cl"
       }
