@@ -11,6 +11,29 @@ public static class GitRunner {
 	// Anything that touches the index goes through this gate
 	private static readonly SemaphoreSlim s_indexGate = new(1, 1);
 
+	// linux doesnt have a GCR
+	private static readonly Lazy<bool> s_needsCredentialHelper = new(() => {
+		if (OperatingSystem.IsWindows()) return false;
+		try {
+			var psi = new ProcessStartInfo("git") {
+				UseShellExecute = false,
+				CreateNoWindow = true,
+				RedirectStandardOutput = true,
+				RedirectStandardError = true
+			};
+			psi.ArgumentList.Add("config");
+			psi.ArgumentList.Add("--get-all");
+			psi.ArgumentList.Add("credential.helper");
+			using var process = Process.Start(psi);
+			if (process is null) return false;
+			var output = process.StandardOutput.ReadToEnd();
+			process.WaitForExit(5000);
+			return string.IsNullOrWhiteSpace(output);
+		} catch {
+			return false;
+		}
+	});
+
 	public static async Task<GitResult> RunAsync(
 		string workingDirectory,
 		IEnumerable<string> args,
@@ -42,6 +65,12 @@ public static class GitRunner {
 		};
 		// Only valid when stdin is redirected
 		if (stdin is not null) psi.StandardInputEncoding = new UTF8Encoding(false);
+		// windows does have a GCR tho
+		if (s_needsCredentialHelper.Value) {
+			psi.ArgumentList.Add("-c");
+			psi.ArgumentList.Add("credential.helper=store");
+		}
+
 		foreach (var arg in args) psi.ArgumentList.Add(arg);
 
 		// Credential prompts go to the editor through askpass and never to a terminal
