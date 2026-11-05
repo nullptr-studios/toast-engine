@@ -1040,6 +1040,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			"cmake",
 			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH=\"{toastPath}\" -DCMAKE_BUILD_TYPE={gameBuildType}"
 		));
+		tasks.Add(LoaderTask.Do("Release game symbols", async log => {
+			Log.InvalidateBacktraceCache();
+			log("Released debug symbols of the loaded game");
+			await Task.CompletedTask;
+		}));
+
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
