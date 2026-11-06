@@ -366,21 +366,21 @@ void VulkanRenderer::tick(float time) noexcept {
 		acquireFrameSlot();
 	}
 	const bool got_slot = std::exchange(m_frame_slot, FrameSlot::none) == FrameSlot::held;
-	m_perf_ticks.fetch_add(1, std::memory_order_relaxed);
+	detail::addSingleWriter(m_perf_ticks, 1);
 
 	if (!got_slot) {
-		m_skipped_builds.fetch_add(1, std::memory_order_relaxed);
+		detail::addSingleWriter(m_skipped_builds, 1);
 		return;
 	}
-	m_perf_frames_built.fetch_add(1, std::memory_order_relaxed);
+	detail::addSingleWriter(m_perf_frames_built, 1);
 
 	const auto build_start = std::chrono::steady_clock::now();
 	const auto count_build = [this, build_start] {
-		m_perf_build_ns.fetch_add(
+		detail::addSingleWriter(
+		    m_perf_build_ns,
 		    static_cast<uint64_t>(
 		        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - build_start).count()
-		    ),
-		    std::memory_order_relaxed
+		    )
 		);
 	};
 

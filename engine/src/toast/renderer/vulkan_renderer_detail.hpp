@@ -7,10 +7,18 @@
 #include "toast/renderer/render_frame.hpp"
 #include "toast/renderer/resources/vulkan_mesh.hpp"
 
+#include <atomic>
 #include <cstdint>
+#include <type_traits>
 #include <vulkan/vulkan.hpp>
 
 namespace renderer::detail {
+
+/// Single writer thread only so the add skips the locked read modify write
+template<typename T>
+inline void addSingleWriter(std::atomic<T>& counter, std::type_identity_t<T> value) noexcept {
+	counter.store(counter.load(std::memory_order_relaxed) + value, std::memory_order_relaxed);
+}
 
 inline auto packExtent(vk::Extent2D extent) -> uint64_t {
 	return (static_cast<uint64_t>(extent.width) << 32u) | static_cast<uint64_t>(extent.height);
