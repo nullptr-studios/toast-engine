@@ -33,9 +33,8 @@ struct ShadowView {
 	glm::vec4 cull_sphere {0.0f};
 
 	uint32_t layer = 0;
-	bool directional = false;
-
 	uint32_t resolution = 0;
+	bool directional = false;
 };
 
 struct ShadowFrame {
@@ -45,20 +44,20 @@ struct ShadowFrame {
 	std::vector<glm::mat4> matrices;
 };
 
+/// Widest fields first since this is copied per instance every frame
 struct MeshInstanceProxy {
 	VulkanMesh* mesh = nullptr;
 	assets::Material* material = nullptr;
 	assets::Material* root_material = nullptr;
+	uint64_t node_rid = 0;
 	glm::mat4 model = glm::mat4(1.0f);
-
-	// joint_count > 0 selects the skinned pipeline
-	uint32_t joint_offset = 0;
-	uint32_t joint_count = 0;
 
 	glm::vec3 bounds_center {0.0f};
 	float bounds_radius = 0.0f;
 
-	bool visible = true;
+	// joint_count > 0 selects the skinned pipeline
+	uint32_t joint_offset = 0;
+	uint32_t joint_count = 0;
 
 	uint32_t instance_index = 0;
 
@@ -66,38 +65,37 @@ struct MeshInstanceProxy {
 
 	uint32_t posed_vertex_offset = k_no_posed_vertices;
 
-	uint64_t node_rid = 0;
+	bool visible = true;
 
 	/// Selected in the editor hierarchy
 	bool outlined = false;
 };
 
+/// Widest fields first since this is copied per instance every frame
 struct VoxelVolumeProxy {
-	uint32_t record_index = 0;
-
-	glm::uvec3 brick_dims {0};
-
 	glm::mat4 model {1.0f};
 	glm::mat4 inverse_model {1.0f};
-
 	glm::mat4 previous_model {1.0f};
 
-	/// False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero
-	bool has_previous = false;
+	uint64_t node_rid = 0;
+
+	glm::uvec3 brick_dims {0};
+	uint32_t record_index = 0;
 
 	glm::vec3 bounds_center {0.0f};
 	float bounds_radius = 0.0f;
 
 	float view_distance = 0.0f;
+	uint32_t highlight_record = 0;
+
+	/// False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero
+	bool has_previous = false;
 
 	bool camera_inside = false;
 
 	bool mirrored = false;
 
 	bool visible = true;
-
-	uint64_t node_rid = 0;
-	uint32_t highlight_record = 0;
 
 	/// Selected in the editor hierarchy
 	bool outlined = false;
@@ -119,9 +117,10 @@ constexpr size_t k_max_size_handles = 6;
 struct TransformGizmoDraw {
 	bool visible = false;
 	toast::GizmoTool tool = toast::GizmoTool::select;
-	glm::mat4 model {1.0f};
 	toast::GizmoHandle hover = toast::GizmoHandle::none;
 	toast::GizmoHandle active = toast::GizmoHandle::none;
+	glm::mat4 model {1.0f};
+
 	float drag_scale_factor = 1.0f;
 
 	std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
@@ -130,17 +129,18 @@ struct TransformGizmoDraw {
 };
 
 struct GizmoState {
-	bool visible = false;
-	toast::GizmoTool tool = toast::GizmoTool::select;
 	glm::vec3 origin {0.0f};
 	glm::quat orientation {1.0f, 0.0f, 0.0f, 0.0f};
-	toast::GizmoHandle hover = toast::GizmoHandle::none;
-	toast::GizmoHandle active = toast::GizmoHandle::none;
 	float drag_scale_factor = 1.0f;
 
 	std::array<SizeHandleDraw, k_max_size_handles> size_handles {};
 	uint32_t size_handle_count = 0;
 	float size_handle_scale = 1.0f;
+
+	bool visible = false;
+	toast::GizmoTool tool = toast::GizmoTool::select;
+	toast::GizmoHandle hover = toast::GizmoHandle::none;
+	toast::GizmoHandle active = toast::GizmoHandle::none;
 };
 
 #if defined(TOAST_DEV_TOOLS)
@@ -181,9 +181,6 @@ struct RenderFrame {
 
 	std::shared_ptr<const VoxelGpuStorage> voxel_storage;
 
-	/// Camera near plane distance so voxel cells it clips draw with the camera inside variant
-	float near_plane = 0.0f;
-
 	std::vector<assets::HandleBase> asset_refs;
 
 	std::vector<GpuLight> lights;
@@ -204,37 +201,48 @@ struct RenderFrame {
 
 	std::vector<MaterialRange> material_ranges;
 
+	/// Nearest first and at most k_max_fog_volumes
+	std::vector<FogVolumeGpu> fog_volumes;
+
+	std::vector<debug::Vertex> debug_line_vertices;    // pairs form line segments
+	std::vector<debug::Vertex> debug_triangle_vertices;
+	std::vector<glm::mat4> debug_gizmo_instances;
+	std::vector<debug::Billboard> debug_billboards;
+	std::vector<debug::Mesh> debug_meshes;
+
+	std::vector<vk::CommandBuffer> ui_command_buffers;
+	std::vector<vk::ImageView> ui_output_views;
+	std::vector<UIWorldPanelProxy> ui_world_panels;
+	std::shared_ptr<const void> ui_slot_guard;
+
+#if defined(TOAST_DEV_TOOLS)
+	ImGuiInputSnapshot imgui_input;
+#endif
+
+	PostProcessSettings post_process;
+
+	uint64_t sequence = 0;
+
+	LightStats light_stats;
+
+	TransformGizmoDraw transform_gizmo;
+
 	/// Render resolution
 	glm::vec2 viewport_extent {0.0f};
 	glm::vec2 output_extent {0.0f};
 	/// NDC offset jittered_view_projection adds
 	glm::vec2 jitter_ndc {0.0f};
+
+	/// Camera near plane distance so voxel cells it clips draw with the camera inside variant
+	float near_plane = 0.0f;
+
 	float camera_near = 0.01f;
 	float camera_far = 5000.0f;
 
 	float cluster_near = 0.1f;
 	float cluster_far = 5000.0f;
 
-	LightStats light_stats;
-
-#if defined(TOAST_DEV_TOOLS)
-	ImGuiInputSnapshot imgui_input;
-#endif
-
 	uint32_t render_mode = 0;
-
-	uint64_t sequence = 0;
-
-	/// Jittered and resolved by TaaPass which then skips FxaaPass
-	bool taa_active = false;
-
-	/// History is stale since the camera switched or TAA just turned on
-	bool taa_reset = false;
-
-	PostProcessSettings post_process;
-
-	/// Nearest first and at most k_max_fog_volumes
-	std::vector<FogVolumeGpu> fog_volumes;
 
 	int32_t probe_capture_index = -1;
 	uint32_t probe_capture_face = 0;
@@ -244,18 +252,11 @@ struct RenderFrame {
 
 	uint32_t capture_extent = 0;
 
-	std::vector<debug::Vertex> debug_line_vertices;    // pairs form line segments
-	std::vector<debug::Vertex> debug_triangle_vertices;
-	std::vector<glm::mat4> debug_gizmo_instances;
-	std::vector<debug::Billboard> debug_billboards;
-	std::vector<debug::Mesh> debug_meshes;
+	/// Jittered and resolved by TaaPass which then skips FxaaPass
+	bool taa_active = false;
 
-	TransformGizmoDraw transform_gizmo;
-
-	std::vector<vk::CommandBuffer> ui_command_buffers;
-	std::vector<vk::ImageView> ui_output_views;
-	std::vector<UIWorldPanelProxy> ui_world_panels;
-	std::shared_ptr<const void> ui_slot_guard;
+	/// History is stale since the camera switched or TAA just turned on
+	bool taa_reset = false;
 };
 
 }

@@ -93,13 +93,13 @@ private:
 	time_point_t m_previous_render;
 	uint64_t m_render_count = 0;
 
-	// published state
+	/// Sim seqlock group and render seqlock group each own a cache line so the two writers never false share
 	alignas(64) std::atomic<double> m_pub_delta {0.0};
 	std::atomic<double> m_pub_raw_delta {0.0};
 	std::atomic<uint64_t> m_pub_frame {0};
+	std::atomic<uint32_t> m_sim_seq {0};
 	std::atomic<bool> m_pub_paused {false};
 	std::atomic<bool> m_paused {false};
-	std::atomic<uint32_t> m_sim_seq {0};
 
 	alignas(64) std::atomic<double> m_pub_render_delta {0.0};
 	std::atomic<uint64_t> m_pub_render_frame {0};

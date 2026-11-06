@@ -153,6 +153,8 @@ private:
 	const VulkanCore* m_core = nullptr;
 	vk::Extent2D m_extent;
 	vk::Format m_color_format = vk::Format::eB8G8R8A8Unorm;
+	std::atomic<SharingState> m_sharing {SharingState::off};
+	std::atomic<bool> m_readback_requested {false};
 
 	std::mutex m_frame_mutex;
 	std::vector<SharedImage> m_images;
@@ -166,8 +168,6 @@ private:
 	std::condition_variable m_slot_freed;
 	std::atomic<uint64_t> m_frame_counter {0};
 	std::unique_ptr<Interop> m_interop;
-	std::atomic<SharingState> m_sharing {SharingState::off};
-	std::atomic<bool> m_readback_requested {false};
 };
 
 }

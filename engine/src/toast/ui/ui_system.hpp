@@ -167,6 +167,9 @@ private:
 
 	float m_dp_ratio = 1.0f;
 
+	bool m_documents_reload_pending = false;
+	bool m_stylesheet_cache_dirty = false;
+
 	uint64_t m_next_context_id = 1;    ///< context names must be unique
 	uint64_t m_frame_counter = 0;
 
@@ -189,9 +192,6 @@ private:
 	std::unordered_map<uint64_t, size_t> m_global_localization_refs;
 	std::unordered_map<uint64_t, size_t> m_global_image_localization_refs;
 	std::vector<LocalizationScope> m_localization_stack;
-
-	bool m_documents_reload_pending = false;
-	bool m_stylesheet_cache_dirty = false;
 
 	/// Held while a deferred setup runs so its owner cannot be cancelled and destroyed halfway through
 	std::mutex m_deferred_mutex;

@@ -71,7 +71,6 @@ private:
 	/// Presses since the last tick so a tap released before the tick still samples down once
 	std::unordered_set<int> m_keys_pressed;
 	std::unordered_set<int> m_mouse_pressed;
-	ModifierKey m_mods = ModifierKey::none;
 
 	glm::vec2 m_mouse_position {0.0f};
 	glm::vec2 m_prev_mouse_position {0.0f};
@@ -87,17 +86,18 @@ private:
 	/// Added to raw positions so a locked cursor resumes where the game left it
 	glm::vec2 m_cursor_offset {0.0f};
 	bool m_resync_cursor = false;
+	ModifierKey m_mods = ModifierKey::none;
+	Device m_last_device = Device::none;
+	bool m_has_last_tick = false;
 
 	glm::vec2 m_viewport_position {0.0f};
 	glm::vec2 m_viewport_size {0.0f};
 
 	std::unordered_map<uint32_t, SDL_Gamepad*> m_gamepads;
 
-	Device m_last_device = Device::none;
 	std::string m_last_name;
 
 	std::chrono::steady_clock::time_point m_last_tick;
-	bool m_has_last_tick = false;
 };
 
 }

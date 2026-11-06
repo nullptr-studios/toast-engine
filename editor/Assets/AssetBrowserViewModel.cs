@@ -41,7 +41,6 @@ public sealed class BreadcrumbItem {
 }
 
 public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
-	// Extension sets derived dynamically from importers + asset registry
 	// TODO: Do this with reflection at some point
 	private static readonly IReadOnlyList<IAssetImporter> s_defaultImporters = [
 		new TextureImporter(new TextureImporter.Settings()),
@@ -50,8 +49,6 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		new FontImporter(),
 		new UIImageImporter(),
 		new VoxImporter(new VoxImporter.Settings()),
-		// Without these a dropped .bank matched the audio_bank asset extension instead and was copied raw: Master.strings.bank
-		// became a plain bank, and its events were never generated
 		new AudioBankImporter(),
 		new AudioStringImporter(new AudioStringImporter.Settings())
 	];
@@ -424,7 +421,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	public IReadOnlyList<string> DragPaths(object pressed) {
 		var items = m_selectedItems.Contains(pressed) ? m_selectedItems.ToList() : [pressed];
 		return items.Select(i => i switch {
-			AssetFile f => f.Filepath,
+			AssetFile f => f.AssetPath, // also copy the asset bruh
 			AssetFolder d => d.Filepath,
 			_ => null
 		}).OfType<string>().ToList();
@@ -437,7 +434,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 
 		foreach (var path in paths) {
 			var full = Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar);
-			if (!IsEditablePath(full)) return false;
+			if (!IsEditablePath(full) || IsLockedByOthersPath(full)) return false;
 
 			if (Directory.Exists(full)) {
 				if (ProjectContext.IsDatabaseRoot(full)) return false;
@@ -720,7 +717,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 							if (MetaFile.ReadHeader(meta)?.Uid is { } folderUid)
 								uids.Add(folderUid);
 						AssetDatabase.RemoveArtworkOutputs(uids);
-						Directory.Delete(folder.Filepath, true);
+						AssetDatabase.DeleteDirectory(folder.Filepath);
 					} catch {
 						/* ignore */
 					}
@@ -934,7 +931,16 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	public bool CanMoveAsset(string uid, AssetFolder target) {
 		if (!CanWriteToFolder(target) || !AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return false;
 		var source = ProjectContext.Resolve(virtualPath);
-		return File.Exists(source) && IsEditablePath(source);
+		return File.Exists(source) && IsEditablePath(source) && !IsLockedByOthersPath(source);
+	}
+
+	private bool IsLockedByOthersPath(string path) {
+		if (File.Exists(path)) return m_git?.GetLock(path) is { OwnedByMe: false };
+		return FindByPath(Folders, path) is { } folder && HasLockedByOthers(folder);
+	}
+
+	private static bool HasLockedByOthers(AssetFolder folder) {
+		return GetAllFiles(folder).Any(f => f.IsLockedByOthers);
 	}
 
 	private bool CanCreateFolder(object? param) {
@@ -1029,7 +1035,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	}
 
 	private static bool IsEditable(AssetFolder folder) {
-		return IsEditablePath(folder.Filepath) && !ProjectContext.IsDatabaseRoot(folder.Filepath);
+		return IsEditablePath(folder.Filepath) && !ProjectContext.IsDatabaseRoot(folder.Filepath) &&
+			!HasLockedByOthers(folder);
 	}
 
 	private T Track<T>(T command) where T : IRelayCommand {

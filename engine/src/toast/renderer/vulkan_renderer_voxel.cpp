@@ -534,17 +534,17 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 		frame.voxel_instances.push_back(
 		    VoxelVolumeProxy {
-		      .record_index = *record,
-		      .brick_dims = dims,
 		      .model = model,
 		      .inverse_model = glm::inverse(model),
 		      .previous_model = has_previous ? previous->second : model,
-		      .has_previous = has_previous,
+		      .node_rid = node_rid,
+		      .brick_dims = dims,
+		      .record_index = *record,
 		      .bounds_center = glm::vec3(sphere),
 		      .bounds_radius = sphere.w,
-		      .mirrored = glm::determinant(model) < 0.0f,
-		      .node_rid = node_rid,
 		      .highlight_record = highlight_record_of(entry.highlight_id),
+		      .has_previous = has_previous,
+		      .mirrored = glm::determinant(model) < 0.0f,
 		      .outlined = isOutlined(entry.outline_id != 0 ? entry.outline_id : node_rid),
 		    }
 		);

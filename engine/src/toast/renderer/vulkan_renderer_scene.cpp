@@ -705,12 +705,12 @@ void VulkanRenderer::gatherMeshProxies(RenderFrame& frame) {
 		      .mesh = &gpu_mesh,
 		      .material = material,
 		      .root_material = material->rootMaterial(),
+		      .node_rid = node->rid(),
 		      .model = world_transform,
-		      .joint_offset = joint_offset,
-		      .joint_count = joint_count,
 		      .bounds_center = world_center,
 		      .bounds_radius = world_radius,
-		      .node_rid = node->rid(),
+		      .joint_offset = joint_offset,
+		      .joint_count = joint_count,
 		      .outlined = isOutlined(node->rid()),
 		    }
 		);

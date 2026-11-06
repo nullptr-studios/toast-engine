@@ -3,8 +3,12 @@ project(my_game CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
+if (NOT TOAST_PATH AND DEFINED ENV{TOAST_PATH})
+  file(TO_CMAKE_PATH "$ENV{TOAST_PATH}" TOAST_PATH)
+endif ()
+
 if (NOT TOAST_PATH)
-  message(FATAL_ERROR "TOAST_PATH not defined! Please pass -DTOAST_PATH=\"path/to/toast/engine\"")
+  message(FATAL_ERROR "TOAST_PATH not defined! Pass -DTOAST_PATH=\"path/to/toast/engine\" or set the TOAST_PATH environment variable")
 endif ()
 
 

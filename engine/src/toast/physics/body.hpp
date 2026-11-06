@@ -70,7 +70,6 @@ struct Body {
 	bool enabled = true;
 	bool awake = true;
 	bool allow_sleep = true;
-	bool sleep_locked = false;
 	float sleep_timer = 0.0f;
 	float asleep_seconds = 0.0f;
 	glm::vec3 sleep_anchor_center = {};
@@ -89,6 +88,7 @@ struct Body {
 	float extent_radius = 0.0f;    /// Distance to the center of mass
 	glm::bvec3 lock_position = glm::bvec3(false);
 	glm::bvec3 lock_rotation = glm::bvec3(false);
+	bool sleep_locked = false;
 	float linear_damping = 0.0f;
 	float angular_damping = 0.0f;
 	float drag_scale = 1.0f;

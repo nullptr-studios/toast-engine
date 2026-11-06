@@ -275,8 +275,8 @@ void VulkanRenderer::fitShadowViews(
 			      .view_projection = fit.view_projection,
 			      .cull_sphere = fit.cull_sphere,
 			      .layer = cascade,
-			      .directional = true,
 			      .resolution = shadows::cascadeResolution(),
+			      .directional = true,
 			    }
 			);
 
@@ -348,8 +348,8 @@ void VulkanRenderer::fitShadowViews(
 		      .view_projection = view_projection,
 		      .cull_sphere = glm::vec4(position, range),
 		      .layer = layer,
-		      .directional = false,
 		      .resolution = resolution,
+		      .directional = false,
 		    }
 		);
 		frame.shadows.matrices.push_back(view_projection);
@@ -398,8 +398,8 @@ void VulkanRenderer::fitShadowViews(
 			      .view_projection = view_projection,
 			      .cull_sphere = glm::vec4(position, range),
 			      .layer = base_layer + face,
-			      .directional = false,
 			      .resolution = resolution,
+			      .directional = false,
 			    }
 			);
 			frame.shadows.matrices.push_back(view_projection);
