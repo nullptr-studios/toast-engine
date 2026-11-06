@@ -1424,9 +1424,8 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	auto phase_start = clock::now();
 	auto end_phase = [&phase_start](std::atomic<uint64_t>& counter) {
 		const auto now = clock::now();
-		counter.fetch_add(
-		    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now - phase_start).count()),
-		    std::memory_order_relaxed
+		detail::addSingleWriter(
+		    counter, static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now - phase_start).count())
 		);
 		phase_start = now;
 	};

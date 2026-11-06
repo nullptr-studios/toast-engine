@@ -1029,7 +1029,6 @@ public:
 		return m_reflection_probe_pass;
 	}
 
-	[[nodiscard]]
 	void setActiveCamera(toast::Camera* camera);
 
 	void forgetCamera(const toast::Camera* camera);
@@ -1249,7 +1248,8 @@ private:
 	std::thread m_render_thread;
 
 	std::array<RenderFrame, k_render_frames> m_render_frames;
-	std::atomic<uint32_t> m_write_index = 0;
+	/// Main thread only
+	uint32_t m_write_index = 0;
 
 	std::mutex m_queue_mutex;
 
@@ -1500,7 +1500,7 @@ private:
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
 	std::array<SceneColorResources, 2> m_voxel_reservoirs;
-	/// The lighting scope's reservoirs when the spatial pass then writes m_voxel_reservoirs
+	/// The lighting scope reservoirs when the spatial pass then writes m_voxel_reservoirs
 	SceneColorResources m_voxel_candidate_reservoirs;
 	uint32_t m_voxel_reservoir_parity = 0;
 	bool m_voxel_reservoir_written = false;
@@ -1803,19 +1803,23 @@ private:
 
 	std::unique_ptr<SkinnedBlasPool> m_skinned_blas_pool;
 
-	std::atomic<uint64_t> m_last_drawn_sequence {0};
-	std::atomic<uint32_t> m_out_of_order_frames {0};
-	std::atomic<uint32_t> m_dropped_frames {0};
+	/// Render thread only
+	uint64_t m_last_drawn_sequence = 0;
 
-	std::atomic<uint32_t> m_skipped_builds {0};
-
-	std::atomic<float> m_frame_time_avg_ms {0.0f};
-	std::atomic<float> m_frame_time_min_ms {0.0f};
-	std::atomic<float> m_frame_time_max_ms {0.0f};
-
+	/// Stats grouped by writer thread on separate cache lines to avoid false sharing
+	/// Main thread writes
+	alignas(64) std::atomic<uint32_t> m_skipped_builds {0};
 	std::atomic<uint64_t> m_perf_ticks {0};
 	std::atomic<uint64_t> m_perf_frames_built {0};
 	std::atomic<uint64_t> m_perf_slot_wait_ns {0};
+	std::atomic<uint64_t> m_perf_build_ns {0};
+
+	/// Render thread writes
+	alignas(64) std::atomic<uint32_t> m_out_of_order_frames {0};
+	std::atomic<uint32_t> m_dropped_frames {0};
+	std::atomic<float> m_frame_time_avg_ms {0.0f};
+	std::atomic<float> m_frame_time_min_ms {0.0f};
+	std::atomic<float> m_frame_time_max_ms {0.0f};
 	std::atomic<uint64_t> m_perf_draws {0};
 	std::atomic<uint64_t> m_perf_repeated_draws {0};
 	std::atomic<uint64_t> m_perf_draw_work_ns {0};
@@ -1827,9 +1831,8 @@ private:
 	std::atomic<uint64_t> m_perf_present_ns {0};
 	std::atomic<uint64_t> m_perf_frame_wait_ns {0};
 	std::atomic<uint64_t> m_perf_pacing_ns {0};
-	std::atomic<uint64_t> m_perf_build_ns {0};
 
-	std::atomic_bool m_cull_debug_draw {false};
+	alignas(64) std::atomic_bool m_cull_debug_draw {false};
 
 	std::atomic_bool m_cull_freeze {false};
 	glm::mat4 m_frozen_cull_view_projection {1.0f};

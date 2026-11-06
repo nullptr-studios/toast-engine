@@ -165,9 +165,9 @@ void VulkanRenderer::mainRenderThread() try {
 					}
 				}
 			}
-			m_perf_frame_wait_ns.fetch_add(
-			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - frame_wait_start).count()),
-			    std::memory_order_relaxed
+			detail::addSingleWriter(
+			    m_perf_frame_wait_ns,
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - frame_wait_start).count())
 			);
 
 			if (!m_running) {
@@ -182,9 +182,9 @@ void VulkanRenderer::mainRenderThread() try {
 				has_frame = true;
 				consumed_queued_frame = true;
 
-				const uint64_t previous = m_last_drawn_sequence.exchange(frame_to_draw.sequence, std::memory_order_relaxed);
+				const uint64_t previous = std::exchange(m_last_drawn_sequence, frame_to_draw.sequence);
 				if (frame_to_draw.sequence < previous) {
-					m_out_of_order_frames.fetch_add(1, std::memory_order_relaxed);
+					detail::addSingleWriter(m_out_of_order_frames, 1);
 					TOAST_WARN(
 					    "VulkanRenderer",
 					    "Frame {} drawn after frame {} - render frames arrived out of order",
@@ -192,7 +192,7 @@ void VulkanRenderer::mainRenderThread() try {
 					    previous
 					);
 				} else if (previous != 0 && frame_to_draw.sequence > previous + 1) {
-					m_dropped_frames.fetch_add(static_cast<uint32_t>(frame_to_draw.sequence - previous - 1), std::memory_order_relaxed);
+					detail::addSingleWriter(m_dropped_frames, static_cast<uint32_t>(frame_to_draw.sequence - previous - 1));
 				}
 			} else if (!has_frame) {
 				continue;
@@ -203,9 +203,9 @@ void VulkanRenderer::mainRenderThread() try {
 		if (limit_hz > 0.0 && !clamp_to_simulation) {
 			const auto pacing_start = clock::now();
 			std::this_thread::sleep_until(next_frame_deadline);
-			m_perf_pacing_ns.fetch_add(
-			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - pacing_start).count()),
-			    std::memory_order_relaxed
+			detail::addSingleWriter(
+			    m_perf_pacing_ns,
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - pacing_start).count())
 			);
 			const auto interval = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / limit_hz));
 			const auto now = clock::now();
@@ -245,13 +245,13 @@ void VulkanRenderer::mainRenderThread() try {
 		const auto draw_start = clock::now();
 		// A pass with no free output image rendered nothing
 		if (drawFrame(frame_to_draw)) {
-			m_perf_draw_work_ns.fetch_add(
-			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count()),
-			    std::memory_order_relaxed
+			detail::addSingleWriter(
+			    m_perf_draw_work_ns,
+			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count())
 			);
-			m_perf_draws.fetch_add(1, std::memory_order_relaxed);
+			detail::addSingleWriter(m_perf_draws, 1);
 			if (!consumed_queued_frame) {
-				m_perf_repeated_draws.fetch_add(1, std::memory_order_relaxed);
+				detail::addSingleWriter(m_perf_repeated_draws, 1);
 			}
 
 			{
@@ -333,11 +333,11 @@ void VulkanRenderer::acquireFrameSlot() noexcept {
 	using namespace std::chrono_literals;
 	const auto slot_wait_start = std::chrono::steady_clock::now();
 	m_frame_slot = m_free_frames.try_acquire_for(50ms) ? FrameSlot::held : FrameSlot::missed;
-	m_perf_slot_wait_ns.fetch_add(
+	detail::addSingleWriter(
+	    m_perf_slot_wait_ns,
 	    static_cast<uint64_t>(
 	        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slot_wait_start).count()
-	    ),
-	    std::memory_order_relaxed
+	    )
 	);
 }
 

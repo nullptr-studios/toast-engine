@@ -16,22 +16,30 @@ namespace toast {
 
 class TOAST_API [[ToastNode, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEmitter : public Node {
 public:
-	[[Button]]
+	[[Reflect, Button]]
 	void play();                                              ///< Fires the event
 
-	[[Button]]
+	[[Reflect, Button]]
 	void stop();                                              ///< Stops the event using the @c allowFadeout()
-
+	[[Reflect]]
 	void pause(bool value);                                   ///< Pauses and resumes in a location
+	[[Reflect]]
 	void setParameter(std::string_view name, float value);    ///< Changes a parameter by name
+	[[Reflect]]
 	void setParameter(std::string_view, bool value);          ///< Changes a parameter by name
+	[[Reflect]]
 	auto isPlaying() -> bool;                                 ///< @returns true if it's currently playing
 
 	void event(std::string_view path);                        ///< Sets the event by URI
+	[[Reflect]]
 	void event(toast::UID uid);                               ///< Sets the event by UID
+	[[Reflect]]
 	void playOnEnable(bool value);                            ///< If true, will play every time the node is enabled
+	[[Reflect]]
 	void volume(float value);                                 ///< @param value 0.0 - 1.0
+	[[Reflect]]
 	void pitch(float value);                                  ///< @param value 0.5 - 2.0
+	[[Reflect]]
 	void allowFadeout(bool value);                            ///< False forces the event to bypass envelope settings
 	                                                          ///
 	signals::Signal<std::string_view> audio_started;
