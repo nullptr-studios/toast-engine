@@ -264,9 +264,6 @@ private:
 	void initializeNsightActivity();
 #endif
 
-	bool m_validation_enabled = false;
-	bool m_debug_utils_enabled = false;
-
 	vk::raii::Context m_context;
 	vk::raii::Instance m_instance = nullptr;
 #ifndef NDEBUG
@@ -285,20 +282,24 @@ private:
 	uint32_t m_graphics_queue_family_index = std::numeric_limits<uint32_t>::max();
 	uint32_t m_compute_queue_family_index = std::numeric_limits<uint32_t>::max();
 	uint32_t m_transfer_queue_family_index = std::numeric_limits<uint32_t>::max();
+
+	uint32_t m_transfer_queue_index = 0;
+
 	vk::Queue m_graphics_queue = nullptr;
 	vk::Queue m_compute_queue = nullptr;
 	vk::Queue m_transfer_queue = nullptr;
 
-	bool m_sampler_anisotropy_supported = false;
 	float m_max_sampler_anisotropy = 1.0f;
+
+	uint32_t m_as_scratch_alignment = 0;
 
 	mutable std::mutex m_graphics_submit_mutex;
 	mutable std::mutex m_transfer_submit_mutex;
-	uint32_t m_transfer_queue_index = 0;
 
 	RENDERDOC_API_1_6_0* rdoc_api = nullptr;
 
 	mutable NsightMode m_nsight_mode = NsightMode::none;
+	mutable bool m_nsight_gputrace_activated = false;
 
 	bool m_frame_boundary_supported = false;
 	bool m_memory_budget_supported = false;
@@ -306,14 +307,17 @@ private:
 	bool m_texture_sharing_supported = false;
 
 	bool m_ray_tracing_supported = false;
-	std::string_view m_ray_tracing_reason = "not probed";
 	RayTracingMode m_ray_tracing_startup_mode {};
 	bool m_mesh_shader_supported = false;
+	std::string_view m_ray_tracing_reason = "not probed";
+
 	uint32_t m_mesh_multiview_views = 0;
+
 	bool m_depth_clamp_supported = false;
 	bool m_dual_source_blend_supported = false;
+	bool m_sampler_anisotropy_supported = false;
 
-	uint32_t m_as_scratch_alignment = 0;
-	mutable bool m_nsight_gputrace_activated = false;
+	bool m_validation_enabled = false;
+	bool m_debug_utils_enabled = false;
 };
 }

@@ -12,6 +12,7 @@ if (BUILD_TESTING)
 	# HACK DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/external/inc)
+	target_precompile_headers(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/pch.h)
 	# renderer/04-import-reflection calls the Slang API directly and the engine find_package does not carry here
 	find_package(slang CONFIG REQUIRED)
 	target_link_libraries(toast_tests PRIVATE toast_engine RmlUi::RmlUi slang::slang)

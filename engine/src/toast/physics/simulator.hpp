@@ -185,6 +185,8 @@ public:
 		size_t voxel_voxel_max_estimated_voxels = 0;
 		/// World-space longest axis metres behind box_voxel_max_estimated_voxels
 		float box_voxel_max_extent_meters = 0.0f;
+		uint32_t brick_pool_allocated = 0;
+
 		size_t narrow_collisions = 0;
 		size_t sleeping_pairs_skipped = 0;
 		size_t rejected_manifolds = 0;
@@ -252,14 +254,13 @@ public:
 		size_t fragments_evicted = 0;
 		size_t static_splits_spawned = 0;
 
-		uint32_t brick_pool_allocated = 0;
-		uint32_t brick_pool_capacity = 0;
-
 		/// Peak constraint batch count across islands this tick
 		size_t max_constraint_batches = 0;
 
 		/// How many ticks the fixed step accumulator ran this frame since tick_ms above is only the last one
 		size_t ticks_this_frame = 1;
+
+		uint32_t brick_pool_capacity = 0;
 
 		/// The accumulator cut this frame catch up burst short on time rather than running out of work
 		bool ticks_capped_by_time_budget = false;
@@ -406,8 +407,8 @@ private:
 		ShapeID shape;
 		toast::Box<toast::VoxelNode> node;
 		bool is_part = false;
-		uint64_t part_key = 0;
 		uint32_t source_revision = 0;
+		uint64_t part_key = 0;
 		uint64_t source_model = 0;
 		uint64_t source_palette = 0;
 	};
@@ -724,6 +725,7 @@ private:
 
 	mutable std::thread::id m_owner_thread;
 	std::atomic<SimulationPhase> m_phase = SimulationPhase::idle;
+	NarrowPhase m_narrow_phase;
 
 	std::vector<BodySlot> m_bodies;
 	std::deque<uint32_t> m_free_body_slots;
@@ -788,7 +790,6 @@ private:
 	std::deque<uint32_t> m_free_shape_slots;
 
 	BroadPhase m_broad_phase;
-	NarrowPhase m_narrow_phase;
 	std::vector<Manifold> m_manifolds;
 	std::vector<CachedManifold> m_cached_manifolds;
 	/// Swapped with m_cached_manifolds every updateCache so neither side reallocates

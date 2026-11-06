@@ -1040,6 +1040,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			"cmake",
 			$"lib/ -B .toast/cmake_cache {cmakeGenerator} -DTOAST_PATH=\"{toastPath}\" -DCMAKE_BUILD_TYPE={gameBuildType}"
 		));
+		tasks.Add(LoaderTask.Do("Release game symbols", async log => {
+			Log.InvalidateBacktraceCache();
+			log("Released debug symbols of the loaded game");
+			await Task.CompletedTask;
+		}));
+
 		tasks.Add(LoaderTask.Run(
 			"cmake build",
 			"cmake",
@@ -1109,9 +1115,29 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		var stageRoot = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, ".toast", "pack_stage"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
 
+#if DEBUG
+		const string gameConfig = "Debug";
+#elif RELWITHDEBINFO
+		const string gameConfig = "RelWithDebInfo";
+#else
+		const string gameConfig = "Release";
+#endif
+		var cmakeCache = $".toast/cmake_release_cache_{gameConfig}";
+
 		Directory.CreateDirectory(outputDir);
 
 		Log.InvalidateBacktraceCache();
+
+		async Task CleanGameOutputs(Action<string> log) {
+			await Task.Run(() => {
+				foreach (var ext in new[] { ".dll", ".pdb", ".ilk", ".lib", ".exp" }) {
+					var stale = Path.Combine(outputDir, $"my_game{ext}");
+					if (!File.Exists(stale)) continue;
+					log($"  remove stale {Path.GetFileName(stale)}");
+					File.Delete(stale);
+				}
+			});
+		}
 
 		async Task CopyDlls(Action<string> log) {
 			var libExt = OperatingSystem.IsWindows() ? ".dll" : ".so";
@@ -1252,29 +1278,18 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				"dotnet",
 				$"publish \"{playerPath}\" -c Release -p:PublishSingleFile=true -p:OptimizationPreference=Speed -o \"{outputDir}\""
 			),
-			// Generate CMake on Release
+			LoaderTask.Do("clean stale game outputs", CleanGameOutputs),
+			// Generate CMake
 			LoaderTask.Run(
-				"cmake configure (Release)",
+				$"cmake configure ({gameConfig})",
 				"cmake",
-				#if DEBUG
-                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Debug"
-                #elif RELWITHDEBINFO
-                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=RelWithDebInfo"
-                #else
-                			$"lib/ -B .toast/cmake_release_cache {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE=Release"
-                #endif
+				$"lib/ -B {cmakeCache} {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE={gameConfig}"
 			),
-			// Build Game DLL on Release
+			// Build Game DLL
 			LoaderTask.Run(
-				"cmake build (Release)",
+				$"cmake build ({gameConfig})",
 				"cmake",
-				#if DEBUG
-                			"--build .toast/cmake_release_cache --config Debug --parallel"
-                #elif RELWITHDEBINFO
-                			"--build .toast/cmake_release_cache --config RelWithDebInfo --parallel"
-                #else
-                			"--build .toast/cmake_release_cache --config Release --parallel"
-                #endif
+				$"--build {cmakeCache} --config {gameConfig} --parallel"
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),

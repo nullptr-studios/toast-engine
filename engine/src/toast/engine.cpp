@@ -121,15 +121,15 @@ struct EnginePimpl {
 	std::unique_ptr<ProjectSettings> settings = nullptr;
 	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
 	std::unique_ptr<physics::Simulator> physics_simulator = nullptr;
-	Time time;
-	event::Listener listener;
-	toast::NodeRegistry reflection_registry;
-
 	// owned by renderer's output target
 	renderer::SharedTextureOutputTarget* shared_target = nullptr;
 
 	/// Hash of the thread that ran tick() for the last time
 	std::atomic<size_t> tick_thread {0};
+	Time time;
+	event::Listener listener;
+	toast::NodeRegistry reflection_registry;
+
 	/// Stands in for tick_thread until the first tick
 	size_t creator_thread = std::hash<std::thread::id> {}(std::this_thread::get_id());
 
@@ -520,15 +520,15 @@ void Engine::tick() {
 			if (Workspace* ws = it->second->asWorkspace()) {
 				const auto gizmo = ws->gizmoRenderState();
 				renderer::GizmoState gizmo_state {
-				  .visible = gizmo.visible,
-				  .tool = gizmo.tool,
 				  .origin = gizmo.origin,
 				  .orientation = gizmo.orientation,
-				  .hover = gizmo.hover,
-				  .active = gizmo.active,
 				  .drag_scale_factor = gizmo.drag_scale_factor,
 				  .size_handle_count = gizmo.size_handle_count,
 				  .size_handle_scale = gizmo.size_handle_scale,
+				  .visible = gizmo.visible,
+				  .tool = gizmo.tool,
+				  .hover = gizmo.hover,
+				  .active = gizmo.active,
 				};
 				for (uint32_t i = 0; i < gizmo.size_handle_count; ++i) {
 					gizmo_state.size_handles[i] = {

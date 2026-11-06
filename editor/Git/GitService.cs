@@ -45,6 +45,7 @@ public sealed class GitService : IDisposable {
 	private int m_statusRunning;
 	private int m_statusPending;
 	private int m_locksRunning;
+	private int m_locksPending;
 	private int m_fetchRunning;
 	private bool m_disposed;
 	private DateTime m_authorsLoadedAt = DateTime.MinValue;
@@ -348,8 +349,19 @@ public sealed class GitService : IDisposable {
 
 	public async Task RefreshLocksAsync() {
 		if (!IsAvailable || !HasLfs || m_disposed) return;
-		if (Interlocked.Exchange(ref m_locksRunning, 1) == 1) return;
 
+		Volatile.Write(ref m_locksPending, 1);
+		do {
+			if (Interlocked.Exchange(ref m_locksRunning, 1) == 1) return;
+			try {
+				while (Interlocked.Exchange(ref m_locksPending, 0) == 1) await RefreshLocksOnce();
+			} finally {
+				Interlocked.Exchange(ref m_locksRunning, 0);
+			}
+		} while (Volatile.Read(ref m_locksPending) == 1);
+	}
+
+	private async Task RefreshLocksOnce() {
 		try {
 			var result = await RunAsync(["lfs", "locks", "--verify", "--json"], serialize: false,
 				timeout: TimeSpan.FromSeconds(30));
@@ -375,8 +387,6 @@ public sealed class GitService : IDisposable {
 			if (changed) Dispatcher.UIThread.Post(() => LocksChanged?.Invoke());
 		} catch (Exception e) {
 			Log.Warn($"Git: lock refresh failed ({e.Message})");
-		} finally {
-			Interlocked.Exchange(ref m_locksRunning, 0);
 		}
 	}
 

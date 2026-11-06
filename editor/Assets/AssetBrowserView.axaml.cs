@@ -25,6 +25,7 @@ public partial class AssetBrowserView : UserControl {
 	private PointerPressedEventArgs? m_pressArgs;
 
 	private object? m_pressItem;
+	private bool m_deferSelect;
 	private bool m_marquee;
 	private Point m_marqueeStart;
 	private IReadOnlyCollection<object>? m_marqueeKeep;
@@ -87,7 +88,8 @@ public partial class AssetBrowserView : UserControl {
 		if (IsTagRemoveButton(e.Source)) return;
 		var item = GetCardItem(e.Source);
 		if (item is null) return;
-		Vm.SelectItem(item, e.KeyModifiers);
+		m_deferSelect = e.KeyModifiers == KeyModifiers.None && Vm.SelectedItems.Contains(item);
+		if (!m_deferSelect) Vm.SelectItem(item, e.KeyModifiers);
 		Focus();
 		m_pressItem = item;
 		m_pressArgs = e;
@@ -103,6 +105,7 @@ public partial class AssetBrowserView : UserControl {
 
 		var pressed = m_pressItem;
 		var args = m_pressArgs;
+		m_deferSelect = false;
 		m_pressItem = null;
 		m_pressArgs = null;
 
@@ -133,6 +136,8 @@ public partial class AssetBrowserView : UserControl {
 	}
 
 	private void OnCardPointerReleased(object? sender, PointerReleasedEventArgs e) {
+		if (m_deferSelect && m_pressItem is { } clicked) Vm.SelectItem(clicked, KeyModifiers.None);
+		m_deferSelect = false;
 		m_pressItem = null;
 		m_pressArgs = null;
 	}

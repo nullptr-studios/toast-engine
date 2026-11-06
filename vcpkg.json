@@ -97,6 +97,10 @@
       "version>=": "1.10.0"
     },
     {
+      "name": "indicators",
+      "version>=": "2.3"
+    },
+    {
       "name": "curl"
     },
     {

@@ -547,8 +547,8 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 		  .shape = shape,
 		  .node = node.box().as<toast::VoxelNode>(),
 		  .is_part = part != nullptr,
-		  .part_key = part != nullptr ? part->key : 0,
 		  .source_revision = part != nullptr ? part->revision : node.revision(),
+		  .part_key = part != nullptr ? part->key : 0,
 		  .source_model = node.getModel().uid().data(),
 		  .source_palette = node.paletteUid(),
 		});
