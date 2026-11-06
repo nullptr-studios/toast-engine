@@ -152,6 +152,8 @@ size_t&#160;</td><td class="memItemRight"><b>voxel_voxel_max_estimated_voxels</b
 <tr class="memitem:ad80b0c8968fc9e535bf39e527ce6c28e" id="r_ad80b0c8968fc9e535bf39e527ce6c28e"><td class="memItemLeft"><a id="ad80b0c8968fc9e535bf39e527ce6c28e" name="ad80b0c8968fc9e535bf39e527ce6c28e"></a>
 float&#160;</td><td class="memItemRight"><b>box_voxel_max_extent_meters</b> = 0.0f</td></tr>
 <tr class="memdesc:ad80b0c8968fc9e535bf39e527ce6c28e"><td class="mdescLeft">&#160;</td><td class="mdescRight">World-space longest axis metres behind box_voxel_max_estimated_voxels. <br /></td></tr>
+<tr class="memitem:a6fe50ed3070866c00d7e251f26c323f0" id="r_a6fe50ed3070866c00d7e251f26c323f0"><td class="memItemLeft"><a id="a6fe50ed3070866c00d7e251f26c323f0" name="a6fe50ed3070866c00d7e251f26c323f0"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>brick_pool_allocated</b> = 0</td></tr>
 <tr class="memitem:a8c4aae33c0501975595000c432b2b674" id="r_a8c4aae33c0501975595000c432b2b674"><td class="memItemLeft"><a id="a8c4aae33c0501975595000c432b2b674" name="a8c4aae33c0501975595000c432b2b674"></a>
 size_t&#160;</td><td class="memItemRight"><b>narrow_collisions</b> = 0</td></tr>
 <tr class="memitem:a5f78615231ac6fd72c5c52b4a042300e" id="r_a5f78615231ac6fd72c5c52b4a042300e"><td class="memItemLeft"><a id="a5f78615231ac6fd72c5c52b4a042300e" name="a5f78615231ac6fd72c5c52b4a042300e"></a>
@@ -267,16 +269,14 @@ size_t&#160;</td><td class="memItemRight"><b>fragments_despawned</b> = 0</td></t
 size_t&#160;</td><td class="memItemRight"><b>fragments_evicted</b> = 0</td></tr>
 <tr class="memitem:af5c516b16dd6130717e0e6cadbec02e5" id="r_af5c516b16dd6130717e0e6cadbec02e5"><td class="memItemLeft"><a id="af5c516b16dd6130717e0e6cadbec02e5" name="af5c516b16dd6130717e0e6cadbec02e5"></a>
 size_t&#160;</td><td class="memItemRight"><b>static_splits_spawned</b> = 0</td></tr>
-<tr class="memitem:a6fe50ed3070866c00d7e251f26c323f0" id="r_a6fe50ed3070866c00d7e251f26c323f0"><td class="memItemLeft"><a id="a6fe50ed3070866c00d7e251f26c323f0" name="a6fe50ed3070866c00d7e251f26c323f0"></a>
-uint32_t&#160;</td><td class="memItemRight"><b>brick_pool_allocated</b> = 0</td></tr>
-<tr class="memitem:a6f48a1fd4859716e2c2646741f781095" id="r_a6f48a1fd4859716e2c2646741f781095"><td class="memItemLeft"><a id="a6f48a1fd4859716e2c2646741f781095" name="a6f48a1fd4859716e2c2646741f781095"></a>
-uint32_t&#160;</td><td class="memItemRight"><b>brick_pool_capacity</b> = 0</td></tr>
 <tr class="memitem:a2c2615f918c9a8c6153876552626ffde" id="r_a2c2615f918c9a8c6153876552626ffde"><td class="memItemLeft"><a id="a2c2615f918c9a8c6153876552626ffde" name="a2c2615f918c9a8c6153876552626ffde"></a>
 size_t&#160;</td><td class="memItemRight"><b>max_constraint_batches</b> = 0</td></tr>
 <tr class="memdesc:a2c2615f918c9a8c6153876552626ffde"><td class="mdescLeft">&#160;</td><td class="mdescRight">Peak constraint batch count across islands this tick. <br /></td></tr>
 <tr class="memitem:aa7d1fafbc895a194bfdc8803bcc64237" id="r_aa7d1fafbc895a194bfdc8803bcc64237"><td class="memItemLeft"><a id="aa7d1fafbc895a194bfdc8803bcc64237" name="aa7d1fafbc895a194bfdc8803bcc64237"></a>
 size_t&#160;</td><td class="memItemRight"><b>ticks_this_frame</b> = 1</td></tr>
 <tr class="memdesc:aa7d1fafbc895a194bfdc8803bcc64237"><td class="mdescLeft">&#160;</td><td class="mdescRight">How many ticks the fixed step accumulator ran this frame since tick_ms above is only the last one. <br /></td></tr>
+<tr class="memitem:a6f48a1fd4859716e2c2646741f781095" id="r_a6f48a1fd4859716e2c2646741f781095"><td class="memItemLeft"><a id="a6f48a1fd4859716e2c2646741f781095" name="a6f48a1fd4859716e2c2646741f781095"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>brick_pool_capacity</b> = 0</td></tr>
 <tr class="memitem:ae4da2222fd14734a55f1250f02cae669" id="r_ae4da2222fd14734a55f1250f02cae669"><td class="memItemLeft"><a id="ae4da2222fd14734a55f1250f02cae669" name="ae4da2222fd14734a55f1250f02cae669"></a>
 bool&#160;</td><td class="memItemRight"><b>ticks_capped_by_time_budget</b> = false</td></tr>
 <tr class="memdesc:ae4da2222fd14734a55f1250f02cae669"><td class="mdescLeft">&#160;</td><td class="mdescRight">The accumulator cut this frame catch up burst short on time rather than running out of work. <br /></td></tr>

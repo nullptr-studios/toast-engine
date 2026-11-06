@@ -118,12 +118,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structrenderer
   <div class="headertitle"><div class="title">renderer::MeshInstanceProxy Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Widest fields first since this is copied per instance every frame.  
+ <a href="#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="render__frame_8hpp_source.html">render_frame.hpp</a>&gt;</code></p>
 <div class="dynheader">
 Collaboration diagram for renderer::MeshInstanceProxy:</div>
 <div class="dyncontent">
 <div class="center"><img src="structrenderer_1_1MeshInstanceProxy__coll__graph.png" border="0" usemap="#arenderer_1_1MeshInstanceProxy_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="arenderer_1_1MeshInstanceProxy_coll__map" id="arenderer_1_1MeshInstanceProxy_coll__map">
-<area shape="rect" title=" " alt="" coords="1672,73,1883,100"/>
+<area shape="rect" title="Widest fields first since this is copied per instance every frame." alt="" coords="1672,73,1883,100"/>
 <area shape="rect" href="classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="1366,33,1528,60"/>
 <area shape="poly" title=" " alt="" coords="1544,56,1674,74,1669,74,1543,61"/>
 <area shape="rect" href="classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="1125,33,1316,60"/>
@@ -161,24 +166,24 @@ Public Attributes</h2></td></tr>
 <a class="el" href="classassets_1_1Material.html">assets::Material</a> *&#160;</td><td class="memItemRight"><b>material</b> = nullptr</td></tr>
 <tr class="memitem:a556dcc455c7e2ec278896f097cd7f914" id="r_a556dcc455c7e2ec278896f097cd7f914"><td class="memItemLeft"><a id="a556dcc455c7e2ec278896f097cd7f914" name="a556dcc455c7e2ec278896f097cd7f914"></a>
 <a class="el" href="classassets_1_1Material.html">assets::Material</a> *&#160;</td><td class="memItemRight"><b>root_material</b> = nullptr</td></tr>
+<tr class="memitem:ab55ddd2992e7f35d24e4730b65fa03f1" id="r_ab55ddd2992e7f35d24e4730b65fa03f1"><td class="memItemLeft"><a id="ab55ddd2992e7f35d24e4730b65fa03f1" name="ab55ddd2992e7f35d24e4730b65fa03f1"></a>
+uint64_t&#160;</td><td class="memItemRight"><b>node_rid</b> = 0</td></tr>
 <tr class="memitem:aea7dfe02b88d5b7974b531ae72ebc1c3" id="r_aea7dfe02b88d5b7974b531ae72ebc1c3"><td class="memItemLeft"><a id="aea7dfe02b88d5b7974b531ae72ebc1c3" name="aea7dfe02b88d5b7974b531ae72ebc1c3"></a>
 glm::mat4&#160;</td><td class="memItemRight"><b>model</b> = glm::mat4(1.0f)</td></tr>
-<tr class="memitem:accadb76eb1302c316c056dd5a5057e88" id="r_accadb76eb1302c316c056dd5a5057e88"><td class="memItemLeft"><a id="accadb76eb1302c316c056dd5a5057e88" name="accadb76eb1302c316c056dd5a5057e88"></a>
-uint32_t&#160;</td><td class="memItemRight"><b>joint_offset</b> = 0</td></tr>
-<tr class="memitem:a33ef3388f61fa8a385a47bde29090678" id="r_a33ef3388f61fa8a385a47bde29090678"><td class="memItemLeft"><a id="a33ef3388f61fa8a385a47bde29090678" name="a33ef3388f61fa8a385a47bde29090678"></a>
-uint32_t&#160;</td><td class="memItemRight"><b>joint_count</b> = 0</td></tr>
 <tr class="memitem:a27ceeb34c843676e41b08cf21b0d8125" id="r_a27ceeb34c843676e41b08cf21b0d8125"><td class="memItemLeft"><a id="a27ceeb34c843676e41b08cf21b0d8125" name="a27ceeb34c843676e41b08cf21b0d8125"></a>
 glm::vec3&#160;</td><td class="memItemRight"><b>bounds_center</b> {0.0f}</td></tr>
 <tr class="memitem:a02a72bc3eb408db4d4d95d87c974cc4d" id="r_a02a72bc3eb408db4d4d95d87c974cc4d"><td class="memItemLeft"><a id="a02a72bc3eb408db4d4d95d87c974cc4d" name="a02a72bc3eb408db4d4d95d87c974cc4d"></a>
 float&#160;</td><td class="memItemRight"><b>bounds_radius</b> = 0.0f</td></tr>
-<tr class="memitem:ab891159ddcedd1196181e1283555c475" id="r_ab891159ddcedd1196181e1283555c475"><td class="memItemLeft"><a id="ab891159ddcedd1196181e1283555c475" name="ab891159ddcedd1196181e1283555c475"></a>
-bool&#160;</td><td class="memItemRight"><b>visible</b> = true</td></tr>
+<tr class="memitem:accadb76eb1302c316c056dd5a5057e88" id="r_accadb76eb1302c316c056dd5a5057e88"><td class="memItemLeft"><a id="accadb76eb1302c316c056dd5a5057e88" name="accadb76eb1302c316c056dd5a5057e88"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>joint_offset</b> = 0</td></tr>
+<tr class="memitem:a33ef3388f61fa8a385a47bde29090678" id="r_a33ef3388f61fa8a385a47bde29090678"><td class="memItemLeft"><a id="a33ef3388f61fa8a385a47bde29090678" name="a33ef3388f61fa8a385a47bde29090678"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>joint_count</b> = 0</td></tr>
 <tr class="memitem:a5884ad423f80dab947a251ab7870e220" id="r_a5884ad423f80dab947a251ab7870e220"><td class="memItemLeft"><a id="a5884ad423f80dab947a251ab7870e220" name="a5884ad423f80dab947a251ab7870e220"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>instance_index</b> = 0</td></tr>
 <tr class="memitem:ae0ff98b715eac77ba15db5c703268376" id="r_ae0ff98b715eac77ba15db5c703268376"><td class="memItemLeft"><a id="ae0ff98b715eac77ba15db5c703268376" name="ae0ff98b715eac77ba15db5c703268376"></a>
 uint32_t&#160;</td><td class="memItemRight"><b>posed_vertex_offset</b> = k_no_posed_vertices</td></tr>
-<tr class="memitem:ab55ddd2992e7f35d24e4730b65fa03f1" id="r_ab55ddd2992e7f35d24e4730b65fa03f1"><td class="memItemLeft"><a id="ab55ddd2992e7f35d24e4730b65fa03f1" name="ab55ddd2992e7f35d24e4730b65fa03f1"></a>
-uint64_t&#160;</td><td class="memItemRight"><b>node_rid</b> = 0</td></tr>
+<tr class="memitem:ab891159ddcedd1196181e1283555c475" id="r_ab891159ddcedd1196181e1283555c475"><td class="memItemLeft"><a id="ab891159ddcedd1196181e1283555c475" name="ab891159ddcedd1196181e1283555c475"></a>
+bool&#160;</td><td class="memItemRight"><b>visible</b> = true</td></tr>
 <tr class="memitem:a43cf7890c67b787bdb4d156448c62454" id="r_a43cf7890c67b787bdb4d156448c62454"><td class="memItemLeft"><a id="a43cf7890c67b787bdb4d156448c62454" name="a43cf7890c67b787bdb4d156448c62454"></a>
 bool&#160;</td><td class="memItemRight"><b>outlined</b> = false</td></tr>
 <tr class="memdesc:a43cf7890c67b787bdb4d156448c62454"><td class="mdescLeft">&#160;</td><td class="mdescRight">Selected in the editor hierarchy. <br /></td></tr>
@@ -188,7 +193,9 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:a03e8d0cd223a64f634251529fc2c715f" id="r_a03e8d0cd223a64f634251529fc2c715f"><td class="memItemLeft"><a id="a03e8d0cd223a64f634251529fc2c715f" name="a03e8d0cd223a64f634251529fc2c715f"></a>
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_no_posed_vertices</b> = ~0u</td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Widest fields first since this is copied per instance every frame. </p>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/renderer/<a class="el" href="render__frame_8hpp_source.html">render_frame.hpp</a></li>
 </ul>
 </div><!-- contents -->

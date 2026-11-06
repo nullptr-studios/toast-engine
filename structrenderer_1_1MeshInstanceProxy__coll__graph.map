@@ -1,5 +1,5 @@
 <map id="renderer::MeshInstanceProxy" name="renderer::MeshInstanceProxy">
-<area shape="rect" id="Node000001" title=" " alt="" coords="1672,73,1883,100"/>
+<area shape="rect" id="Node000001" title="Widest fields first since this is copied per instance every frame." alt="" coords="1672,73,1883,100"/>
 <area shape="rect" id="Node000002" href="$classrenderer_1_1VulkanMesh.html" title=" " alt="" coords="1366,33,1528,60"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1544,56,1674,74,1669,74,1543,61"/>
 <area shape="rect" id="Node000003" href="$classrenderer_1_1IVulkanResource.html" title=" " alt="" coords="1125,33,1316,60"/>

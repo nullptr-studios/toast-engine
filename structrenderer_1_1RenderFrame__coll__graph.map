@@ -1,38 +1,38 @@
 <map id="renderer::RenderFrame" name="renderer::RenderFrame">
-<area shape="rect" id="Node000001" title=" " alt="" coords="1826,166,1997,194"/>
-<area shape="rect" id="Node000002" href="$structrenderer_1_1FrameUBO.html" title=" " alt="" coords="1469,54,1623,82"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1639,69,1720,81,1762,90,1803,104,1855,133,1897,166,1891,165,1852,137,1801,109,1761,96,1719,86,1639,74"/>
-<area shape="rect" id="Node000003" href="$structrenderer_1_1ShadowFrame.html" title=" " alt="" coords="1458,110,1634,138"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1649,130,1802,150,1860,165,1855,165,1801,156,1649,135"/>
-<area shape="rect" id="Node000004" href="$structrenderer_1_1LightStats.html" title=" " alt="" coords="1471,166,1621,194"/>
-<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1636,177,1828,179,1823,180,1636,182"/>
-<area shape="rect" id="Node000005" href="$structrenderer_1_1PostProcessSettings.html" title=" " alt="" coords="1438,222,1654,250"/>
-<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="1668,225,1801,207,1862,195,1868,194,1802,213,1669,230"/>
-<area shape="rect" id="Node000006" href="$structrenderer_1_1PostProcessSettings_1_1Bloom.html" title=" " alt="" coords="1084,5,1299,50"/>
-<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="1314,38,1367,59,1391,74,1411,93,1421,107,1425,122,1424,150,1422,177,1426,190,1435,203,1459,222,1454,221,1431,207,1421,192,1417,178,1418,150,1420,123,1416,109,1407,96,1387,78,1364,63,1314,44"/>
-<area shape="rect" id="Node000007" href="$structrenderer_1_1PostProcessSettings_1_1LensFlare.html" title=" " alt="" coords="1084,75,1299,119"/>
-<area shape="poly" id="edge6_Node000005_Node000007" title=" " alt="" coords="1314,113,1365,132,1411,160,1420,172,1424,183,1427,193,1435,203,1465,222,1460,221,1432,207,1422,196,1419,185,1415,174,1408,164,1363,137,1314,118"/>
-<area shape="rect" id="Node000008" href="$classassets_1_1Handle.html" title=" " alt="" coords="762,75,936,119"/>
-<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="951,94,1086,96,1080,98,952,100"/>
-<area shape="rect" id="Node000009" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="224,83,373,111"/>
-<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="388,88,397,88,567,84,738,88,764,91,759,92,738,93,567,89,397,93,390,93"/>
-<area shape="rect" id="Node000012" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="422,108,578,136"/>
-<area shape="poly" id="edge12_Node000012_Node000009" title=" " alt="" coords="388,106,424,112,419,113,389,111"/>
-<area shape="rect" id="Node000010" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="5,55,113,83"/>
-<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="127,74,225,87,221,90,129,79"/>
-<area shape="rect" id="Node000011" href="$structtoast_1_1UID.html" title=" " alt="" coords="16,111,102,139"/>
-<area shape="poly" id="edge10_Node000009_Node000011" title=" " alt="" coords="116,120,199,113,228,110,223,113,200,118,119,125"/>
-<area shape="poly" id="edge11_Node000008_Node000012" title=" " alt="" coords="593,120,737,113,764,112,759,113,738,118,594,125"/>
-<area shape="rect" id="Node000013" href="$structrenderer_1_1PostProcessSettings_1_1Tonemap.html" title=" " alt="" coords="1084,144,1299,189"/>
-<area shape="poly" id="edge13_Node000005_Node000013" title=" " alt="" coords="1314,184,1410,202,1486,221,1481,221,1409,208,1314,190"/>
-<area shape="rect" id="Node000014" href="$structrenderer_1_1PostProcessSettings_1_1Fxaa.html" title=" " alt="" coords="1084,213,1299,258"/>
-<area shape="poly" id="edge14_Node000005_Node000014" title=" " alt="" coords="1314,233,1440,235,1435,236,1314,238"/>
-<area shape="rect" id="Node000015" href="$structrenderer_1_1PostProcessSettings_1_1Ssr.html" title=" " alt="" coords="1070,282,1313,310"/>
-<area shape="poly" id="edge15_Node000005_Node000015" title=" " alt="" coords="1326,276,1409,263,1483,251,1488,250,1410,269,1327,282"/>
-<area shape="rect" id="Node000016" href="$structrenderer_1_1PostProcessSettings_1_1Ssao.html" title=" " alt="" coords="1084,333,1299,378"/>
-<area shape="poly" id="edge16_Node000005_Node000016" title=" " alt="" coords="1313,344,1363,329,1408,305,1416,296,1419,286,1423,275,1432,264,1461,251,1466,249,1435,268,1427,278,1424,288,1420,299,1411,309,1365,334,1314,349"/>
-<area shape="rect" id="Node000017" href="$structrenderer_1_1PostProcessSettings_1_1Fog.html" title=" " alt="" coords="1068,402,1314,430"/>
-<area shape="poly" id="edge17_Node000005_Node000017" title=" " alt="" coords="1329,408,1371,393,1407,368,1416,356,1420,344,1419,319,1418,292,1422,278,1431,264,1454,251,1459,249,1435,268,1427,280,1423,293,1424,318,1425,345,1421,359,1411,372,1374,398,1330,413"/>
-<area shape="rect" id="Node000018" href="$structrenderer_1_1TransformGizmoDraw.html" title=" " alt="" coords="1433,278,1659,306"/>
-<area shape="poly" id="edge18_Node000001_Node000018" title=" " alt="" coords="1674,284,1738,273,1801,254,1828,241,1853,224,1892,195,1897,193,1856,229,1830,246,1803,259,1739,278,1675,289"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="1826,222,1997,250"/>
+<area shape="rect" id="Node000002" href="$structrenderer_1_1FrameUBO.html" title=" " alt="" coords="1469,110,1623,138"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1639,125,1720,137,1762,146,1803,160,1855,189,1897,222,1891,221,1852,193,1801,165,1761,152,1719,142,1639,130"/>
+<area shape="rect" id="Node000003" href="$structrenderer_1_1ShadowFrame.html" title=" " alt="" coords="1458,166,1634,194"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="1649,186,1802,206,1860,221,1855,221,1801,212,1649,191"/>
+<area shape="rect" id="Node000004" href="$structrenderer_1_1PostProcessSettings.html" title=" " alt="" coords="1438,222,1654,250"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="1669,233,1828,235,1822,236,1669,238"/>
+<area shape="rect" id="Node000005" href="$structrenderer_1_1PostProcessSettings_1_1Bloom.html" title=" " alt="" coords="1084,5,1299,50"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="1314,38,1367,59,1391,74,1411,93,1421,107,1425,122,1424,150,1422,177,1426,190,1435,203,1459,222,1454,221,1431,207,1421,192,1417,178,1418,150,1420,123,1416,109,1407,96,1387,78,1364,63,1314,44"/>
+<area shape="rect" id="Node000006" href="$structrenderer_1_1PostProcessSettings_1_1LensFlare.html" title=" " alt="" coords="1084,75,1299,119"/>
+<area shape="poly" id="edge5_Node000004_Node000006" title=" " alt="" coords="1314,113,1365,132,1411,160,1420,172,1424,183,1427,193,1435,203,1465,222,1460,221,1432,207,1422,196,1419,185,1415,174,1408,164,1363,137,1314,118"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1Handle.html" title=" " alt="" coords="762,75,936,119"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="951,94,1086,96,1080,98,952,100"/>
+<area shape="rect" id="Node000008" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="224,83,373,111"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="388,88,397,88,567,84,738,88,764,91,759,92,738,93,567,89,397,93,390,93"/>
+<area shape="rect" id="Node000011" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="422,108,578,136"/>
+<area shape="poly" id="edge11_Node000011_Node000008" title=" " alt="" coords="388,106,424,112,419,113,389,111"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="5,55,113,83"/>
+<area shape="poly" id="edge8_Node000008_Node000009" title=" " alt="" coords="127,74,225,87,221,90,129,79"/>
+<area shape="rect" id="Node000010" href="$structtoast_1_1UID.html" title=" " alt="" coords="16,111,102,139"/>
+<area shape="poly" id="edge9_Node000008_Node000010" title=" " alt="" coords="116,120,199,113,228,110,223,113,200,118,119,125"/>
+<area shape="poly" id="edge10_Node000007_Node000011" title=" " alt="" coords="593,120,737,113,764,112,759,113,738,118,594,125"/>
+<area shape="rect" id="Node000012" href="$structrenderer_1_1PostProcessSettings_1_1Tonemap.html" title=" " alt="" coords="1084,144,1299,189"/>
+<area shape="poly" id="edge12_Node000004_Node000012" title=" " alt="" coords="1314,184,1410,202,1486,221,1481,221,1409,208,1314,190"/>
+<area shape="rect" id="Node000013" href="$structrenderer_1_1PostProcessSettings_1_1Fxaa.html" title=" " alt="" coords="1084,213,1299,258"/>
+<area shape="poly" id="edge13_Node000004_Node000013" title=" " alt="" coords="1314,233,1440,235,1435,236,1314,238"/>
+<area shape="rect" id="Node000014" href="$structrenderer_1_1PostProcessSettings_1_1Ssr.html" title=" " alt="" coords="1070,282,1313,310"/>
+<area shape="poly" id="edge14_Node000004_Node000014" title=" " alt="" coords="1326,276,1409,263,1483,251,1488,250,1410,269,1327,282"/>
+<area shape="rect" id="Node000015" href="$structrenderer_1_1PostProcessSettings_1_1Ssao.html" title=" " alt="" coords="1084,333,1299,378"/>
+<area shape="poly" id="edge15_Node000004_Node000015" title=" " alt="" coords="1313,344,1363,329,1408,305,1416,296,1419,286,1423,275,1432,264,1461,251,1466,249,1435,268,1427,278,1424,288,1420,299,1411,309,1365,334,1314,349"/>
+<area shape="rect" id="Node000016" href="$structrenderer_1_1PostProcessSettings_1_1Fog.html" title=" " alt="" coords="1068,402,1314,430"/>
+<area shape="poly" id="edge16_Node000004_Node000016" title=" " alt="" coords="1329,408,1371,393,1407,368,1416,356,1420,344,1419,319,1418,292,1422,278,1431,264,1454,251,1459,249,1435,268,1427,280,1423,293,1424,318,1425,345,1421,359,1411,372,1374,398,1330,413"/>
+<area shape="rect" id="Node000017" href="$structrenderer_1_1LightStats.html" title=" " alt="" coords="1471,278,1621,306"/>
+<area shape="poly" id="edge17_Node000001_Node000017" title=" " alt="" coords="1636,284,1717,276,1801,263,1862,251,1868,250,1802,269,1717,281,1636,289"/>
+<area shape="rect" id="Node000018" href="$structrenderer_1_1TransformGizmoDraw.html" title=" " alt="" coords="1433,334,1659,362"/>
+<area shape="poly" id="edge18_Node000001_Node000018" title=" " alt="" coords="1674,340,1738,329,1801,310,1828,297,1853,280,1892,251,1897,249,1856,285,1830,302,1803,315,1739,334,1675,345"/>
 </map>

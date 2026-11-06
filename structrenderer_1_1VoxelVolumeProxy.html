@@ -118,43 +118,50 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structrenderer
   <div class="headertitle"><div class="title">renderer::VoxelVolumeProxy Struct Reference</div></div>
 </div><!--header-->
 <div class="contents">
+
+<p>Widest fields first since this is copied per instance every frame.  
+ <a href="#details">More...</a></p>
+
+<p><code>#include &lt;<a class="el" href="render__frame_8hpp_source.html">render_frame.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:a5cc2303759c98eaba68444c7587b53b9" id="r_a5cc2303759c98eaba68444c7587b53b9"><td class="memItemLeft"><a id="a5cc2303759c98eaba68444c7587b53b9" name="a5cc2303759c98eaba68444c7587b53b9"></a>
-uint32_t&#160;</td><td class="memItemRight"><b>record_index</b> = 0</td></tr>
-<tr class="memitem:aa3e80e8f694ccbb24a8367c8aef18730" id="r_aa3e80e8f694ccbb24a8367c8aef18730"><td class="memItemLeft"><a id="aa3e80e8f694ccbb24a8367c8aef18730" name="aa3e80e8f694ccbb24a8367c8aef18730"></a>
-glm::uvec3&#160;</td><td class="memItemRight"><b>brick_dims</b> {0}</td></tr>
 <tr class="memitem:ae9843337dd185e9ec426404f12f5c0e7" id="r_ae9843337dd185e9ec426404f12f5c0e7"><td class="memItemLeft"><a id="ae9843337dd185e9ec426404f12f5c0e7" name="ae9843337dd185e9ec426404f12f5c0e7"></a>
 glm::mat4&#160;</td><td class="memItemRight"><b>model</b> {1.0f}</td></tr>
 <tr class="memitem:a198219aa3730ba9d2f22b5f4a0c37901" id="r_a198219aa3730ba9d2f22b5f4a0c37901"><td class="memItemLeft"><a id="a198219aa3730ba9d2f22b5f4a0c37901" name="a198219aa3730ba9d2f22b5f4a0c37901"></a>
 glm::mat4&#160;</td><td class="memItemRight"><b>inverse_model</b> {1.0f}</td></tr>
 <tr class="memitem:ab169d68a5babf087c6174abb56e40ccc" id="r_ab169d68a5babf087c6174abb56e40ccc"><td class="memItemLeft"><a id="ab169d68a5babf087c6174abb56e40ccc" name="ab169d68a5babf087c6174abb56e40ccc"></a>
 glm::mat4&#160;</td><td class="memItemRight"><b>previous_model</b> {1.0f}</td></tr>
-<tr class="memitem:aab6cd229fdde2f4d3f06e67bf37c2f75" id="r_aab6cd229fdde2f4d3f06e67bf37c2f75"><td class="memItemLeft"><a id="aab6cd229fdde2f4d3f06e67bf37c2f75" name="aab6cd229fdde2f4d3f06e67bf37c2f75"></a>
-bool&#160;</td><td class="memItemRight"><b>has_previous</b> = false</td></tr>
-<tr class="memdesc:aab6cd229fdde2f4d3f06e67bf37c2f75"><td class="mdescLeft">&#160;</td><td class="mdescRight">False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero. <br /></td></tr>
+<tr class="memitem:abc1bcc980ab96c047133d63e49578386" id="r_abc1bcc980ab96c047133d63e49578386"><td class="memItemLeft"><a id="abc1bcc980ab96c047133d63e49578386" name="abc1bcc980ab96c047133d63e49578386"></a>
+uint64_t&#160;</td><td class="memItemRight"><b>node_rid</b> = 0</td></tr>
+<tr class="memitem:aa3e80e8f694ccbb24a8367c8aef18730" id="r_aa3e80e8f694ccbb24a8367c8aef18730"><td class="memItemLeft"><a id="aa3e80e8f694ccbb24a8367c8aef18730" name="aa3e80e8f694ccbb24a8367c8aef18730"></a>
+glm::uvec3&#160;</td><td class="memItemRight"><b>brick_dims</b> {0}</td></tr>
+<tr class="memitem:a5cc2303759c98eaba68444c7587b53b9" id="r_a5cc2303759c98eaba68444c7587b53b9"><td class="memItemLeft"><a id="a5cc2303759c98eaba68444c7587b53b9" name="a5cc2303759c98eaba68444c7587b53b9"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>record_index</b> = 0</td></tr>
 <tr class="memitem:ac3283e6e1312709e05d75d61a4f1b1d5" id="r_ac3283e6e1312709e05d75d61a4f1b1d5"><td class="memItemLeft"><a id="ac3283e6e1312709e05d75d61a4f1b1d5" name="ac3283e6e1312709e05d75d61a4f1b1d5"></a>
 glm::vec3&#160;</td><td class="memItemRight"><b>bounds_center</b> {0.0f}</td></tr>
 <tr class="memitem:a7c2f1a91921ce61eee573a058d1bf298" id="r_a7c2f1a91921ce61eee573a058d1bf298"><td class="memItemLeft"><a id="a7c2f1a91921ce61eee573a058d1bf298" name="a7c2f1a91921ce61eee573a058d1bf298"></a>
 float&#160;</td><td class="memItemRight"><b>bounds_radius</b> = 0.0f</td></tr>
 <tr class="memitem:a99748b9f4e7f0a8f0072de731039654f" id="r_a99748b9f4e7f0a8f0072de731039654f"><td class="memItemLeft"><a id="a99748b9f4e7f0a8f0072de731039654f" name="a99748b9f4e7f0a8f0072de731039654f"></a>
 float&#160;</td><td class="memItemRight"><b>view_distance</b> = 0.0f</td></tr>
+<tr class="memitem:aa33f873748611a0069af4ca0678b58df" id="r_aa33f873748611a0069af4ca0678b58df"><td class="memItemLeft"><a id="aa33f873748611a0069af4ca0678b58df" name="aa33f873748611a0069af4ca0678b58df"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>highlight_record</b> = 0</td></tr>
+<tr class="memitem:aab6cd229fdde2f4d3f06e67bf37c2f75" id="r_aab6cd229fdde2f4d3f06e67bf37c2f75"><td class="memItemLeft"><a id="aab6cd229fdde2f4d3f06e67bf37c2f75" name="aab6cd229fdde2f4d3f06e67bf37c2f75"></a>
+bool&#160;</td><td class="memItemRight"><b>has_previous</b> = false</td></tr>
+<tr class="memdesc:aab6cd229fdde2f4d3f06e67bf37c2f75"><td class="mdescLeft">&#160;</td><td class="mdescRight">False the first frame this node_uid is drawn so the shader reports motion as not written instead of zero. <br /></td></tr>
 <tr class="memitem:a6d2f1ef968c78a27bef2ec34877a55f8" id="r_a6d2f1ef968c78a27bef2ec34877a55f8"><td class="memItemLeft"><a id="a6d2f1ef968c78a27bef2ec34877a55f8" name="a6d2f1ef968c78a27bef2ec34877a55f8"></a>
 bool&#160;</td><td class="memItemRight"><b>camera_inside</b> = false</td></tr>
 <tr class="memitem:a99fd63154777c3d56f8728781142a28f" id="r_a99fd63154777c3d56f8728781142a28f"><td class="memItemLeft"><a id="a99fd63154777c3d56f8728781142a28f" name="a99fd63154777c3d56f8728781142a28f"></a>
 bool&#160;</td><td class="memItemRight"><b>mirrored</b> = false</td></tr>
 <tr class="memitem:a3895bab72ff9a14cf0ad1cdcfdcbf032" id="r_a3895bab72ff9a14cf0ad1cdcfdcbf032"><td class="memItemLeft"><a id="a3895bab72ff9a14cf0ad1cdcfdcbf032" name="a3895bab72ff9a14cf0ad1cdcfdcbf032"></a>
 bool&#160;</td><td class="memItemRight"><b>visible</b> = true</td></tr>
-<tr class="memitem:abc1bcc980ab96c047133d63e49578386" id="r_abc1bcc980ab96c047133d63e49578386"><td class="memItemLeft"><a id="abc1bcc980ab96c047133d63e49578386" name="abc1bcc980ab96c047133d63e49578386"></a>
-uint64_t&#160;</td><td class="memItemRight"><b>node_rid</b> = 0</td></tr>
-<tr class="memitem:aa33f873748611a0069af4ca0678b58df" id="r_aa33f873748611a0069af4ca0678b58df"><td class="memItemLeft"><a id="aa33f873748611a0069af4ca0678b58df" name="aa33f873748611a0069af4ca0678b58df"></a>
-uint32_t&#160;</td><td class="memItemRight"><b>highlight_record</b> = 0</td></tr>
 <tr class="memitem:a577ebd5a4636c57183712fb5abc84c02" id="r_a577ebd5a4636c57183712fb5abc84c02"><td class="memItemLeft"><a id="a577ebd5a4636c57183712fb5abc84c02" name="a577ebd5a4636c57183712fb5abc84c02"></a>
 bool&#160;</td><td class="memItemRight"><b>outlined</b> = false</td></tr>
 <tr class="memdesc:a577ebd5a4636c57183712fb5abc84c02"><td class="mdescLeft">&#160;</td><td class="mdescRight">Selected in the editor hierarchy. <br /></td></tr>
 </table>
-<hr/>The documentation for this struct was generated from the following file:<ul>
+<a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
+<div class="textblock"><p>Widest fields first since this is copied per instance every frame. </p>
+</div><hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/renderer/<a class="el" href="render__frame_8hpp_source.html">render_frame.hpp</a></li>
 </ul>
 </div><!-- contents -->

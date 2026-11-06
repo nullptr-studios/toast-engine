@@ -280,30 +280,30 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('ui__system_8hp
 <div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span> </div>
 <div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keywordtype">float</span> m_dp_ratio = 1.0f;</div>
 <div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  uint64_t m_next_context_id = 1;    </div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  uint64_t m_frame_counter = 0;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  <span class="keywordtype">bool</span> m_documents_reload_pending = false;</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  <span class="keywordtype">bool</span> m_stylesheet_cache_dirty = false;</div>
 <div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  std::vector&lt;toast::Panel*&gt; m_panels;</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  std::vector&lt;toast::Panel3D*&gt; m_world_panels;</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  std::vector&lt;Rml::Context*&gt; m_screen_contexts;</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  std::unordered_map&lt;Rml::Context*, toast::Node*&gt; m_context_owners;</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  std::unordered_set&lt;Rml::Context*&gt; m_display_density_contexts;</div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span> </div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  std::vector&lt;assets::Handle&lt;assets::UIStyle&gt;&gt; m_global_styles;</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  std::vector&lt;assets::Handle&lt;assets::ColorScheme&gt;&gt; m_global_schemes;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_style_refs;</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_scheme_refs;</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  std::unordered_set&lt;std::<span class="keywordtype">string</span>&gt; m_loaded_fonts;</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  std::<span class="keywordtype">string</span> m_language;</div>
-<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  std::vector&lt;assets::Handle&lt;assets::Localization&gt;&gt; m_global_localizations;</div>
-<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span>  std::vector&lt;assets::Handle&lt;assets::ImageLocalization&gt;&gt; m_global_image_localizations;</div>
-<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_localization_refs;</div>
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_image_localization_refs;</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  std::vector&lt;<a class="code hl_struct" href="structui_1_1UISystem_1_1LocalizationScope.html">LocalizationScope</a>&gt; m_localization_stack;</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span> </div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  <span class="keywordtype">bool</span> m_documents_reload_pending = false;</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  <span class="keywordtype">bool</span> m_stylesheet_cache_dirty = false;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  uint64_t m_next_context_id = 1;    </div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  uint64_t m_frame_counter = 0;</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  std::vector&lt;toast::Panel*&gt; m_panels;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  std::vector&lt;toast::Panel3D*&gt; m_world_panels;</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  std::vector&lt;Rml::Context*&gt; m_screen_contexts;</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  std::unordered_map&lt;Rml::Context*, toast::Node*&gt; m_context_owners;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  std::unordered_set&lt;Rml::Context*&gt; m_display_density_contexts;</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  std::vector&lt;assets::Handle&lt;assets::UIStyle&gt;&gt; m_global_styles;</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  std::vector&lt;assets::Handle&lt;assets::ColorScheme&gt;&gt; m_global_schemes;</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_style_refs;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_scheme_refs;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  std::unordered_set&lt;std::<span class="keywordtype">string</span>&gt; m_loaded_fonts;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  std::<span class="keywordtype">string</span> m_language;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  std::vector&lt;assets::Handle&lt;assets::Localization&gt;&gt; m_global_localizations;</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  std::vector&lt;assets::Handle&lt;assets::ImageLocalization&gt;&gt; m_global_image_localizations;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_localization_refs;</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  std::unordered_map&lt;uint64_t, <span class="keywordtype">size_t</span>&gt; m_global_image_localization_refs;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  std::vector&lt;<a class="code hl_struct" href="structui_1_1UISystem_1_1LocalizationScope.html">LocalizationScope</a>&gt; m_localization_stack;</div>
 <div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span></div>
 <div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  std::mutex m_deferred_mutex;</div>
 <div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  std::vector&lt;std::pair&lt;toast::Node*, std::function&lt;<span class="keywordtype">void</span>()&gt;&gt;&gt; m_deferred_setups;</div>

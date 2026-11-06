@@ -389,58 +389,62 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__core_8
 <div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>  <span class="keywordtype">void</span> initializeNsightActivity();</div>
 <div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>
-<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  <span class="keywordtype">bool</span> m_validation_enabled = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  <span class="keywordtype">bool</span> m_debug_utils_enabled = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  vk::raii::Context m_context;</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>  vk::raii::Instance m_instance = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span><span class="preprocessor">#ifndef NDEBUG</span></div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  vk::raii::DebugUtilsMessengerEXT m_debug_messenger = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span> </div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  vk::raii::PhysicalDevice m_physical_device = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  vk::raii::Device m_device = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  vk::raii::PipelineCache m_pipeline_cache = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>  std::unique_ptr&lt;AsyncCompute&gt; m_async_compute;</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span> </div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  std::optional&lt;vma::raii::Allocator&gt; m_allocator;</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span> </div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>  uint32_t m_graphics_queue_family_index = std::numeric_limits&lt;uint32_t&gt;::max();</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  uint32_t m_compute_queue_family_index = std::numeric_limits&lt;uint32_t&gt;::max();</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  uint32_t m_transfer_queue_family_index = std::numeric_limits&lt;uint32_t&gt;::max();</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>  vk::raii::Context m_context;</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>  vk::raii::Instance m_instance = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span><span class="preprocessor">#ifndef NDEBUG</span></div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>  vk::raii::DebugUtilsMessengerEXT m_debug_messenger = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>  vk::raii::PhysicalDevice m_physical_device = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  vk::raii::Device m_device = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  vk::raii::PipelineCache m_pipeline_cache = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  std::unique_ptr&lt;AsyncCompute&gt; m_async_compute;</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span> </div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  std::optional&lt;vma::raii::Allocator&gt; m_allocator;</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span> </div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  uint32_t m_graphics_queue_family_index = std::numeric_limits&lt;uint32_t&gt;::max();</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>  uint32_t m_compute_queue_family_index = std::numeric_limits&lt;uint32_t&gt;::max();</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>  uint32_t m_transfer_queue_family_index = std::numeric_limits&lt;uint32_t&gt;::max();</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span> </div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>  uint32_t m_transfer_queue_index = 0;</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
 <div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>  vk::Queue m_graphics_queue = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  vk::Queue m_compute_queue = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>  vk::Queue m_transfer_queue = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span> </div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  <span class="keywordtype">bool</span> m_sampler_anisotropy_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  <span class="keywordtype">float</span> m_max_sampler_anisotropy = 1.0f;</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span> </div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  <span class="keyword">mutable</span> std::mutex m_graphics_submit_mutex;</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  <span class="keyword">mutable</span> std::mutex m_transfer_submit_mutex;</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  uint32_t m_transfer_queue_index = 0;</div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  <span class="keywordtype">float</span> m_max_sampler_anisotropy = 1.0f;</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  uint32_t m_as_scratch_alignment = 0;</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span> </div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  <span class="keyword">mutable</span> std::mutex m_graphics_submit_mutex;</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  <span class="keyword">mutable</span> std::mutex m_transfer_submit_mutex;</div>
 <div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
 <div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  RENDERDOC_API_1_6_0* rdoc_api = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span> </div>
 <div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  <span class="keyword">mutable</span> NsightMode m_nsight_mode = NsightMode::none;</div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span> </div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  <span class="keywordtype">bool</span> m_frame_boundary_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  <span class="keywordtype">bool</span> m_memory_budget_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span> </div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  <span class="keywordtype">bool</span> m_texture_sharing_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  <span class="keywordtype">bool</span> m_ray_tracing_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  std::string_view m_ray_tracing_reason = <span class="stringliteral">&quot;not probed&quot;</span>;</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> m_nsight_gputrace_activated = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span> </div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  <span class="keywordtype">bool</span> m_frame_boundary_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  <span class="keywordtype">bool</span> m_memory_budget_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  <span class="keywordtype">bool</span> m_texture_sharing_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span> </div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  <span class="keywordtype">bool</span> m_ray_tracing_supported = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>  RayTracingMode m_ray_tracing_startup_mode {};</div>
 <div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  <span class="keywordtype">bool</span> m_mesh_shader_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  uint32_t m_mesh_multiview_views = 0;</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  <span class="keywordtype">bool</span> m_depth_clamp_supported = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  <span class="keywordtype">bool</span> m_dual_source_blend_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>  std::string_view m_ray_tracing_reason = <span class="stringliteral">&quot;not probed&quot;</span>;</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span> </div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>  uint32_t m_mesh_multiview_views = 0;</div>
 <div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  uint32_t m_as_scratch_alignment = 0;</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  <span class="keyword">mutable</span> <span class="keywordtype">bool</span> m_nsight_gputrace_activated = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>};</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>  <span class="keywordtype">bool</span> m_depth_clamp_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>  <span class="keywordtype">bool</span> m_dual_source_blend_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  <span class="keywordtype">bool</span> m_sampler_anisotropy_supported = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span> </div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>  <span class="keywordtype">bool</span> m_validation_enabled = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  <span class="keywordtype">bool</span> m_debug_utils_enabled = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>};</div>
 </div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>}</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>}</div>
 <div class="ttc" id="aasync__compute_8hpp_html"><div class="ttname"><a href="async__compute_8hpp.html">async_compute.hpp</a></div></div>
 <div class="ttc" id="aclassrenderer_1_1AsyncCompute_html"><div class="ttname"><a href="classrenderer_1_1AsyncCompute.html">renderer::AsyncCompute</a></div><div class="ttdef"><b>Definition</b> async_compute.hpp:20</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html_a212e2a92f2003f248f3e4b52a3500f08"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html#a212e2a92f2003f248f3e4b52a3500f08">renderer::VulkanCore::updateTracyMemory</a></div><div class="ttdeci">void updateTracyMemory() const</div><div class="ttdoc">Replays live VRAM blocks to a newly connected Tracy and plots heap usage.</div><div class="ttdef"><b>Definition</b> vulkan_core.cpp:1328</div></div>
