@@ -329,6 +329,14 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		if (record.volume == nullptr) {
 			continue;
 		}
+
+		if (record.fragment_origin != physics::BodyID {} && std::ranges::none_of(gathered, [&](const Gathered& g) {
+			    return g.node != nullptr && g.node->ownsBody(record.fragment_origin);
+		    })) {
+			// do not leak voxel shit to other voxel shit
+			continue;
+		}
+
 		const voxel::Palette* palette = record.palette != nullptr ? record.palette : &defaultVoxelPalette();
 		const uint64_t id = voxelFragmentRenderId(record.shape);
 
