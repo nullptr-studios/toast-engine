@@ -184,6 +184,8 @@ struct VoxelCollisionWorld {
 		glm::mat4 world_to_voxel {1.0f};
 		glm::vec3 bounds_center {0.0f};
 		float bounds_radius = 0.0f;
+		glm::vec3 box_min {0.0f}; // needs this for collisions
+		glm::vec3 box_max {0.0f};
 		uint32_t record_index = 0;
 	};
 

@@ -60,6 +60,8 @@ struct DebrisSpawn {
 struct DebrisVolume {
     float4x4 worldToVoxel;
     float4 bounds;
+    float4 boxMin;
+    float4 boxMax;
     uint recordIndex;
     uint pad0;
     uint pad1;
@@ -94,6 +96,10 @@ struct VolumeRecord {
     uint coarseOffset;
     uint paletteOffset;
     float maxEmissive;
+    uint glassOffset;
+    int textureOriginX;
+    int textureOriginY;
+    int textureOriginZ;
 };
 
 [[vk::binding(0, 1)]]
@@ -105,7 +111,7 @@ StructuredBuffer<VolumeRecord> gVolumeRecords;
 
 static const uint kGroupSize = 64;
 static const uint kMaxVolumes = 512;        // mirrors DebrisSimulation::k_max_volumes
-static const uint kMaxCandidates = 16;      // volumes one piece collides with per step
+static const uint kMaxCandidates = 32;
 static const uint kBrickDim = 8;
 static const uint kTagEmpty = 0;
 static const uint kTagUniform = 1;
@@ -120,6 +126,9 @@ static const uint kSleepSteps = 15;
 static const float kBounceSpeed = 0.5;      // slower impact sticks
 static const float kContactSlop = 0.001;    // next step does not start touching
 static const float kFloorZ = 0.0f;          // lowest height a piece reaches
+static const uint kMaxSweeps = 8;
+static const float kSleepSpin = 1.0;
+static const float kMaxSpin = 30.0;
 
 // Graphics queue patches sections in place unordered with this queue so new records can still be uninitialized headroom
 // No robust buffer access so every index is checked against the buffer
@@ -181,6 +190,22 @@ float3 bitOffset(uint bit, float scale) {
     return (float3(float(bit & 1u), float((bit >> 1) & 1u), float(bit >> 2)) - 0.5) * (gParams.voxelSize * scale);
 }
 
+// look if touches a cube that is present
+bool latticePresent(uint mask, int3 p) {
+    uint3 low = uint3(p.x == 1 ? 1 : 0, p.y == 1 ? 1 : 0, p.z == 1 ? 1 : 0);
+    uint3 high = uint3(p.x == -1 ? 0 : 1, p.y == -1 ? 0 : 1, p.z == -1 ? 0 : 1);
+    for (uint z = low.z; z <= high.z; ++z) {
+        for (uint y = low.y; y <= high.y; ++y) {
+            for (uint x = low.x; x <= high.x; ++x) {
+                if (((mask >> (x + 2u * y + 4u * z)) & 1u) != 0u) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 // Grows in after spawning and shrinks away before dying
 float displayScale(DebrisMotion motion) {
     float grow = lerp(kSpawnScale, 1.0, saturate(motion.age / max(gParams.fadeIn, 1e-4)));
@@ -194,8 +219,8 @@ struct Contact {
     float depth;
 };
 
-// Bounds of every volume staged once per group since gVolumes lives in host visible memory
-groupshared float4 sBounds[kMaxVolumes];
+groupshared float4 sBoxMin[kMaxVolumes];
+groupshared float4 sBoxMax[kMaxVolumes];
 
 struct Candidates {
     uint count;
@@ -208,10 +233,7 @@ Candidates gatherCandidates(float3 centre, float radius) {
     candidates.count = 0u;
     uint volumeCount = min(gParams.volumeCount, kMaxVolumes);
     for (uint v = 0u; v < volumeCount && candidates.count < kMaxCandidates; ++v) {
-        float4 bounds = sBounds[v];
-        float3 toCentre = centre - bounds.xyz;
-        float reach = bounds.w + radius;
-        if (dot(toCentre, toCentre) <= reach * reach) {
+        if (all(centre >= sBoxMin[v].xyz - radius) && all(centre <= sBoxMax[v].xyz + radius)) {
             candidates.index[candidates.count] = v;
             ++candidates.count;
         }
@@ -228,9 +250,7 @@ Contact contactAt(float3 world, Candidates candidates) {
 
     for (uint c = 0u; c < candidates.count; ++c) {
         uint v = candidates.index[c];
-        float4 bounds = sBounds[v];
-        float3 toCentre = world - bounds.xyz;
-        if (dot(toCentre, toCentre) > bounds.w * bounds.w) {
+        if (any(world < sBoxMin[v].xyz) || any(world > sBoxMax[v].xyz)) {
             continue;
         }
 
@@ -241,23 +261,34 @@ Contact contactAt(float3 world, Candidates candidates) {
             continue;
         }
 
-        // Points from solid to empty neighbours
-        // holy first time using a gradient outside math class
-        float3 gradient = float3(
-            debrisSolid(volume.recordIndex, voxel - int3(1, 0, 0)) - debrisSolid(volume.recordIndex, voxel + int3(1, 0, 0)),
-            debrisSolid(volume.recordIndex, voxel - int3(0, 1, 0)) - debrisSolid(volume.recordIndex, voxel + int3(0, 1, 0)),
-            debrisSolid(volume.recordIndex, voxel - int3(0, 0, 1)) - debrisSolid(volume.recordIndex, voxel + int3(0, 0, 1)));
-
-        if (all(gradient == 0.0)) {
-            // Buried so leave towards world up
-            gradient = mul(volume.worldToVoxel, float4(0.0, 0.0, 1.0, 0.0)).xyz;
+        // Leaves through the nearest faceuint axis = 2u;
+        float side = 1.0;
+        float depthVoxels = 1e9;
+        for (uint a = 0u; a < 3u; ++a) {
+            int3 step = int3(0, 0, 0);
+            step[a] = 1;
+            float inside = frac(local[a]);
+            if (debrisSolid(volume.recordIndex, voxel - step) == 0.0 && inside < depthVoxels) {
+                depthVoxels = inside;
+                axis = a;
+                side = -1.0;
+            }
+            if (debrisSolid(volume.recordIndex, voxel + step) == 0.0 && 1.0 - inside < depthVoxels) {
+                depthVoxels = 1.0 - inside;
+                axis = a;
+                side = 1.0;
+            }
         }
 
-        float3 magnitude = abs(gradient);
-        uint axis = magnitude.x >= magnitude.y ? (magnitude.x >= magnitude.z ? 0u : 2u) : (magnitude.y >= magnitude.z ? 1u : 2u);
-        float side = gradient[axis] >= 0.0 ? 1.0 : -1.0;
-        float inside = frac(local[axis]);
-        float depthVoxels = side > 0.0 ? 1.0 - inside : inside;
+        if (depthVoxels > 1e8) {
+            // Buried so leave towards world up
+            float3 up = mul(volume.worldToVoxel, float4(0.0, 0.0, 1.0, 0.0)).xyz;
+            float3 magnitude = abs(up);
+            axis = magnitude.x >= magnitude.y ? (magnitude.x >= magnitude.z ? 0u : 2u) : (magnitude.y >= magnitude.z ? 1u : 2u);
+            side = up[axis] >= 0.0 ? 1.0 : -1.0;
+            float inside = frac(local[axis]);
+            depthVoxels = side > 0.0 ? 1.0 - inside : inside;
+        }
 
         float3 voxelNormal = float3(0.0, 0.0, 0.0);
         voxelNormal[axis] = side;
@@ -328,7 +359,8 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
     // Before any early return so every thread reaches the barrier
     uint volumeCount = min(gParams.volumeCount, kMaxVolumes);
     for (uint v = groupThread.x; v < volumeCount; v += kGroupSize) {
-        sBounds[v] = gVolumes[v].bounds;
+        sBoxMin[v] = gVolumes[v].boxMin;
+        sBoxMax[v] = gVolumes[v].boxMax;
     }
     GroupMemoryBarrierWithGroupSync();
 
@@ -359,16 +391,25 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
 
     // Farthest point plus the floor probe below it plus how far gravity and velocity carry it this step
     float travel = (length(particle.velocity) + length(gParams.gravity) * stepTime) * stepTime;
-    float reach = 0.87 * gParams.voxelSize * motion.baseScale + 1.5 * gParams.voxelSize + travel;
+    float reach = 1.74 * gParams.voxelSize * motion.baseScale + 1.5 * gParams.voxelSize + travel;
     Candidates candidates = gatherCandidates(particle.position, reach);
 
     if ((particle.packed & kFlagAsleep) != 0u) {
         // Wakes once nothing supports it
-        bool supported = particle.position.z <= kFloorZ + 2.0 * kContactSlop;
-        for (uint bit = 0u; bit < 8u && !supported; ++bit) {
-            if (((mask >> bit) & 1u) != 0u) {
-                float3 below = particle.position + rotateByQuat(particle.rotation, bitOffset(bit, motion.baseScale)) - float3(0.0, 0.0, gParams.voxelSize);
-                supported = contactAt(below, candidates).hit;
+        // probes under the corners
+        float sleepUnit = gParams.voxelSize * motion.baseScale;
+        bool supported = false;
+        for (int pz = -1; pz <= 1 && !supported; ++pz) {
+            for (int py = -1; py <= 1 && !supported; ++py) {
+                for (int px = -1; px <= 1 && !supported; ++px) {
+                    int3 p = int3(px, py, pz);
+                    if (all(p == 0) || !latticePresent(mask, p)) {
+                        continue;
+                    }
+                    float3 corner = particle.position + rotateByQuat(particle.rotation, float3(p) * sleepUnit);
+                    supported = corner.z <= kFloorZ + 2.0 * kContactSlop ||
+                                contactAt(corner - float3(0.0, 0.0, 0.25 * gParams.voxelSize), candidates).hit;
+                }
             }
         }
 
@@ -386,52 +427,94 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
     for (uint s = 0u; s < gParams.substeps; ++s) {
         float dt = gParams.dt;
         particle.velocity += gParams.gravity * dt;
-        particle.position += particle.velocity * dt;
 
-        // Nothing goes under the ground plane
-        if (particle.position.z < kFloorZ) {
-            particle.position.z = kFloorZ;
-            // It stops dead, otherwise it keeps spinning and sliding along the floor
-            particle.velocity = float3(0.0, 0.0, 0.0);
-            motion.angular = float3(0.0, 0.0, 0.0);
-            touching = true;
-        }
+        uint sweeps = clamp(uint(ceil(length(particle.velocity) * dt / (0.5 * gParams.voxelSize))), 1u, kMaxSweeps);
+        float sweepDt = dt / float(sweeps);
+        for (uint w = 0u; w < sweeps; ++w) {
+            particle.position += particle.velocity * sweepDt;
 
-        float spin = length(motion.angular);
-        if (spin > 1e-5) {
-            particle.rotation = normalize(particle.rotation + 0.5 * dt * quatMul(float4(motion.angular, 0.0), particle.rotation));
-        }
-
-        // One response per substep
-        Contact deepest;
-        deepest.hit = false;
-        deepest.normal = float3(0.0, 0.0, 1.0);
-        deepest.depth = 0.0;
-        for (uint bit = 0u; bit < 8u; ++bit) {
-            if (((mask >> bit) & 1u) == 0u) {
-                continue;
+            float spin = length(motion.angular);
+            if (spin > 1e-5) {
+                particle.rotation = normalize(particle.rotation + 0.5 * sweepDt * quatMul(float4(motion.angular, 0.0), particle.rotation));
             }
-            Contact contact = contactAt(particle.position + rotateByQuat(particle.rotation, bitOffset(bit, motion.baseScale)), candidates);
-            if (contact.hit && (!deepest.hit || contact.depth > deepest.depth)) {
-                deepest = contact;
+
+            // The piece is tested by the corners of its cubes
+            float unit = gParams.voxelSize * motion.baseScale;
+            float floorDepth = 0.0;
+            Contact deepest;
+            deepest.hit = false;
+            deepest.normal = float3(0.0, 0.0, 1.0);
+            deepest.depth = 0.0;
+            float3 hitOffsetSum = float3(0.0, 0.0, 0.0);
+            float hitCount = 0.0;
+            for (int pz = -1; pz <= 1; ++pz) {
+                for (int py = -1; py <= 1; ++py) {
+                    for (int px = -1; px <= 1; ++px) {
+                        int3 p = int3(px, py, pz);
+                        if (all(p == 0) || !latticePresent(mask, p)) {
+                            continue;
+                        }
+                        float3 offset = rotateByQuat(particle.rotation, float3(p) * unit);
+                        float3 point = particle.position + offset;
+                        floorDepth = max(floorDepth, kFloorZ - point.z);
+                        Contact contact = contactAt(point, candidates);
+                        if (contact.hit) {
+                            hitOffsetSum += offset;
+                            hitCount += 1.0;
+                            if (!deepest.hit || contact.depth > deepest.depth) {
+                                deepest = contact;
+                            }
+                        }
+                    }
+                }
             }
-        }
 
-        if (deepest.hit) {
-            touching = true;
-            particle.position += deepest.normal * (deepest.depth + kContactSlop);
+            // Nothing goes under the ground plane
+            if (floorDepth > 0.0) {
+                particle.position.z += floorDepth;
+                // It stops dead, otherwise it keeps spinning and sliding along the floor
+                particle.velocity = float3(0.0, 0.0, 0.0);
+                motion.angular = float3(0.0, 0.0, 0.0);
+                touching = true;
+            }
 
-            float approach = dot(particle.velocity, deepest.normal);
-            if (approach < 0.0) {
-                float3 tangent = particle.velocity - approach * deepest.normal;
-                float bounce = -approach > kBounceSpeed ? -approach * gParams.restitution : 0.0;
-                particle.velocity = tangent * saturate(1.0 - gParams.friction) + bounce * deepest.normal;
-                motion.angular *= saturate(1.0 - gParams.friction);
+            if (deepest.hit) {
+                touching = true;
+                particle.position += deepest.normal * (deepest.depth + kContactSlop);
+
+                float approach = dot(particle.velocity, deepest.normal);
+                if (approach < 0.0) {
+                    float3 before = particle.velocity;
+                    float3 tangent = particle.velocity - approach * deepest.normal;
+                    float bounce = -approach > kBounceSpeed ? -approach * gParams.restitution : 0.0;
+
+                    // Friction only takes what the normal impulse allows
+                    float tangentSpeed = length(tangent);
+                    float grip = min(tangentSpeed, gParams.friction * (-approach + bounce));
+                    if (tangentSpeed > 1e-6) {
+                        tangent -= tangent * (grip / tangentSpeed);
+                    }
+                    particle.velocity = tangent + bounce * deepest.normal;
+
+                    if (-approach > kBounceSpeed) {
+                        // cube inertia
+                        float3 contactOffset = hitOffsetSum / max(hitCount, 1.0);
+                        float size = gParams.voxelSize * motion.baseScale;
+                        motion.angular *= saturate(1.0 - gParams.friction);
+                        motion.angular += cross(contactOffset, particle.velocity - before) * (1.5 / max(size * size, 1e-6));
+                        float angularSpeed = length(motion.angular);
+                        if (angularSpeed > kMaxSpin) {
+                            motion.angular *= kMaxSpin / angularSpeed;
+                        }
+                    } else {
+                        motion.angular *= 0.5;
+                    }
+                }
             }
         }
     }
 
-    if (touching && length(particle.velocity) < kSleepSpeed) {
+    if (touching && length(particle.velocity) < kSleepSpeed && length(motion.angular) < kSleepSpin) {
         ++motion.restSteps;
     } else {
         motion.restSteps = 0u;

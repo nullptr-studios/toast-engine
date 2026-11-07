@@ -564,11 +564,25 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	collision->volumes.reserve(frame.voxel_instances.size());
 	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
 	for (const VoxelVolumeProxy& proxy : frame.voxel_instances) {
+		// the debris pass culls by the box of the volume
+		const glm::vec3 extent = voxel::localExtent(proxy.brick_dims);
+		glm::vec3 box_min {std::numeric_limits<float>::max()};
+		glm::vec3 box_max {std::numeric_limits<float>::lowest()};
+		for (int corner = 0; corner < 8; ++corner) {
+			const glm::vec3 local(
+			    (corner & 1) != 0 ? extent.x : 0.0f, (corner & 2) != 0 ? extent.y : 0.0f, (corner & 4) != 0 ? extent.z : 0.0f
+			);
+			const glm::vec3 world = glm::vec3(proxy.model * glm::vec4(local, 1.0f));
+			box_min = glm::min(box_min, world);
+			box_max = glm::max(box_max, world);
+		}
 		collision->volumes.push_back(
 		    VoxelCollisionWorld::Volume {
 		      .world_to_voxel = to_voxel_units * proxy.inverse_model,
 		      .bounds_center = proxy.bounds_center,
 		      .bounds_radius = proxy.bounds_radius,
+		      .box_min = box_min,
+		      .box_max = box_max,
 		      .record_index = proxy.record_index,
 		    }
 		);

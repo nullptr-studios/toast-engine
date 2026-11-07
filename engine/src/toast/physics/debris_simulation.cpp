@@ -167,6 +167,8 @@ void DebrisSimulation::step(uint32_t steps, double fixed_delta, std::shared_ptr<
 			    volumes[i] = GpuVolume {
 			      .world_to_voxel = volume.world_to_voxel,
 			      .bounds = glm::vec4(volume.bounds_center, volume.bounds_radius),
+			      .box_min = glm::vec4(volume.box_min, 0.0f),
+			      .box_max = glm::vec4(volume.box_max, 0.0f),
 			      .record_index = volume.record_index,
 			    };
 		    }
