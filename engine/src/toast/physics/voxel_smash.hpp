@@ -350,10 +350,16 @@ inline auto collectSmashPieces(
 ) -> SmashPieces {
 	const auto [low, high] = smash.bounds();
 	const int poses = smash.poseCount();
-	return collectBrokenPieces(
-	    volume, palette, materials, low, high, [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
+	return collectCellPieces(
+	    volume,
+	    palette,
+	    materials,
+	    low,
+	    high,
+	    [&](const glm::vec3& center, const voxel::PhysicalMaterial& material) {
 		    return material.breakableBy(max_hardness) && material.toughness <= energy_density && smash.contains(center, poses);
-	    }
+	    },
+	    [](const glm::ivec3&) { return 0u; }
 	);
 }
 
