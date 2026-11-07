@@ -219,37 +219,37 @@ auto coerce(const std::any& value, const std::type_info& type) -> std::any {
 	if (value.type() == type) {
 		return value;
 	}
-	if (auto* v = std::any_cast<bool>(&value)) {
+	if (const auto* v = std::any_cast<bool>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<int8_t>(&value)) {
+	if (const auto* v = std::any_cast<int8_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<int16_t>(&value)) {
+	if (const auto* v = std::any_cast<int16_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<int32_t>(&value)) {
+	if (const auto* v = std::any_cast<int32_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<int64_t>(&value)) {
+	if (const auto* v = std::any_cast<int64_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<uint8_t>(&value)) {
+	if (const auto* v = std::any_cast<uint8_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<uint16_t>(&value)) {
+	if (const auto* v = std::any_cast<uint16_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<uint32_t>(&value)) {
+	if (const auto* v = std::any_cast<uint32_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<uint64_t>(&value)) {
+	if (const auto* v = std::any_cast<uint64_t>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<float>(&value)) {
+	if (const auto* v = std::any_cast<float>(&value)) {
 		return convertFrom(*v, type);
 	}
-	if (auto* v = std::any_cast<double>(&value)) {
+	if (const auto* v = std::any_cast<double>(&value)) {
 		return convertFrom(*v, type);
 	}
 	return {};
