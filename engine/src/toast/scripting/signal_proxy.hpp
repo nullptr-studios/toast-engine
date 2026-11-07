@@ -13,7 +13,10 @@ public:
 	SignalProxy(toast::Box<toast::Node> source, const toast::SignalInfo& info) : m_source(std::move(source)), m_info(&info) { }
 
 	[[nodiscard]]
-	auto connect(NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args = true) -> bool;
+	auto connect(
+	    NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args = true,
+	    const std::vector<signals::ParamBinding>& bindings = {}
+	) -> bool;
 
 	[[nodiscard]]
 	auto disconnect(NodeProxy target, signals::ConnectionSource source, std::string_view function) -> bool;

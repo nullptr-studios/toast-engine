@@ -12,6 +12,25 @@ static auto fromProtoSource(proto::events::SignalConnectionSource source) -> sig
 	return static_cast<signals::ConnectionSource>(source);
 }
 
+static void toProtoBinding(const signals::ParamBinding& binding, proto::events::ParamBinding& out) {
+	if (binding.kind == signals::ParamBinding::Kind::signal_arg) {
+		out.set_signal_arg(binding.signal_arg);
+	} else {
+		out.set_literal(binding.literal);
+	}
+}
+
+static auto fromProtoBinding(const proto::events::ParamBinding& in) -> signals::ParamBinding {
+	signals::ParamBinding binding;
+	if (in.has_literal()) {
+		binding.kind = signals::ParamBinding::Kind::literal;
+		binding.literal = in.literal();
+	} else {
+		binding.signal_arg = in.signal_arg();
+	}
+	return binding;
+}
+
 template<>
 struct ProtoTraits<RequestSignalState> {
 	using Proto = proto::events::RequestSignalState;
@@ -56,6 +75,9 @@ struct ProtoTraits<SignalState> {
 				pc->set_function(connection.function);
 				pc->set_source(toProtoSource(connection.source));
 				pc->set_forwards_args(connection.forwards_args);
+				for (const auto& binding : connection.bindings) {
+					toProtoBinding(binding, *pc->add_bindings());
+				}
 			}
 		}
 		return p;
@@ -71,14 +93,20 @@ struct ProtoTraits<SignalState> {
 			signal.signal = ps.signal();
 			signal.arguments.assign(ps.arguments().begin(), ps.arguments().end());
 			for (const auto& pc : ps.connections()) {
-				signal.connections.push_back(
-				    {toast::UID::fromString(pc.target_uid()),
-						 pc.target_name(),
-						 pc.target_type(),
-						 pc.function(),
-						 fromProtoSource(pc.source()),
-						 pc.forwards_args()}
+				auto& connection = signal.connections.emplace_back(
+				    SignalConnection {
+				      toast::UID::fromString(pc.target_uid()),
+				      pc.target_name(),
+				      pc.target_type(),
+				      pc.function(),
+				      fromProtoSource(pc.source()),
+				      pc.forwards_args(),
+				      {}
+				    }
 				);
+				for (const auto& binding : pc.bindings()) {
+					connection.bindings.push_back(fromProtoBinding(binding));
+				}
 			}
 		}
 		return e;
@@ -134,6 +162,7 @@ struct ProtoTraits<SignalCallables> {
 			pc->set_already_connected(callable.already_connected);
 			pc->set_forwards_args(callable.forwards_args);
 			pc->set_disabled_reason(callable.disabled_reason);
+			pc->set_declaring_class(callable.declaring_class);
 			for (const auto& parameter : callable.parameters) {
 				auto* pp = pc->add_parameters();
 				pp->set_name(parameter.name);
@@ -157,6 +186,7 @@ struct ProtoTraits<SignalCallables> {
 			callable.already_connected = pc.already_connected();
 			callable.forwards_args = pc.forwards_args();
 			callable.disabled_reason = pc.disabled_reason();
+			callable.declaring_class = pc.declaring_class();
 			for (const auto& pp : pc.parameters()) {
 				callable.parameters.push_back({pp.name(), pp.type()});
 			}
@@ -180,6 +210,9 @@ struct ProtoTraits<AddSignalConnection> {
 		p.set_target_node(e.target_node);
 		p.set_function(e.function);
 		p.set_forwards_args(e.forwards_args);
+		for (const auto& binding : e.bindings) {
+			toProtoBinding(binding, *p.add_bindings());
+		}
 		return p;
 	}
 
@@ -191,6 +224,9 @@ struct ProtoTraits<AddSignalConnection> {
 		e.target_node = toast::UID::fromString(p.target_node());
 		e.function = p.function();
 		e.forwards_args = p.forwards_args();
+		for (const auto& binding : p.bindings()) {
+			e.bindings.push_back(fromProtoBinding(binding));
+		}
 		return e;
 	}
 };

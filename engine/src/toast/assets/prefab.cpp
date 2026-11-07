@@ -277,6 +277,56 @@ auto nextStringValue(std::string_view& view) -> std::optional<std::string_view> 
 	return std::nullopt;
 }
 
+auto encodeBindings(std::span<const signals::ParamBinding> bindings) -> std::string {
+	std::string out;
+	for (const auto& binding : bindings) {
+		if (binding.kind == signals::ParamBinding::Kind::signal_arg) {
+			out += std::format("s{};", binding.signal_arg);
+		} else {
+			out += std::format("l{}:{}", binding.literal.size(), binding.literal);
+		}
+	}
+	return out;
+}
+
+auto decodeBindings(std::string_view text) -> std::optional<std::vector<signals::ParamBinding>> {
+	std::vector<signals::ParamBinding> out;
+	auto read_number = [&](char terminator) -> std::optional<uint32_t> {
+		const size_t end = text.find(terminator);
+		if (end == std::string_view::npos || end == 0) {
+			return std::nullopt;
+		}
+		uint32_t value = 0;
+		auto [next, error] = std::from_chars(text.data(), text.data() + end, value);
+		if (error != std::errc {} || next != text.data() + end) {
+			return std::nullopt;
+		}
+		text.remove_prefix(end + 1);
+		return value;
+	};
+	while (!text.empty()) {
+		const char tag = text.front();
+		text.remove_prefix(1);
+		if (tag == 's') {
+			auto index = read_number(';');
+			if (!index) {
+				return std::nullopt;
+			}
+			out.push_back({.kind = signals::ParamBinding::Kind::signal_arg, .signal_arg = *index});
+		} else if (tag == 'l') {
+			auto length = read_number(':');
+			if (!length || *length > text.size()) {
+				return std::nullopt;
+			}
+			out.push_back({.kind = signals::ParamBinding::Kind::literal, .literal = std::string(text.substr(0, *length))});
+			text.remove_prefix(*length);
+		} else {
+			return std::nullopt;
+		}
+	}
+	return out;
+}
+
 }
 
 namespace assets {
@@ -733,9 +783,22 @@ auto Prefab::parseSignal(std::string_view line) -> std::optional<Signal> {
 		target.assign(*target_token);
 		if (target.data() == 0) {
 			TOAST_WARN("ResourceManager", "Ignoring invalid signal target '{}' for {}", *target_token, signal.name);
-			continue;
 		}
-		signal.connections.push_back({.target = target, .function = unescapeString(*function_token)});
+		SignalConnection connection {.target = target, .function = unescapeString(*function_token)};
+
+		// A quoted token right after the function holds its bindings, the next connection starts with a UID
+		std::string_view lookahead = line;
+		if (auto bindings_token = nextStringValue(lookahead); bindings_token && bindings_token->starts_with('"')) {
+			if (auto bindings = decodeBindings(unescapeString(*bindings_token))) {
+				connection.bindings = std::move(*bindings);
+			} else {
+				TOAST_WARN("ResourceManager", "Ignoring malformed bindings on signal {}", signal.name);
+			}
+			line = lookahead;
+		}
+		if (target.data() != 0) {
+			signal.connections.push_back(std::move(connection));
+		}
 	}
 
 	return signal;
@@ -1004,7 +1067,12 @@ void Prefab::writeSignal(const Signal& signal, std::stringstream& ss) const {
 	std::vector<std::string> entries;
 	entries.reserve(signal.connections.size());
 	for (const auto& connection : signal.connections) {
-		entries.push_back(std::format("{} {}", connection.target, escapeString(connection.function)));
+		std::string entry = std::format("{} {}", connection.target, escapeString(connection.function));
+		if (!connection.bindings.empty()) {
+			entry += ' ';
+			entry += escapeString(encodeBindings(connection.bindings));
+		}
+		entries.push_back(std::move(entry));
 	}
 
 	constexpr size_t wrap_column = 90;
@@ -1221,6 +1289,12 @@ auto Prefab::toBinary() const -> std::vector<uint8_t> {
 			for (const auto& connection : signal.connections) {
 				writeValue(buffer, connection.target.data());
 				writeString(buffer, connection.function);
+				writeValue(buffer, static_cast<uint32_t>(connection.bindings.size()));
+				for (const auto& binding : connection.bindings) {
+					writeValue(buffer, static_cast<uint8_t>(binding.kind));
+					writeValue(buffer, binding.signal_arg);
+					writeString(buffer, binding.literal);
+				}
 			}
 		}
 
@@ -1370,7 +1444,19 @@ Prefab::Prefab(std::span<const uint8_t> bytes) {
 				for (uint32_t k = 0; k < connection_count; ++k) {
 					UID target;
 					target.value = reader.readValue<uint64_t>();
-					signal.connections.push_back({.target = target, .function = reader.readString()});
+					SignalConnection connection {.target = target, .function = reader.readString()};
+					if (header.version >= 6) {
+						const uint32_t binding_count = reader.readValue<uint32_t>();
+						connection.bindings.reserve(binding_count);
+						for (uint32_t b = 0; b < binding_count; ++b) {
+							signals::ParamBinding binding;
+							binding.kind = static_cast<signals::ParamBinding::Kind>(reader.readValue<uint8_t>());
+							binding.signal_arg = reader.readValue<uint32_t>();
+							binding.literal = reader.readString();
+							connection.bindings.push_back(std::move(binding));
+						}
+					}
+					signal.connections.push_back(std::move(connection));
 				}
 				node.signals.push_back(std::move(signal));
 			}
@@ -1664,7 +1750,9 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 				);
 				continue;
 			}
-			signal.connections.push_back({.target = connection.target, .function = connection.function});
+			signal.connections.push_back(
+			    {.target = connection.target, .function = connection.function, .bindings = connection.bindings}
+			);
 		}
 		if (!signal.connections.empty()) {
 			out.signals.push_back(std::move(signal));
@@ -1692,7 +1780,9 @@ void Prefab::serializeNode(const toast::Node& node, bool is_root) {
 					);
 					continue;
 				}
-				signal.connections.push_back({.target = connection.target, .function = connection.function});
+				signal.connections.push_back(
+				    {.target = connection.target, .function = connection.function, .bindings = connection.bindings}
+				);
 			}
 			if (!signal.connections.empty()) {
 				out.signals.push_back(std::move(signal));

@@ -44,7 +44,7 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/01-format_and_handle", 
 
 		// toFile re-emits the marker first, and the Prefab field survives re-parsing.
 		std::string out = nf.toFile();
-		assert(out.rfind("~format @int = 5", 0) == 0);    // starts with the version marker
+		assert(out.rfind("~format @int = 6", 0) == 0);    // starts with the version marker
 
 		std::stringstream round(out);
 		Prefab reparsed(round);
@@ -86,10 +86,13 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/01-format_and_handle", 
 		assert(v4.nodes.size() == 1);    // legacy version accepted
 
 		Prefab v5(std::span<const uint8_t>(patched(5)));
-		assert(v5.nodes.size() == 1);    // current version accepted
+		assert(v5.nodes.size() == 1);    // legacy version accepted
 
 		Prefab v6(std::span<const uint8_t>(patched(6)));
-		assert(v6.nodes.empty());        // future version refused
+		assert(v6.nodes.size() == 1);    // current version accepted
+
+		Prefab v7(std::span<const uint8_t>(patched(7)));
+		assert(v7.nodes.empty());        // future version refused
 	}
 
 	// --- validate() catches duplicate UIDs and multiple rootless chunks ----------------------

@@ -734,7 +734,7 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 								);
 								continue;
 							}
-							(void)runtime->connectLuaSignal(signal_data.name, *target->second, connection.function, true);
+							(void)runtime->connectLuaSignal(signal_data.name, *target->second, connection.function, true, connection.bindings);
 						}
 						continue;
 					}
@@ -750,7 +750,13 @@ auto INodeOwner::buildTree(std::vector<Box<Node>>&& nodes, const assets::Handle<
 					);
 					continue;
 				}
-				signal->connect(&*node, *target->second, connection.function, signals::ConnectionSource::editor, true);
+				if (!signal->connect(
+				        &*node, *target->second, connection.function, signals::ConnectionSource::editor, true, connection.bindings
+				    )) {
+					TOAST_WARN(
+					    "World", "Prefab signal '{}' on '{}' could not connect to '{}'", signal_data.name, node->name(), connection.function
+					);
+				}
 			}
 		}
 	}

@@ -163,10 +163,12 @@ public partial class SignalsViewModel : Tool, IDisposable {
 		if (App.MainWindow is not { } owner || HierarchyViewModel.Current is not { } hierarchy) return;
 		var result = await SignalConnectionWindow.ShowAsync(owner, hierarchy, signal);
 		if (result is null) return;
-		Events.Send(new AddSignalConnection {
+		var add = new AddSignalConnection {
 			SourceNode = signal.NodeUid, DeclaringType = signal.DeclaringType, Signal = signal.Name,
 			TargetNode = result.TargetUid, Function = result.Function.Name, ForwardsArgs = result.Function.ForwardsArgs
-		});
+		};
+		add.Bindings.AddRange(result.Bindings);
+		Events.Send(add);
 	}
 
 	internal static IBrush SourceBrush(SignalConnectionSource source) {

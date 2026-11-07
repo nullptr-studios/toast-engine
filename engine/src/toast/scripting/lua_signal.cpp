@@ -8,8 +8,10 @@ void LuaSignal::owner(toast::Box<toast::Node> node) {
 	m_state->owner = std::move(node);
 }
 
-auto LuaSignal::connect(NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args)
-    -> bool {
+auto LuaSignal::connect(
+    NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args,
+    const std::vector<signals::ParamBinding>& bindings
+) -> bool {
 	if (!m_state->owner.exists() || !target.exists() || function.empty()) {
 		return false;
 	}
@@ -18,8 +20,7 @@ auto LuaSignal::connect(NodeProxy target, std::string_view function, signals::Co
 			return false;
 		}
 	}
-	m_state->signal.connect(*target.box(), function, source, forwards_args);
-	return true;
+	return m_state->signal.connect(*target.box(), function, source, forwards_args, bindings);
 }
 
 auto LuaSignal::disconnect(NodeProxy target, std::string_view function, signals::ConnectionSource source) -> bool {
