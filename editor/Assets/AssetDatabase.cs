@@ -89,6 +89,46 @@ public static class AssetDatabase {
 		return result;
 	}
 
+	private static List<ArtworkOutput> OutputsFromMeta(string sourceVirtualPath) {
+		return OutputsBySource().GetValueOrDefault(sourceVirtualPath) ?? [];
+	}
+
+	private static Dictionary<string, List<ArtworkOutput>> OutputsBySource() {
+		var result = new Dictionary<string, List<ArtworkOutput>>();
+		if (!Directory.Exists(ProjectContext.AssetsPath)) return result;
+		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
+			var header = MetaFile.ReadHeader(metaPath);
+			if (header?.Source is not { Length: > 0 } source) continue;
+			var real = metaPath[..^5];
+			if (!result.TryGetValue(source, out var list)) result[source] = list = [];
+			list.Add(new ArtworkOutput(header.Uid, Path.GetFileName(real), null, ProjectContext.ToVirtual(real) ?? real));
+		}
+
+		return result;
+	}
+
+	public static void SyncArtworkDatabase() {
+		var db = LoadArtworkDatabase();
+		var changed = false;
+		foreach (var (source, outputs) in OutputsBySource()) {
+			if (db[source] is not null) continue;
+			var real = ProjectContext.Resolve(source);
+			if (!File.Exists(real)) continue;
+			db[source] = new JsonObject {
+				["last_hash"] = ComputeHash(real),
+				["outputs"] = new JsonArray(outputs.Select(o => (JsonNode)new JsonObject {
+					["uid"] = o.Uid,
+					["name"] = o.Name,
+					["hash"] = o.Hash,
+					["uri"] = o.Uri
+				}).ToArray())
+			};
+			changed = true;
+		}
+
+		if (changed) SaveArtworkDatabase(db);
+	}
+
 	// full re-scan of all .meta files; writes one <db>.json per content database + core.json
 	public static void RebuildAssetDatabase(bool notifyListeners = true) {
 		var now = DateTime.UtcNow.ToString("o");
@@ -164,6 +204,7 @@ public static class AssetDatabase {
 		log ??= _ => { };
 		GenerateMissingMetas(log);
 		RebuildAssetDatabase();
+		SyncArtworkDatabase();
 		await RelocateMissingAssets(log);
 		await RelocateMissingArtwork(log);
 		await CheckArtworkChanges(log);
@@ -373,7 +414,10 @@ public static class AssetDatabase {
 		string sourceVirtualPath, Action<string> log,
 		Action<double>? progress = null) {
 		var db = LoadArtworkDatabase();
-		if (db[sourceVirtualPath] is not JsonObject entry) {
+		var previous = db[sourceVirtualPath] is JsonObject entry
+			? ReadOutputs(entry)
+			: OutputsFromMeta(sourceVirtualPath);
+		if (previous.Count == 0) {
 			log($"No import record for {sourceVirtualPath}");
 			return;
 		}
@@ -384,7 +428,6 @@ public static class AssetDatabase {
 			return;
 		}
 
-		var previous = ReadOutputs(entry);
 		var uids = previous.Select(o => o.Uid).ToList();
 
 		// find where the existing outputs live + the settings they were imported with
@@ -610,6 +653,7 @@ public static class AssetDatabase {
 
 	private static void SaveArtworkDatabase(JsonObject db) {
 		var path = ProjectContext.Resolve("cache://artwork_database.json");
+		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
 	}
 

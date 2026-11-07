@@ -23,6 +23,7 @@ struct ParamBinding {
 	enum class Kind : uint8_t {
 		signal_arg,
 		literal,
+	};
 
 	Kind kind = Kind::signal_arg;
 	uint32_t signal_arg = 0;

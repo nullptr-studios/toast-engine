@@ -59,6 +59,7 @@ struct SignalCallable {
 	bool forwards_args = true;
 	std::string disabled_reason;
 	std::string declaring_class;
+};
 
 struct SignalCallables : Event<SignalCallables> {
 	uint64_t request = 0;
