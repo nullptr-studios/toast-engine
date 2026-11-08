@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
@@ -227,9 +228,9 @@ private:
 	VulkanPipeline m_change_pipeline;
 	SceneDescriptorSets m_ray_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_ray_storage_sets;
-	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_ray_storage_bound;
+	DescriptorCache<std::shared_ptr<const VoxelGpuStorage>> m_ray_storage_bound;
 	std::vector<vk::raii::DescriptorSet> m_ray_sets;
-	std::vector<std::array<vk::ImageView, 3>> m_ray_bound;
+	DescriptorCache<std::array<vk::ImageView, 3>> m_ray_bound;
 	/// Reflection keeps gVoxelInstances only when the trace code reads it
 	bool m_ray_instances_bound = false;
 
@@ -304,9 +305,9 @@ private:
 	float m_point_share = 0.5f;
 
 	std::vector<vk::raii::DescriptorSet> m_probe_sets;
-	std::vector<std::array<vk::ImageView, 2>> m_probe_bound;
+	DescriptorCache<std::array<vk::ImageView, 2>> m_probe_bound;
 	std::vector<vk::raii::DescriptorSet> m_debug_sets;
-	std::vector<std::array<vk::ImageView, 3>> m_debug_bound;
+	DescriptorCache<std::array<vk::ImageView, 3>> m_debug_bound;
 
 	bool m_published_valid = false;
 	uint32_t m_frame = 0;

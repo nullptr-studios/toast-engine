@@ -158,6 +158,15 @@ target_compile_definitions(toast_engine PUBLIC
         GLM_FORCE_INTRINSICS
 )
 
+option(TOAST_PROFILE_LOCKS "Show contended mutexes in Tracy, every lock sends events while a profiler is connected" ON)
+# A header and not a define since it changes engine type layouts and game projects never see engine defines
+set(_toast_build_config_dir "${CMAKE_CURRENT_BINARY_DIR}/build_config/$<CONFIG>")
+file(GENERATE
+        OUTPUT "${_toast_build_config_dir}/toast/build_config.hpp"
+        CONTENT "#pragma once\n$<$<AND:$<CONFIG:Debug,RelWithDebInfo>,$<BOOL:${TOAST_PROFILE_LOCKS}>>:#define TOAST_PROFILE_LOCKS\n>"
+)
+target_include_directories(toast_engine PUBLIC "${_toast_build_config_dir}")
+
 # Replaces global operator new and delete so Tracy lists every heap allocation, only active where Tracy is
 option(TOAST_TRACK_HEAP "Report C++ heap allocations to Tracy" ON)
 # 0 records no callstack, around 8 to 16 shows who allocates but slows allocation heavy code down a lot
@@ -247,6 +256,7 @@ list(GET _tinyspline_include_list 0 _tinyspline_include)
 add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E rm -rf "${TOAST_ENGINE_OUTPUT_ROOT}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/include" "${TOAST_ENGINE_OUTPUT_ROOT}/include"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_toast_build_config_dir}/toast/build_config.hpp" "${TOAST_ENGINE_OUTPUT_ROOT}/include/toast/build_config.hpp"
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${TOAST_ENGINE_OUTPUT_ROOT}/ffi"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different "${CMAKE_SOURCE_DIR}/.clang-format" "${TOAST_ENGINE_OUTPUT_ROOT}/.clang-format"
         # Generated reflection headers
@@ -280,6 +290,7 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
             VERBATIM
     )
 endif ()
+
 
 if (WIN32)
     add_custom_command(TARGET toast_engine POST_BUILD

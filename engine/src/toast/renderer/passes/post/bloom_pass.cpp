@@ -152,20 +152,19 @@ void BloomPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	TOAST_TRACE("Render", "BloomPass targets created: {} mips from {}x{}", m_mips.size(), extent.width, extent.height);
 }
 
-void BloomPass::writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene) {
-	std::array<vk::DescriptorImageInfo, 2> image_infos {};
-	image_infos[0].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	image_infos[0].imageView = source;
-	image_infos[0].sampler = *m_sampler;
+void BloomPass::writeDescriptor(
+    vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView backdrop, vk::ImageView mask
+) {
+	const std::array<vk::ImageView, 4> views {source, scene ? scene : source, backdrop ? backdrop : source, mask};
 
-	image_infos[1].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-	image_infos[1].imageView = scene ? scene : source;
-	image_infos[1].sampler = *m_sampler;
-
-	const std::array<vk::WriteDescriptorSet, 2> writes {
-	  vk::WriteDescriptorSet(set, 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, image_infos.data()),
-	  vk::WriteDescriptorSet(set, 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[1]),
-	};
+	std::array<vk::DescriptorImageInfo, 4> image_infos {};
+	std::array<vk::WriteDescriptorSet, 4> writes {};
+	for (uint32_t i = 0; i < 4; ++i) {
+		image_infos[i].imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		image_infos[i].imageView = views[i];
+		image_infos[i].sampler = *m_sampler;
+		writes[i] = vk::WriteDescriptorSet(set, i, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[i]);
+	}
 	m_core->getDevice().updateDescriptorSets(writes, {});
 }
 
@@ -206,23 +205,25 @@ void BloomPass::drawInto(
 auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -> vk::ImageView {
 	ZoneScoped;
 	if (m_mips.empty() || !m_composite.view.has_value() || !m_composite_pipeline.isReady() || !source_view ||
-	    frame_index >= m_frame_sets.size()) {
+	    frame_index >= m_frame_sets.size() || !m_glass_mask) {
 		return source_view;
 	}
 
 	// Safe since the fence of this slot was waited on
 	FrameSets& sets = m_frame_sets[frame_index];
-	if (sets.bound_source != source_view) {
-		writeDescriptor(*sets.downsample[0], source_view, source_view);
+	if (sets.bound_source != source_view || sets.bound_backdrop != m_glass_backdrop || sets.bound_mask != m_glass_mask) {
+		writeDescriptor(*sets.downsample[0], source_view, source_view, m_glass_backdrop, m_glass_mask);
 		for (size_t i = 1; i < m_mips.size(); ++i) {
-			writeDescriptor(*sets.downsample[i], **m_mips[i - 1].view, source_view);
+			writeDescriptor(*sets.downsample[i], **m_mips[i - 1].view, source_view, m_glass_backdrop, m_glass_mask);
 		}
 		for (size_t i = 0; i + 1 < m_mips.size(); ++i) {
 			const size_t from = m_mips.size() - 1 - i;
-			writeDescriptor(*sets.upsample[i], **m_mips[from].view, source_view);
+			writeDescriptor(*sets.upsample[i], **m_mips[from].view, source_view, m_glass_backdrop, m_glass_mask);
 		}
-		writeDescriptor(*sets.composite, **m_mips[0].view, source_view);
+		writeDescriptor(*sets.composite, **m_mips[0].view, source_view, m_glass_backdrop, m_glass_mask);
 		sets.bound_source = source_view;
+		sets.bound_backdrop = m_glass_backdrop;
+		sets.bound_mask = m_glass_mask;
 	}
 
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
@@ -273,6 +274,11 @@ void BloomPass::onResize(vk::Extent2D extent) {
 		return;
 	}
 	createTargets(*m_core, extent);
+}
+
+void BloomPass::setGlassSources(vk::ImageView backdrop, vk::ImageView mask) {
+	m_glass_backdrop = backdrop;
+	m_glass_mask = mask;
 }
 
 }

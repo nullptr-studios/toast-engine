@@ -656,7 +656,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		if (m_voxel_pass != nullptr) {
 			m_voxel_pass->onTargetsRecreated();
 		}
-		std::ranges::fill(m_present_bound_views, vk::ImageView {});
+		bumpTargetGeneration();
 		m_current_frame = 0;
 	} catch (const std::exception& e) { TOAST_CRITICAL("Render", "Failed to recreate output target on resize: {}", e.what()); }
 }

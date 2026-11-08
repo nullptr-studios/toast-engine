@@ -30,6 +30,7 @@
 #include <string>
 #include <string_view>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 #include <toast/log.hpp>
 #include <toast/thread_pool.hpp>
 #include <unordered_map>
@@ -205,7 +206,7 @@ private:
 
 	struct Entry {
 		lua_State* state = nullptr;
-		std::recursive_mutex mutex;
+		TOAST_LOCKABLE(std::recursive_mutex, mutex, "Lua state");
 		std::atomic<uint64_t> owner {0};                         ///< token of the owning thread, 0 while free
 		int depth = 0;                                           ///< lock nesting, only touched by the owner
 		std::mutex pending_mutex;

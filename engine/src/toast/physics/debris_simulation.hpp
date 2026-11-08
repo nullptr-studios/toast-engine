@@ -17,6 +17,7 @@
 #include <mutex>
 #include <optional>
 #include <span>
+#include <toast/lock_profiling.hpp>
 #include <toast/renderer/compute/async_compute_task.hpp>
 #include <utility>
 #include <vector>
@@ -186,7 +187,7 @@ private:
 
 	std::shared_ptr<const renderer::VoxelCollisionWorld> m_world;
 
-	mutable std::mutex m_time_mutex;
+	mutable TOAST_LOCKABLE(std::mutex, m_time_mutex, "Debris time");
 	double m_sim_time = 0.0;
 	double m_display_time = 0.0;
 	double m_frame_delta = 0.0;

@@ -4,7 +4,7 @@
 
 namespace physics {
 
-auto voxelDataMutex() -> std::recursive_mutex& {
+auto voxelDataMutex() -> TOAST_LOCKABLE_BASE(std::recursive_mutex) & {
 	return voxel::runtimePoolMutex();
 }
 

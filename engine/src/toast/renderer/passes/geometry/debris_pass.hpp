@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/passes/render_pass_base.hpp"
 #include "toast/renderer/resources/scene_descriptor_set.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
@@ -64,7 +65,7 @@ private:
 	VulkanPipeline m_glass_pipeline;
 	SceneDescriptorSets m_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_sets;
-	std::vector<std::array<vk::Buffer, 2>> m_bound;
+	DescriptorCache<std::array<vk::Buffer, 2>> m_bound;
 	vk::Buffer m_args = nullptr;
 	PushConstants m_push;
 };

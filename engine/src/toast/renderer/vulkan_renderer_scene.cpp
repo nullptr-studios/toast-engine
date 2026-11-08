@@ -366,14 +366,18 @@ void VulkanRenderer::tick(float time) noexcept {
 		acquireFrameSlot();
 	}
 	const bool got_slot = std::exchange(m_frame_slot, FrameSlot::none) == FrameSlot::held;
+#if defined(TOAST_DEV_TOOLS)
 	detail::addSingleWriter(m_perf_ticks, 1);
-
 	if (!got_slot) {
 		detail::addSingleWriter(m_skipped_builds, 1);
+	}
+#endif
+	if (!got_slot) {
 		return;
 	}
-	detail::addSingleWriter(m_perf_frames_built, 1);
 
+#if defined(TOAST_DEV_TOOLS)
+	detail::addSingleWriter(m_perf_frames_built, 1);
 	const auto build_start = std::chrono::steady_clock::now();
 	const auto count_build = [this, build_start] {
 		detail::addSingleWriter(
@@ -383,6 +387,9 @@ void VulkanRenderer::tick(float time) noexcept {
 		    )
 		);
 	};
+#else
+	const auto count_build = [] { };
+#endif
 
 	TOAST_PHASE(phases, "Tick: reset frame");
 	auto& frame = getCurrentFrameBuild();

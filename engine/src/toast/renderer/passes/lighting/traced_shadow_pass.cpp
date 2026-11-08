@@ -76,8 +76,7 @@ void TracedShadowPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight, vk::ImageView {});
-	m_bound_acceleration_structures.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound.resize(VulkanRenderer::k_frames_in_flight);
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -88,7 +87,7 @@ void TracedShadowPass::createResources(const VulkanCore& core) {
 
 void TracedShadowPass::createTarget(const VulkanCore& core, vk::Extent2D extent) {
 	m_target.create(core, extent, m_scene_format, "TracedShadowPass");
-	std::ranges::fill(m_bound_views, vk::ImageView {});
+	m_bound.invalidate();
 }
 
 void TracedShadowPass::onResize(vk::Extent2D extent) {
@@ -122,8 +121,7 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 		return source_view;
 	}
 
-	const std::pair bound_tlas {tlas, scene->getAccelerationStructureGeneration(frame_index)};
-	if (m_bound_views[frame_index] != source_view || m_bound_acceleration_structures[frame_index] != bound_tlas) {
+	if (m_bound.update(frame_index, {source_view, tlas, scene->getAccelerationStructureGeneration(frame_index)})) {
 		constexpr auto k_sampler = vk::DescriptorType::eCombinedImageSampler;
 		const vk::DescriptorSet set = *m_descriptor_sets[frame_index];
 
@@ -133,8 +131,6 @@ auto TracedShadowPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::I
 		    .image(set, 2, k_sampler, *m_point_sampler, normal_view, vk::ImageLayout::eShaderReadOnlyOptimal)
 		    .accelerationStructure(set, 3, tlas);
 		writer.flush(m_core->getDevice());
-		m_bound_views[frame_index] = source_view;
-		m_bound_acceleration_structures[frame_index] = bound_tlas;
 	}
 
 	m_target.beginScope(cmd);

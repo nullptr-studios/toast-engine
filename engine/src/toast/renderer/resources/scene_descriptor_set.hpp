@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/shaders/shader_reflection.hpp"
 
@@ -48,10 +49,10 @@ private:
 	std::optional<uint32_t> m_scene_binding;
 
 	std::optional<uint32_t> m_detail_binding;
-	std::vector<vk::ImageView> m_bound_detail;
+	DescriptorCache<vk::ImageView> m_bound_detail;
 
 	/// Handle plus generation since a recreated structure can reuse a destroyed handle value
-	std::vector<std::pair<vk::AccelerationStructureKHR, uint64_t>> m_bound_tlas;
+	DescriptorCache<std::pair<vk::AccelerationStructureKHR, uint64_t>> m_bound_tlas;
 };
 
 }

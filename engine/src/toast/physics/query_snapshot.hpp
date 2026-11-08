@@ -13,12 +13,21 @@
 
 namespace physics {
 
+/// Immutable copy shared by every snapshot until the key below changes
+struct QueryVoxel {
+	std::shared_ptr<const VoxelShapeData> data;
+	uint32_t generation = 0;
+	uint64_t volume_id = 0;
+	uint32_t volume_revision = 0;
+	uint32_t surface_revision = 0;
+};
+
 /// All data used by gameplay collision queries from one completed physics tick.
 struct QuerySnapshot {
 	AABBTree tree;
 	std::vector<BodySlot> bodies;
 	std::vector<ShapeSlot> shapes;
-	std::vector<VoxelShapeSlot> voxels;
+	std::vector<QueryVoxel> voxels;
 	std::vector<toast::Box<toast::Node>> collider_nodes;
 	std::vector<toast::Box<toast::Node>> body_nodes;
 	float fat_margin = 0.0f;
@@ -52,8 +61,8 @@ struct QuerySnapshot {
 		if (id.slot >= voxels.size()) {
 			return nullptr;
 		}
-		const VoxelShapeSlot& slot = voxels[id.slot];
-		return slot.data && slot.generation == id.generation ? &*slot.data : nullptr;
+		const QueryVoxel& slot = voxels[id.slot];
+		return slot.data && slot.generation == id.generation ? slot.data.get() : nullptr;
 	}
 
 	[[nodiscard]]

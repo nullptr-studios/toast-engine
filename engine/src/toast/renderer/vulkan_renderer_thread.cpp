@@ -118,9 +118,11 @@ void VulkanRenderer::mainRenderThread() try {
 	RenderFrame frame_to_draw;
 	bool has_frame = false;
 
+#if defined(TOAST_DEV_TOOLS)
 	std::array<float, 60> frame_time_window {};
 	size_t frame_time_cursor = 0;
 	clock::time_point last_frame_time {};
+#endif
 
 	while (m_running.load(std::memory_order_acquire)) {
 		ZoneScopedN("VulkanRenderer::mainRenderThread");
@@ -133,6 +135,7 @@ void VulkanRenderer::mainRenderThread() try {
 			continue;
 		}
 
+		// applies queued resize
 		const uint64_t pending_resize = m_pending_resize_packed.exchange(k_no_pending_resize, std::memory_order_acq_rel);
 		if (pending_resize != k_no_pending_resize) {
 			const auto extent = detail::unpackExtent(pending_resize);
@@ -154,7 +157,9 @@ void VulkanRenderer::mainRenderThread() try {
 				       m_pending_resize_packed.load(std::memory_order_acquire) != k_no_pending_resize;
 			};
 
+#if defined(TOAST_DEV_TOOLS)
 			const auto frame_wait_start = clock::now();
+#endif
 			if (m_ready_frames.empty()) {
 				if (!has_frame || clamp_to_simulation) {
 					m_frame_cv.wait(lock, wake_condition);
@@ -165,10 +170,12 @@ void VulkanRenderer::mainRenderThread() try {
 					}
 				}
 			}
+#if defined(TOAST_DEV_TOOLS)
 			detail::addSingleWriter(
 			    m_perf_frame_wait_ns,
 			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - frame_wait_start).count())
 			);
+#endif
 
 			if (!m_running) {
 				return;
@@ -184,16 +191,21 @@ void VulkanRenderer::mainRenderThread() try {
 
 				const uint64_t previous = std::exchange(m_last_drawn_sequence, frame_to_draw.sequence);
 				if (frame_to_draw.sequence < previous) {
+#if defined(TOAST_DEV_TOOLS)
 					detail::addSingleWriter(m_out_of_order_frames, 1);
+#endif
 					TOAST_WARN(
 					    "VulkanRenderer",
 					    "Frame {} drawn after frame {} - render frames arrived out of order",
 					    frame_to_draw.sequence,
 					    previous
 					);
-				} else if (previous != 0 && frame_to_draw.sequence > previous + 1) {
+				}
+#if defined(TOAST_DEV_TOOLS)
+				if (previous != 0 && frame_to_draw.sequence > previous + 1) {
 					detail::addSingleWriter(m_dropped_frames, static_cast<uint32_t>(frame_to_draw.sequence - previous - 1));
 				}
+#endif
 			} else if (!has_frame) {
 				continue;
 			}
@@ -201,12 +213,16 @@ void VulkanRenderer::mainRenderThread() try {
 
 		// Clamped frames are capped in waitForFrameSlot
 		if (limit_hz > 0.0 && !clamp_to_simulation) {
+#if defined(TOAST_DEV_TOOLS)
 			const auto pacing_start = clock::now();
+#endif
 			std::this_thread::sleep_until(next_frame_deadline);
+#if defined(TOAST_DEV_TOOLS)
 			detail::addSingleWriter(
 			    m_perf_pacing_ns,
 			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - pacing_start).count())
 			);
+#endif
 			const auto interval = std::chrono::duration_cast<clock::duration>(std::chrono::duration<double>(1.0 / limit_hz));
 			const auto now = clock::now();
 			next_frame_deadline = (next_frame_deadline + interval > now) ? next_frame_deadline + interval : now + interval;
@@ -242,9 +258,12 @@ void VulkanRenderer::mainRenderThread() try {
 		}
 #endif
 
+#if defined(TOAST_DEV_TOOLS)
 		const auto draw_start = clock::now();
+#endif
 		// A pass with no free output image rendered nothing
 		if (drawFrame(frame_to_draw)) {
+#if defined(TOAST_DEV_TOOLS)
 			detail::addSingleWriter(
 			    m_perf_draw_work_ns,
 			    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(clock::now() - draw_start).count())
@@ -253,7 +272,6 @@ void VulkanRenderer::mainRenderThread() try {
 			if (!consumed_queued_frame) {
 				detail::addSingleWriter(m_perf_repeated_draws, 1);
 			}
-
 			{
 				static constexpr size_t k_window = 60;
 				const auto now = clock::now();
@@ -277,8 +295,10 @@ void VulkanRenderer::mainRenderThread() try {
 				}
 				last_frame_time = now;
 			}
+#endif
 		}
 
+		// handling graphics capture
 		if (do_capture && rdoc_api != nullptr) {
 			rdoc_api->EndFrameCapture(nullptr, nullptr);
 			TOAST_INFO("VulkanRenderer", "RenderDoc frame capture triggered");
@@ -303,6 +323,7 @@ void VulkanRenderer::mainRenderThread() try {
 			m_free_frames.release();
 		}
 
+		// poll vram usage
 #ifdef TRACY_ENABLE
 		{
 			const auto memory_props = m_core->getPhysicalDevice().getMemoryProperties();
@@ -325,20 +346,22 @@ void VulkanRenderer::mainRenderThread() try {
 } catch (const vk::DeviceLostError& error) {
 	// Nothing recovers a lost device and the abort would otherwise drop the queued logs
 	TOAST_CRITICAL("Render", "GPU device lost on the render thread, shutting down: {}", error.what());
-	logging::flush();
-	std::abort();
 }
 
 void VulkanRenderer::acquireFrameSlot() noexcept {
 	using namespace std::chrono_literals;
+#if defined(TOAST_DEV_TOOLS)
 	const auto slot_wait_start = std::chrono::steady_clock::now();
+#endif
 	m_frame_slot = m_free_frames.try_acquire_for(50ms) ? FrameSlot::held : FrameSlot::missed;
+#if defined(TOAST_DEV_TOOLS)
 	detail::addSingleWriter(
 	    m_perf_slot_wait_ns,
 	    static_cast<uint64_t>(
 	        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - slot_wait_start).count()
 	    )
 	);
+#endif
 }
 
 void VulkanRenderer::waitForFrameSlot() noexcept {

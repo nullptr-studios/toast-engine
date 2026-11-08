@@ -66,7 +66,7 @@ void TaaPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound_views.resize(VulkanRenderer::k_frames_in_flight);
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -78,7 +78,7 @@ void TaaPass::createResources(const VulkanCore& core) {
 void TaaPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	m_targets[0].create(core, extent, m_scene_format, "TaaPass History A");
 	m_targets[1].create(core, extent, m_scene_format, "TaaPass History B");
-	std::ranges::fill(m_bound_views, std::array<vk::ImageView, 2> {});
+	m_bound_views.invalidate();
 	m_history_valid = false;
 }
 
@@ -124,7 +124,7 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	}
 
 	const std::array<vk::ImageView, 2> wanted {source_view, history.view()};
-	if (m_bound_views[frame_index] != wanted) {
+	if (m_bound_views.update(frame_index, wanted)) {
 		const std::array image_infos {
 		  vk::DescriptorImageInfo(*m_point_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  vk::DescriptorImageInfo(*m_linear_sampler, history.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
@@ -140,7 +140,6 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 			);
 		}
 		m_core->getDevice().updateDescriptorSets(writes, {});
-		m_bound_views[frame_index] = wanted;
 	}
 
 	const glm::mat4 current_view_projection = frame->frame_data.view_projection;

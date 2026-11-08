@@ -667,11 +667,11 @@ auto GiPass::createPipelines(const VulkanCore& core) -> bool {
 		writer.buffer(merge_set, k_merge_dirty_binding, storage, *m_dirty[i]);
 		writer.flush(core.getDevice());
 	}
-	m_probe_bound.assign(VulkanRenderer::k_frames_in_flight, {});
-	m_debug_bound.assign(VulkanRenderer::k_frames_in_flight, {});
-	m_ray_bound.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_probe_bound.resize(VulkanRenderer::k_frames_in_flight);
+	m_debug_bound.resize(VulkanRenderer::k_frames_in_flight);
+	m_ray_bound.resize(VulkanRenderer::k_frames_in_flight);
 	createChange(core);
-	m_ray_storage_bound.assign(VulkanRenderer::k_frames_in_flight, nullptr);
+	m_ray_storage_bound.resize(VulkanRenderer::k_frames_in_flight);
 	if (trace == nullptr) {
 		TOAST_WARN("Render", "GiPass found no voxel trace scene so probes get no rays");
 	}
@@ -687,9 +687,9 @@ void GiPass::onResize(vk::Extent2D extent) {
 	m_extent = extent;
 	if (m_core != nullptr) {
 		m_debug_target.create(*m_core, extent, m_scene_format, "GiPass Debug");
-		std::ranges::fill(m_probe_bound, std::array<vk::ImageView, 2> {});
-		std::ranges::fill(m_debug_bound, std::array<vk::ImageView, 3> {});
-		std::ranges::fill(m_ray_bound, std::array<vk::ImageView, 3> {});
+		m_probe_bound.invalidate();
+		m_debug_bound.invalidate();
+		m_ray_bound.invalidate();
 		createChange(*m_core);
 	}
 }
@@ -917,7 +917,7 @@ void GiPass::bindProbeSet(uint32_t frame_index) {
 	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const std::array wanted {depth_view, normal_view};
-	if (m_probe_bound[frame_index] == wanted) {
+	if (!m_probe_bound.update(frame_index, wanted)) {
 		return;
 	}
 	DescriptorWriter writer;
@@ -938,7 +938,6 @@ void GiPass::bindProbeSet(uint32_t frame_index) {
 	    vk::ImageLayout::eShaderReadOnlyOptimal
 	);
 	writer.flush(m_core->getDevice());
-	m_probe_bound[frame_index] = wanted;
 }
 
 auto GiPass::bindRaySets(uint32_t frame_index, vk::ImageView scene_view) -> bool {
@@ -948,15 +947,14 @@ auto GiPass::bindRaySets(uint32_t frame_index, vk::ImageView scene_view) -> bool
 		return false;
 	}
 	// Safe since the fence of this slot was waited on
-	if (m_ray_storage_bound[frame_index] != frame->voxel_storage) {
+	if (m_ray_storage_bound.update(frame_index, frame->voxel_storage)) {
 		writeVoxelStorageDescriptors(m_core->getDevice(), *m_ray_storage_sets[frame_index], *frame->voxel_storage);
-		m_ray_storage_bound[frame_index] = frame->voxel_storage;
 	}
 
 	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const std::array wanted {depth_view, normal_view, scene_view};
-	if (m_ray_bound[frame_index] != wanted) {
+	if (m_ray_bound.update(frame_index, wanted)) {
 		DescriptorWriter writer;
 		writer.image(
 		    *m_ray_sets[frame_index],
@@ -983,7 +981,6 @@ auto GiPass::bindRaySets(uint32_t frame_index, vk::ImageView scene_view) -> bool
 		    vk::ImageLayout::eShaderReadOnlyOptimal
 		);
 		writer.flush(m_core->getDevice());
-		m_ray_bound[frame_index] = wanted;
 	}
 	m_ray_scene_sets.updateTlas(frame_index);
 	return true;
@@ -1287,7 +1284,7 @@ auto GiPass::recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const std::array wanted {source_view, depth_view, normal_view};
-	if (m_debug_bound[frame_index] != wanted) {
+	if (m_debug_bound.update(frame_index, wanted)) {
 		DescriptorWriter writer;
 		writer.image(
 		    *m_debug_sets[frame_index],
@@ -1314,7 +1311,6 @@ auto GiPass::recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		    vk::ImageLayout::eShaderReadOnlyOptimal
 		);
 		writer.flush(m_core->getDevice());
-		m_debug_bound[frame_index] = wanted;
 	}
 
 	const vk::PipelineLayout layout = *m_debug_layout.getPipelineLayout();

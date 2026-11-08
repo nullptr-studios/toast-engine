@@ -24,6 +24,18 @@ Sampler2D gSource;
 [[vk::binding(1,0)]]
 Sampler2D gSceneColor;
 
+[[vk::binding(2,0)]]
+Sampler2D gGlassBackdrop;
+
+[[vk::binding(3,0)]]
+Sampler2D gGlassMask;
+
+float3 bloomSource(float2 uv)
+{
+    float m = gGlassMask.Sample(uv).r;
+    return lerp(gSource.Sample(uv).rgb, gGlassBackdrop.Sample(uv).rgb, m);
+}
+
 typedef FullscreenVSOutput VSOutput;
 
 [shader("vertex")]
@@ -48,7 +60,7 @@ float3 applyThreshold(float3 color)
 }
 
 // Not an entry point or Slang would promote the uniform parameter into a second push block
-float4 fragmentDownsample(VSOutput input, uniform bool applyKaris) : SV_Target0
+float4 fragmentDownsampleLoop(VSOutput input) : SV_Target0
 {
     float2 texel = gParams.inverseSourceSize;
     float2 uv = input.uv;
@@ -78,22 +90,51 @@ float4 fragmentDownsample(VSOutput input, uniform bool applyKaris) : SV_Target0
     float3 group4 = (e + f + h + i) * 0.25;
 
     float3 result;
-    if (applyKaris)
-    {
-        float w0 = 1.0 / (1.0 + luminance(group0));
-        float w1 = 1.0 / (1.0 + luminance(group1));
-        float w2 = 1.0 / (1.0 + luminance(group2));
-        float w3 = 1.0 / (1.0 + luminance(group3));
-        float w4 = 1.0 / (1.0 + luminance(group4));
-        float total = w0 * 0.5 + (w1 + w2 + w3 + w4) * 0.125;
-        result = (group0 * w0 * 0.5 + (group1 * w1 + group2 * w2 + group3 * w3 + group4 * w4) * 0.125) / max(total, 1e-4);
+    result = group0 * 0.5 + (group1 + group2 + group3 + group4) * 0.125;
 
-        result = applyThreshold(result);
-    }
-    else
-    {
-        result = group0 * 0.5 + (group1 + group2 + group3 + group4) * 0.125;
-    }
+    return float4(result, 1.0);
+}
+
+float4 fragmentDownsampleStart(VSOutput input) : SV_Target0
+{
+    float2 texel = gParams.inverseSourceSize;
+    float2 uv = input.uv;
+
+    // Interleaved so the texture queue never throttles and live registers stay low
+    float3 j = bloomSource(uv + float2(-1.0, 1.0) * texel).rgb;
+    float3 k = bloomSource(uv + float2( 1.0, 1.0) * texel).rgb;
+    float3 l = bloomSource(uv + float2(-1.0,-1.0) * texel).rgb;
+    float3 m = bloomSource(uv + float2( 1.0,-1.0) * texel).rgb;
+    float3 group0 = (j + k + l + m) * 0.25;
+
+    float3 e = bloomSource(uv).rgb;
+    float3 b = bloomSource(uv + float2( 0.0, 2.0) * texel).rgb;
+    float3 d = bloomSource(uv + float2(-2.0, 0.0) * texel).rgb;
+    float3 a = bloomSource(uv + float2(-2.0, 2.0) * texel).rgb;
+    float3 group1 = (a + b + d + e) * 0.25;
+
+    float3 c = bloomSource(uv + float2( 2.0, 2.0) * texel).rgb;
+    float3 f = bloomSource(uv + float2( 2.0, 0.0) * texel).rgb;
+    float3 group2 = (b + c + e + f) * 0.25;
+
+    float3 g = bloomSource(uv + float2(-2.0,-2.0) * texel).rgb;
+    float3 h = bloomSource(uv + float2( 0.0,-2.0) * texel).rgb;
+    float3 group3 = (d + e + g + h) * 0.25;
+
+    float3 i = bloomSource(uv + float2( 2.0,-2.0) * texel).rgb;
+    float3 group4 = (e + f + h + i) * 0.25;
+
+    float3 result;
+
+    float w0 = 1.0 / (1.0 + luminance(group0));
+    float w1 = 1.0 / (1.0 + luminance(group1));
+    float w2 = 1.0 / (1.0 + luminance(group2));
+    float w3 = 1.0 / (1.0 + luminance(group3));
+    float w4 = 1.0 / (1.0 + luminance(group4));
+    float total = w0 * 0.5 + (w1 + w2 + w3 + w4) * 0.125;
+    result = (group0 * w0 * 0.5 + (group1 * w1 + group2 * w2 + group3 * w3 + group4 * w4) * 0.125) / max(total, 1e-4);
+
+    result = applyThreshold(result);
 
     return float4(result, 1.0);
 }
@@ -101,13 +142,13 @@ float4 fragmentDownsample(VSOutput input, uniform bool applyKaris) : SV_Target0
 [shader("fragment")]
 float4 fragmentDownsampleFirst(VSOutput input) : SV_Target0
 {
-    return fragmentDownsample(input, true);
+    return fragmentDownsampleStart(input);
 }
 
 [shader("fragment")]
 float4 fragmentDownsampleNext(VSOutput input) : SV_Target0
 {
-    return fragmentDownsample(input, false);
+    return fragmentDownsampleLoop(input);
 }
 
 [shader("fragment")]

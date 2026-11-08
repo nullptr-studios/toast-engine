@@ -117,7 +117,7 @@ void TonemapPass::createExposureResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_exposure_sets.clear();
-	m_exposure_bound_views.assign(VulkanRenderer::k_frames_in_flight, vk::ImageView {});
+	m_exposure_bound_views.resize(VulkanRenderer::k_frames_in_flight);
 	DescriptorWriter writer;
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
@@ -151,7 +151,7 @@ void TonemapPass::createResources(const VulkanCore& core) {
 
 	m_descriptor_sets.clear();
 	m_params_buffers.resize(VulkanRenderer::k_frames_in_flight);
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight, vk::ImageView {});
+	m_bound_views.resize(VulkanRenderer::k_frames_in_flight);
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo buffer_ci {};
@@ -187,15 +187,15 @@ void TonemapPass::createResources(const VulkanCore& core) {
 void TonemapPass::createTarget(const VulkanCore& core, vk::Extent2D extent) {
 	m_target.create(core, extent, m_ldr_format, "TonemapPass");
 	// A new view can reuse the handle value of a destroyed view
-	std::ranges::fill(m_bound_views, vk::ImageView {});
-	std::ranges::fill(m_exposure_bound_views, vk::ImageView {});
+	m_bound_views.invalidate();
+	m_exposure_bound_views.invalidate();
 }
 
 void TonemapPass::recordExposure(
     vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, const PostProcessSettings::Tonemap& settings
 ) {
 	ZoneScoped;
-	if (m_exposure_bound_views[frame_index] != source_view) {
+	if (m_exposure_bound_views.update(frame_index, source_view)) {
 		DescriptorWriter writer;
 		writer.image(
 		    *m_exposure_sets[frame_index],
@@ -206,7 +206,6 @@ void TonemapPass::recordExposure(
 		    vk::ImageLayout::eShaderReadOnlyOptimal
 		);
 		writer.flush(m_core->getDevice());
-		m_exposure_bound_views[frame_index] = source_view;
 	}
 
 	const auto now = std::chrono::steady_clock::now();
@@ -321,7 +320,7 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		}
 	}
 
-	if (m_bound_views[frame_index] != source_view) {
+	if (m_bound_views.update(frame_index, source_view)) {
 		vk::DescriptorImageInfo image_info {};
 		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		image_info.imageView = source_view;
@@ -331,7 +330,6 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		    *m_descriptor_sets[frame_index], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
 		);
 		m_core->getDevice().updateDescriptorSets(write, {});
-		m_bound_views[frame_index] = source_view;
 	}
 
 	m_target.beginScope(cmd);

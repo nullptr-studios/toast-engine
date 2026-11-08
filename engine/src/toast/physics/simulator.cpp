@@ -199,7 +199,7 @@ namespace {
 std::atomic<std::thread::id> g_simulator_thread {};    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 struct Requests {
-	std::mutex mutex;
+	TOAST_LOCKABLE(std::mutex, mutex, "Physics requests");
 	std::deque<std::move_only_function<void()>> queue;
 	std::atomic<size_t> pending {0};    ///< queued, plus the one being carried out
 	bool running = false;               ///< only the simulator thread touches it
@@ -281,36 +281,65 @@ Simulator::~Simulator() {
 }
 
 auto Simulator::querySnapshot() -> std::shared_ptr<const QuerySnapshot> {
+	// A physics tick between steps reads the step before it, only the tick thread is serial with the simulation
+	if (instance != nullptr && instance->m_query_snapshot_dirty.load(std::memory_order_acquire) && onSimulatorThread() &&
+	    instance->m_phase.load(std::memory_order_relaxed) == SimulationPhase::idle) {
+		instance->publishQuerySnapshot();
+	}
 	return published_query_snapshot.load(std::memory_order_acquire);
 }
 
 void Simulator::publishQuerySnapshot() {
 	ZoneScopedN("physics::PublishQuerySnapshot");
-	auto snapshot = std::make_shared<QuerySnapshot>();
-	snapshot->tree = m_broad_phase.snapshotTree();
+	m_query_snapshot_dirty.store(false, std::memory_order_relaxed);
+	std::shared_ptr<const QuerySnapshot> previous = published_query_snapshot.load(std::memory_order_acquire);
+	std::shared_ptr<QuerySnapshot> snapshot = std::exchange(m_spare_query_snapshot, nullptr);
+	if (not snapshot) {
+		snapshot = std::make_shared<QuerySnapshot>();
+	}
+	// Copy assignment keeps the spare capacity
+	snapshot->tree = m_broad_phase.tree();
 	snapshot->bodies = m_bodies;
 	snapshot->shapes = m_shapes;
 	snapshot->fat_margin = tunables().broadphase_fat_margin;
 	snapshot->tick = m_tick_index;
-	snapshot->collider_nodes.resize(m_shapes.size());
-	snapshot->body_nodes.resize(m_bodies.size());
+	snapshot->collider_nodes.assign(m_shapes.size(), {});
+	snapshot->body_nodes.assign(m_bodies.size(), {});
 	{
 		std::scoped_lock voxel_lock {voxelDataMutex()};
-		snapshot->voxels.reserve(m_voxel_shapes.size());
-		for (const VoxelShapeSlot& source : m_voxel_shapes) {
-			VoxelShapeSlot copy;
-			copy.generation = source.generation;
-			if (source.data) {
-				VoxelShapeData& data = copy.data.emplace();
-				data.surface = source.data->surface;
-				data.palette = source.data->palette;
-				data.materials = source.data->materials;
-				if (source.data->volume) {
-					data.owned_volume = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*source.data->volume));
-					data.volume = data.owned_volume.get();
+		const std::vector<QueryVoxel>* cached = previous && not m_query_voxels_stale ? &previous->voxels : nullptr;
+		m_query_voxels_stale = false;
+		snapshot->voxels.resize(m_voxel_shapes.size());
+		for (size_t index = 0; index < m_voxel_shapes.size(); ++index) {
+			const VoxelShapeSlot& source = m_voxel_shapes[index];
+			const voxel::Volume* volume = source.data ? source.data->volume : nullptr;
+			QueryVoxel key {
+			  .generation = source.generation,
+			  .volume_id = volume ? volume->id() : 0,
+			  .volume_revision = volume ? volume->revision() : 0,
+			  .surface_revision = source.data ? source.data->surface_revision : 0,
+			};
+			if (cached != nullptr && index < cached->size()) {
+				const QueryVoxel& hit = (*cached)[index];
+				if ((hit.data != nullptr) == source.data.has_value() && hit.generation == key.generation &&
+				    hit.volume_id == key.volume_id && hit.volume_revision == key.volume_revision &&
+				    hit.surface_revision == key.surface_revision) {
+					snapshot->voxels[index] = hit;
+					continue;
 				}
 			}
-			snapshot->voxels.push_back(std::move(copy));
+			if (source.data) {
+				auto data = std::make_shared<VoxelShapeData>();
+				data->surface = source.data->surface;
+				data->palette = source.data->palette;
+				data->materials = source.data->materials;
+				if (volume) {
+					data->owned_volume = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*volume));
+					data->volume = data->owned_volume.get();
+				}
+				key.data = std::move(data);
+			}
+			snapshot->voxels[index] = std::move(key);
 		}
 	}
 	for (const NodeBinding& binding : m_node_bindings) {
@@ -332,6 +361,10 @@ void Simulator::publishQuerySnapshot() {
 		}
 	}
 	published_query_snapshot.store(std::move(snapshot), std::memory_order_release);
+	// Readers only reach it through the published pointer so one owner left means nobody reads it
+	if (previous.use_count() == 1) {
+		m_spare_query_snapshot = std::const_pointer_cast<QuerySnapshot>(std::move(previous));
+	}
 }
 
 void Simulator::registerRigidbody(Rigidbody& node) {
@@ -822,7 +855,7 @@ void Simulator::tick() {
 	publishTransforms();
 	publishJoints();
 	publishVoxelRenderRecords();
-	publishQuerySnapshot();
+	m_query_snapshot_dirty.store(true, std::memory_order_release);
 	m_profile.tick_ms = elapsed_ms(tick_start, std::chrono::steady_clock::now());
 	publishProfile(islands);
 	FrameMarkNamed("PhysicsStep");
@@ -1195,6 +1228,7 @@ void Simulator::refreshPalette(uint64_t palette_uid) {
 			data->palette = palette;
 			data->materials = materials;
 			data->moments = accumulateMassMoments(*data->volume, palette, materials);
+			m_query_voxels_stale = true;
 
 			const Body* body = tryGetBody(slot.shape.owner);
 			if (body != nullptr && body->type == BodyType::dynamic_body) {
@@ -2542,6 +2576,9 @@ void Simulator::syncRenderPoses() {
 	if (instance != nullptr) {
 		runPendingRequests();
 		instance->rebuildRenderPoseLookup();
+		if (instance->m_query_snapshot_dirty.load(std::memory_order_relaxed)) {
+			instance->publishQuerySnapshot();
+		}
 	}
 }
 

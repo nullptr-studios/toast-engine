@@ -27,6 +27,7 @@
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 #include "toast/renderer/vulkan_renderer_detail.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <SDL3/SDL_keycode.h>
 #include <iostream>
@@ -325,6 +326,7 @@ void VulkanRenderer::createSceneColorResources() {
 
 	create(m_scene_color, m_scene_color_format, "SceneColor", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop, m_scene_color_format, "GlassBackdrop", vk::ImageUsageFlagBits::eTransferDst);
+	create(m_glass_mask, vk::Format::eR8Unorm, "GlassMask");
 	create(m_scene_normal, m_scene_normal_format, "SceneNormal", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop_normal, m_scene_normal_format, "GlassBackdropNormal", vk::ImageUsageFlagBits::eTransferDst);
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
@@ -459,7 +461,7 @@ void VulkanRenderer::createPresentResources() {
 	const vk::DescriptorSetLayout set_layout = *layouts[0];
 	m_present_sets.clear();
 	m_depth_upscale_sets.clear();
-	m_present_bound_views.assign(k_frames_in_flight, vk::ImageView {});
+	m_present_bound.resize(k_frames_in_flight);
 	for (uint32_t i = 0; i < k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(*m_descriptor_pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -469,7 +471,7 @@ void VulkanRenderer::createPresentResources() {
 		m_depth_upscale_sets.push_back(std::move(depth_set[0]));
 		setDebugName(*m_core, *m_depth_upscale_sets[i], std::format("VulkanRenderer DepthUpscaleSet[{}]", i));
 	}
-	m_depth_upscale_bound.assign(k_frames_in_flight, vk::ImageView {});
+	m_depth_upscale_bound.resize(k_frames_in_flight);
 }
 
 void VulkanRenderer::createFrameResources() {
@@ -776,7 +778,7 @@ auto VulkanRenderer::voxelDetailView() const -> vk::ImageView {
 
 void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload_job) {
 	{
-		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		std::lock_guard lock(m_upload_mutex);
 		m_upload_waiting.push_back(std::move(upload_job));
 	}
 	pumpUploadQueue();
@@ -788,7 +790,7 @@ void VulkanRenderer::pumpUploadQueue() {
 	while (true) {
 		std::unique_ptr<PendingResourceUpload> job;
 		{
-			std::lock_guard<std::mutex> lock(m_upload_mutex);
+			std::lock_guard lock(m_upload_mutex);
 			if (m_upload_waiting.empty()) {
 				return;
 			}
@@ -805,7 +807,7 @@ void VulkanRenderer::pumpUploadQueue() {
 			m_upload_host_bytes.fetch_add(j->host_bytes, std::memory_order_acq_rel);
 
 			{
-				std::lock_guard<std::mutex> lock(m_upload_mutex);
+				std::lock_guard lock(m_upload_mutex);
 				m_upload_staging.push_back(std::move(j));
 			}
 			m_pending_upload_builds.fetch_sub(1, std::memory_order_acq_rel);
@@ -870,7 +872,7 @@ void VulkanRenderer::flushResourceUploads() {
 
 	std::vector<std::unique_ptr<PendingResourceUpload>> jobs_to_flush;
 	{
-		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		std::lock_guard lock(m_upload_mutex);
 		if (m_upload_staging.empty()) {
 			return;
 		}
@@ -883,7 +885,7 @@ void VulkanRenderer::flushResourceUploads() {
 		if (jobs.empty()) {
 			return;
 		}
-		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		std::lock_guard lock(m_upload_mutex);
 		m_upload_staging.insert(m_upload_staging.begin(), std::make_move_iterator(jobs.begin()), std::make_move_iterator(jobs.end()));
 		jobs.clear();
 	};

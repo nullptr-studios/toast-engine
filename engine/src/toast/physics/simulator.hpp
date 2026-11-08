@@ -36,6 +36,7 @@
 #include <thread>
 #include <toast/events/listener.hpp>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 #include <toast/log.hpp>
 #include <toast/voxel/connectivity.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
@@ -720,7 +721,7 @@ private:
 	inline static Simulator* instance = nullptr;
 	inline static std::atomic<std::shared_ptr<const QuerySnapshot>> published_query_snapshot;
 
-	std::mutex m_wind_mutex;
+	TOAST_LOCKABLE(std::mutex, m_wind_mutex, "Physics wind");
 	std::optional<glm::vec3> m_level_wind;
 
 	mutable std::thread::id m_owner_thread;
@@ -802,13 +803,19 @@ private:
 	std::vector<VoxelRenderRecord> m_voxel_render_records;
 	std::vector<DebrisSpawn> m_debris_spawns;
 
-	std::mutex m_damage_mutex;
+	TOAST_LOCKABLE(std::mutex, m_damage_mutex, "Physics damage");
 	std::vector<DamageCommand> m_damage_commands;
 	std::vector<DebugDirtyBrick> m_debug_dirty_bricks;
 
 	uint64_t m_next_fragment_sequence = 1;
 	uint64_t m_tick_index = 0;
 	void publishQuerySnapshot();
+	/// Unpublished snapshot nobody reads anymore so its buffers get refilled instead of reallocated
+	std::shared_ptr<QuerySnapshot> m_spare_query_snapshot;
+	/// Steps only mark it so a burst of fixed steps copies once per frame
+	std::atomic<bool> m_query_snapshot_dirty = false;
+	/// Palette reloads change voxel copies without bumping any revision
+	bool m_query_voxels_stale = false;
 	std::vector<FragmentRecord> m_fragments;
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;

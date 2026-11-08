@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -82,15 +83,15 @@ private:
 	std::vector<vk::raii::DescriptorSet> m_mask_sets;
 	std::vector<vk::raii::DescriptorSet> m_voxel_sets;
 	std::vector<vma::raii::Buffer> m_volume_buffers;
-	std::vector<vk::ImageView> m_bound_depth;
-	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
+	DescriptorCache<vk::ImageView> m_bound_depth;
+	DescriptorCache<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
 
 	ShaderLayout m_outline_layout;
 	VulkanPipeline m_resolve_pipeline;
 	VulkanPipeline m_composite_pipeline;
 	std::vector<vk::raii::DescriptorSet> m_outline_sets;
 	/// Mask history and outline views each set was written with
-	std::vector<std::array<vk::ImageView, 3>> m_bound_outline;
+	DescriptorCache<std::array<vk::ImageView, 3>> m_bound_outline;
 
 	/// Ping pong where m_write is the one this frame resolves into
 	std::array<PostProcessTarget, 2> m_coverage;

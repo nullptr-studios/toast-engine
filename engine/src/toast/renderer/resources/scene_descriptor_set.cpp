@@ -25,9 +25,9 @@ void SceneDescriptorSets::create(
 	m_sets.clear();
 	m_sets.reserve(VulkanRenderer::k_frames_in_flight);
 	m_scene_binding.reset();
-	m_bound_tlas.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound_tlas.resize(VulkanRenderer::k_frames_in_flight);
 	m_detail_binding.reset();
-	m_bound_detail.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound_detail.resize(VulkanRenderer::k_frames_in_flight);
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &layout);
@@ -84,7 +84,6 @@ void SceneDescriptorSets::create(
 				    vk::ImageLayout::eShaderReadOnlyOptimal
 				);
 				m_detail_binding = binding.binding;
-				m_bound_detail[i] = detail;
 				continue;
 			}
 
@@ -229,7 +228,7 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	ZoneScoped;
 	if (m_core != nullptr && m_detail_binding.has_value() && frame_index < m_bound_detail.size()) {
 		const vk::ImageView detail = VulkanRenderer::instance->voxelDetailView();
-		if (detail != m_bound_detail[frame_index]) {
+		if (m_bound_detail.update(frame_index, detail)) {
 			DescriptorWriter writer;
 			writer.image(
 			    *m_sets[frame_index],
@@ -240,7 +239,6 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 			    vk::ImageLayout::eShaderReadOnlyOptimal
 			);
 			writer.flush(m_core->getDevice());
-			m_bound_detail[frame_index] = detail;
 		}
 	}
 	if (m_core == nullptr || !m_scene_binding.has_value() || frame_index >= m_bound_tlas.size()) {
@@ -252,15 +250,13 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	const std::pair bound {tlas, scene != nullptr ? scene->getAccelerationStructureGeneration(frame_index) : 0};
 
 	// A descriptor cannot be written with a null structure
-	if (!tlas || bound == m_bound_tlas[frame_index]) {
+	if (!tlas || !m_bound_tlas.update(frame_index, bound)) {
 		return;
 	}
 
 	DescriptorWriter writer;
 	writer.accelerationStructure(*m_sets[frame_index], *m_scene_binding, tlas);
 	writer.flush(m_core->getDevice());
-
-	m_bound_tlas[frame_index] = bound;
 }
 
 }

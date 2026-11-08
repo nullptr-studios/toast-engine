@@ -635,3 +635,15 @@ SurfaceOutput fragmentSurface(VSOutput input, out float depth : SV_Depth)
     }
     return output;
 }
+
+[shader("fragment")]
+float4 fragmentMask(VSOutput input, out float depth : SV_Depth) : SV_Target0
+{
+    GlassComposite glass;
+    if (!compositeGlass(input, true, glass))
+    {
+        discard;
+    }
+    depth = glass.depth;
+    return float4(1.0, 1.0, 1.0, 1.0);
+}

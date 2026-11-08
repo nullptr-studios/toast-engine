@@ -5,6 +5,7 @@
 #pragma once
 
 #include "toast/renderer/core/depth_convention.hpp"
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/gpu_timer.hpp"
 #include "toast/renderer/core/vulkan_core.hpp"
@@ -51,6 +52,7 @@
 #include <toast/assets/texture.hpp>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <toast/lock_profiling.hpp>
 #include <toast/settings/settings.hpp>
 #include <toast/world/gizmo_layout.hpp>
 #include <tracy/TracyVulkan.hpp>
@@ -690,6 +692,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto getGlassMaskView() const noexcept -> vk::ImageView {
+		return m_glass_mask.view ? **m_glass_mask.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
 	auto getGlassBackdropDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
 	}
@@ -936,15 +943,10 @@ public:
 		return m_irradiance_stale_count.load(std::memory_order_relaxed);
 	}
 
+#if defined(TOAST_DEV_TOOLS)
 	[[nodiscard]]
 	auto getOutOfOrderFrameCount() const noexcept -> uint32_t {
 		return m_out_of_order_frames.load(std::memory_order_relaxed);
-	}
-
-	void getFrameTimeStats(float& avg_ms, float& min_ms, float& max_ms) const noexcept {
-		avg_ms = m_frame_time_avg_ms.load(std::memory_order_relaxed);
-		min_ms = m_frame_time_min_ms.load(std::memory_order_relaxed);
-		max_ms = m_frame_time_max_ms.load(std::memory_order_relaxed);
 	}
 
 	[[nodiscard]]
@@ -956,6 +958,7 @@ public:
 	auto getDroppedFrameCount() const noexcept -> uint32_t {
 		return m_dropped_frames.load(std::memory_order_relaxed);
 	}
+#endif
 
 	[[nodiscard]]
 	auto getVisibleInstanceCount() const noexcept -> uint32_t {
@@ -1058,6 +1061,7 @@ public:
 		return m_debug_draw_enabled.load(std::memory_order_relaxed);
 	}
 
+#if defined(TOAST_DEV_TOOLS)
 	struct PerfCounters {
 		uint64_t ticks = 0;
 		uint64_t frames_built = 0;
@@ -1097,6 +1101,7 @@ public:
 		  .build_ns = m_perf_build_ns.load(std::memory_order_relaxed),
 		};
 	}
+#endif
 
 	struct UploadStats {
 		uint32_t slots_in_flight = 0;
@@ -1251,9 +1256,9 @@ private:
 	/// Main thread only
 	uint32_t m_write_index = 0;
 
-	std::mutex m_queue_mutex;
+	TOAST_LOCKABLE(std::mutex, m_queue_mutex, "Render frame queue");
 
-	std::condition_variable m_frame_cv;
+	toast::ConditionVariable m_frame_cv;
 
 	std::queue<uint32_t> m_ready_frames;
 	const RenderFrame* m_rendering_frame = nullptr;
@@ -1407,7 +1412,7 @@ private:
 
 	/// Main thread only
 	void buildVoxelProxies(RenderFrame& frame);
-	std::mutex m_upload_mutex;
+	TOAST_LOCKABLE(std::mutex, m_upload_mutex, "Render uploads");
 
 	std::atomic<int> m_pending_upload_builds {0};
 
@@ -1420,7 +1425,7 @@ private:
 
 	std::unordered_map<assets::Material*, std::unique_ptr<MaterialPass>> m_material_passes;
 	/// Guards m_material_passes and m_render_passes
-	mutable std::mutex m_pass_mutex;
+	mutable TOAST_LOCKABLE(std::mutex, m_pass_mutex, "Render passes");
 	std::atomic_bool m_pending_material_pass_clear {false};
 	event::Listener m_asset_listener;
 
@@ -1481,6 +1486,7 @@ private:
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
 	SceneColorResources m_glass_backdrop;
+	SceneColorResources m_glass_mask;
 	SceneColorResources m_glass_backdrop_normal;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
@@ -1555,11 +1561,11 @@ private:
 	VulkanPipeline m_present_pipeline;
 	vk::raii::Sampler m_present_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_present_sets;
-	std::vector<vk::ImageView> m_present_bound_views;
+	DescriptorCache<vk::ImageView> m_present_bound;
 	VulkanPipeline m_depth_upscale_pipeline;
 	vk::raii::Sampler m_depth_upscale_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_depth_upscale_sets;
-	std::vector<vk::ImageView> m_depth_upscale_bound;
+	DescriptorCache<vk::ImageView> m_depth_upscale_bound;
 
 	TracyVkCtx m_tracy_vk_ctx = nullptr;
 	std::unique_ptr<GpuTimer> m_gpu_timer;
@@ -1668,7 +1674,7 @@ private:
 
 	UIFrameBuilder m_ui_frame_builder;
 
-	std::mutex m_mesh_proxy_mutex;
+	TOAST_LOCKABLE(std::mutex, m_mesh_proxy_mutex, "Render mesh proxies");
 	std::vector<toast::MeshNode*> m_mesh_proxy_nodes;
 	std::vector<std::pair<toast::Node3D*, void (*)(toast::Node3D&)>> m_debug_nodes;
 
@@ -1806,6 +1812,7 @@ private:
 	/// Render thread only
 	uint64_t m_last_drawn_sequence = 0;
 
+#if defined(TOAST_DEV_TOOLS)
 	/// Stats grouped by writer thread on separate cache lines to avoid false sharing
 	/// Main thread writes
 	alignas(64) std::atomic<uint32_t> m_skipped_builds {0};
@@ -1831,6 +1838,7 @@ private:
 	std::atomic<uint64_t> m_perf_present_ns {0};
 	std::atomic<uint64_t> m_perf_frame_wait_ns {0};
 	std::atomic<uint64_t> m_perf_pacing_ns {0};
+#endif
 
 	alignas(64) std::atomic_bool m_cull_debug_draw {false};
 
