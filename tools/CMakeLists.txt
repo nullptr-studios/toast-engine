@@ -32,18 +32,18 @@ add_custom_target(kenzo ALL
 add_dependencies(reflection_generator packer)
 
 if (BUILD_TESTING)
-    find_program(CARGO cargo)
-    if (CARGO)
+    find_program(DOTNET dotnet)
+    if (DOTNET)
         add_test(
             NAME refgen_unit_tests
-            COMMAND ${CARGO} test --manifest-path "${CMAKE_CURRENT_SOURCE_DIR}/reflection_generator/Cargo.toml"
+            COMMAND ${DOTNET} test "${CMAKE_CURRENT_SOURCE_DIR}/reflection_generator/tests/ReflectionGenerator.Tests"
             WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/reflection_generator"
         )
         set_tests_properties(refgen_unit_tests PROPERTIES
-            LABELS "reflection_generator;rust"
+            LABELS "reflection_generator;dotnet"
             TIMEOUT 300
         )
     else()
-        message(WARNING "cargo not found; skipping reflection_generator unit tests")
+        message(WARNING "dotnet not found; skipping reflection_generator unit tests")
     endif()
 endif()

@@ -31,12 +31,10 @@ CMakeUserPresets.json
 **.sln
 vsxmake**/
 vs**/
-Cargo.lock
 *.user
 
 # exclusions
 !/tests/**
 !/toast/src/**
 
-!/tools/reflection_generator/build.rs
 **/imgui.ini

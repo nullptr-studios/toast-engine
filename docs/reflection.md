@@ -155,7 +155,7 @@ A completely `constexpr` templated struct called `Reflect<T>` would hold all ref
 fields, functions and attributes on a given class, with getters and setters and a bunch
 of other functions like RTTI, Factory functions, destructors, etc. to avoid the use of
 vtables on the `Node` classes while maintaining inheritance and polymorphism. A generator
-coded mainly in rust (`tools/reflection_generator`) would then parse all header files that
+coded in C# (`tools/reflection_generator`) would then parse all header files that
 contain a `[[ToastNode]]` attribute and generate an Abstract Syntax Tree with Tree-sitter.
 Then, it would generate C++ files that would get compiled with the project and would fill
 out all the information required by the `Reflect<T>` class.
