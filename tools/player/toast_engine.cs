@@ -54,6 +54,10 @@ public class ToastEngine : IDisposable {
 		toast_mount_pack(scheme, pakPath);
 	}
 
+	public bool OpenAssetDatabase(string databasePath) {
+		return toast_open_asset_database(databasePath) != 0;
+	}
+
 	public void StartGame() {
 		toast_start_game();
 	}
@@ -93,6 +97,9 @@ public class ToastEngine : IDisposable {
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_mount_pack(string scheme, string pakPath);
+
+	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
+	private static extern int toast_open_asset_database(string databasePath);
 
 	[DllImport("__ENGINE_LIB__", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void toast_start_game();

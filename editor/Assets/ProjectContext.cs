@@ -43,6 +43,7 @@ public static class ProjectContext {
 		DataSchemaStubGenerator.StopWatching();
 		SchemaEditorState.Reset();
 		AssetDatabase.Reset();
+		AssetStore.Close();
 		IsInitialized = false;
 		ProjectPath = ArtworkPath = AssetsPath = CachePath = CorePath = SavedPath = "";
 		Databases = ["assets"];
@@ -66,6 +67,7 @@ public static class ProjectContext {
 		RegisterSchemes();
 		EnsureDirectories();
 		IsInitialized = true;
+		AssetStore.Open();
 		AssetBrowserSettings.Load();
 		UIBindStubGenerator.Generate();
 		UIBindStubGenerator.StartWatching();

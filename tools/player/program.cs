@@ -21,9 +21,11 @@ internal class Program {
 		);
 
 		engine.SetLoadMode(gameMode: true);
-		foreach (var pakFile in Directory.EnumerateFiles(basePath, "*.pak")) {
-			var scheme = Path.GetFileNameWithoutExtension(pakFile);
-			engine.MountPack(scheme, pakFile);
+		var databasePath = Path.Combine(basePath, "game.db");
+		if (!engine.OpenAssetDatabase(databasePath)) {
+			Console.Error.WriteLine($"Could not load the game's asset database: {databasePath} (or a pak it lists) is missing");
+			engine.Dispose();
+			return;
 		}
 
 		engine.Init();

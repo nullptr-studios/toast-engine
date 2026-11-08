@@ -58,6 +58,8 @@ TOAST_C_API void toast_set_load_mode(int mode) NOEXCEPT;
  */
 TOAST_C_API void toast_mount_pack(const char* scheme, const char* pak_path) NOEXCEPT;
 
+TOAST_C_API int toast_open_asset_database(const char* db_path) NOEXCEPT;
+
 /**
  * @brief Creates the World and loads the init_scene from project settings
  */
