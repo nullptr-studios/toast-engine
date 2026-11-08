@@ -1000,6 +1000,51 @@ void Simulator::emitDebris(
 	const glm::vec3 push_direction = push != nullptr ? push->direction : glm::vec3 {0.0f};
 	const float push_length = glm::length(push_direction);
 
+	const glm::ivec3 dims = data->volume != nullptr ? glm::ivec3(data->volume->voxelDims()) : glm::ivec3(0);
+	const auto solid_at = [&](const glm::ivec3& v) {
+		if (glm::any(glm::lessThan(v, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(v, dims))) {
+			return false;
+		}
+		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
+		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(v / brick_dim);
+		const glm::uvec3 in_brick = glm::uvec3(v % brick_dim);
+		return occupancy != nullptr && voxel::isSolid(*occupancy, in_brick.x, in_brick.y, in_brick.z);
+	};
+	const auto blocked_ahead = [&](const glm::vec3& from, const glm::vec3& direction, glm::vec3& normal_local) {
+		glm::ivec3 previous = glm::ivec3(glm::floor(from));
+		for (float t = 0.25f; t <= k_debris_lookahead_voxels; t += 0.25f) {
+			const glm::ivec3 cell = glm::ivec3(glm::floor(from + (direction * t)));
+			if (cell == previous) {
+				continue;
+			}
+			if (solid_at(cell)) {
+				// axis it changed the most along
+				int axis = -1;
+				for (int a = 0; a < 3; ++a) {
+					if (cell[a] != previous[a] && (axis < 0 || std::abs(direction[a]) > std::abs(direction[axis]))) {
+						axis = a;
+					}
+				}
+				normal_local = glm::vec3(0.0f);
+				normal_local[axis] = direction[axis] > 0.0f ? -1.0f : 1.0f;
+				return true;
+			}
+			previous = cell;
+		}
+		return false;
+	};
+	const glm::quat to_lattice = glm::inverse(lattice_rotation);
+
+	glm::vec3 mouth {0.0f};
+	if (blast != nullptr) {
+		const glm::vec3 dig = blast->end - blast->start;
+		if (glm::length(dig) > 1.0e-4f) {
+			mouth = -glm::normalize(dig);
+		} else if (push_length > 1.0e-6f) {
+			mouth = to_lattice * (-push_direction / push_length);
+		}
+	}
+
 	m_debris_spawns.reserve(m_debris_spawns.size() + clusters.size());
 	for (const DebrisCluster& cluster : clusters) {
 		// the block is 2 voxels wide
@@ -1012,7 +1057,10 @@ void Simulator::emitDebris(
 		const voxel::PaletteEntry& look = data->palette.entries[cluster.material];
 		const float mass =
 		    static_cast<float>(cluster.whole ? cluster.voxel_count : static_cast<uint32_t>(std::popcount(cluster.mask))) *
-		    static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume;
+		    static_cast<float>(data->materials.materials[material_index].density) * k_voxel_volume *
+		    tunables().debris_density_multiplier;
+
+		const glm::vec3 start = local / voxel::k_voxel_size;
 
 		// starts with the speed of the point it broke off from
 		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
@@ -1021,18 +1069,77 @@ void Simulator::emitDebris(
 			// thrown outward from the crater axis inside a cone
 			const glm::vec3 outward = local - closestPointOnSegment(local, blast->start, blast->end);
 			const float outward_length = glm::length(outward);
-			const glm::vec3 axis_local = outward_length > 1.0e-4f ? outward / outward_length : rng.direction();
+			const glm::vec3 radial = outward_length > 1.0e-4f ? outward / outward_length : rng.direction();
+			const glm::vec3 axis_local =
+			    glm::dot(mouth, mouth) > 0.0f ? glm::normalize(mouth + (radial * k_debris_mouth_spread)) : radial;
 			const glm::vec3 axis = body->rotation * (shape->voxel.local_rotation * axis_local);
-			float speed = debrisSpeed(energy_each, mass, speed_scale);
+			float speed = debrisSpeed(energy_each, mass, speed_scale, tunables().debris_max_speed);
 			if (blast->max_speed > 0.0f) {
 				speed = std::min(speed, blast->max_speed);
 			}
 			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
 		}
-		if (push != nullptr && push_length > 1.0e-6f && mass > 0.0f) {
-			const float speed = std::min({push->speed, push->max_impulse / mass, k_max_debris_speed});
+		glm::vec3 push_normal {0.0f};
+		const bool push_open =
+		    push_length > 1.0e-6f &&
+		    (blast == nullptr || not blocked_ahead(start, to_lattice * (push_direction / push_length), push_normal));
+		if (push != nullptr && push_open && mass > 0.0f) {
+			const float speed = std::min({push->speed, push->max_impulse / mass, tunables().debris_max_speed});
 			if (std::isfinite(speed) && speed > 0.0f) {
 				velocity += (push_direction / push_length) * speed;
+			}
+		}
+
+		float scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f);
+		const auto overlaps_solid = [&](float s) {
+			for (uint32_t bit = 0; bit < 8; ++bit) {
+				if ((cluster.mask & (1u << bit)) == 0) {
+					continue;
+				}
+				const glm::vec3 cube_center =
+				    start +
+				    (glm::vec3(static_cast<float>(bit & 1u), static_cast<float>((bit >> 1u) & 1u), static_cast<float>(bit >> 2u)) -
+						 0.5f) *
+				        s;
+				for (uint32_t corner = 0; corner < 8; ++corner) {
+					// corner on the border dorstnt counts the neighbour
+					const glm::vec3 sign =
+					    glm::vec3(
+					        static_cast<float>(corner & 1u), static_cast<float>((corner >> 1u) & 1u), static_cast<float>(corner >> 2u)
+					    ) -
+					    0.5f;
+					if (solid_at(glm::ivec3(glm::floor(cube_center + (sign * 0.96f * s))))) {
+						return true;
+					}
+				}
+			}
+			return false;
+		};
+		for (int attempt = 0; attempt < 3 && overlaps_solid(scale); ++attempt) {
+			scale *= 0.8f;
+		}
+		if (overlaps_solid(scale)) {
+			continue;
+		}
+
+		// a piece never goes into solid voxels
+		if (not together && data->volume != nullptr) {
+			for (int pass = 0; pass < 2; ++pass) {
+				const float speed = glm::length(velocity);
+				if (speed < 1.0e-3f) {
+					break;
+				}
+				glm::vec3 normal_local {0.0f};
+				if (not blocked_ahead(start, to_lattice * (velocity / speed), normal_local)) {
+					break;
+				}
+
+				const glm::vec3 normal = lattice_rotation * normal_local;
+				const float into = glm::dot(velocity, normal);
+				if (into >= 0.0f) {
+					break;
+				}
+				velocity -= (1.0f + k_debris_spawn_restitution) * into * normal;
 			}
 		}
 
@@ -1051,7 +1158,7 @@ void Simulator::emitDebris(
 		      .glass = voxel::isGlass(look),
 		      .alpha = look.alpha,
 		      .ior = look.ior,
-		      .scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f),
+		      .scale = scale,
 		    }
 		);
 	}

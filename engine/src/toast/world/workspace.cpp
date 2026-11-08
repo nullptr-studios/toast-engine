@@ -15,6 +15,7 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/prefab.hpp>
 #include <toast/engine.hpp>
+#include <toast/events/signal_bindings.hpp>
 #include <toast/events/signals_events.hpp>
 #include <toast/physics/nodes/box_collider.hpp>
 #include <toast/physics/nodes/capsule_collider.hpp>
@@ -1599,6 +1600,7 @@ void Workspace::eventSubscriptions() {
 				item.function = connection.function;
 				item.source = connection.source;
 				item.forwards_args = connection.forwards_args;
+				item.bindings = connection.bindings;
 			}
 		});
 		if (auto* runtime = node->scriptRuntime()) {
@@ -1616,6 +1618,7 @@ void Workspace::eventSubscriptions() {
 					item.function = connection.function;
 					item.source = connection.source;
 					item.forwards_args = connection.forwards_args;
+					item.bindings = connection.bindings;
 				}
 			}
 		}
@@ -1650,8 +1653,6 @@ void Workspace::eventSubscriptions() {
 			return true;
 		}
 
-		const size_t lua_arg_count = is_lua_signal ? source_runtime->luaSignalArgTypes(e.signal).size() : 0;
-
 		std::unordered_map<std::string, size_t> by_name;
 		for (auto* info = target->info(); info != nullptr; info = info->base_type) {
 			for (const auto& method : info->methods) {
@@ -1660,20 +1661,16 @@ void Workspace::eventSubscriptions() {
 				}
 				auto& callable = response.callables.emplace_back();
 				callable.name = method.name;
+				callable.declaring_class = std::string(info->type);
 				callable.has_cpp = true;
 				callable.compatible = method.return_type_id && *method.return_type_id == typeid(void);
-				callable.forwards_args = !is_lua_signal && !method.parameters.empty();
-				if (callable.compatible && is_lua_signal) {
-					callable.compatible = method.parameters.empty();
-				} else if (callable.compatible && !method.parameters.empty()) {
-					callable.compatible = method.parameters.size() == signal->args.size();
-					for (size_t i = 0; callable.compatible && i < method.parameters.size(); ++i) {
-						callable.compatible =
-						    method.parameters[i].type_id && signal->args[i] && *method.parameters[i].type_id == *signal->args[i];
-					}
-				}
+				callable.forwards_args = !method.parameters.empty();
 				for (const auto& parameter : method.parameters) {
 					callable.parameters.push_back({std::string(parameter.name), std::string(parameter.type)});
+					if (!signals::isBindableType(parameter.type) && callable.disabled_reason.empty()) {
+						callable.compatible = false;
+						callable.disabled_reason = std::format("Parameter '{}' is a container, which cannot be bound", parameter.name);
+					}
 				}
 				by_name.emplace(callable.name, response.callables.size() - 1);
 			}
@@ -1688,14 +1685,18 @@ void Workspace::eventSubscriptions() {
 				}
 				auto& callable = response.callables.emplace_back();
 				callable.name = function.name;
+				callable.declaring_class = "Lua";
 				callable.has_lua = true;
-				const size_t arg_count = is_lua_signal ? lua_arg_count : signal->args.size();
-				callable.compatible = function.parameters.empty() || function.parameters.size() == arg_count ||
-				                      (function.is_vararg && function.parameters.size() <= arg_count) ||
-				                      (is_lua_signal && function.is_vararg);
-				callable.forwards_args = (!is_lua_signal || lua_arg_count > 0) && (!function.parameters.empty() || function.is_vararg);
-				for (const auto& name : function.parameters) {
-					callable.parameters.push_back({name, "any"});
+				callable.compatible = true;
+				callable.forwards_args = !function.parameters.empty();
+				for (size_t i = 0; i < function.parameters.size(); ++i) {
+					const std::string type = i < function.parameter_types.size() ? function.parameter_types[i] : "any";
+					callable.parameters.push_back({function.parameters[i], type});
+					if (!signals::isBindableType(type) && callable.disabled_reason.empty()) {
+						callable.compatible = false;
+						callable.disabled_reason =
+						    std::format("Parameter '{}' is a container, which cannot be bound", function.parameters[i]);
+					}
 				}
 				by_name.emplace(callable.name, response.callables.size() - 1);
 			}
@@ -1714,11 +1715,10 @@ void Workspace::eventSubscriptions() {
 			});
 			if (callable.already_connected) {
 				callable.disabled_reason = "Already connected";
-			} else if (!callable.compatible) {
-				callable.disabled_reason = "The function signature is not compatible";
+			} else if (!callable.compatible && callable.disabled_reason.empty()) {
+				callable.disabled_reason = "The function returns a value";
 			}
 		}
-		std::ranges::sort(response.callables, {}, &event::SignalCallable::name);
 		event::send<event::SignalCallables>(response);
 		return true;
 	});
@@ -1739,10 +1739,17 @@ void Workspace::eventSubscriptions() {
 		    std::format("{}:{}", e.target_node, e.function)
 		);
 		recordHistory(std::move(context), [&] {
+			bool connected = true;
 			if (e.declaring_type == "Lua" && src.exists() && src->scriptRuntime() && target.exists()) {
-				src->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args);
+				connected = src->scriptRuntime()->connectLuaSignal(e.signal, *target, e.function, e.forwards_args, e.bindings);
+				if (!connected) {
+					TOAST_WARN("World", "Lua signal {} was not connected to {}:{}", e.signal, e.target_node, e.function);
+				}
 			} else if (src.exists() && sig && sig->connect && target.exists()) {
-				sig->connect(&*src, *target, e.function, signals::ConnectionSource::editor, e.forwards_args);
+				connected = sig->connect(&*src, *target, e.function, signals::ConnectionSource::editor, e.forwards_args, e.bindings);
+				if (!connected) {
+					TOAST_WARN("World", "Signal {} was not connected to {}:{}", e.signal, e.target_node, e.function);
+				}
 			} else {
 				TOAST_WARN(
 				    "World",

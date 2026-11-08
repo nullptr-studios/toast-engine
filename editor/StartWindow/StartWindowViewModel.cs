@@ -91,6 +91,8 @@ public partial class StartWindowViewModel : ViewModelBase {
 		}
 
 		tasks.Add(LoaderTask.Do("Check for missing files", AssetDatabase.RelocateMissingAssets));
+		tasks.Add(LoaderTask.Do("Sync artwork database",
+			async log => { await Task.Run(AssetDatabase.SyncArtworkDatabase); }));
 		tasks.Add(LoaderTask.Do("Check for missing artwork", AssetDatabase.RelocateMissingArtwork));
 
 		tasks.Add(LoaderTask.Do("Generate missing metadata",

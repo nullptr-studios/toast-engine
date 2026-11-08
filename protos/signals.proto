@@ -8,6 +8,13 @@ enum SignalConnectionSource {
   SIGNAL_CONNECTION_SOURCE_EDITOR = 3;
 }
 
+message ParamBinding {
+  oneof source {
+    uint32 signal_arg = 1;
+    string literal = 2;
+  }
+}
+
 message SignalConnection {
   string target_uid = 1;
   string target_name = 2;
@@ -15,6 +22,7 @@ message SignalConnection {
   string function = 4;
   SignalConnectionSource source = 5;
   bool forwards_args = 6;
+  repeated ParamBinding bindings = 7;
 }
 
 message SignalStateEntry {
@@ -56,6 +64,7 @@ message SignalCallable {
   bool already_connected = 6;
   bool forwards_args = 7;
   string disabled_reason = 8;
+  string declaring_class = 9;
 }
 
 message SignalCallables {
@@ -72,6 +81,7 @@ message AddSignalConnection {
   string target_node = 4;
   string function = 5;
   bool forwards_args = 6;
+  repeated ParamBinding bindings = 7;
 }
 
 message RemoveSignalConnection {

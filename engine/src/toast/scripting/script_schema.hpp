@@ -60,6 +60,7 @@ struct LuaGroup {
 struct LuaFunctionDesc {
 	std::string name;
 	std::vector<std::string> parameters;
+	std::vector<std::string> parameter_types;
 	bool is_vararg = false;
 };
 

@@ -69,6 +69,8 @@ public:
 	struct GpuVolume {
 		glm::mat4 world_to_voxel {1.0f};
 		glm::vec4 bounds {0.0f};
+		glm::vec4 box_min {0.0f};
+		glm::vec4 box_max {0.0f};
 		uint32_t record_index = 0;
 		std::array<uint32_t, 3> pad {};
 	};
@@ -77,7 +79,7 @@ public:
 	static_assert(sizeof(GpuParticle) == 64, "GpuParticle is mirrored by debris.slang and debris_draw.slang");
 	static_assert(sizeof(GpuMotion) == 32, "GpuMotion is mirrored by debris.slang");
 	static_assert(sizeof(GpuSpawn) == 80, "GpuSpawn is mirrored by debris.slang");
-	static_assert(sizeof(GpuVolume) == 96, "GpuVolume is mirrored by debris.slang");
+	static_assert(sizeof(GpuVolume) == 128, "GpuVolume is mirrored by debris.slang");
 
 	static constexpr uint32_t k_max_spawns_per_step = 4096;
 	static constexpr uint32_t k_max_volumes = 512;
