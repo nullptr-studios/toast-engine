@@ -1,6 +1,9 @@
 #pragma once
 #include "signals.hpp"
 
+#include <array>
+#include <cstdint>
+#include <toast/events/signal_bindings.hpp>
 #include <toast/world/node.hpp>
 #include <tracy/Tracy.hpp>
 
@@ -29,9 +32,43 @@ inline void Signal<Args...>::connect(toast::Node& node, F&& cb) {
 }
 
 template<typename... Args>
-inline void
-    Signal<Args...>::connect(toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args) {
+inline auto Signal<Args...>::connect(
+    toast::Node& node, std::string_view identifier, ConnectionSource source, bool forwards_args,
+    const std::vector<ParamBinding>& bindings
+) -> bool {
 	callback_t wrapper;
+	if (!bindings.empty()) {
+		constexpr bool dynamic = std::is_same_v<std::tuple<Args...>, std::tuple<DynamicArgs>>;
+		auto resolved = resolveBindings(node, identifier, bindings, dynamic ? SIZE_MAX : sizeof...(Args));
+		if (!resolved) {
+			return false;
+		}
+		wrapper = [iden = std::string(identifier),
+		           box = toast::Box<toast::Node>(node),
+		           resolved = std::move(*resolved)](const Args&... args) mutable {
+			if (!box) {
+				return;
+			}
+			if constexpr (dynamic) {
+				invokeBound(*box, iden, resolved, std::span<const std::any>(args.values...));
+			} else {
+				const std::array<std::any, sizeof...(Args)> values {std::any(args)...};
+				invokeBound(*box, iden, resolved, values);
+			}
+		};
+		modify([&](ConnectionList& list) {
+			list.push_back(
+			    {.uid = node.uid(),
+					 .identifier = std::string(identifier),
+					 .source = source,
+					 .forwards_args = forwards_args,
+					 .bindings = bindings,
+					 .node = toast::Box<toast::Node>(node),
+					 .cb = std::move(wrapper)}
+			);
+		});
+		return true;
+	}
 	if constexpr (std::is_same_v<std::tuple<Args...>, std::tuple<DynamicArgs>>) {
 		wrapper =
 		    [iden = std::string(identifier), box = toast::Box<toast::Node>(node), forwards_args](const DynamicArgs& args) mutable {
@@ -58,6 +95,7 @@ inline void
 				 .cb = std::move(wrapper)}
 		);
 	});
+	return true;
 }
 
 template<typename... Args>
@@ -82,7 +120,7 @@ inline auto Signal<Args...>::connections() const -> std::vector<ConnectionInfo> 
 	std::vector<ConnectionInfo> result;
 	result.reserve(current->size());
 	for (const auto& listener : *current) {
-		result.push_back({listener.uid, listener.identifier, listener.source, listener.forwards_args});
+		result.push_back({listener.uid, listener.identifier, listener.source, listener.forwards_args, listener.bindings});
 	}
 	return result;
 }
@@ -118,20 +156,22 @@ inline auto Signal<Args...>::get(void* signal) -> std::vector<ConnectionInfo> {
 
 template<typename... Args>
 template<typename NodeType, auto MemberPtr>
-inline void Signal<Args...>::connect(
-    void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source, bool forwards_args
-) {
+inline auto Signal<Args...>::connect(
+    void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source, bool forwards_args,
+    const std::vector<ParamBinding>& bindings
+) -> bool {
 	if (!signal) {
-		return;
+		return false;
 	}
 	auto& target_signal = static_cast<NodeType*>(signal)->*MemberPtr;
 	const auto connections = target_signal.connections();
 	const bool exists = std::ranges::any_of(connections, [&](const ConnectionInfo& connection) {
 		return connection.target == target.uid() && connection.function == identifier && connection.source == source;
 	});
-	if (!exists) {
-		target_signal.connect(target, identifier, source, forwards_args);
+	if (exists) {
+		return false;
 	}
+	return target_signal.connect(target, identifier, source, forwards_args, bindings);
 }
 
 template<typename... Args>

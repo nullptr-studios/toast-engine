@@ -42,6 +42,7 @@ class Signal {
 		std::string identifier;
 		ConnectionSource source = ConnectionSource::unknown;
 		bool forwards_args = true;
+		std::vector<ParamBinding> bindings;
 
 		toast::Box<toast::Node> node;
 		callback_t cb;
@@ -95,9 +96,10 @@ public:
 	  requires(std::is_invocable_r_v<void, F, Args...> || std::is_invocable_r_v<void, F>)
 	void connect(toast::Node& node, F&& cb);
 
-	void connect(
-	    toast::Node& node, std::string_view identifier, ConnectionSource source = ConnectionSource::cpp, bool forwards_args = true
-	);
+	auto connect(
+	    toast::Node& node, std::string_view identifier, ConnectionSource source = ConnectionSource::cpp, bool forwards_args = true,
+	    const std::vector<ParamBinding>& bindings = {}
+	) -> bool;
 
 	void disconnect(toast::Node& node, std::string_view identifier, ConnectionSource source = ConnectionSource::cpp);
 
@@ -112,8 +114,10 @@ public:
 	static auto get(void* signal) -> std::vector<ConnectionInfo>;
 
 	template<typename NodeType, auto MemberPtr>
-	static void
-	    connect(void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source, bool forwards_args);
+	static auto connect(
+	    void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source, bool forwards_args,
+	    const std::vector<ParamBinding>& bindings
+	) -> bool;
 
 	template<typename NodeType, auto MemberPtr>
 	static void disconnect(void* signal, toast::Node& target, std::string_view identifier, ConnectionSource source);

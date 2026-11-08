@@ -51,7 +51,8 @@ enum class FieldType : uint8_t {
 
 struct TOAST_API SignalInfo {
 	using SignalGetterPtr = std::vector<signals::ConnectionInfo> (*)(void*);
-	using SignalConnectPtr = void (*)(void*, Node&, std::string_view, signals::ConnectionSource, bool);
+	using SignalConnectPtr =
+	    bool (*)(void*, Node&, std::string_view, signals::ConnectionSource, bool, const std::vector<signals::ParamBinding>&);
 	using SignalDisconnectPtr = void (*)(void*, Node&, std::string_view, signals::ConnectionSource);
 	using SignalClearPtr = void (*)(void*, signals::ConnectionSource);
 	using SignalFirePtr = bool (*)(void*, std::span<const std::any>);

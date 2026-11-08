@@ -16,7 +16,10 @@ public:
 	void owner(toast::Box<toast::Node> node);
 
 	[[nodiscard]]
-	auto connect(NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args = true) -> bool;
+	auto connect(
+	    NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args = true,
+	    const std::vector<signals::ParamBinding>& bindings = {}
+	) -> bool;
 
 	[[nodiscard]]
 	auto disconnect(NodeProxy target, std::string_view function, signals::ConnectionSource source) -> bool;
