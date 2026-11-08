@@ -1,5 +1,9 @@
 var NAVTREEINDEX8 =
 {
+"classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3":[12,0,1,90,13],
+"classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3":[14,0,14,93,13],
+"classtoast_1_1VoxelNode.html#a566632592044fcb10458debaf7474f77":[12,0,1,90,20],
+"classtoast_1_1VoxelNode.html#a566632592044fcb10458debaf7474f77":[14,0,14,93,20],
 "classtoast_1_1VoxelNode.html#a60a4d8c8cba74d30d76303740faa0bdc":[12,0,1,90,56],
 "classtoast_1_1VoxelNode.html#a60a4d8c8cba74d30d76303740faa0bdc":[14,0,14,93,56],
 "classtoast_1_1VoxelNode.html#a66d0b4fac31fa4d55eca774c7c1d0aeb":[12,0,1,90,46],
@@ -245,9 +249,5 @@ var NAVTREEINDEX8 =
 "classtoast_1_1input_1_1TrackpadGesture.html":[14,0,14,1,2],
 "classtoast_1_1settings_1_1Setting.html":[14,0,14,3,3],
 "classtoast_1_1settings_1_1Setting.html#a0260892211f3f141fcd4a1b030d38799":[14,0,14,3,3,0],
-"classtoast_1_1settings_1_1Settings.html":[14,0,14,3,2],
-"classtoast_1_1settings_1_1Settings.html#a2514d5ab1be9871df16ed5a30dc0b906":[14,0,14,3,2,7],
-"classtoast_1_1settings_1_1Settings.html#a3a3631e787543207be145504893a874f":[14,0,14,3,2,10],
-"classtoast_1_1settings_1_1Settings.html#a3d00dbfa26d9b27d6bb09b553ee0b7cc":[14,0,14,3,2,3],
-"classtoast_1_1settings_1_1Settings.html#a3dd0576d1e579b929088afb4205a6f35":[14,0,14,3,2,4]
+"classtoast_1_1settings_1_1Settings.html":[14,0,14,3,2]
 };

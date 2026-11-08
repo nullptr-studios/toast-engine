@@ -1,5 +1,9 @@
 var NAVTREEINDEX9 =
 {
+"classtoast_1_1settings_1_1Settings.html#a2514d5ab1be9871df16ed5a30dc0b906":[14,0,14,3,2,7],
+"classtoast_1_1settings_1_1Settings.html#a3a3631e787543207be145504893a874f":[14,0,14,3,2,10],
+"classtoast_1_1settings_1_1Settings.html#a3d00dbfa26d9b27d6bb09b553ee0b7cc":[14,0,14,3,2,3],
+"classtoast_1_1settings_1_1Settings.html#a3dd0576d1e579b929088afb4205a6f35":[14,0,14,3,2,4],
 "classtoast_1_1settings_1_1Settings.html#a45ebbfc4b60ea0d7924bc9de2c16dd93":[14,0,14,3,2,2],
 "classtoast_1_1settings_1_1Settings.html#a50c6d90cb8e1140574f032ddbc3e8aed":[14,0,14,3,2,1],
 "classtoast_1_1settings_1_1Settings.html#a62270d411101927c36456440eeae8505":[14,0,14,3,2,9],
@@ -245,9 +249,5 @@ var NAVTREEINDEX9 =
 "functions_func_u.html":[14,3,1,20],
 "functions_func_v.html":[14,3,1,21],
 "functions_func_w.html":[14,3,1,22],
-"functions_func_~.html":[14,3,1,23],
-"functions_g.html":[14,3,0,6],
-"functions_h.html":[14,3,0,7],
-"functions_i.html":[14,3,0,8],
-"functions_j.html":[14,3,0,9]
+"functions_func_~.html":[14,3,1,23]
 };

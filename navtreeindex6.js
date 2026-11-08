@@ -1,5 +1,9 @@
 var NAVTREEINDEX6 =
 {
+"classtoast_1_1AudioSphereEmitter.html#a9551fadbe1276e0887a23f24a4ec1680":[12,0,1,13,1],
+"classtoast_1_1AudioSphereEmitter.html#a9551fadbe1276e0887a23f24a4ec1680":[14,0,14,16,1],
+"classtoast_1_1AudioVolume.html":[12,0,1,14],
+"classtoast_1_1AudioVolume.html":[14,0,14,17],
 "classtoast_1_1AudioVolume.html#a28a73fe2ce7479edd41f6625d6c61319":[12,0,1,14,0],
 "classtoast_1_1AudioVolume.html#a28a73fe2ce7479edd41f6625d6c61319":[14,0,14,17,0],
 "classtoast_1_1AudioVolume.html#af10612bd91c6605a77b47aa6ae08828e":[12,0,1,14,1],
@@ -245,9 +249,5 @@ var NAVTREEINDEX6 =
 "classtoast_1_1Node3D.html#ac4822bb7142b5ac24c14a231652da487":[12,0,1,43,6],
 "classtoast_1_1Node3D.html#ac4822bb7142b5ac24c14a231652da487":[14,0,14,46,6],
 "classtoast_1_1Node3D.html#adad24d149f2272f82a98518028bbece9":[12,0,1,43,3],
-"classtoast_1_1Node3D.html#adad24d149f2272f82a98518028bbece9":[14,0,14,46,3],
-"classtoast_1_1Node3D.html#ae7ff4677e5eda696b65c5b835512fa1d":[12,0,1,43,2],
-"classtoast_1_1Node3D.html#ae7ff4677e5eda696b65c5b835512fa1d":[14,0,14,46,2],
-"classtoast_1_1NodeRegistry.html":[12,0,1,46],
-"classtoast_1_1NodeRegistry.html":[14,0,14,49]
+"classtoast_1_1Node3D.html#adad24d149f2272f82a98518028bbece9":[14,0,14,46,3]
 };

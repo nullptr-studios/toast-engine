@@ -267,8 +267,8 @@ constexpr auto&#160;</td><td class="memItemRight"><b>physics::debrisBit</b> (con
 auto&#160;</td><td class="memItemRight"><b>physics::wholeDebris</b> (std::span&lt; const <a class="el" href="structphysics_1_1DebrisVoxel.html">DebrisVoxel</a> &gt; voxels) -&gt; <a class="el" href="structphysics_1_1DebrisCluster.html">DebrisCluster</a></td></tr>
 <tr class="memitem:aee0773650a6ea8ddcc107559703622c9" id="r_aee0773650a6ea8ddcc107559703622c9"><td class="memItemLeft"><a id="aee0773650a6ea8ddcc107559703622c9" name="aee0773650a6ea8ddcc107559703622c9"></a>
 auto&#160;</td><td class="memItemRight"><b>physics::clusterDebris</b> (std::span&lt; const <a class="el" href="structphysics_1_1DebrisVoxel.html">DebrisVoxel</a> &gt; voxels, const glm::ivec3 &amp;jitter) -&gt; std::vector&lt; <a class="el" href="structphysics_1_1DebrisCluster.html">DebrisCluster</a> &gt;</td></tr>
-<tr class="memitem:a65772891154fd379bbe69a2b0078700a" id="r_a65772891154fd379bbe69a2b0078700a"><td class="memItemLeft"><a id="a65772891154fd379bbe69a2b0078700a" name="a65772891154fd379bbe69a2b0078700a"></a>
-auto&#160;</td><td class="memItemRight"><b>physics::debrisSpeed</b> (float energy, float mass, float scale) -&gt; float</td></tr>
+<tr class="memitem:a62af7fabad27c7878a22e378931ec636" id="r_a62af7fabad27c7878a22e378931ec636"><td class="memItemLeft"><a id="a62af7fabad27c7878a22e378931ec636" name="a62af7fabad27c7878a22e378931ec636"></a>
+auto&#160;</td><td class="memItemRight"><b>physics::debrisSpeed</b> (float energy, float mass, float scale, float max_speed=k_max_debris_speed) -&gt; float</td></tr>
 <tr class="memitem:a848a7b1a52864a59ac9e62ddbcd468f0" id="r_a848a7b1a52864a59ac9e62ddbcd468f0"><td class="memItemLeft"><a id="a848a7b1a52864a59ac9e62ddbcd468f0" name="a848a7b1a52864a59ac9e62ddbcd468f0"></a>
 auto&#160;</td><td class="memItemRight"><b>physics::debrisConeDirection</b> (const glm::vec3 &amp;axis, <a class="el" href="structphysics_1_1Rng.html">Rng</a> &amp;rng, float spread) -&gt; glm::vec3</td></tr>
 <tr class="memitem:af4d6c42e78f5dffeff657f2486af2a79" id="r_af4d6c42e78f5dffeff657f2486af2a79"><td class="memItemLeft"><a id="af4d6c42e78f5dffeff657f2486af2a79" name="af4d6c42e78f5dffeff657f2486af2a79"></a>
@@ -286,6 +286,12 @@ constexpr float&#160;</td><td class="memItemRight"><b>physics::k_debris_cone_spr
 constexpr float&#160;</td><td class="memItemRight"><b>physics::k_debris_max_spin</b> = 8.0f</td></tr>
 <tr class="memitem:a9d9a3d87993fd7483d8a530c44fed9b6" id="r_a9d9a3d87993fd7483d8a530c44fed9b6"><td class="memItemLeft"><a id="a9d9a3d87993fd7483d8a530c44fed9b6" name="a9d9a3d87993fd7483d8a530c44fed9b6"></a>
 constexpr float&#160;</td><td class="memItemRight"><b>physics::k_debris_min_scale</b> = 0.55f</td></tr>
+<tr class="memitem:a3e4c36ed66a76109633c9014f1a23637" id="r_a3e4c36ed66a76109633c9014f1a23637"><td class="memItemLeft"><a id="a3e4c36ed66a76109633c9014f1a23637" name="a3e4c36ed66a76109633c9014f1a23637"></a>
+constexpr float&#160;</td><td class="memItemRight"><b>physics::k_debris_lookahead_voxels</b> = 3.0f</td></tr>
+<tr class="memitem:a29e6fb762c19126dff7276b6999866bf" id="r_a29e6fb762c19126dff7276b6999866bf"><td class="memItemLeft"><a id="a29e6fb762c19126dff7276b6999866bf" name="a29e6fb762c19126dff7276b6999866bf"></a>
+constexpr float&#160;</td><td class="memItemRight"><b>physics::k_debris_spawn_restitution</b> = 0.3f</td></tr>
+<tr class="memitem:aeea1e9c73ea568d8135fc89e6b8cc7de" id="r_aeea1e9c73ea568d8135fc89e6b8cc7de"><td class="memItemLeft"><a id="aeea1e9c73ea568d8135fc89e6b8cc7de" name="aeea1e9c73ea568d8135fc89e6b8cc7de"></a>
+constexpr float&#160;</td><td class="memItemRight"><b>physics::k_debris_mouth_spread</b> = 0.6f</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Small voxel debris clusters. </p>

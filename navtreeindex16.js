@@ -1,5 +1,12 @@
 var NAVTREEINDEX16 =
 {
+"structtoast_1_1ProceduralVoxel_1_1BakedPart.html":[12,0,1,58,2],
+"structtoast_1_1ProceduralVoxel_1_1BakedPart.html":[14,0,14,61,2],
+"structtoast_1_1ProceduralVoxel_1_1ComposeInput.html":[12,0,1,58,3],
+"structtoast_1_1ProceduralVoxel_1_1ComposeInput.html":[14,0,14,61,3],
+"structtoast_1_1ProceduralVoxel_1_1ComposeInput.html#a84269b9cc70695ce224b158b46b8e711":[12,0,1,58,3,1],
+"structtoast_1_1ProceduralVoxel_1_1ComposeInput.html#a84269b9cc70695ce224b158b46b8e711":[14,0,14,61,3,1],
+"structtoast_1_1ProceduralVoxel_1_1ComposeInput.html#a902b6bfbf57d086f20c2f6b4d2ece513":[12,0,1,58,3,2],
 "structtoast_1_1ProceduralVoxel_1_1ComposeInput.html#a902b6bfbf57d086f20c2f6b4d2ece513":[14,0,14,61,3,2],
 "structtoast_1_1ProceduralVoxel_1_1ComposeInput_1_1Preview.html":[12,0,1,58,3,0],
 "structtoast_1_1ProceduralVoxel_1_1ComposeInput_1_1Preview.html":[14,0,14,61,3,0],
@@ -242,12 +249,5 @@ var NAVTREEINDEX16 =
 "structvoxel_1_1gpu_1_1PackedPool.html#afa6c97f5899866fc6253dfb97efb1230":[14,0,16,0,1,0],
 "structvoxel_1_1gpu_1_1PackedScene.html":[14,0,16,0,3],
 "structvoxel_1_1gpu_1_1PackedScene.html#ac51ea056865d910be8e8d9c53479843e":[14,0,16,0,3,1],
-"structvoxel_1_1gpu_1_1PackedScene.html#ace733f61b7f30c150785b09916b6e86a":[14,0,16,0,3,0],
-"structvoxel_1_1gpu_1_1PatchRun.html":[14,0,16,0,5],
-"structvoxel_1_1gpu_1_1PatchSection.html":[14,0,16,0,6],
-"structvoxel_1_1gpu_1_1PatchSection.html#a24b5bbd5f8f1de3b5591cdb4b966289a":[14,0,16,0,6,0],
-"structvoxel_1_1gpu_1_1SceneLayout.html":[14,0,16,0,4],
-"structvoxel_1_1gpu_1_1ScenePatch.html":[14,0,16,0,8],
-"structvoxel_1_1gpu_1_1ScenePatch.html#a4120ee5fccb075c83b44ebf5e9bd1601":[14,0,16,0,8,3],
-"structvoxel_1_1gpu_1_1ScenePatch.html#ab6ae4ac56d7057b4d0fab6701be72dba":[14,0,16,0,8,1]
+"structvoxel_1_1gpu_1_1PackedScene.html#ace733f61b7f30c150785b09916b6e86a":[14,0,16,0,3,0]
 };

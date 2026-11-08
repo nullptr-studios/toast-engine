@@ -66,8 +66,8 @@
 <area shape="poly" id="edge138_Node000001_Node000038" title=" " alt="" coords="2609,48,2841,229,2973,335,3068,416,3111,449,3127,466,3141,492,3145,507,3141,522,3123,546,3099,564,3097,559,3119,542,3136,520,3140,507,3136,494,3123,469,3107,453,3065,420,2970,339,2838,233,2607,53"/>
 <area shape="rect" id="Node000097" href="$voxel__node_8hpp.html" title="Frontend for a Voxel node." alt="" coords="3336,325,3512,370"/>
 <area shape="poly" id="edge143_Node000001_Node000097" title=" " alt="" coords="2670,29,2750,35,2843,47,2941,66,3037,96,3110,133,3206,193,3385,317,3379,316,3203,197,3108,138,3035,100,2940,72,2842,52,2749,40,2670,34"/>
-<area shape="rect" id="Node000158" title=" " alt="" coords="3873,98,4095,126"/>
-<area shape="poly" id="edge152_Node000001_Node000158" title=" " alt="" coords="2670,30,3174,53,3512,72,3855,95,3861,98,3855,98,3854,101,3511,78,3174,59,2670,35"/>
+<area shape="rect" id="Node000159" title=" " alt="" coords="3873,98,4095,126"/>
+<area shape="poly" id="edge152_Node000001_Node000159" title=" " alt="" coords="2670,30,3174,53,3512,72,3855,95,3861,98,3855,98,3854,101,3511,78,3174,59,2670,35"/>
 <area shape="rect" id="Node000055" title=" " alt="" coords="4118,98,4242,126"/>
 <area shape="poly" id="edge153_Node000001_Node000055" title=" " alt="" coords="2669,27,2915,30,3267,39,3679,60,3893,75,4106,98,4100,98,3892,81,3679,65,3267,45,2915,35,2670,32"/>
 <area shape="rect" id="Node000003" href="$layers_8hpp.html" title="Collision layers." alt="" coords="2166,645,2255,672"/>

@@ -1,5 +1,11 @@
 var NAVTREEINDEX13 =
 {
+"structevent_1_1MaterialAssetReloaded.html":[14,0,4,36],
+"structevent_1_1MusicBeat.html":[14,0,4,37],
+"structevent_1_1MusicBeat.html#a122c305df6f442dfeed2c7fca202cfee":[14,0,4,37,2],
+"structevent_1_1MusicBeat.html#a79906f6e8371d1953ffab14ba51ffbb1":[14,0,4,37,1],
+"structevent_1_1MusicBeat.html#abe1d9458a0f77728b3d0e70275e58521":[14,0,4,37,3],
+"structevent_1_1MusicBeat.html#aeab60462b28b9a09be241dd5c7942b40":[14,0,4,37,0],
 "structevent_1_1MusicMarker.html":[14,0,4,38],
 "structevent_1_1MusicStopped.html":[14,0,4,39],
 "structevent_1_1NodeCallFunction.html":[14,0,4,40],
@@ -243,11 +249,5 @@ var NAVTREEINDEX13 =
 "structinput_1_1EvalContext.html#a84eaf82caae573fa25fb32683e614189":[14,0,6,6,2],
 "structinput_1_1ITrigger_1_1Result.html":[14,0,6,15,0],
 "structinput_1_1ITrigger_1_1Result.html#a0d00c106a0cadee65e9a1e4036268b16":[14,0,6,15,0,2],
-"structinput_1_1ITrigger_1_1Result.html#a3d9735766b198e805fc50820aa315380":[14,0,6,15,0,0],
-"structinput_1_1ITrigger_1_1Result.html#a7d07416ce1ee3ffab0efe6b316d2a2d9":[14,0,6,15,0,1],
-"structinput_1_1InputSample.html":[14,0,6,12],
-"structinput_1_1KeyCode.html":[14,0,6,16],
-"structinput_1_1SignalList.html":[14,0,6,23],
-"structinput_1_1SignalList.html#a0c2b28941817075fa65a39e290e8b5e8":[14,0,6,23,0],
-"structinput_1_1SignalList.html#a66aa27e7c71ebaf466871d935035e830":[14,0,6,23,1]
+"structinput_1_1ITrigger_1_1Result.html#a3d9735766b198e805fc50820aa315380":[14,0,6,15,0,0]
 };

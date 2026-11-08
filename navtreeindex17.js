@@ -1,5 +1,12 @@
 var NAVTREEINDEX17 =
 {
+"structvoxel_1_1gpu_1_1PatchRun.html":[14,0,16,0,5],
+"structvoxel_1_1gpu_1_1PatchSection.html":[14,0,16,0,6],
+"structvoxel_1_1gpu_1_1PatchSection.html#a24b5bbd5f8f1de3b5591cdb4b966289a":[14,0,16,0,6,0],
+"structvoxel_1_1gpu_1_1SceneLayout.html":[14,0,16,0,4],
+"structvoxel_1_1gpu_1_1ScenePatch.html":[14,0,16,0,8],
+"structvoxel_1_1gpu_1_1ScenePatch.html#a4120ee5fccb075c83b44ebf5e9bd1601":[14,0,16,0,8,3],
+"structvoxel_1_1gpu_1_1ScenePatch.html#ab6ae4ac56d7057b4d0fab6701be72dba":[14,0,16,0,8,1],
 "structvoxel_1_1gpu_1_1ScenePatch.html#ac1bd4716dfa317f704163ddf1bb7ce1e":[14,0,16,0,8,0],
 "structvoxel_1_1gpu_1_1ScenePatch.html#ac406081f37d62f7473a2b01f2b1b6c2c":[14,0,16,0,8,2],
 "structvoxel_1_1gpu_1_1SceneVolume.html":[14,0,16,0,2],
@@ -22,8 +29,8 @@ var NAVTREEINDEX17 =
 "texture_8hpp_source.html":[15,0,2,0,0,0,21],
 "tga__decode_8hpp.html":[15,0,2,0,0,9,8],
 "tga__decode_8hpp_source.html":[15,0,2,0,0,9,8],
-"thread-listener_8hpp_source.html":[15,0,2,0,0,2,10],
-"thread-listener_8inl_source.html":[15,0,2,0,0,2,11],
+"thread-listener_8hpp_source.html":[15,0,2,0,0,2,11],
+"thread-listener_8inl_source.html":[15,0,2,0,0,2,12],
 "thread__pool_8hpp.html":[15,0,2,0,0,26],
 "thread__pool_8hpp_source.html":[15,0,2,0,0,26],
 "tick__scheduler_8hpp.html":[15,0,2,0,0,12,30],

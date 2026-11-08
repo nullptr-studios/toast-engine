@@ -196,8 +196,10 @@ Classes</h2></td></tr>
 <tr class="memitem:SignalConnectionWindow" id="r_SignalConnectionWindow"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SignalConnectionWindow.html">SignalConnectionWindow</a></td></tr>
 <tr class="memitem:SignalFunctionViewModel" id="r_SignalFunctionViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SignalFunctionViewModel.html">SignalFunctionViewModel</a></td></tr>
 <tr class="memitem:SignalItemViewModel" id="r_SignalItemViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SignalItemViewModel.html">SignalItemViewModel</a></td></tr>
+<tr class="memitem:SignalParameterViewModel" id="r_SignalParameterViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SignalParameterViewModel.html">SignalParameterViewModel</a></td></tr>
 <tr class="memitem:SignalsView" id="r_SignalsView"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SignalsView.html">SignalsView</a></td></tr>
 <tr class="memitem:SignalsViewModel" id="r_SignalsViewModel"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SignalsViewModel.html">SignalsViewModel</a></td></tr>
+<tr class="memitem:SignalTypes" id="r_SignalTypes"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><b>SignalTypes</b></td></tr>
 <tr class="memitem:StringSettingRow" id="r_StringSettingRow"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1StringSettingRow.html">StringSettingRow</a></td></tr>
 <tr class="memitem:SubgroupVM" id="r_SubgroupVM"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1SubgroupVM.html">SubgroupVM</a></td></tr>
 <tr class="memitem:ToastZoneFactory" id="r_ToastZoneFactory"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classeditor_1_1Workspace_1_1ToastZoneFactory.html">ToastZoneFactory</a></td></tr>
@@ -247,6 +249,20 @@ Enumerations</h2></td></tr>
 , <b>Rendering</b>
 , <b>Physics</b>
 , <b>Editor</b>
+ }</td></tr>
+<tr class="memitem:ae499a63407a5fac037fb89a7e33c0105" id="r_ae499a63407a5fac037fb89a7e33c0105"><td class="memItemLeft"><a id="ae499a63407a5fac037fb89a7e33c0105" name="ae499a63407a5fac037fb89a7e33c0105"></a>enum &#160;</td><td class="memItemRight"><b>SignalParamKind</b> { <br />
+&#160;&#160;<b>Bool</b>
+, <b>Integer</b>
+, <b>Number</b>
+, <b>String</b>
+, <br />
+&#160;&#160;<b>Vec2</b>
+, <b>Vec3</b>
+, <b>Vec4</b>
+, <b>Any</b>
+, <br />
+&#160;&#160;<b>Other</b>
+<br />
  }</td></tr>
 <tr class="memitem:ade109f9bb78f88e0dae9d9aedad60c17" id="r_ade109f9bb78f88e0dae9d9aedad60c17"><td class="memItemLeft"><a id="ade109f9bb78f88e0dae9d9aedad60c17" name="ade109f9bb78f88e0dae9d9aedad60c17"></a>enum &#160;</td><td class="memItemRight"><b>GizmoTool</b> { <br />
 &#160;&#160;<b>Select</b>
@@ -317,8 +333,10 @@ record&#160;</td><td class="memItemRight"><b>EnumOption</b> (string Label, strin
 record&#160;</td><td class="memItemRight"><b>InspectorSection</b> (string Title, string ColorKey, string Icon, IReadOnlyList&lt; string &gt; Fields)</td></tr>
 <tr class="memitem:ac4b37e9bdb18cd900abf9c64b415b26c" id="r_ac4b37e9bdb18cd900abf9c64b415b26c"><td class="memItemLeft"><a id="ac4b37e9bdb18cd900abf9c64b415b26c" name="ac4b37e9bdb18cd900abf9c64b415b26c"></a>
 record&#160;</td><td class="memItemRight"><b>InspectorProfile</b> (Func&lt; string, IReadOnlyList&lt; InspectorSection &gt;?&gt; SectionsFor, bool FirstScriptOnly)</td></tr>
-<tr class="memitem:a6276bd354adc07509b8a672f0d7e3092" id="r_a6276bd354adc07509b8a672f0d7e3092"><td class="memItemLeft"><a id="a6276bd354adc07509b8a672f0d7e3092" name="a6276bd354adc07509b8a672f0d7e3092"></a>
-record&#160;</td><td class="memItemRight"><b>SignalConnectionResult</b> (string TargetUid, <a class="el" href="classeditor_1_1Workspace_1_1SignalFunctionViewModel.html">SignalFunctionViewModel</a> Function)</td></tr>
+<tr class="memitem:a8c2a8e50df1e380d4b66d67d0e79ac36" id="r_a8c2a8e50df1e380d4b66d67d0e79ac36"><td class="memItemLeft"><a id="a8c2a8e50df1e380d4b66d67d0e79ac36" name="a8c2a8e50df1e380d4b66d67d0e79ac36"></a>
+record&#160;</td><td class="memItemRight"><b>SignalConnectionResult</b> (string TargetUid, <a class="el" href="classeditor_1_1Workspace_1_1SignalFunctionViewModel.html">SignalFunctionViewModel</a> Function, IReadOnlyList&lt; ParamBinding &gt; Bindings)</td></tr>
+<tr class="memitem:a7595d30c2bd8132c3c1be900e37b1db3" id="r_a7595d30c2bd8132c3c1be900e37b1db3"><td class="memItemLeft"><a id="a7595d30c2bd8132c3c1be900e37b1db3" name="a7595d30c2bd8132c3c1be900e37b1db3"></a>
+record&#160;</td><td class="memItemRight"><b>SignalArgChip</b> (int Index, string Type)</td></tr>
 </table>
 </div><!-- contents -->
 </div><!-- doc-content -->

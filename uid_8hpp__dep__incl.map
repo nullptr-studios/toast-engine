@@ -32,18 +32,18 @@
 <area shape="poly" id="edge79_Node000001_Node000178" title=" " alt="" coords="4093,34,4360,89,4355,89,4093,39"/>
 <area shape="rect" id="Node000179" href="$signal__types_8hpp_source.html" title=" " alt="" coords="4125,81,4299,126"/>
 <area shape="poly" id="edge80_Node000001_Node000179" title=" " alt="" coords="4058,37,4162,81,4156,80,4058,42"/>
-<area shape="rect" id="Node000180" href="$signals__events_8hpp_source.html" title=" " alt="" coords="4363,174,4536,218"/>
-<area shape="poly" id="edge85_Node000001_Node000180" title=" " alt="" coords="4116,22,4239,30,4371,42,4481,58,4518,68,4539,79,4547,92,4548,105,4537,131,4514,155,4487,175,4485,171,4511,151,4533,128,4543,105,4542,94,4535,83,4516,73,4480,63,4370,47,4239,35,4116,28"/>
-<area shape="rect" id="Node000181" href="$reflect_8hpp_source.html" title=" " alt="" coords="4127,174,4297,218"/>
-<area shape="poly" id="edge88_Node000001_Node000181" title=" " alt="" coords="4034,42,4071,82,4115,124,4181,174,4175,173,4112,128,4067,86,4032,47"/>
-<area shape="rect" id="Node000185" href="$editor__overlays_8hpp.html" title="What the VoxelEditor asks the viewport to draw on top of the scene." alt="" coords="4701,81,4899,126"/>
-<area shape="poly" id="edge89_Node000001_Node000185" title=" " alt="" coords="4116,24,4375,45,4683,78,4703,84,4698,84,4682,84,4374,50,4117,30"/>
-<area shape="rect" id="Node000186" href="$shader__compiler_8hpp_source.html" title=" " alt="" coords="4923,81,5138,126"/>
-<area shape="poly" id="edge91_Node000001_Node000186" title=" " alt="" coords="4116,21,4469,39,4690,56,4911,78,4925,83,4920,83,4910,84,4689,61,4469,45,4116,27"/>
-<area shape="rect" id="Node000188" href="$brush__composer_8hpp.html" title="Turns a VoxelBrush prefab into a voxel model, in memory." alt="" coords="50,452,214,496"/>
-<area shape="poly" id="edge94_Node000001_Node000188" title=" " alt="" coords="3905,21,3069,29,1815,40,659,58,278,70,166,77,115,84,72,103,38,124,25,137,16,152,10,171,8,195,8,290,11,315,18,339,43,383,75,421,106,450,101,452,71,424,38,386,13,341,5,316,3,290,3,195,5,170,11,150,21,134,34,120,69,98,114,78,165,71,278,65,659,53,1815,35,3069,24,3910,21"/>
-<area shape="rect" id="Node000189" href="$world__events_8hpp.html" title="Events that allow client code to interact with the World class." alt="" coords="5213,81,5379,126"/>
-<area shape="poly" id="edge99_Node000001_Node000189" title=" " alt="" coords="4116,18,4316,21,4584,29,4888,48,5043,61,5195,78,5215,84,5210,84,5194,84,5043,66,4888,53,4584,35,4316,26,4116,23"/>
+<area shape="rect" id="Node000181" href="$signals__events_8hpp_source.html" title=" " alt="" coords="4363,174,4536,218"/>
+<area shape="poly" id="edge85_Node000001_Node000181" title=" " alt="" coords="4116,22,4239,30,4371,42,4481,58,4518,68,4539,79,4547,92,4548,105,4537,131,4514,155,4487,175,4485,171,4511,151,4533,128,4543,105,4542,94,4535,83,4516,73,4480,63,4370,47,4239,35,4116,28"/>
+<area shape="rect" id="Node000182" href="$reflect_8hpp_source.html" title=" " alt="" coords="4127,174,4297,218"/>
+<area shape="poly" id="edge88_Node000001_Node000182" title=" " alt="" coords="4034,42,4071,82,4115,124,4181,174,4175,173,4112,128,4067,86,4032,47"/>
+<area shape="rect" id="Node000186" href="$editor__overlays_8hpp.html" title="What the VoxelEditor asks the viewport to draw on top of the scene." alt="" coords="4701,81,4899,126"/>
+<area shape="poly" id="edge89_Node000001_Node000186" title=" " alt="" coords="4116,24,4375,45,4683,78,4703,84,4698,84,4682,84,4374,50,4117,30"/>
+<area shape="rect" id="Node000187" href="$shader__compiler_8hpp_source.html" title=" " alt="" coords="4923,81,5138,126"/>
+<area shape="poly" id="edge91_Node000001_Node000187" title=" " alt="" coords="4116,21,4469,39,4690,56,4911,78,4925,83,4920,83,4910,84,4689,61,4469,45,4116,27"/>
+<area shape="rect" id="Node000189" href="$brush__composer_8hpp.html" title="Turns a VoxelBrush prefab into a voxel model, in memory." alt="" coords="50,452,214,496"/>
+<area shape="poly" id="edge94_Node000001_Node000189" title=" " alt="" coords="3905,21,3069,29,1815,40,659,58,278,70,166,77,115,84,72,103,38,124,25,137,16,152,10,171,8,195,8,290,11,315,18,339,43,383,75,421,106,450,101,452,71,424,38,386,13,341,5,316,3,290,3,195,5,170,11,150,21,134,34,120,69,98,114,78,165,71,278,65,659,53,1815,35,3069,24,3910,21"/>
+<area shape="rect" id="Node000190" href="$world__events_8hpp.html" title="Events that allow client code to interact with the World class." alt="" coords="5213,81,5379,126"/>
+<area shape="poly" id="edge99_Node000001_Node000190" title=" " alt="" coords="4116,18,4316,21,4584,29,4888,48,5043,61,5195,78,5215,84,5210,84,5194,84,5043,66,4888,53,4584,35,4316,26,4116,23"/>
 <area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="227,321,259,367,254,367,227,327"/>
 <area shape="poly" id="edge5_Node000004_Node000002" title=" " alt="" coords="274,226,292,244,305,265,310,294,303,323,291,349,278,369,273,366,286,346,298,321,304,294,300,267,288,248,274,231"/>
 <area shape="poly" id="edge6_Node000004_Node000003" title=" " alt="" coords="220,231,212,267,207,265,218,236"/>
@@ -143,9 +143,9 @@
 <area shape="poly" id="edge78_Node000177_Node000018" title=" " alt="" coords="3886,137,3899,179,3898,200,3890,220,3842,279,3793,321,3742,347,3688,364,3629,374,3566,382,3496,391,3418,406,3323,426,3225,442,3032,462,2858,473,2724,476,2723,470,2858,467,3032,457,3225,436,3322,421,3417,401,3495,386,3565,376,3629,369,3687,359,3740,343,3790,316,3839,276,3886,217,3893,199,3894,180,3883,142"/>
 <area shape="poly" id="edge76_Node000177_Node000041" title=" " alt="" coords="3876,139,3880,182,3875,202,3863,220,3849,229,3825,237,3757,248,3668,256,3567,261,3258,269,3145,280,3144,275,3257,264,3567,256,3667,251,3757,243,3824,232,3847,224,3859,216,3870,200,3874,181,3873,143"/>
 <area shape="poly" id="edge77_Node000177_Node000152" title=" " alt="" coords="3760,116,3144,188,3143,182,3765,116"/>
-<area shape="poly" id="edge81_Node000179_Node000180" title=" " alt="" coords="4283,129,4395,173,4390,173,4283,134"/>
-<area shape="poly" id="edge82_Node000179_Node000181" title=" " alt="" coords="4214,139,4214,175,4210,172,4210,143"/>
-<area shape="poly" id="edge83_Node000181_Node000003" title=" " alt="" coords="4109,205,3861,221,3222,236,2135,257,292,289,292,283,2135,252,3222,231,3861,216,4114,204"/>
-<area shape="poly" id="edge84_Node000181_Node000108" title=" " alt="" coords="4214,232,4214,268,4210,264,4210,236"/>
-<area shape="poly" id="edge95_Node000188_Node000015" title=" " alt="" coords="193,500,295,543,410,586,495,612,578,636,573,636,493,617,408,592,293,548,193,506"/>
+<area shape="poly" id="edge81_Node000179_Node000181" title=" " alt="" coords="4283,129,4395,173,4390,173,4283,134"/>
+<area shape="poly" id="edge82_Node000179_Node000182" title=" " alt="" coords="4214,139,4214,175,4210,172,4210,143"/>
+<area shape="poly" id="edge83_Node000182_Node000003" title=" " alt="" coords="4109,205,3861,221,3222,236,2135,257,292,289,292,283,2135,252,3222,231,3861,216,4114,204"/>
+<area shape="poly" id="edge84_Node000182_Node000108" title=" " alt="" coords="4214,232,4214,268,4210,264,4210,236"/>
+<area shape="poly" id="edge95_Node000189_Node000015" title=" " alt="" coords="193,500,295,543,410,586,495,612,578,636,573,636,493,617,408,592,293,548,193,506"/>
 </map>

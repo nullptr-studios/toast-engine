@@ -6,6 +6,7 @@ var dir_abb20f91362304de7c90b522a26015f1 =
     [ "listener.hpp", "listener_8hpp_source.html", null ],
     [ "listener.inl", "listener_8inl_source.html", null ],
     [ "proto_event.hpp", "proto__event_8hpp.html", "proto__event_8hpp" ],
+    [ "signal_bindings.hpp", "signal__bindings_8hpp.html", "signal__bindings_8hpp" ],
     [ "signal_types.hpp", "signal__types_8hpp_source.html", null ],
     [ "signals.hpp", "signals_8hpp.html", null ],
     [ "signals.inl", "signals_8inl_source.html", null ],

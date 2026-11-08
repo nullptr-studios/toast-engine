@@ -54,6 +54,7 @@ var namespaceeditor_1_1Workspace =
     [ "SignalConnectionWindow", "classeditor_1_1Workspace_1_1SignalConnectionWindow.html", null ],
     [ "SignalFunctionViewModel", "classeditor_1_1Workspace_1_1SignalFunctionViewModel.html", null ],
     [ "SignalItemViewModel", "classeditor_1_1Workspace_1_1SignalItemViewModel.html", null ],
+    [ "SignalParameterViewModel", "classeditor_1_1Workspace_1_1SignalParameterViewModel.html", null ],
     [ "SignalsView", "classeditor_1_1Workspace_1_1SignalsView.html", null ],
     [ "SignalsViewModel", "classeditor_1_1Workspace_1_1SignalsViewModel.html", null ],
     [ "StringSettingRow", "classeditor_1_1Workspace_1_1StringSettingRow.html", null ],

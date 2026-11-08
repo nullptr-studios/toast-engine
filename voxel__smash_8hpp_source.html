@@ -471,14 +471,20 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__smash_8
 <div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>) -&gt; SmashPieces {</div>
 <div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>  <span class="keyword">const</span> <span class="keyword">auto</span> [low, high] = smash.bounds();</div>
 <div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>  <span class="keyword">const</span> <span class="keywordtype">int</span> poses = smash.poseCount();</div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>  <span class="keywordflow">return</span> collectBrokenPieces(</div>
-<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>      volume, palette, materials, low, high, [&amp;](<span class="keyword">const</span> glm::vec3&amp; center, <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1PhysicalMaterial.html">voxel::PhysicalMaterial</a>&amp; material) {</div>
-<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>        <span class="keywordflow">return</span> material.breakableBy(max_hardness) &amp;&amp; material.<a class="code hl_variable" href="structvoxel_1_1PhysicalMaterial.html#a4de68ddf70a8e0af9e4a51ee5d6b8aff">toughness</a> &lt;= energy_density &amp;&amp; smash.contains(center, poses);</div>
-<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>      }</div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>  );</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>}</div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span> </div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>}</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>  <span class="keywordflow">return</span> collectCellPieces(</div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>      volume,</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>      palette,</div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>      materials,</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>      low,</div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>      high,</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>      [&amp;](<span class="keyword">const</span> glm::vec3&amp; center, <span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1PhysicalMaterial.html">voxel::PhysicalMaterial</a>&amp; material) {</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>        <span class="keywordflow">return</span> material.breakableBy(max_hardness) &amp;&amp; material.<a class="code hl_variable" href="structvoxel_1_1PhysicalMaterial.html#a4de68ddf70a8e0af9e4a51ee5d6b8aff">toughness</a> &lt;= energy_density &amp;&amp; smash.contains(center, poses);</div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>      },</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>      [](<span class="keyword">const</span> glm::ivec3&amp;) { <span class="keywordflow">return</span> 0u; }</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>  );</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>}</div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span> </div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>}</div>
 <div class="ttc" id="abrick_8hpp_html"><div class="ttname"><a href="brick_8hpp.html">brick.hpp</a></div></div>
 <div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
 <div class="ttc" id="acomponent__classification_8hpp_html"><div class="ttname"><a href="component__classification_8hpp.html">component_classification.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>

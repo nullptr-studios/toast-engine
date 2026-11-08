@@ -94,7 +94,7 @@ var searchData=
   ['invokebool_91',['invokeBool',['../classscripting_1_1LuaCallback.html#a981cb8257ce2558400813e3c9218a3e4',1,'scripting::LuaCallback']]],
   ['invoker_92',['Invoker',['../structtoast_1_1FunctionInfo.html#afa37c6206c14328a70ff1eaeba250920',1,'toast::FunctionInfo::Invoker'],['../structtoast_1_1TickFunctions.html#adc80b1f7f56a60e728ca119ec0c8987c',1,'toast::TickFunctions::Invoker']]],
   ['invokewithargument_93',['invokeWithArgument',['../classscripting_1_1LuaCallback.html#a36c4fcb4d0fec0cf20e6fe7f1b70f79c',1,'scripting::LuaCallback']]],
-  ['ior_94',['ior',['../structphysics_1_1DebrisSpawn.html#a8dd126eb122147f05bbf8424c6e07240',1,'physics::DebrisSpawn::ior'],['../structvoxel_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'voxel::PaletteEntry::ior'],['../structassets_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'assets::PaletteEntry::ior']]],
+  ['ior_94',['ior',['../structvoxel_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'voxel::PaletteEntry::ior'],['../structassets_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'assets::PaletteEntry::ior']]],
   ['ioutputtarget_95',['IOutputTarget',['../classrenderer_1_1IOutputTarget.html',1,'renderer']]],
   ['ipickernode_96',['IPickerNode',['../interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html',1,'editor::Components::Modals']]],
   ['ipostprocesspass_97',['IPostProcessPass',['../classrenderer_1_1IPostProcessPass.html',1,'renderer']]],

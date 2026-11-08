@@ -24,6 +24,7 @@ var namespaceeditor_1_1Components_1_1Elements =
     [ "LayerTagBox", "classeditor_1_1Components_1_1Elements_1_1LayerTagBox.html", null ],
     [ "NodeBox", "classeditor_1_1Components_1_1Elements_1_1NodeBox.html", null ],
     [ "SearchableTreeItem&lt; T &gt;", "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html", null ],
+    [ "SpanPanel", "classeditor_1_1Components_1_1Elements_1_1SpanPanel.html", null ],
     [ "StringBox", "classeditor_1_1Components_1_1Elements_1_1StringBox.html", null ],
     [ "TagStrip", "classeditor_1_1Components_1_1Elements_1_1TagStrip.html", null ]
 ];

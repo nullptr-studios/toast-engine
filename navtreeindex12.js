@@ -1,5 +1,9 @@
 var NAVTREEINDEX12 =
 {
+"ray__tracing__scene_8hpp_source.html":[15,0,2,0,0,6,6,1],
+"raycast_8hpp.html":[15,0,2,0,0,4,32],
+"raycast_8hpp_source.html":[15,0,2,0,0,4,32],
+"reflect_8hpp_source.html":[15,0,2,0,0,5,0],
 "reflect__event_8hpp.html":[15,0,2,0,0,5,1],
 "reflect__event_8hpp_source.html":[15,0,2,0,0,5,1],
 "reflect__node_8hpp.html":[15,0,2,0,0,5,2],
@@ -71,12 +75,14 @@ var NAVTREEINDEX12 =
 "shared__texture__output__target_8hpp_source.html":[15,0,2,0,0,6,4,2],
 "shatter_8hpp.html":[15,0,2,0,0,4,35],
 "shatter_8hpp_source.html":[15,0,2,0,0,4,35],
+"signal__bindings_8hpp.html":[15,0,2,0,0,2,6],
+"signal__bindings_8hpp_source.html":[15,0,2,0,0,2,6],
 "signal__proxy_8hpp_source.html":[15,0,2,0,0,7,13],
-"signal__types_8hpp_source.html":[15,0,2,0,0,2,6],
-"signals_8hpp.html":[15,0,2,0,0,2,7],
-"signals_8hpp_source.html":[15,0,2,0,0,2,7],
-"signals_8inl_source.html":[15,0,2,0,0,2,8],
-"signals__events_8hpp_source.html":[15,0,2,0,0,2,9],
+"signal__types_8hpp_source.html":[15,0,2,0,0,2,7],
+"signals_8hpp.html":[15,0,2,0,0,2,8],
+"signals_8hpp_source.html":[15,0,2,0,0,2,8],
+"signals_8inl_source.html":[15,0,2,0,0,2,9],
+"signals__events_8hpp_source.html":[15,0,2,0,0,2,10],
 "simulator_8hpp.html":[15,0,2,0,0,4,36],
 "simulator_8hpp_source.html":[15,0,2,0,0,4,36],
 "skinned__blas__pool_8cpp.html":[15,0,2,0,0,6,6,2],
@@ -243,11 +249,5 @@ var NAVTREEINDEX12 =
 "structevent_1_1LastInputType.html":[14,0,4,31],
 "structevent_1_1LoadNode.html":[14,0,4,33],
 "structevent_1_1LoadNodeByURI.html":[14,0,4,34],
-"structevent_1_1MakeNodeGlobal.html":[14,0,4,35],
-"structevent_1_1MaterialAssetReloaded.html":[14,0,4,36],
-"structevent_1_1MusicBeat.html":[14,0,4,37],
-"structevent_1_1MusicBeat.html#a122c305df6f442dfeed2c7fca202cfee":[14,0,4,37,2],
-"structevent_1_1MusicBeat.html#a79906f6e8371d1953ffab14ba51ffbb1":[14,0,4,37,1],
-"structevent_1_1MusicBeat.html#abe1d9458a0f77728b3d0e70275e58521":[14,0,4,37,3],
-"structevent_1_1MusicBeat.html#aeab60462b28b9a09be241dd5c7942b40":[14,0,4,37,0]
+"structevent_1_1MakeNodeGlobal.html":[14,0,4,35]
 };

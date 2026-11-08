@@ -1173,6 +1173,7 @@ var hierarchy =
       [ "editor.Workspace.SignalConnectionDialogViewModel", "classeditor_1_1Workspace_1_1SignalConnectionDialogViewModel.html", null ],
       [ "editor.Workspace.SignalConnectionViewModel", "classeditor_1_1Workspace_1_1SignalConnectionViewModel.html", null ],
       [ "editor.Workspace.SignalItemViewModel", "classeditor_1_1Workspace_1_1SignalItemViewModel.html", null ],
+      [ "editor.Workspace.SignalParameterViewModel", "classeditor_1_1Workspace_1_1SignalParameterViewModel.html", null ],
       [ "editor.Workspace.SubgroupVM", "classeditor_1_1Workspace_1_1SubgroupVM.html", null ],
       [ "editor.Workspace.WorkspaceHistoryState", "classeditor_1_1Workspace_1_1WorkspaceHistoryState.html", null ]
     ] ],
@@ -1187,8 +1188,10 @@ var hierarchy =
     [ "voxel::PaletteEntry", "structvoxel_1_1PaletteEntry.html", null ],
     [ "voxel::PaletteRemap", "structvoxel_1_1PaletteRemap.html", null ],
     [ "Panel", null, [
+      [ "editor.Components.Elements.SpanPanel", "classeditor_1_1Components_1_1Elements_1_1SpanPanel.html", null ],
       [ "editor.Components.Elements.TagStrip", "classeditor_1_1Components_1_1Elements_1_1TagStrip.html", null ]
     ] ],
+    [ "signals::ParamBinding", "structsignals_1_1ParamBinding.html", null ],
     [ "toast::ParameterInfo", "structtoast_1_1ParameterInfo.html", null ],
     [ "toast::MusicPlayer::ParamID", "structtoast_1_1MusicPlayer_1_1ParamID.html", null ],
     [ "renderer::VulkanTexture::Params", "structrenderer_1_1VulkanTexture_1_1Params.html", null ],
@@ -1364,6 +1367,7 @@ var hierarchy =
     [ "Rml::RenderInterface", null, [
       [ "RenderInterface_VK", "classRenderInterface__VK.html", null ]
     ] ],
+    [ "signals::ResolvedBinding", "structsignals_1_1ResolvedBinding.html", null ],
     [ "input::Bind::Result", "structinput_1_1Bind_1_1Result.html", null ],
     [ "input::ITrigger::Result", "structinput_1_1ITrigger_1_1Result.html", null ],
     [ "renderer::voxel_debug::Rgb", "structrenderer_1_1voxel__debug_1_1Rgb.html", null ],

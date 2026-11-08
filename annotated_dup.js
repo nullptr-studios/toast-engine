@@ -200,6 +200,7 @@ var annotated_dup =
           [ "LayerTagBox", "classeditor_1_1Components_1_1Elements_1_1LayerTagBox.html", null ],
           [ "NodeBox", "classeditor_1_1Components_1_1Elements_1_1NodeBox.html", null ],
           [ "SearchableTreeItem&lt; T &gt;", "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html", null ],
+          [ "SpanPanel", "classeditor_1_1Components_1_1Elements_1_1SpanPanel.html", null ],
           [ "StringBox", "classeditor_1_1Components_1_1Elements_1_1StringBox.html", null ],
           [ "TagStrip", "classeditor_1_1Components_1_1Elements_1_1TagStrip.html", null ]
         ] ],
@@ -394,6 +395,7 @@ var annotated_dup =
         [ "SignalConnectionWindow", "classeditor_1_1Workspace_1_1SignalConnectionWindow.html", null ],
         [ "SignalFunctionViewModel", "classeditor_1_1Workspace_1_1SignalFunctionViewModel.html", null ],
         [ "SignalItemViewModel", "classeditor_1_1Workspace_1_1SignalItemViewModel.html", null ],
+        [ "SignalParameterViewModel", "classeditor_1_1Workspace_1_1SignalParameterViewModel.html", null ],
         [ "SignalsView", "classeditor_1_1Workspace_1_1SignalsView.html", null ],
         [ "SignalsViewModel", "classeditor_1_1Workspace_1_1SignalsViewModel.html", null ],
         [ "StringSettingRow", "classeditor_1_1Workspace_1_1StringSettingRow.html", null ],
@@ -767,7 +769,7 @@ var annotated_dup =
       [ "DebrisBlast", "structphysics_1_1DebrisBlast.html", null ],
       [ "DebrisCluster", "structphysics_1_1DebrisCluster.html", null ],
       [ "DebrisSimulation", "classphysics_1_1DebrisSimulation.html", "classphysics_1_1DebrisSimulation" ],
-      [ "DebrisSpawn", "structphysics_1_1DebrisSpawn.html", "structphysics_1_1DebrisSpawn" ],
+      [ "DebrisSpawn", "structphysics_1_1DebrisSpawn.html", null ],
       [ "DebrisVoxel", "structphysics_1_1DebrisVoxel.html", null ],
       [ "DetachedComponent", "structphysics_1_1DetachedComponent.html", null ],
       [ "DynamicRigidbody", "classphysics_1_1DynamicRigidbody.html", null ],
@@ -1017,8 +1019,10 @@ var annotated_dup =
       [ "Vec3FieldProxy", "classscripting_1_1Vec3FieldProxy.html", null ]
     ] ],
     [ "signals", null, [
+      [ "ConnectionInfo", "structsignals_1_1ConnectionInfo.html", null ],
       [ "DynamicArgs", "structsignals_1_1DynamicArgs.html", null ],
-      [ "ConnectionInfo", "structsignals_1_1ConnectionInfo.html", null ]
+      [ "ParamBinding", "structsignals_1_1ParamBinding.html", null ],
+      [ "ResolvedBinding", "structsignals_1_1ResolvedBinding.html", null ]
     ] ],
     [ "std", null, [
       [ "formatter&lt; toast::Box&lt; T &gt; &gt;", "structstd_1_1formatter_3_01toast_1_1Box_3_01T_01_4_01_4.html", null ],

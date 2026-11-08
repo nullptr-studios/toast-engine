@@ -1,7 +1,13 @@
 <map id="engine/src/toast/events" name="engine/src/toast/events">
-<area shape="rect" id="node1" href="dir_2f5e1e55eaa2c6364f5b7f0ebae372a6.html" title="world" alt="" coords="31,130,89,158"/>
-<area shape="rect" id="node2" href="dir_abb20f91362304de7c90b522a26015f1.html" title="events" alt="" coords="27,54,93,82"/>
-<area shape="poly" id="edge1" href="dir_000022_000063.html" alt="" coords="61,80,63,115,57,114,59,85"/>
-<area shape="rect" id="edge1-headlabel" href="dir_000022_000063.html" title="1" alt="" coords="64,103,72,120"/>
-<area shape="rect" id="clust1" href="dir_5e3b13ae2ca2708cae0c59ff3dc0407a.html" title="toast" alt="" coords="16,16,104,168"/>
+<area shape="rect" id="node1" href="dir_2f5e1e55eaa2c6364f5b7f0ebae372a6.html" title="world" alt="" coords="27,130,85,158"/>
+<area shape="rect" id="node2" href="dir_659cd8cc942ea13f42942a5af3df800f.html" title="scripting" alt="" coords="109,130,187,158"/>
+<area shape="rect" id="node3" href="dir_bbd47c16a186dd93264399a4ae4ab43b.html" title="reflect" alt="" coords="210,130,272,158"/>
+<area shape="rect" id="node4" href="dir_abb20f91362304de7c90b522a26015f1.html" title="events" alt="" coords="115,54,181,82"/>
+<area shape="poly" id="edge1" href="dir_000022_000063.html" alt="" coords="134,81,86,122,82,118,129,84"/>
+<area shape="rect" id="edge1-headlabel" href="dir_000022_000063.html" title="2" alt="" coords="88,116,96,133"/>
+<area shape="poly" id="edge2" href="dir_000022_000048.html" alt="" coords="150,80,150,115,146,113,146,85"/>
+<area shape="rect" id="edge2-headlabel" href="dir_000022_000048.html" title="1" alt="" coords="152,103,160,120"/>
+<area shape="poly" id="edge3" href="dir_000022_000043.html" alt="" coords="165,80,216,120,210,121,164,85"/>
+<area shape="rect" id="edge3-headlabel" href="dir_000022_000043.html" title="1" alt="" coords="212,103,220,120"/>
+<area shape="rect" id="clust1" href="dir_5e3b13ae2ca2708cae0c59ff3dc0407a.html" title="toast" alt="" coords="16,16,283,168"/>
 </map>

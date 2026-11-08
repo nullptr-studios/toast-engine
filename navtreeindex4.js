@@ -1,5 +1,9 @@
 var NAVTREEINDEX4 =
 {
+"classinput_1_1InvertModifier.html#ae37602a17efa19f75e2e7e2980e26a5b":[14,0,6,14,0],
+"classinput_1_1KeyModifier.html":[14,0,6,17],
+"classinput_1_1KeyModifier.html#a0315e8648d2c0d5c72df4cb0ca707523":[14,0,6,17,1],
+"classinput_1_1KeyModifier.html#a18e526baf4938392dd0245d5a8bbd4d3":[14,0,6,17,0],
 "classinput_1_1PlayerController.html":[14,0,6,18],
 "classinput_1_1PlayerController.html#a3a7fbd5d84af724abf5f8d701fad1479":[14,0,6,18,3],
 "classinput_1_1PlayerController.html#a619d368318621d06e8e921c783313c85":[14,0,6,18,4],
@@ -245,9 +249,5 @@ var NAVTREEINDEX4 =
 "classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f":[14,0,9,103,8],
 "classrenderer_1_1VoxelPass.html#a56b5af37ed73efff85d04b6ce443494b":[14,0,9,103,23],
 "classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4":[14,0,9,103,9],
-"classrenderer_1_1VoxelPass.html#a65ccc7ad91b774f83f5fe7788f9610fa":[14,0,9,103,12],
-"classrenderer_1_1VoxelPass.html#a707ca07b3d884e022989069429c6cd16":[14,0,9,103,19],
-"classrenderer_1_1VoxelPass.html#a86cfe941b78bf7fabbd28ea1e822c90f":[14,0,9,103,7],
-"classrenderer_1_1VoxelPass.html#a9beab196d01d75c0a41036b1c646763e":[14,0,9,103,13],
-"classrenderer_1_1VoxelPass.html#a9c87ad8986736b4b204cff7aaf00eb29":[14,0,9,103,6]
+"classrenderer_1_1VoxelPass.html#a65ccc7ad91b774f83f5fe7788f9610fa":[14,0,9,103,12]
 };

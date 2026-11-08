@@ -9,5 +9,5 @@ var searchData=
   ['interior_6',['interior',['../structassets_1_1Prefab_1_1BasicNode.html#a1e2137737013b1826a3fe8d2ac9eb6c8',1,'assets::Prefab::BasicNode']]],
   ['inverse_5fbind_5fmatrices_7',['inverse_bind_matrices',['../structassets_1_1Skin.html#ade59b80e8a0c98aa8eb70bd14bc68256',1,'assets::Skin']]],
   ['inverse_5fconnections_8',['inverse_connections',['../structtoast_1_1TickScheduler_1_1DependencyGraph.html#afd6980bd0e1464e54c8525578f0cdd8b',1,'toast::TickScheduler::DependencyGraph']]],
-  ['ior_9',['ior',['../structphysics_1_1DebrisSpawn.html#a8dd126eb122147f05bbf8424c6e07240',1,'physics::DebrisSpawn::ior'],['../structvoxel_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'voxel::PaletteEntry::ior'],['../structassets_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'assets::PaletteEntry::ior']]]
+  ['ior_9',['ior',['../structvoxel_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'voxel::PaletteEntry::ior'],['../structassets_1_1PaletteEntry.html#a7fbf0a5422fbcb84b08c9565bf0240cf',1,'assets::PaletteEntry::ior']]]
 ];

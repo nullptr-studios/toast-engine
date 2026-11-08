@@ -1,5 +1,9 @@
 var NAVTREEINDEX7 =
 {
+"classtoast_1_1Node3D.html#ae7ff4677e5eda696b65c5b835512fa1d":[12,0,1,43,2],
+"classtoast_1_1Node3D.html#ae7ff4677e5eda696b65c5b835512fa1d":[14,0,14,46,2],
+"classtoast_1_1NodeRegistry.html":[12,0,1,46],
+"classtoast_1_1NodeRegistry.html":[14,0,14,49],
 "classtoast_1_1PaintVolume.html":[12,0,1,48],
 "classtoast_1_1PaintVolume.html":[14,0,14,51],
 "classtoast_1_1Panel.html":[12,0,1,49],
@@ -245,9 +249,5 @@ var NAVTREEINDEX7 =
 "classtoast_1_1VoxelNode.html#a4a43a9cecbd2c6a179d43cd65859f194":[12,0,1,90,60],
 "classtoast_1_1VoxelNode.html#a4a43a9cecbd2c6a179d43cd65859f194":[14,0,14,93,60],
 "classtoast_1_1VoxelNode.html#a4c310b3e7a9db53c8a2b430150afca23":[12,0,1,90,37],
-"classtoast_1_1VoxelNode.html#a4c310b3e7a9db53c8a2b430150afca23":[14,0,14,93,37],
-"classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3":[12,0,1,90,13],
-"classtoast_1_1VoxelNode.html#a5106f152a967f56109c3f6a8d5e479a3":[14,0,14,93,13],
-"classtoast_1_1VoxelNode.html#a566632592044fcb10458debaf7474f77":[12,0,1,90,20],
-"classtoast_1_1VoxelNode.html#a566632592044fcb10458debaf7474f77":[14,0,14,93,20]
+"classtoast_1_1VoxelNode.html#a4c310b3e7a9db53c8a2b430150afca23":[14,0,14,93,37]
 };

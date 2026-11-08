@@ -44,10 +44,12 @@ var NAVTREEINDEX2 =
 "classeditor_1_1Components_1_1Elements_1_1NodeBox.html":[14,0,3,1,2,22],
 "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html":[12,0,0,1,3,23],
 "classeditor_1_1Components_1_1Elements_1_1SearchableTreeItem-1-g.html":[14,0,3,1,2,23],
-"classeditor_1_1Components_1_1Elements_1_1StringBox.html":[12,0,0,1,3,24],
-"classeditor_1_1Components_1_1Elements_1_1StringBox.html":[14,0,3,1,2,24],
-"classeditor_1_1Components_1_1Elements_1_1TagStrip.html":[12,0,0,1,3,25],
-"classeditor_1_1Components_1_1Elements_1_1TagStrip.html":[14,0,3,1,2,25],
+"classeditor_1_1Components_1_1Elements_1_1SpanPanel.html":[12,0,0,1,3,24],
+"classeditor_1_1Components_1_1Elements_1_1SpanPanel.html":[14,0,3,1,2,24],
+"classeditor_1_1Components_1_1Elements_1_1StringBox.html":[12,0,0,1,3,25],
+"classeditor_1_1Components_1_1Elements_1_1StringBox.html":[14,0,3,1,2,25],
+"classeditor_1_1Components_1_1Elements_1_1TagStrip.html":[12,0,0,1,3,26],
+"classeditor_1_1Components_1_1Elements_1_1TagStrip.html":[14,0,3,1,2,26],
 "classeditor_1_1Components_1_1Modals_1_1AboutWindow.html":[12,0,0,1,4,0],
 "classeditor_1_1Components_1_1Modals_1_1AboutWindow.html":[14,0,3,1,3,0],
 "classeditor_1_1Components_1_1Modals_1_1AssetFolderNode.html":[12,0,0,1,4,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX2 =
 "classeditor_1_1Logger_1_1LogDetailWindow.html":[12,0,0,6,1],
 "classeditor_1_1Logger_1_1LogDetailWindow.html":[14,0,3,6,1],
 "classeditor_1_1Logger_1_1LogEntry.html":[12,0,0,6,2],
-"classeditor_1_1Logger_1_1LogEntry.html":[14,0,3,6,2],
-"classeditor_1_1Logger_1_1LogFilterState.html":[12,0,0,6,3],
-"classeditor_1_1Logger_1_1LogFilterState.html":[14,0,3,6,3]
+"classeditor_1_1Logger_1_1LogEntry.html":[14,0,3,6,2]
 };
