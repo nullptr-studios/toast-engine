@@ -385,6 +385,15 @@ public partial class FieldVM : ObservableObject {
 		ParameterName = info.Path;
 		IsLua = true;
 		Kind = InspectorFormat.LuaKindOf(info.Kind, info.IsArray);
+		if (Kind == WidgetKind.String && info.EnumOptions.Count > 0) {
+			Kind = WidgetKind.Enum;
+			foreach (var option in info.EnumOptions) {
+				EnumOptions.Add(option);
+				m_enumLabelToValue[option] = option;
+				m_enumValueToLabel[option] = option;
+			}
+		}
+
 		DisplayName = string.IsNullOrEmpty(info.DisplayName)
 			? InspectorFormat.DisplayName(info.Name)
 			: info.DisplayName;

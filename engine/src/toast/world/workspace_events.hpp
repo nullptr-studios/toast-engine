@@ -515,6 +515,7 @@ struct InspectorLuaContent : Event<InspectorLuaContent> {
 		double min = 0.0;
 		double max = 0.0;
 		std::string unit;
+		std::vector<std::string> enum_options;
 	};
 
 	struct LuaSubgroup {
