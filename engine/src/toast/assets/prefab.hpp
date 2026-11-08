@@ -42,7 +42,7 @@ constexpr std::string_view vec3_str = "vec3";
 constexpr std::string_view vec4_str = "vec4";
 constexpr std::string_view quaternion_str = "quat";
 
-constexpr uint16_t format_version = 5;    ///< current binary layout version
+constexpr uint16_t format_version = 6;    ///< current binary layout version
 
 struct TOAST_API NodeFileBinaryHeader {
 	const std::array<uint8_t, 6> magic = {'T', 'N', 'O', 'D', 'E', '\0'};
@@ -214,6 +214,7 @@ public:
 	struct SignalConnection {
 		toast::UID target;
 		std::string function;
+		std::vector<signals::ParamBinding> bindings;
 	};
 
 	/** One reflected signal and the connections authored for it. */

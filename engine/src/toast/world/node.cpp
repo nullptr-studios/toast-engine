@@ -309,6 +309,7 @@ void Node::reloadScripts() noexcept {
 		UID target;
 		std::string function;
 		bool forwards_args = true;
+		std::vector<signals::ParamBinding> bindings;
 	};
 
 	std::vector<std::vector<SavedVar>> saved;
@@ -333,7 +334,8 @@ void Node::reloadScripts() noexcept {
 					    {.signal = signal_name,
 							 .target = connection.target,
 							 .function = connection.function,
-							 .forwards_args = connection.forwards_args}
+							 .forwards_args = connection.forwards_args,
+							 .bindings = connection.bindings}
 					);
 				}
 			}
@@ -381,7 +383,9 @@ void Node::reloadScripts() noexcept {
 	if (m_script_runtime && m_owner != nullptr) {
 		for (const SavedLuaSignal& saved_signal : editor_signals) {
 			if (Box<Node> target = find(saved_signal.target); target.exists()) {
-				m_script_runtime->connectLuaSignal(saved_signal.signal, *target, saved_signal.function, saved_signal.forwards_args);
+				m_script_runtime->connectLuaSignal(
+				    saved_signal.signal, *target, saved_signal.function, saved_signal.forwards_args, saved_signal.bindings
+				);
 			}
 		}
 	}

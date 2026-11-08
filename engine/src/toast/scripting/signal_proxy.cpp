@@ -107,8 +107,10 @@ auto luaArgument(lua_State* state, int index, const std::type_info& type) -> std
 
 }
 
-auto SignalProxy::connect(NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args)
-    -> bool {
+auto SignalProxy::connect(
+    NodeProxy target, std::string_view function, signals::ConnectionSource source, bool forwards_args,
+    const std::vector<signals::ParamBinding>& bindings
+) -> bool {
 	if (!m_source.exists() || !m_info || !m_info->get || !m_info->connect || !target.exists() || function.empty()) {
 		return false;
 	}
@@ -117,8 +119,7 @@ auto SignalProxy::connect(NodeProxy target, std::string_view function, signals::
 			return false;
 		}
 	}
-	m_info->connect(&*m_source, *target.box(), function, source, forwards_args);
-	return true;
+	return m_info->connect(&*m_source, *target.box(), function, source, forwards_args, bindings);
 }
 
 auto SignalProxy::disconnect(NodeProxy target, signals::ConnectionSource source, std::string_view function) -> bool {

@@ -16,6 +16,7 @@ struct SignalConnection {
 	std::string function;
 	signals::ConnectionSource source = signals::ConnectionSource::unknown;
 	bool forwards_args = true;
+	std::vector<signals::ParamBinding> bindings;
 };
 
 struct SignalStateEntry {
@@ -57,6 +58,7 @@ struct SignalCallable {
 	bool already_connected = false;
 	bool forwards_args = true;
 	std::string disabled_reason;
+	std::string declaring_class;
 };
 
 struct SignalCallables : Event<SignalCallables> {
@@ -73,6 +75,7 @@ struct AddSignalConnection : Event<AddSignalConnection> {
 	toast::UID target_node;
 	std::string function;
 	bool forwards_args = true;
+	std::vector<signals::ParamBinding> bindings;
 };
 
 struct RemoveSignalConnection : Event<RemoveSignalConnection> {

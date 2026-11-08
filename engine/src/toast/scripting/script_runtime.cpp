@@ -211,11 +211,7 @@ auto parseNumber(std::string_view& text, double& value) -> bool {
 	return true;
 }
 
-void applyFieldAnnotations(LuaVarDesc& desc, std::string_view src, size_t declaration_pos, std::string_view script_name) {
-	if (declaration_pos == std::string_view::npos) {
-		return;
-	}
-
+auto leadingAnnotations(std::string_view src, size_t declaration_pos) -> std::vector<std::string_view> {
 	const size_t declaration_line = src.rfind('\n', declaration_pos);
 	size_t line_start = declaration_line == std::string_view::npos ? 0 : declaration_line + 1;
 	std::vector<std::string_view> annotations;
@@ -236,6 +232,92 @@ void applyFieldAnnotations(LuaVarDesc& desc, std::string_view src, size_t declar
 		line_start = previous_start;
 	}
 	std::ranges::reverse(annotations);
+	return annotations;
+}
+
+auto isIdentifierChar(char c) -> bool {
+	return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_';
+}
+
+auto functionDeclPos(std::string_view src, std::string_view name) -> size_t {
+	size_t pos = 0;
+	while ((pos = src.find(name, pos)) != std::string_view::npos) {
+		const size_t end = pos + name.size();
+		const char before = pos > 0 ? src[pos - 1] : ' ';
+		if (isIdentifierChar(before) || (end < src.size() && isIdentifierChar(src[end]))) {
+			pos = end;
+			continue;
+		}
+		size_t after = end;
+		while (after < src.size() && (src[after] == ' ' || src[after] == '\t')) {
+			++after;
+		}
+		if (after < src.size() && src[after] == '(') {
+			size_t start = pos;
+			if (start > 0 && (src[start - 1] == '.' || src[start - 1] == ':')) {
+				--start;
+				while (start > 0 && isIdentifierChar(src[start - 1])) {
+					--start;
+				}
+			}
+			while (start > 0 && (src[start - 1] == ' ' || src[start - 1] == '\t')) {
+				--start;
+			}
+			if (start >= 8 && src.substr(start - 8, 8) == "function") {
+				return start - 8;
+			}
+		} else if (after < src.size() && src[after] == '=' && (after + 1 >= src.size() || src[after + 1] != '=')) {
+			if (trim(src.substr(after + 1, 16)).starts_with("function")) {
+				return pos;
+			}
+		}
+		pos = end;
+	}
+	return std::string_view::npos;
+}
+
+void applyFunctionAnnotations(LuaFunctionDesc& function, std::string_view src) {
+	function.parameter_types.assign(function.parameters.size(), "any");
+	const size_t declaration = functionDeclPos(src, function.name);
+	if (declaration == std::string_view::npos) {
+		return;
+	}
+	for (std::string_view annotation : leadingAnnotations(src, declaration)) {
+		annotation = trim(annotation);
+		const size_t tag_end = annotation.find_first_of(" \t");
+		if (tag_end == std::string_view::npos) {
+			continue;
+		}
+		const std::string_view tag = annotation.substr(0, tag_end);
+		if (tag != "param" && tag != "type") {
+			continue;
+		}
+		std::string_view rest = trim(annotation.substr(tag_end));
+		const size_t name_end = rest.find_first_of(" \t");
+		if (name_end == std::string_view::npos) {
+			continue;
+		}
+		std::string_view name = rest.substr(0, name_end);
+		if (name.ends_with('?')) {
+			name.remove_suffix(1);
+		}
+		std::string_view type = trim(rest.substr(name_end));
+		type = type.substr(0, type.find_first_of(" \t"));
+		if (type.ends_with('?')) {
+			type.remove_suffix(1);
+		}
+		if (const auto it = std::ranges::find(function.parameters, name); it != function.parameters.end() && !type.empty()) {
+			function.parameter_types[static_cast<size_t>(it - function.parameters.begin())] = std::string(type);
+		}
+	}
+}
+
+void applyFieldAnnotations(LuaVarDesc& desc, std::string_view src, size_t declaration_pos, std::string_view script_name) {
+	if (declaration_pos == std::string_view::npos) {
+		return;
+	}
+
+	const auto annotations = leadingAnnotations(src, declaration_pos);
 
 	for (std::string_view annotation : annotations) {
 		annotation = trim(annotation);
@@ -499,13 +581,16 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 			function.name = key;
 			val.push(l);
 			lua_Debug debug {};
+			lua_pushvalue(l, -1);
 			if (lua_getinfo(l, ">u", &debug) != 0) {
 				const int parameter_count = std::max(0, static_cast<int>(debug.nparams) - 1);
 				function.is_vararg = debug.isvararg != 0;
 				for (int i = 0; i < parameter_count; ++i) {
-					function.parameters.push_back(std::format("arg{}", i + 1));
+					const char* declared = lua_getlocal(l, nullptr, i + 2);
+					function.parameters.push_back(declared != nullptr ? std::string(declared) : std::format("arg{}", i + 1));
 				}
 			}
+			lua_pop(l, 1);
 			m_schema.functions.push_back(std::move(function));
 			continue;
 		}
@@ -572,6 +657,9 @@ void ScriptInstance::extractSchema(std::string_view src) noexcept {
 	sortByDeclaration(m_schema.fields, src, 0);
 	sortByDeclaration(m_schema.groups, src, 0);
 	sortByDeclaration(m_schema.functions, src, 0);
+	for (LuaFunctionDesc& function : m_schema.functions) {
+		applyFunctionAnnotations(function, src);
+	}
 	for (LuaGroup& group : m_schema.groups) {
 		const size_t group_pos = declPos(src, group.name, 0);
 		const size_t from = group_pos == std::string_view::npos ? 0 : group_pos;
@@ -1349,11 +1437,13 @@ auto ScriptRuntime::luaSignalArgTypes(std::string_view name) const -> std::vecto
 	return {};
 }
 
-auto ScriptRuntime::connectLuaSignal(std::string_view name, toast::Node& target, std::string_view function, bool forwards_args)
-    -> bool {
+auto ScriptRuntime::connectLuaSignal(
+    std::string_view name, toast::Node& target, std::string_view function, bool forwards_args,
+    const std::vector<signals::ParamBinding>& bindings
+) -> bool {
 	for (const auto& instance : m_instances) {
 		if (auto it = instance->luaSignals().find(std::string(name)); it != instance->luaSignals().end()) {
-			return it->second.connect(NodeProxy(target.box()), function, signals::ConnectionSource::editor, forwards_args);
+			return it->second.connect(NodeProxy(target.box()), function, signals::ConnectionSource::editor, forwards_args, bindings);
 		}
 	}
 	return false;
