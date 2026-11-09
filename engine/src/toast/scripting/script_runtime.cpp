@@ -350,6 +350,26 @@ void applyFieldAnnotations(LuaVarDesc& desc, std::string_view src, size_t declar
 			}
 			desc.min = min;
 			desc.max = max;
+		} else if (tag == "enum") {
+			if (desc.kind != LuaVarKind::string || desc.is_array) {
+				TOAST_WARN("Lua", "{}: @enum on '{}' only applies to a string var", script_name, desc.path);
+				continue;
+			}
+			std::vector<std::string> options;
+			std::string_view rest = arguments;
+			while (!(rest = trim(rest)).empty()) {
+				const size_t end = rest.find_first_of(" \t");
+				const std::string_view option = rest.substr(0, end);
+				if (std::ranges::find(options, option) == options.end()) {
+					options.emplace_back(option);
+				}
+				rest = end == std::string_view::npos ? std::string_view {} : rest.substr(end);
+			}
+			if (options.empty()) {
+				TOAST_WARN("Lua", "{}: @enum on '{}' needs at least one option", script_name, desc.path);
+				continue;
+			}
+			desc.enum_options = std::move(options);
 		}
 	}
 }
