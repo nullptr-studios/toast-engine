@@ -1036,13 +1036,19 @@ void GiPass::recordMerge(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t c
 	    vk::PipelineBindPoint::eCompute, layout, 0, std::array {m_merge_scene_sets.get(frame_index), *m_merge_sets[frame_index]}, {}
 	);
 
+	GpuTimer* timer = VulkanRenderer::instance->gpuTimer();
+	static constexpr std::array<std::string_view, k_max_cascades> k_merge_scopes {
+	  "GI merge c0", "GI merge c1", "GI merge c2", "GI merge c3", "GI merge c4", "GI merge c5"
+	};
 	cmd.bindPipeline(vk::PipelineBindPoint::eCompute, m_merge_pipeline.getPipeline());
 	for (uint32_t i = cascades; i-- > 1;) {
+		const GpuScope scope(timer, frame_index, cmd, k_merge_scopes[i]);
 		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(uint32_t), &i);
 		cmd.dispatch(k_stride_groups, 1, 1);
 		computeBarrier(cmd);
 	}
 
+	const GpuScope scope(timer, frame_index, cmd, "GI irradiance");
 	sync::BarrierBatch barriers;
 	barriers.image(m_atlas_state, sync::Usage::compute_storage_write);
 	barriers.flush(cmd);

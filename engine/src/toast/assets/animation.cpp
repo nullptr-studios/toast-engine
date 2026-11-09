@@ -225,17 +225,11 @@ auto AnimationClip::sample(float time) const -> std::unordered_map<std::string, 
 		NodePose& pose = poses[track.target_node];
 
 		switch (track.target) {
-			case TrackTarget::translation:
-				pose.translation = track.sampleVec3(time);
-				pose.has_translation = true;
-				break;
-			case TrackTarget::rotation:
-				pose.rotation = track.sampleQuat(time);
-				pose.has_rotation = true;
-				break;
+			case TrackTarget::translation: pose.translation = track.sampleVec3(time); break;
+			case TrackTarget::rotation: pose.rotation = track.sampleQuat(time); break;
 			case TrackTarget::scale:
-				pose.scale = track.sampleVec3(time);
-				pose.has_scale = true;
+				// pose.scale = track.sampleVec3(time);
+				// pose.has_scale = true; // fuck the scale
 				break;
 		}
 	}

@@ -113,16 +113,11 @@ void AnimationPlayer::tick() {
 			continue;
 		}
 
-		// Only the components the clip actually keys - see NodePose
-		if (pose.has_translation) {
-			target->position = pose.translation;
-		}
-		if (pose.has_rotation) {
-			target->rotation = pose.rotation;
-		}
-		if (pose.has_scale) {
-			target->scale = pose.scale;
-		}
+		target->position = pose.translation;
+		target->rotation = pose.rotation;
+		// if (pose.has_scale) {
+		// 	target->scale = pose.scale;
+		// }
 		target->syncTransform();
 	}
 }

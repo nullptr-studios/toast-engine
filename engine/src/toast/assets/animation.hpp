@@ -85,12 +85,15 @@ struct TOAST_API AnimationTrack {
 /// Flagged per component: a clip may drive only some, and an unanimated one must keep whatever the node
 /// already has rather than snap to identity
 struct NodePose {
+	alignas(16) glm::quat rotation {1.0f, 0.0f, 0.0f, 0.0f};
+
 	glm::vec3 translation {0.0f};
-	glm::quat rotation {1.0f, 0.0f, 0.0f, 0.0f};
-	glm::vec3 scale {1.0f};
-	bool has_translation = false;
-	bool has_rotation = false;
-	bool has_scale = false;
+	// glm::vec3 scale {1.0f};	FUCK THE SCALE
+
+	// uint8_t has_translation = false;
+	// uint8_t has_rotation = false;
+
+	float _pad;
 };
 
 /// @brief A named set of tracks that play together

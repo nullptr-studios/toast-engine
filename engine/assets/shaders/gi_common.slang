@@ -297,39 +297,19 @@ struct GiHistory
     float rays;
 };
 
-/// 32 bit maths since f32tof16 needs shaderFloat16 and shaderInt16 which the device does not enable
-/// Rounds to nearest and flushes under 2^-14 to zero and saturates past the largest half
+/// GLSL.std.450 packing since f32tof16 needs shaderFloat16 and shaderInt16 which the device does not enable
+/// Clamped first since PackHalf2x16 turns overflow into infinity
 uint giFloatToHalf(float value)
 {
-    const uint bits = asuint(value);
-    const uint sign = (bits >> 16) & 0x8000u;
-    int exponent = int((bits >> 23) & 0xffu) - 112;
-    uint mantissa = (bits & 0x7fffffu) + 0x1000u;
-    if ((mantissa & 0x800000u) != 0u)
-    {
-        mantissa = 0u;
-        exponent += 1;
-    }
-    if (exponent <= 0)
-    {
-        return sign;
-    }
-    if (exponent >= 31)
-    {
-        return sign | 0x7bffu;
-    }
-    return sign | (uint(exponent) << 10) | (mantissa >> 13);
+    const float2 clamped = float2(clamp(value, -65504.0, 65504.0), 0.0);
+    return spirv_asm { result:$$uint = OpExtInst glsl450 PackHalf2x16 $clamped };
 }
 
+/// Reads the low 16 bits of @p half
 float giHalfToFloat(uint half)
 {
-    const uint sign = (half & 0x8000u) << 16;
-    const uint exponent = (half >> 10) & 0x1fu;
-    if (exponent == 0u)
-    {
-        return asfloat(sign);
-    }
-    return asfloat(sign | ((exponent + 112u) << 23) | ((half & 0x3ffu) << 13));
+    const float2 unpacked = spirv_asm { result:$$float2 = OpExtInst glsl450 UnpackHalf2x16 $half };
+    return unpacked.x;
 }
 
 GiHistory giPackHistory(float3 radiance, float transmittance, float rays)
