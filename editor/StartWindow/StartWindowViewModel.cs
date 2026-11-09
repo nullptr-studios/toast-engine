@@ -20,23 +20,54 @@ using CommunityToolkit.Mvvm.Input;
 using editor.Assets;
 using editor.Components.Modals;
 using editor.Engine;
+using editor.Install;
 using Lucide.Avalonia;
 
 namespace editor.StartWindow;
 
 public partial class StartWindowViewModel : ViewModelBase {
-	private static readonly string ToastPath =
-		Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../toast_engine"));
+	private static readonly string ToastPath = BuildInfo.ToastPath;
 
 	private readonly ProjectList m_projectList = ProjectList.LoadList();
 
 	[ObservableProperty] private string m_searchText = "";
 	private Window? m_window;
+	private bool m_updateChecked;
 
 	// Fake data for the previewer
 	public StartWindowViewModel() {
 		Projects.CollectionChanged += (_, _) => RebuildFilteredProjects();
 		RebuildFilteredProjects();
+	}
+
+	private async Task CheckForUpdate(Window owner) {
+		if (m_updateChecked) return;
+		m_updateChecked = true;
+
+		var info = await Updater.CheckAsync();
+		if (info is null || !owner.IsVisible) return;
+
+		var modal = new MessageModal(new ModalConfig(
+			"Update available",
+			$"Toast Engine v{info.Version} is available, you are on v{BuildInfo.Version}.\n" +
+			"Updating will restart the editor.",
+			ModalButtons.OkCancel,
+			LucideIconKind.Download,
+			new SolidColorBrush(Color.Parse("#4a9eff")),
+			"Update",
+			CancelLabel: "Later"
+		));
+		if (await modal.ShowDialog<bool?>(owner) != true) return;
+
+		var popup = new LoadingPopup($"Downloading Toast Engine v{info.Version}...");
+		popup.Show(owner);
+		try {
+			await Updater.ApplyAsync(info, new Progress<double>(p =>
+				popup.SetText($"Downloading Toast Engine v{info.Version}... {p:P0}")));
+		} catch (Exception e) {
+			popup.Close();
+			await App.Modals.ShowError("Update failed", e.Message);
+		}
 	}
 
 	public ObservableCollection<ProjectListItem> Projects => m_projectList.Projects;
@@ -68,9 +99,10 @@ public partial class StartWindowViewModel : ViewModelBase {
 
 	public void SetWindow(Window window) {
 		m_window = window;
+		_ = CheckForUpdate(window);
 	}
 
-	private void LaunchProject(string projectPath, Window parentWindow) {
+	internal void LaunchProject(string projectPath, Window? parentWindow) {
 		m_projectList.Upsert(projectPath);
 		m_projectList.SaveList();
 
@@ -169,7 +201,7 @@ public partial class StartWindowViewModel : ViewModelBase {
 		var desktop = (IClassicDesktopStyleApplicationLifetime)Application.Current!.ApplicationLifetime!;
 		desktop.MainWindow = new SplashLoaderWindow(vm);
 		desktop.MainWindow.Show();
-		parentWindow.Close();
+		parentWindow?.Close();
 	}
 
 	private async Task LaunchProjectFromList(string projectPath, Window parentWindow) {
