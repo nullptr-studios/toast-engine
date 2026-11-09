@@ -745,296 +745,297 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('workspace__eve
 <div class="line"><a id="l00515" name="l00515"></a><span class="lineno">  515</span>    <span class="keywordtype">double</span> min = 0.0;</div>
 <div class="line"><a id="l00516" name="l00516"></a><span class="lineno">  516</span>    <span class="keywordtype">double</span> max = 0.0;</div>
 <div class="line"><a id="l00517" name="l00517"></a><span class="lineno">  517</span>    std::string unit;</div>
-<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>  };</div>
+<div class="line"><a id="l00518" name="l00518"></a><span class="lineno">  518</span>    std::vector&lt;std::string&gt; enum_options;</div>
+<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span>  };</div>
 </div>
-<div class="line"><a id="l00519" name="l00519"></a><span class="lineno">  519</span> </div>
-<div class="foldopen" id="foldopen00520" data-start="{" data-end="};">
-<div class="line"><a id="l00520" name="l00520"></a><span class="lineno"><a class="line" href="structevent_1_1InspectorLuaContent_1_1LuaSubgroup.html">  520</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1InspectorLuaContent_1_1LuaSubgroup.html">LuaSubgroup</a> {</div>
-<div class="line"><a id="l00521" name="l00521"></a><span class="lineno">  521</span>    std::string name;</div>
-<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>    std::vector&lt;LuaField&gt; fields;</div>
-<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>  };</div>
+<div class="line"><a id="l00520" name="l00520"></a><span class="lineno">  520</span> </div>
+<div class="foldopen" id="foldopen00521" data-start="{" data-end="};">
+<div class="line"><a id="l00521" name="l00521"></a><span class="lineno"><a class="line" href="structevent_1_1InspectorLuaContent_1_1LuaSubgroup.html">  521</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1InspectorLuaContent_1_1LuaSubgroup.html">LuaSubgroup</a> {</div>
+<div class="line"><a id="l00522" name="l00522"></a><span class="lineno">  522</span>    std::string name;</div>
+<div class="line"><a id="l00523" name="l00523"></a><span class="lineno">  523</span>    std::vector&lt;LuaField&gt; fields;</div>
+<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span>  };</div>
 </div>
-<div class="line"><a id="l00524" name="l00524"></a><span class="lineno">  524</span> </div>
-<div class="foldopen" id="foldopen00525" data-start="{" data-end="};">
-<div class="line"><a id="l00525" name="l00525"></a><span class="lineno"><a class="line" href="structevent_1_1InspectorLuaContent_1_1LuaGroup.html">  525</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1InspectorLuaContent_1_1LuaGroup.html">LuaGroup</a> {</div>
-<div class="line"><a id="l00526" name="l00526"></a><span class="lineno">  526</span>    std::string name;</div>
-<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>    std::vector&lt;LuaField&gt; fields;</div>
-<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>    std::vector&lt;LuaSubgroup&gt; subgroups;</div>
-<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>  };</div>
+<div class="line"><a id="l00525" name="l00525"></a><span class="lineno">  525</span> </div>
+<div class="foldopen" id="foldopen00526" data-start="{" data-end="};">
+<div class="line"><a id="l00526" name="l00526"></a><span class="lineno"><a class="line" href="structevent_1_1InspectorLuaContent_1_1LuaGroup.html">  526</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1InspectorLuaContent_1_1LuaGroup.html">LuaGroup</a> {</div>
+<div class="line"><a id="l00527" name="l00527"></a><span class="lineno">  527</span>    std::string name;</div>
+<div class="line"><a id="l00528" name="l00528"></a><span class="lineno">  528</span>    std::vector&lt;LuaField&gt; fields;</div>
+<div class="line"><a id="l00529" name="l00529"></a><span class="lineno">  529</span>    std::vector&lt;LuaSubgroup&gt; subgroups;</div>
+<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span>  };</div>
 </div>
-<div class="line"><a id="l00530" name="l00530"></a><span class="lineno">  530</span> </div>
-<div class="foldopen" id="foldopen00531" data-start="{" data-end="};">
-<div class="line"><a id="l00531" name="l00531"></a><span class="lineno"><a class="line" href="structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html">  531</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html">LuaScriptCard</a> {</div>
-<div class="line"><a id="l00532" name="l00532"></a><span class="lineno">  532</span>    std::string script;</div>
-<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>    std::vector&lt;LuaField&gt; fields;</div>
-<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    std::vector&lt;LuaGroup&gt; groups;</div>
-<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>  };</div>
+<div class="line"><a id="l00531" name="l00531"></a><span class="lineno">  531</span> </div>
+<div class="foldopen" id="foldopen00532" data-start="{" data-end="};">
+<div class="line"><a id="l00532" name="l00532"></a><span class="lineno"><a class="line" href="structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html">  532</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html">LuaScriptCard</a> {</div>
+<div class="line"><a id="l00533" name="l00533"></a><span class="lineno">  533</span>    std::string script;</div>
+<div class="line"><a id="l00534" name="l00534"></a><span class="lineno">  534</span>    std::vector&lt;LuaField&gt; fields;</div>
+<div class="line"><a id="l00535" name="l00535"></a><span class="lineno">  535</span>    std::vector&lt;LuaGroup&gt; groups;</div>
+<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span>  };</div>
 </div>
-<div class="line"><a id="l00536" name="l00536"></a><span class="lineno">  536</span> </div>
-<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span>  std::string uid;</div>
-<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>  uint32_t schema_version = 0;</div>
-<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  std::vector&lt;LuaScriptCard&gt; scripts;</div>
-<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span> </div>
-<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span>  InspectorLuaContent() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span> </div>
-<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span>  InspectorLuaContent(std::string_view uid, uint32_t schema_version, std::vector&lt;LuaScriptCard&gt; scripts)</div>
-<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>      : uid(uid),</div>
-<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>        schema_version(schema_version),</div>
-<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>        scripts(std::move(scripts)) { }</div>
-<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>};</div>
+<div class="line"><a id="l00537" name="l00537"></a><span class="lineno">  537</span> </div>
+<div class="line"><a id="l00538" name="l00538"></a><span class="lineno">  538</span>  std::string uid;</div>
+<div class="line"><a id="l00539" name="l00539"></a><span class="lineno">  539</span>  uint32_t schema_version = 0;</div>
+<div class="line"><a id="l00540" name="l00540"></a><span class="lineno">  540</span>  std::vector&lt;LuaScriptCard&gt; scripts;</div>
+<div class="line"><a id="l00541" name="l00541"></a><span class="lineno">  541</span> </div>
+<div class="line"><a id="l00542" name="l00542"></a><span class="lineno">  542</span>  InspectorLuaContent() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00543" name="l00543"></a><span class="lineno">  543</span> </div>
+<div class="line"><a id="l00544" name="l00544"></a><span class="lineno">  544</span>  InspectorLuaContent(std::string_view uid, uint32_t schema_version, std::vector&lt;LuaScriptCard&gt; scripts)</div>
+<div class="line"><a id="l00545" name="l00545"></a><span class="lineno">  545</span>      : uid(uid),</div>
+<div class="line"><a id="l00546" name="l00546"></a><span class="lineno">  546</span>        schema_version(schema_version),</div>
+<div class="line"><a id="l00547" name="l00547"></a><span class="lineno">  547</span>        scripts(std::move(scripts)) { }</div>
+<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span>};</div>
 </div>
-<div class="line"><a id="l00548" name="l00548"></a><span class="lineno">  548</span> </div>
-<div class="foldopen" id="foldopen00549" data-start="{" data-end="};">
-<div class="line"><a id="l00549" name="l00549"></a><span class="lineno"><a class="line" href="structevent_1_1NodeChangeLuaParam.html">  549</a></span><span class="keyword">struct </span>NodeChangeLuaParam : Event&lt;NodeChangeLuaParam&gt; {</div>
-<div class="line"><a id="l00550" name="l00550"></a><span class="lineno">  550</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
-<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  std::string path;</div>
-<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>  std::string value;</div>
-<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span> </div>
-<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span>  NodeChangeLuaParam(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node, std::string_view path, std::string_view value) : node(node), path(path), value(value) { }</div>
-<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>};</div>
+<div class="line"><a id="l00549" name="l00549"></a><span class="lineno">  549</span> </div>
+<div class="foldopen" id="foldopen00550" data-start="{" data-end="};">
+<div class="line"><a id="l00550" name="l00550"></a><span class="lineno"><a class="line" href="structevent_1_1NodeChangeLuaParam.html">  550</a></span><span class="keyword">struct </span>NodeChangeLuaParam : Event&lt;NodeChangeLuaParam&gt; {</div>
+<div class="line"><a id="l00551" name="l00551"></a><span class="lineno">  551</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
+<div class="line"><a id="l00552" name="l00552"></a><span class="lineno">  552</span>  std::string path;</div>
+<div class="line"><a id="l00553" name="l00553"></a><span class="lineno">  553</span>  std::string value;</div>
+<div class="line"><a id="l00554" name="l00554"></a><span class="lineno">  554</span> </div>
+<div class="line"><a id="l00555" name="l00555"></a><span class="lineno">  555</span>  NodeChangeLuaParam(<a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node, std::string_view path, std::string_view value) : node(node), path(path), value(value) { }</div>
+<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span>};</div>
 </div>
-<div class="line"><a id="l00556" name="l00556"></a><span class="lineno">  556</span> </div>
-<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span><span class="keyword">enum class</span> HistoryOperation : uint8_t {</div>
-<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span>  initial,</div>
-<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>  create,</div>
-<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>  remove,</div>
-<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>  rename,</div>
-<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  enable,</div>
-<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>  change_value,</div>
-<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>  move,</div>
-<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>  reparent,</div>
-<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>  retype,</div>
-<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>  duplicate,</div>
-<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>  spawn_prefab,</div>
-<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>  paste,</div>
-<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>  promote,</div>
-<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>  call_function,</div>
-<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>  cherry_pick,</div>
-<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  merge</div>
-<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>};</div>
-<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span> </div>
-<div class="foldopen" id="foldopen00576" data-start="{" data-end="};">
-<div class="line"><a id="l00576" name="l00576"></a><span class="lineno"><a class="line" href="structevent_1_1HistoryRevision.html">  576</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1HistoryRevision.html">HistoryRevision</a> {</div>
-<div class="line"><a id="l00577" name="l00577"></a><span class="lineno">  577</span>  uint64_t <span class="keywordtype">id</span> = 0;</div>
-<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>  uint64_t sequence = 0;</div>
-<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>  std::vector&lt;uint64_t&gt; parents;</div>
-<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node_uid;</div>
-<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  std::string node_name;</div>
-<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>  HistoryOperation operation = HistoryOperation::initial;</div>
-<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  std::string subject;</div>
-<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  std::string previous_value;</div>
-<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  std::string current_value;</div>
-<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>};</div>
+<div class="line"><a id="l00557" name="l00557"></a><span class="lineno">  557</span> </div>
+<div class="line"><a id="l00558" name="l00558"></a><span class="lineno">  558</span><span class="keyword">enum class</span> HistoryOperation : uint8_t {</div>
+<div class="line"><a id="l00559" name="l00559"></a><span class="lineno">  559</span>  initial,</div>
+<div class="line"><a id="l00560" name="l00560"></a><span class="lineno">  560</span>  create,</div>
+<div class="line"><a id="l00561" name="l00561"></a><span class="lineno">  561</span>  remove,</div>
+<div class="line"><a id="l00562" name="l00562"></a><span class="lineno">  562</span>  rename,</div>
+<div class="line"><a id="l00563" name="l00563"></a><span class="lineno">  563</span>  enable,</div>
+<div class="line"><a id="l00564" name="l00564"></a><span class="lineno">  564</span>  change_value,</div>
+<div class="line"><a id="l00565" name="l00565"></a><span class="lineno">  565</span>  move,</div>
+<div class="line"><a id="l00566" name="l00566"></a><span class="lineno">  566</span>  reparent,</div>
+<div class="line"><a id="l00567" name="l00567"></a><span class="lineno">  567</span>  retype,</div>
+<div class="line"><a id="l00568" name="l00568"></a><span class="lineno">  568</span>  duplicate,</div>
+<div class="line"><a id="l00569" name="l00569"></a><span class="lineno">  569</span>  spawn_prefab,</div>
+<div class="line"><a id="l00570" name="l00570"></a><span class="lineno">  570</span>  paste,</div>
+<div class="line"><a id="l00571" name="l00571"></a><span class="lineno">  571</span>  promote,</div>
+<div class="line"><a id="l00572" name="l00572"></a><span class="lineno">  572</span>  call_function,</div>
+<div class="line"><a id="l00573" name="l00573"></a><span class="lineno">  573</span>  cherry_pick,</div>
+<div class="line"><a id="l00574" name="l00574"></a><span class="lineno">  574</span>  merge</div>
+<div class="line"><a id="l00575" name="l00575"></a><span class="lineno">  575</span>};</div>
+<div class="line"><a id="l00576" name="l00576"></a><span class="lineno">  576</span> </div>
+<div class="foldopen" id="foldopen00577" data-start="{" data-end="};">
+<div class="line"><a id="l00577" name="l00577"></a><span class="lineno"><a class="line" href="structevent_1_1HistoryRevision.html">  577</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1HistoryRevision.html">HistoryRevision</a> {</div>
+<div class="line"><a id="l00578" name="l00578"></a><span class="lineno">  578</span>  uint64_t <span class="keywordtype">id</span> = 0;</div>
+<div class="line"><a id="l00579" name="l00579"></a><span class="lineno">  579</span>  uint64_t sequence = 0;</div>
+<div class="line"><a id="l00580" name="l00580"></a><span class="lineno">  580</span>  std::vector&lt;uint64_t&gt; parents;</div>
+<div class="line"><a id="l00581" name="l00581"></a><span class="lineno">  581</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node_uid;</div>
+<div class="line"><a id="l00582" name="l00582"></a><span class="lineno">  582</span>  std::string node_name;</div>
+<div class="line"><a id="l00583" name="l00583"></a><span class="lineno">  583</span>  HistoryOperation operation = HistoryOperation::initial;</div>
+<div class="line"><a id="l00584" name="l00584"></a><span class="lineno">  584</span>  std::string subject;</div>
+<div class="line"><a id="l00585" name="l00585"></a><span class="lineno">  585</span>  std::string previous_value;</div>
+<div class="line"><a id="l00586" name="l00586"></a><span class="lineno">  586</span>  std::string current_value;</div>
+<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span>};</div>
 </div>
-<div class="line"><a id="l00587" name="l00587"></a><span class="lineno">  587</span> </div>
-<div class="foldopen" id="foldopen00588" data-start="{" data-end="};">
-<div class="line"><a id="l00588" name="l00588"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryInitialSnapshot.html">  588</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryInitialSnapshot.html">WorkspaceHistoryInitialSnapshot</a> : Event&lt;WorkspaceHistoryInitialSnapshot&gt; {</div>
-<div class="line"><a id="l00589" name="l00589"></a><span class="lineno">  589</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>  std::vector&lt;uint8_t&gt; snapshot;</div>
-<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  <span class="keywordtype">bool</span> available = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>  <span class="keywordtype">bool</span> initially_saved = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>  std::string unavailable_reason;</div>
-<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>};</div>
+<div class="line"><a id="l00588" name="l00588"></a><span class="lineno">  588</span> </div>
+<div class="foldopen" id="foldopen00589" data-start="{" data-end="};">
+<div class="line"><a id="l00589" name="l00589"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryInitialSnapshot.html">  589</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryInitialSnapshot.html">WorkspaceHistoryInitialSnapshot</a> : Event&lt;WorkspaceHistoryInitialSnapshot&gt; {</div>
+<div class="line"><a id="l00590" name="l00590"></a><span class="lineno">  590</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00591" name="l00591"></a><span class="lineno">  591</span>  std::vector&lt;uint8_t&gt; snapshot;</div>
+<div class="line"><a id="l00592" name="l00592"></a><span class="lineno">  592</span>  <span class="keywordtype">bool</span> available = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00593" name="l00593"></a><span class="lineno">  593</span>  <span class="keywordtype">bool</span> initially_saved = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00594" name="l00594"></a><span class="lineno">  594</span>  std::string unavailable_reason;</div>
+<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span>};</div>
 </div>
-<div class="line"><a id="l00595" name="l00595"></a><span class="lineno">  595</span> </div>
-<div class="foldopen" id="foldopen00596" data-start="{" data-end="};">
-<div class="line"><a id="l00596" name="l00596"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryCommitted.html">  596</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryCommitted.html">WorkspaceHistoryCommitted</a> : Event&lt;WorkspaceHistoryCommitted&gt; {</div>
-<div class="line"><a id="l00597" name="l00597"></a><span class="lineno">  597</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  std::vector&lt;uint8_t&gt; before_snapshot;</div>
-<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  std::vector&lt;uint8_t&gt; after_snapshot;</div>
-<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node_uid;</div>
-<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  std::string node_name;</div>
-<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>  HistoryOperation operation = HistoryOperation::change_value;</div>
-<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  std::string subject;</div>
-<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>  std::string previous_value;</div>
-<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  std::string current_value;</div>
-<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>};</div>
+<div class="line"><a id="l00596" name="l00596"></a><span class="lineno">  596</span> </div>
+<div class="foldopen" id="foldopen00597" data-start="{" data-end="};">
+<div class="line"><a id="l00597" name="l00597"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryCommitted.html">  597</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryCommitted.html">WorkspaceHistoryCommitted</a> : Event&lt;WorkspaceHistoryCommitted&gt; {</div>
+<div class="line"><a id="l00598" name="l00598"></a><span class="lineno">  598</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00599" name="l00599"></a><span class="lineno">  599</span>  std::vector&lt;uint8_t&gt; before_snapshot;</div>
+<div class="line"><a id="l00600" name="l00600"></a><span class="lineno">  600</span>  std::vector&lt;uint8_t&gt; after_snapshot;</div>
+<div class="line"><a id="l00601" name="l00601"></a><span class="lineno">  601</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node_uid;</div>
+<div class="line"><a id="l00602" name="l00602"></a><span class="lineno">  602</span>  std::string node_name;</div>
+<div class="line"><a id="l00603" name="l00603"></a><span class="lineno">  603</span>  HistoryOperation operation = HistoryOperation::change_value;</div>
+<div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>  std::string subject;</div>
+<div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  std::string previous_value;</div>
+<div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span>  std::string current_value;</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>};</div>
 </div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span> </div>
-<div class="foldopen" id="foldopen00608" data-start="{" data-end="};">
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceApplyHistorySnapshot.html">  608</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceApplyHistorySnapshot.html">WorkspaceApplyHistorySnapshot</a> : Event&lt;WorkspaceApplyHistorySnapshot&gt; {</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>  std::vector&lt;uint8_t&gt; snapshot;</div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>};</div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span> </div>
+<div class="foldopen" id="foldopen00609" data-start="{" data-end="};">
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceApplyHistorySnapshot.html">  609</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceApplyHistorySnapshot.html">WorkspaceApplyHistorySnapshot</a> : Event&lt;WorkspaceApplyHistorySnapshot&gt; {</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>  std::vector&lt;uint8_t&gt; snapshot;</div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>};</div>
 </div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span> </div>
-<div class="foldopen" id="foldopen00614" data-start="{" data-end="};">
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistorySnapshotApplied.html">  614</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistorySnapshotApplied.html">WorkspaceHistorySnapshotApplied</a> : Event&lt;WorkspaceHistorySnapshotApplied&gt; {</div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>  <span class="keywordtype">bool</span> success = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  std::string error;</div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>};</div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span> </div>
+<div class="foldopen" id="foldopen00615" data-start="{" data-end="};">
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistorySnapshotApplied.html">  615</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistorySnapshotApplied.html">WorkspaceHistorySnapshotApplied</a> : Event&lt;WorkspaceHistorySnapshotApplied&gt; {</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  <span class="keywordtype">bool</span> success = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  std::string error;</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>};</div>
 </div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span> </div>
-<div class="foldopen" id="foldopen00621" data-start="{" data-end="};">
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspacePrepareHistoryMerge.html">  621</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspacePrepareHistoryMerge.html">WorkspacePrepareHistoryMerge</a> : Event&lt;WorkspacePrepareHistoryMerge&gt; {</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <span class="keywordtype">bool</span> is_merge = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>  std::vector&lt;uint8_t&gt; base_snapshot;</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>  std::vector&lt;uint8_t&gt; current_snapshot;</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>  std::vector&lt;uint8_t&gt; incoming_snapshot;</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>};</div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span> </div>
+<div class="foldopen" id="foldopen00622" data-start="{" data-end="};">
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspacePrepareHistoryMerge.html">  622</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspacePrepareHistoryMerge.html">WorkspacePrepareHistoryMerge</a> : Event&lt;WorkspacePrepareHistoryMerge&gt; {</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>  <span class="keywordtype">bool</span> is_merge = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>  std::vector&lt;uint8_t&gt; base_snapshot;</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>  std::vector&lt;uint8_t&gt; current_snapshot;</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>  std::vector&lt;uint8_t&gt; incoming_snapshot;</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>};</div>
 </div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span> </div>
-<div class="foldopen" id="foldopen00630" data-start="{" data-end="};">
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryMergePrepared.html">  630</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryMergePrepared.html">WorkspaceHistoryMergePrepared</a> : Event&lt;WorkspaceHistoryMergePrepared&gt; {</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  <span class="keywordtype">bool</span> success = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  std::vector&lt;uint8_t&gt; snapshot;</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  std::string error;</div>
-<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>};</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span> </div>
+<div class="foldopen" id="foldopen00631" data-start="{" data-end="};">
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryMergePrepared.html">  631</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryMergePrepared.html">WorkspaceHistoryMergePrepared</a> : Event&lt;WorkspaceHistoryMergePrepared&gt; {</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  <span class="keywordtype">bool</span> success = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  std::vector&lt;uint8_t&gt; snapshot;</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span>  std::string error;</div>
+<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>};</div>
 </div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span> </div>
-<div class="foldopen" id="foldopen00638" data-start="{" data-end="};">
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno"><a class="line" href="structevent_1_1UpdateWorkspaceHistory.html">  638</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1UpdateWorkspaceHistory.html">UpdateWorkspaceHistory</a> : Event&lt;UpdateWorkspaceHistory&gt; {</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  <span class="keywordtype">bool</span> available = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>  std::string unavailable_reason;</div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  uint64_t current_revision = 0;</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  <span class="keywordtype">bool</span> is_dirty = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  <span class="keywordtype">bool</span> transaction_open = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  std::vector&lt;HistoryRevision&gt; revisions;</div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>};</div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span> </div>
+<div class="foldopen" id="foldopen00639" data-start="{" data-end="};">
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno"><a class="line" href="structevent_1_1UpdateWorkspaceHistory.html">  639</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1UpdateWorkspaceHistory.html">UpdateWorkspaceHistory</a> : Event&lt;UpdateWorkspaceHistory&gt; {</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>  <span class="keywordtype">bool</span> available = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  std::string unavailable_reason;</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  uint64_t current_revision = 0;</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  <span class="keywordtype">bool</span> is_dirty = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  <span class="keywordtype">bool</span> transaction_open = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>  std::vector&lt;HistoryRevision&gt; revisions;</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>};</div>
 </div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span> </div>
-<div class="foldopen" id="foldopen00648" data-start="{" data-end="};">
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno"><a class="line" href="structevent_1_1RequestWorkspaceHistory.html">  648</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RequestWorkspaceHistory.html">RequestWorkspaceHistory</a> : Event&lt;RequestWorkspaceHistory&gt; {</div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>};</div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span> </div>
+<div class="foldopen" id="foldopen00649" data-start="{" data-end="};">
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno"><a class="line" href="structevent_1_1RequestWorkspaceHistory.html">  649</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1RequestWorkspaceHistory.html">RequestWorkspaceHistory</a> : Event&lt;RequestWorkspaceHistory&gt; {</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>};</div>
 </div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span> </div>
-<div class="foldopen" id="foldopen00652" data-start="{" data-end="};">
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceUndo.html">  652</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceUndo.html">WorkspaceUndo</a> : Event&lt;WorkspaceUndo&gt; {</div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>};</div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span> </div>
+<div class="foldopen" id="foldopen00653" data-start="{" data-end="};">
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceUndo.html">  653</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceUndo.html">WorkspaceUndo</a> : Event&lt;WorkspaceUndo&gt; {</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>};</div>
 </div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span> </div>
-<div class="foldopen" id="foldopen00656" data-start="{" data-end="};">
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceRedo.html">  656</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceRedo.html">WorkspaceRedo</a> : Event&lt;WorkspaceRedo&gt; {</div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>};</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span> </div>
+<div class="foldopen" id="foldopen00657" data-start="{" data-end="};">
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceRedo.html">  657</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceRedo.html">WorkspaceRedo</a> : Event&lt;WorkspaceRedo&gt; {</div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>};</div>
 </div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span> </div>
-<div class="foldopen" id="foldopen00660" data-start="{" data-end="};">
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceCheckoutHistory.html">  660</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceCheckoutHistory.html">WorkspaceCheckoutHistory</a> : Event&lt;WorkspaceCheckoutHistory&gt; {</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  uint64_t revision = 0;</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>};</div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span> </div>
+<div class="foldopen" id="foldopen00661" data-start="{" data-end="};">
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceCheckoutHistory.html">  661</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceCheckoutHistory.html">WorkspaceCheckoutHistory</a> : Event&lt;WorkspaceCheckoutHistory&gt; {</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  uint64_t revision = 0;</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>};</div>
 </div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span> </div>
-<div class="foldopen" id="foldopen00665" data-start="{" data-end="};">
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceCherryPickHistory.html">  665</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceCherryPickHistory.html">WorkspaceCherryPickHistory</a> : Event&lt;WorkspaceCherryPickHistory&gt; {</div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  uint64_t revision = 0;</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>};</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span> </div>
+<div class="foldopen" id="foldopen00666" data-start="{" data-end="};">
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceCherryPickHistory.html">  666</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceCherryPickHistory.html">WorkspaceCherryPickHistory</a> : Event&lt;WorkspaceCherryPickHistory&gt; {</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>  uint64_t revision = 0;</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>};</div>
 </div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span> </div>
-<div class="foldopen" id="foldopen00670" data-start="{" data-end="};">
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceMergeHistory.html">  670</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceMergeHistory.html">WorkspaceMergeHistory</a> : Event&lt;WorkspaceMergeHistory&gt; {</div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>  uint64_t revision = 0;</div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>};</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span> </div>
+<div class="foldopen" id="foldopen00671" data-start="{" data-end="};">
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceMergeHistory.html">  671</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceMergeHistory.html">WorkspaceMergeHistory</a> : Event&lt;WorkspaceMergeHistory&gt; {</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>  uint64_t revision = 0;</div>
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>};</div>
 </div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span> </div>
-<div class="foldopen" id="foldopen00675" data-start="{" data-end="};">
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryTransaction.html">  675</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryTransaction.html">WorkspaceHistoryTransaction</a> : Event&lt;WorkspaceHistoryTransaction&gt; {</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  <span class="keyword">enum class</span> Phase : uint8_t {</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>    begin,</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>    commit,</div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>    cancel</div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>  };</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>  uint64_t transaction = 0;</div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  Phase phase = Phase::begin;</div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  HistoryOperation operation = HistoryOperation::change_value;</div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>  std::string subject;</div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>};</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span> </div>
+<div class="foldopen" id="foldopen00676" data-start="{" data-end="};">
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryTransaction.html">  676</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryTransaction.html">WorkspaceHistoryTransaction</a> : Event&lt;WorkspaceHistoryTransaction&gt; {</div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>  <span class="keyword">enum class</span> Phase : uint8_t {</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>    begin,</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>    commit,</div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>    cancel</div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  };</div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  uint64_t transaction = 0;</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  Phase phase = Phase::begin;</div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>  HistoryOperation operation = HistoryOperation::change_value;</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node;</div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>  std::string subject;</div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>};</div>
 </div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span> </div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span><span class="keyword">enum class</span> HistoryConflictKind : uint8_t {</div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>  value,</div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>  name,</div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>  type,</div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>  enabled,</div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>  parent,</div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>  order,</div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>  existence,</div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  lua_value</div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>};</div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span> </div>
-<div class="foldopen" id="foldopen00700" data-start="{" data-end="};">
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno"><a class="line" href="structevent_1_1HistoryConflict.html">  700</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1HistoryConflict.html">HistoryConflict</a> {</div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  uint64_t <span class="keywordtype">id</span> = 0;</div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node_uid;</div>
-<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>  std::string node_name;</div>
-<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>  HistoryConflictKind kind = HistoryConflictKind::value;</div>
-<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>  std::string field;</div>
-<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>  uint32_t value_type = 0;</div>
-<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>  <span class="keywordtype">bool</span> is_array = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>  std::string ref_type;</div>
-<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>  std::string base_value;</div>
-<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>  std::string current_value;</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>  std::string incoming_value;</div>
-<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>};</div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span> </div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span><span class="keyword">enum class</span> HistoryConflictKind : uint8_t {</div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>  value,</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>  name,</div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>  type,</div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>  enabled,</div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>  parent,</div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>  order,</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  existence,</div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>  lua_value</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>};</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span> </div>
+<div class="foldopen" id="foldopen00701" data-start="{" data-end="};">
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno"><a class="line" href="structevent_1_1HistoryConflict.html">  701</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1HistoryConflict.html">HistoryConflict</a> {</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>  uint64_t <span class="keywordtype">id</span> = 0;</div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>  <a class="code hl_struct" href="structtoast_1_1UID.html">toast::UID</a> node_uid;</div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>  std::string node_name;</div>
+<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>  HistoryConflictKind kind = HistoryConflictKind::value;</div>
+<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>  std::string field;</div>
+<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>  uint32_t value_type = 0;</div>
+<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>  <span class="keywordtype">bool</span> is_array = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>  std::string ref_type;</div>
+<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>  std::string base_value;</div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>  std::string current_value;</div>
+<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>  std::string incoming_value;</div>
+<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>};</div>
 </div>
-<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span> </div>
-<div class="foldopen" id="foldopen00714" data-start="{" data-end="};">
-<div class="line"><a id="l00714" name="l00714"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryConflicts.html">  714</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryConflicts.html">WorkspaceHistoryConflicts</a> : Event&lt;WorkspaceHistoryConflicts&gt; {</div>
-<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>  <span class="keywordtype">bool</span> is_merge = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>  uint64_t source_revision = 0;</div>
-<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>  std::vector&lt;HistoryConflict&gt; conflicts;</div>
-<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>};</div>
+<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span> </div>
+<div class="foldopen" id="foldopen00715" data-start="{" data-end="};">
+<div class="line"><a id="l00715" name="l00715"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceHistoryConflicts.html">  715</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceHistoryConflicts.html">WorkspaceHistoryConflicts</a> : Event&lt;WorkspaceHistoryConflicts&gt; {</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>  <span class="keywordtype">bool</span> is_merge = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>  uint64_t source_revision = 0;</div>
+<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>  std::vector&lt;HistoryConflict&gt; conflicts;</div>
+<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>};</div>
 </div>
-<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span> </div>
-<div class="foldopen" id="foldopen00722" data-start="{" data-end="};">
-<div class="line"><a id="l00722" name="l00722"></a><span class="lineno"><a class="line" href="structevent_1_1HistoryConflictResolution.html">  722</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1HistoryConflictResolution.html">HistoryConflictResolution</a> {</div>
-<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>  <span class="keyword">enum class</span> Choice : uint8_t {</div>
-<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>    base,</div>
-<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>    current,</div>
-<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>    incoming,</div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>    custom_value</div>
-<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>  };</div>
-<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>  uint64_t conflict = 0;</div>
-<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>  Choice choice = Choice::current;</div>
-<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>  std::string custom_value;</div>
-<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>};</div>
+<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span> </div>
+<div class="foldopen" id="foldopen00723" data-start="{" data-end="};">
+<div class="line"><a id="l00723" name="l00723"></a><span class="lineno"><a class="line" href="structevent_1_1HistoryConflictResolution.html">  723</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1HistoryConflictResolution.html">HistoryConflictResolution</a> {</div>
+<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>  <span class="keyword">enum class</span> Choice : uint8_t {</div>
+<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>    base,</div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>    current,</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>    incoming,</div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>    custom_value</div>
+<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>  };</div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>  uint64_t conflict = 0;</div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>  Choice choice = Choice::current;</div>
+<div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span>  std::string custom_value;</div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>};</div>
 </div>
-<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span> </div>
-<div class="foldopen" id="foldopen00734" data-start="{" data-end="};">
-<div class="line"><a id="l00734" name="l00734"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceResolveHistoryConflicts.html">  734</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceResolveHistoryConflicts.html">WorkspaceResolveHistoryConflicts</a> : Event&lt;WorkspaceResolveHistoryConflicts&gt; {</div>
-<div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span>  uint64_t workspace_handle = 0;</div>
-<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>  uint64_t request = 0;</div>
-<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  <span class="keywordtype">bool</span> cancel = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  std::vector&lt;HistoryConflictResolution&gt; resolutions;</div>
-<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>};</div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span> </div>
+<div class="foldopen" id="foldopen00735" data-start="{" data-end="};">
+<div class="line"><a id="l00735" name="l00735"></a><span class="lineno"><a class="line" href="structevent_1_1WorkspaceResolveHistoryConflicts.html">  735</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structevent_1_1WorkspaceResolveHistoryConflicts.html">WorkspaceResolveHistoryConflicts</a> : Event&lt;WorkspaceResolveHistoryConflicts&gt; {</div>
+<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>  uint64_t workspace_handle = 0;</div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  uint64_t request = 0;</div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  <span class="keywordtype">bool</span> cancel = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>  std::vector&lt;HistoryConflictResolution&gt; resolutions;</div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>};</div>
 </div>
-<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span> </div>
-<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>}</div>
+<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span> </div>
+<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>}</div>
 <div class="ttc" id="aclasstoast_1_1Box_html"><div class="ttname"><a href="classtoast_1_1Box.html">toast::Box</a></div><div class="ttdoc">Intrusive reference-counted handle to a Node.</div><div class="ttdef"><b>Definition</b> box.hpp:35</div></div>
 <div class="ttc" id="anode_8hpp_html"><div class="ttname"><a href="node_8hpp.html">node.hpp</a></div><div class="ttdoc">Base object type for the scene graph.</div></div>
 <div class="ttc" id="astructevent_1_1CaptureFrame_html"><div class="ttname"><a href="structevent_1_1CaptureFrame.html">event::CaptureFrame</a></div><div class="ttdoc">Requests a single RenderDoc frame capture around the next rendered frame, sent on F12 in the viewport...</div><div class="ttdef"><b>Definition</b> workspace_events.hpp:427</div></div>
 <div class="ttc" id="astructevent_1_1HierarchyNodesEnabled_1_1Entry_html"><div class="ttname"><a href="structevent_1_1HierarchyNodesEnabled_1_1Entry.html">event::HierarchyNodesEnabled::Entry</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:49</div></div>
-<div class="ttc" id="astructevent_1_1HistoryConflictResolution_html"><div class="ttname"><a href="structevent_1_1HistoryConflictResolution.html">event::HistoryConflictResolution</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:722</div></div>
-<div class="ttc" id="astructevent_1_1HistoryConflict_html"><div class="ttname"><a href="structevent_1_1HistoryConflict.html">event::HistoryConflict</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:700</div></div>
-<div class="ttc" id="astructevent_1_1HistoryRevision_html"><div class="ttname"><a href="structevent_1_1HistoryRevision.html">event::HistoryRevision</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:576</div></div>
+<div class="ttc" id="astructevent_1_1HistoryConflictResolution_html"><div class="ttname"><a href="structevent_1_1HistoryConflictResolution.html">event::HistoryConflictResolution</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:723</div></div>
+<div class="ttc" id="astructevent_1_1HistoryConflict_html"><div class="ttname"><a href="structevent_1_1HistoryConflict.html">event::HistoryConflict</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:701</div></div>
+<div class="ttc" id="astructevent_1_1HistoryRevision_html"><div class="ttname"><a href="structevent_1_1HistoryRevision.html">event::HistoryRevision</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:577</div></div>
 <div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaField_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaField.html">event::InspectorLuaContent::LuaField</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:504</div></div>
-<div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaGroup_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaGroup.html">event::InspectorLuaContent::LuaGroup</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:525</div></div>
-<div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaScriptCard_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html">event::InspectorLuaContent::LuaScriptCard</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:531</div></div>
-<div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaSubgroup_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaSubgroup.html">event::InspectorLuaContent::LuaSubgroup</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:520</div></div>
+<div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaGroup_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaGroup.html">event::InspectorLuaContent::LuaGroup</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:526</div></div>
+<div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaScriptCard_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html">event::InspectorLuaContent::LuaScriptCard</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:532</div></div>
+<div class="ttc" id="astructevent_1_1InspectorLuaContent_1_1LuaSubgroup_html"><div class="ttname"><a href="structevent_1_1InspectorLuaContent_1_1LuaSubgroup.html">event::InspectorLuaContent::LuaSubgroup</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:521</div></div>
 <div class="ttc" id="astructevent_1_1NodeChangeType_html"><div class="ttname"><a href="structevent_1_1NodeChangeType.html">event::NodeChangeType</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:165</div></div>
 <div class="ttc" id="astructevent_1_1NodePicked_html"><div class="ttname"><a href="structevent_1_1NodePicked.html">event::NodePicked</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:320</div></div>
 <div class="ttc" id="astructevent_1_1ProceduralVoxelLayout_html"><div class="ttname"><a href="structevent_1_1ProceduralVoxelLayout.html">event::ProceduralVoxelLayout</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:210</div></div>
 <div class="ttc" id="astructevent_1_1ProceduralVoxelLayout_html_a06fa831e66bfece883bec224d13057ef"><div class="ttname"><a href="structevent_1_1ProceduralVoxelLayout.html#a06fa831e66bfece883bec224d13057ef">event::ProceduralVoxelLayout::projections</a></div><div class="ttdeci">std::vector&lt; VoxelProjectionData &gt; projections</div><div class="ttdoc">front, side, top</div><div class="ttdef"><b>Definition</b> workspace_events.hpp:214</div></div>
 <div class="ttc" id="astructevent_1_1ProceduralVoxelPromoted_html"><div class="ttname"><a href="structevent_1_1ProceduralVoxelPromoted.html">event::ProceduralVoxelPromoted</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:180</div></div>
 <div class="ttc" id="astructevent_1_1RequestHierarchyUpdate_html"><div class="ttname"><a href="structevent_1_1RequestHierarchyUpdate.html">event::RequestHierarchyUpdate</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:46</div></div>
-<div class="ttc" id="astructevent_1_1RequestWorkspaceHistory_html"><div class="ttname"><a href="structevent_1_1RequestWorkspaceHistory.html">event::RequestWorkspaceHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:648</div></div>
+<div class="ttc" id="astructevent_1_1RequestWorkspaceHistory_html"><div class="ttname"><a href="structevent_1_1RequestWorkspaceHistory.html">event::RequestWorkspaceHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:649</div></div>
 <div class="ttc" id="astructevent_1_1RulerChanged_html"><div class="ttname"><a href="structevent_1_1RulerChanged.html">event::RulerChanged</a></div><div class="ttdoc">Measurements the viewport ruler holds, label is in viewport pixels.</div><div class="ttdef"><b>Definition</b> workspace_events.hpp:307</div></div>
 <div class="ttc" id="astructevent_1_1RulerCommand_html"><div class="ttname"><a href="structevent_1_1RulerCommand.html">event::RulerCommand</a></div><div class="ttdoc">0 clear all, 1 remove the last</div><div class="ttdef"><b>Definition</b> workspace_events.hpp:315</div></div>
 <div class="ttc" id="astructevent_1_1RulerSegment_html"><div class="ttname"><a href="structevent_1_1RulerSegment.html">event::RulerSegment</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:299</div></div>
@@ -1043,7 +1044,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('workspace__eve
 <div class="ttc" id="astructevent_1_1SetVoxelEditorOverlays_html"><div class="ttname"><a href="structevent_1_1SetVoxelEditorOverlays.html">event::SetVoxelEditorOverlays</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:285</div></div>
 <div class="ttc" id="astructevent_1_1SetVoxelTool_html"><div class="ttname"><a href="structevent_1_1SetVoxelTool.html">event::SetVoxelTool</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:325</div></div>
 <div class="ttc" id="astructevent_1_1UpdateHierarchyData_1_1HierarchyElement_html"><div class="ttname"><a href="structevent_1_1UpdateHierarchyData_1_1HierarchyElement.html">event::UpdateHierarchyData::HierarchyElement</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:20</div></div>
-<div class="ttc" id="astructevent_1_1UpdateWorkspaceHistory_html"><div class="ttname"><a href="structevent_1_1UpdateWorkspaceHistory.html">event::UpdateWorkspaceHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:638</div></div>
+<div class="ttc" id="astructevent_1_1UpdateWorkspaceHistory_html"><div class="ttname"><a href="structevent_1_1UpdateWorkspaceHistory.html">event::UpdateWorkspaceHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:639</div></div>
 <div class="ttc" id="astructevent_1_1VoxelBakeCompleted_html"><div class="ttname"><a href="structevent_1_1VoxelBakeCompleted.html">event::VoxelBakeCompleted</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:280</div></div>
 <div class="ttc" id="astructevent_1_1VoxelBakePiece_html"><div class="ttname"><a href="structevent_1_1VoxelBakePiece.html">event::VoxelBakePiece</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:267</div></div>
 <div class="ttc" id="astructevent_1_1VoxelBake_html"><div class="ttname"><a href="structevent_1_1VoxelBake.html">event::VoxelBake</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:272</div></div>
@@ -1059,26 +1060,26 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('workspace__eve
 <div class="ttc" id="astructevent_1_1VoxelRotatePieces_html"><div class="ttname"><a href="structevent_1_1VoxelRotatePieces.html">event::VoxelRotatePieces</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:246</div></div>
 <div class="ttc" id="astructevent_1_1VoxelSetPieceBounds_html"><div class="ttname"><a href="structevent_1_1VoxelSetPieceBounds.html">event::VoxelSetPieceBounds</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:217</div></div>
 <div class="ttc" id="astructevent_1_1VoxelSplitPieces_html"><div class="ttname"><a href="structevent_1_1VoxelSplitPieces.html">event::VoxelSplitPieces</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:240</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceApplyHistorySnapshot_html"><div class="ttname"><a href="structevent_1_1WorkspaceApplyHistorySnapshot.html">event::WorkspaceApplyHistorySnapshot</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:608</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceCheckoutHistory_html"><div class="ttname"><a href="structevent_1_1WorkspaceCheckoutHistory.html">event::WorkspaceCheckoutHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:660</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceCherryPickHistory_html"><div class="ttname"><a href="structevent_1_1WorkspaceCherryPickHistory.html">event::WorkspaceCherryPickHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:665</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceApplyHistorySnapshot_html"><div class="ttname"><a href="structevent_1_1WorkspaceApplyHistorySnapshot.html">event::WorkspaceApplyHistorySnapshot</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:609</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceCheckoutHistory_html"><div class="ttname"><a href="structevent_1_1WorkspaceCheckoutHistory.html">event::WorkspaceCheckoutHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:661</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceCherryPickHistory_html"><div class="ttname"><a href="structevent_1_1WorkspaceCherryPickHistory.html">event::WorkspaceCherryPickHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:666</div></div>
 <div class="ttc" id="astructevent_1_1WorkspaceConvertToProceduralVoxel_html"><div class="ttname"><a href="structevent_1_1WorkspaceConvertToProceduralVoxel.html">event::WorkspaceConvertToProceduralVoxel</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:175</div></div>
 <div class="ttc" id="astructevent_1_1WorkspaceCopyNode_html"><div class="ttname"><a href="structevent_1_1WorkspaceCopyNode.html">event::WorkspaceCopyNode</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:157</div></div>
 <div class="ttc" id="astructevent_1_1WorkspaceDuplicateNode_html"><div class="ttname"><a href="structevent_1_1WorkspaceDuplicateNode.html">event::WorkspaceDuplicateNode</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:152</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceHistoryCommitted_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryCommitted.html">event::WorkspaceHistoryCommitted</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:596</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceHistoryConflicts_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryConflicts.html">event::WorkspaceHistoryConflicts</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:714</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceHistoryInitialSnapshot_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryInitialSnapshot.html">event::WorkspaceHistoryInitialSnapshot</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:588</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceHistoryMergePrepared_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryMergePrepared.html">event::WorkspaceHistoryMergePrepared</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:630</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceHistorySnapshotApplied_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistorySnapshotApplied.html">event::WorkspaceHistorySnapshotApplied</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:614</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceHistoryTransaction_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryTransaction.html">event::WorkspaceHistoryTransaction</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:675</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceMergeHistory_html"><div class="ttname"><a href="structevent_1_1WorkspaceMergeHistory.html">event::WorkspaceMergeHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:670</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceHistoryCommitted_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryCommitted.html">event::WorkspaceHistoryCommitted</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:597</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceHistoryConflicts_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryConflicts.html">event::WorkspaceHistoryConflicts</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:715</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceHistoryInitialSnapshot_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryInitialSnapshot.html">event::WorkspaceHistoryInitialSnapshot</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:589</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceHistoryMergePrepared_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryMergePrepared.html">event::WorkspaceHistoryMergePrepared</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:631</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceHistorySnapshotApplied_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistorySnapshotApplied.html">event::WorkspaceHistorySnapshotApplied</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:615</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceHistoryTransaction_html"><div class="ttname"><a href="structevent_1_1WorkspaceHistoryTransaction.html">event::WorkspaceHistoryTransaction</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:676</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceMergeHistory_html"><div class="ttname"><a href="structevent_1_1WorkspaceMergeHistory.html">event::WorkspaceMergeHistory</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:671</div></div>
 <div class="ttc" id="astructevent_1_1WorkspacePasteNode_html"><div class="ttname"><a href="structevent_1_1WorkspacePasteNode.html">event::WorkspacePasteNode</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:161</div></div>
-<div class="ttc" id="astructevent_1_1WorkspacePrepareHistoryMerge_html"><div class="ttname"><a href="structevent_1_1WorkspacePrepareHistoryMerge.html">event::WorkspacePrepareHistoryMerge</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:621</div></div>
+<div class="ttc" id="astructevent_1_1WorkspacePrepareHistoryMerge_html"><div class="ttname"><a href="structevent_1_1WorkspacePrepareHistoryMerge.html">event::WorkspacePrepareHistoryMerge</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:622</div></div>
 <div class="ttc" id="astructevent_1_1WorkspacePromoteNode_html"><div class="ttname"><a href="structevent_1_1WorkspacePromoteNode.html">event::WorkspacePromoteNode</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:170</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceRedo_html"><div class="ttname"><a href="structevent_1_1WorkspaceRedo.html">event::WorkspaceRedo</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:656</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceResolveHistoryConflicts_html"><div class="ttname"><a href="structevent_1_1WorkspaceResolveHistoryConflicts.html">event::WorkspaceResolveHistoryConflicts</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:734</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceRedo_html"><div class="ttname"><a href="structevent_1_1WorkspaceRedo.html">event::WorkspaceRedo</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:657</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceResolveHistoryConflicts_html"><div class="ttname"><a href="structevent_1_1WorkspaceResolveHistoryConflicts.html">event::WorkspaceResolveHistoryConflicts</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:735</div></div>
 <div class="ttc" id="astructevent_1_1WorkspaceSaveCompleted_html"><div class="ttname"><a href="structevent_1_1WorkspaceSaveCompleted.html">event::WorkspaceSaveCompleted</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:113</div></div>
-<div class="ttc" id="astructevent_1_1WorkspaceUndo_html"><div class="ttname"><a href="structevent_1_1WorkspaceUndo.html">event::WorkspaceUndo</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:652</div></div>
+<div class="ttc" id="astructevent_1_1WorkspaceUndo_html"><div class="ttname"><a href="structevent_1_1WorkspaceUndo.html">event::WorkspaceUndo</a></div><div class="ttdef"><b>Definition</b> workspace_events.hpp:653</div></div>
 <div class="ttc" id="astructtoast_1_1UID_html"><div class="ttname"><a href="structtoast_1_1UID.html">toast::UID</a></div><div class="ttdef"><b>Definition</b> uid.hpp:20</div></div>
 <div class="ttc" id="auid_8hpp_html"><div class="ttname"><a href="uid_8hpp.html">uid.hpp</a></div><div class="ttdoc">Unique identifier for everything that exists in our engine.</div></div>
 </div><!-- fragment --></div><!-- contents -->
