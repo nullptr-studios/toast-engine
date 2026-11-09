@@ -15,7 +15,6 @@ Credits:
 ### Prerequisites
 - CMake >=3.24
 - A C++23 compiler (VS18 and GCC15 tested)
-- Rustc and Cargo
 - C# .NET10 toolchain
 - VCPKG with `VCPKG_ROOT` set up in PATH
 

@@ -67,8 +67,11 @@ add_library(toast_engine SHARED ${SOURCE})
 
 file(GLOB_RECURSE TOAST_REFLECTED_HEADERS CONFIGURE_DEPENDS "src/toast/*.hpp" "src/toast/*.h")
 file(GLOB_RECURSE TOAST_REFLECTION_GENERATOR_SOURCES CONFIGURE_DEPENDS
-        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/src/*.rs"
-        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/templates/*")
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/*.cs"
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/*.scriban"
+        "${CMAKE_SOURCE_DIR}/tools/reflection_generator/*.csproj")
+# obj holds generated .cs files that change on every build and would force a regeneration each time
+list(FILTER TOAST_REFLECTION_GENERATOR_SOURCES EXCLUDE REGEX "/(obj|bin|tests)/")
 add_custom_command(
         OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/reflection.stamp"
         COMMAND "${OUTPUT_ROOT}/$<CONFIG>/reflection_generator/reflection_generator${CMAKE_EXECUTABLE_SUFFIX}"
