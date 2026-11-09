@@ -62,6 +62,7 @@
         <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
         <PackageReference Include="Lucide.Avalonia" Version="0.2.0" />
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
+        <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" />
         <PackageReference Include="tinyspline" Version="0.6.0.1" />
         <PackageReference Include="Tomlyn" Version="2.4.0" />

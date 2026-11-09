@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -19,16 +17,7 @@ using Lucide.Avalonia;
 
 namespace editor.Assets;
 
-// two databases because they serve different purposes and have different lifetimes:
-//   artwork_database.json  -> maps source artwork paths to output UIDs + hash
-//                             used to skip re-importing files that havent changed
-//   database.json          -> maps UID to virtual path + asset type
-//                             full rebuild on every import, used by the engine at runtime
 public static class AssetDatabase {
-	private static readonly JsonSerializerOptions s_prettyJson = new() { WriteIndented = true };
-
-	private static Dictionary<string, (string Path, string Type)>? s_uidLookup;
-
 	// extension -> engine asset type, derived from the registry
 	private static readonly Dictionary<string, string> s_assetTypes =
 		AssetTypeRegistry.All.ToDictionary(a => a.Extension, a => a.Type, StringComparer.OrdinalIgnoreCase);
@@ -42,118 +31,43 @@ public static class AssetDatabase {
 	}
 
 	public static bool IsUpToDate(string sourceVirtualPath, string hash) {
-		var db = LoadArtworkDatabase();
-		return db[sourceVirtualPath] is JsonObject entry
-			&& entry["last_hash"]?.GetValue<string>() == hash;
+		AssetStore.Sync();
+		return AssetStore.ArtworkByUri(sourceVirtualPath)?.Hash == hash;
 	}
 
 	public static void UpdateArtworkDatabase(
 		string sourceVirtualPath, string hash, IEnumerable<ArtworkOutput> artworkOutputs) {
-		var db = LoadArtworkDatabase();
-
-		var outputs = new JsonArray();
+		// the importer just wrote the .meta files
+		var id = AssetStore.UpsertArtwork(sourceVirtualPath);
+		AssetStore.SetArtworkHash(sourceVirtualPath, hash);
 		foreach (var output in artworkOutputs)
-			outputs.Add(new JsonObject {
-				["uid"] = output.Uid,
-				["name"] = output.Name,
-				["hash"] = output.Hash,
-				["uri"] = output.Uri
-			});
+			AssetStore.SetOutputInfo(output.Uid, output.Name, output.Hash, id);
+	}
 
-		db[sourceVirtualPath] = new JsonObject {
-			["last_hash"] = hash,
-			["outputs"] = outputs
-		};
+	public static void SyncArtworkHashes(Action<string>? log = null) {
+		AssetStore.Sync();
+		var count = 0;
+		foreach (var artwork in AssetStore.AllArtwork().Where(a => a.Hash is null)) {
+			var real = ProjectContext.Resolve(artwork.Uri);
+			if (!File.Exists(real)) continue; // external imports name a source that is not on the project
+			AssetStore.SetArtworkHash(artwork.Uri, ComputeHash(real));
+			count++;
+		}
 
-		SaveArtworkDatabase(db);
+		if (count > 0) log?.Invoke($"Hashed {count} artwork file(s)");
 	}
 
 	public static IReadOnlyList<ArtworkOutput> GetArtworkOutputs(string sourceVirtualPath) {
-		if (LoadArtworkDatabase()[sourceVirtualPath] is not JsonObject entry) return [];
-		return ReadOutputs(entry);
+		AssetStore.Sync();
+		return AssetStore.OutputsOf(sourceVirtualPath)
+			.Select(a => new ArtworkOutput(a.Uid, a.OutputName ?? Path.GetFileName(a.Path), a.OutputHash, a.Virtual))
+			.ToList();
 	}
 
-	private static List<ArtworkOutput> ReadOutputs(JsonObject entry) {
-		var result = new List<ArtworkOutput>();
-		if (entry["outputs"] is not JsonArray outputs) return result;
-
-		foreach (var node in outputs)
-			if (node is JsonObject obj && obj["uid"]?.GetValue<string>() is { } uid)
-				result.Add(new ArtworkOutput(uid, obj["name"]?.GetValue<string>() ?? "", obj["hash"]?.GetValue<string>(),
-					obj["uri"]?.GetValue<string>() ?? ""));
-			else if (node?.GetValue<string>() is { } legacyUid) {
-				var uri = TryResolve(legacyUid, out var path, out _) ? path : "";
-				result.Add(new ArtworkOutput(legacyUid, Path.GetFileName(uri), null, uri));
-			}
-
-		return result;
-	}
-
-	private static List<ArtworkOutput> OutputsFromMeta(string sourceVirtualPath) {
-		return OutputsBySource().GetValueOrDefault(sourceVirtualPath) ?? [];
-	}
-
-	private static Dictionary<string, List<ArtworkOutput>> OutputsBySource() {
-		var result = new Dictionary<string, List<ArtworkOutput>>();
-		if (!Directory.Exists(ProjectContext.AssetsPath)) return result;
-		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
-			var header = MetaFile.ReadHeader(metaPath);
-			if (header?.Source is not { Length: > 0 } source) continue;
-			var real = metaPath[..^5];
-			if (!result.TryGetValue(source, out var list)) result[source] = list = [];
-			list.Add(new ArtworkOutput(header.Uid, Path.GetFileName(real), null, ProjectContext.ToVirtual(real) ?? real));
-		}
-
-		return result;
-	}
-
-	public static void SyncArtworkDatabase() {
-		var db = LoadArtworkDatabase();
-		var changed = false;
-		foreach (var (source, outputs) in OutputsBySource()) {
-			if (db[source] is not null) continue;
-			var real = ProjectContext.Resolve(source);
-			if (!File.Exists(real)) continue;
-			db[source] = new JsonObject {
-				["last_hash"] = ComputeHash(real),
-				["outputs"] = new JsonArray(outputs.Select(o => (JsonNode)new JsonObject {
-					["uid"] = o.Uid,
-					["name"] = o.Name,
-					["hash"] = o.Hash,
-					["uri"] = o.Uri
-				}).ToArray())
-			};
-			changed = true;
-		}
-
-		if (changed) SaveArtworkDatabase(db);
-	}
-
-	// full re-scan of all .meta files; writes one <db>.json per content database + core.json
+	// syncs the cache from the .meta files
+	// if theres a bug it's most likely here
 	public static void RebuildAssetDatabase(bool notifyListeners = true) {
-		var now = DateTime.UtcNow.ToString("o");
-
-		// One manifest file per content database
-		foreach (var db in ProjectContext.Databases) {
-			var obj = new JsonObject { ["version"] = 2, ["generated_at"] = now };
-			ScanDirectory(Path.Combine(ProjectContext.ProjectPath, db), obj);
-			var path = ProjectContext.Resolve($"cache://{db}.json");
-			File.WriteAllText(path, obj.ToJsonString(s_prettyJson));
-		}
-
-		// core:// always gets its own manifest
-		{
-			var obj = new JsonObject { ["version"] = 2, ["generated_at"] = now };
-			ScanDirectory(ProjectContext.CorePath, obj);
-			var path = ProjectContext.Resolve("cache://core.json");
-			File.WriteAllText(path, obj.ToJsonString(s_prettyJson));
-		}
-
-		// Remove the legacy combined file if it still exists
-		var legacyPath = ProjectContext.Resolve("cache://database.json");
-		if (File.Exists(legacyPath)) File.Delete(legacyPath);
-
-		s_uidLookup = null; // the on-disk database changed, drop the cached lookup
+		AssetStore.Sync();
 
 		// Refresh UI bind stubs so Lua completion tracks .rml edits
 		UIBindStubGenerator.Generate();
@@ -166,15 +80,12 @@ public static class AssetDatabase {
 		if (notifyListeners) ReloadedDatabase?.Invoke();
 	}
 
-	public static void Reset() {
-		s_uidLookup = null;
-	}
+	public static void Reset() { }
 
 	public static bool TryResolve(string uid, out string virtualPath, out string type) {
-		s_uidLookup ??= BuildUidLookup();
-		if (s_uidLookup.TryGetValue(uid, out var entry)) {
-			virtualPath = entry.Path;
-			type = entry.Type;
+		if (AssetStore.ByUid(uid) is { } record) {
+			virtualPath = record.Virtual;
+			type = record.Type;
 			return true;
 		}
 
@@ -183,30 +94,13 @@ public static class AssetDatabase {
 		return false;
 	}
 
-	private static Dictionary<string, (string Path, string Type)> BuildUidLookup() {
-		var lookup = new Dictionary<string, (string, string)>();
-		if (LoadAssetDatabase() is not { } db) return lookup;
-
-		foreach (var (type, collectionNode) in db) {
-			if (type is "version" or "generated_at") continue;
-			if (collectionNode is not JsonObject collection) continue;
-			foreach (var (uid, pathNode) in collection) {
-				var path = pathNode?.GetValue<string>();
-				if (path is null) continue;
-				lookup[uid] = (path, type);
-			}
-		}
-
-		return lookup;
-	}
-
 	public static async Task ValidateProject(Action<string>? log = null) {
 		log ??= _ => { };
 		GenerateMissingMetas(log);
 		RebuildAssetDatabase();
-		SyncArtworkDatabase();
 		await RelocateMissingAssets(log);
 		await RelocateMissingArtwork(log);
+		SyncArtworkHashes(log);
 		await CheckArtworkChanges(log);
 		RebuildAssetDatabase();
 	}
@@ -256,60 +150,55 @@ public static class AssetDatabase {
 	}
 
 	public static async Task RelocateMissingAssets(Action<string> log) {
-		if (LoadAssetDatabase() is not { } db) return;
-
 		var changed = false;
 		var discardAll = false;
 
 		var current = ScanCurrentAssets();
 
-		foreach (var (type, collectionNode) in db.ToList()) {
-			if (type is "version" or "generated_at") continue;
-			if (collectionNode is not JsonObject collection) continue;
-			foreach (var (uid, pathNode) in collection.ToList()) {
-				var virtualPath = pathNode?.GetValue<string>();
-				if (virtualPath is null) continue;
+		foreach (var row in AssetStore.ListAll()) {
+			var uid = row.Uid;
+			var virtualPath = row.Virtual;
+			if (!AssetStore.IsTrackedScheme(row.Db)) continue;
 
-				var realPath = ProjectContext.Resolve(virtualPath);
-				if (File.Exists(realPath)) continue;
+			var realPath = ProjectContext.Resolve(virtualPath);
+			if (File.Exists(realPath)) continue;
 
-				if (current.TryGetValue(uid, out var moved) && moved != virtualPath &&
-				    File.Exists(ProjectContext.Resolve(moved))) {
-					log($"Moved file: {virtualPath} -> {moved}");
-					changed = true; // rebuild rewrites the database
-					continue;
-				}
+			if (current.TryGetValue(uid, out var moved) && moved != virtualPath &&
+			    File.Exists(ProjectContext.Resolve(moved))) {
+				log($"Moved file: {virtualPath} -> {moved}");
+				changed = true; // rebuild rewrites the database
+				continue;
+			}
 
-				log($"Missing file: {virtualPath}");
+			log($"Missing file: {virtualPath}");
 
-				if (discardAll) {
+			if (discardAll) {
+				TryDelete(realPath + ".meta");
+				changed = true;
+				log($"Discarded {virtualPath}");
+				continue;
+			}
+
+			var result = await ShowRelocateModal(
+				"Missing file",
+				$"File {virtualPath} could not be found, do you wish to relocate?",
+				"assets://",
+				Path.GetExtension(realPath));
+
+			switch (result.Decision) {
+				case RelocateDecision.Relocate:
+					if (RelocateMeta(realPath, result.PickedPath!, uid, row.Type, log))
+						changed = true;
+					break;
+				case RelocateDecision.Discard:
+					if (result.AppliedToAll) discardAll = true;
 					TryDelete(realPath + ".meta");
 					changed = true;
 					log($"Discarded {virtualPath}");
-					continue;
-				}
-
-				var result = await ShowRelocateModal(
-					"Missing file",
-					$"File {virtualPath} could not be found, do you wish to relocate?",
-					"assets://",
-					Path.GetExtension(realPath));
-
-				switch (result.Decision) {
-					case RelocateDecision.Relocate:
-						if (RelocateMeta(realPath, result.PickedPath!, uid, type, log))
-							changed = true;
-						break;
-					case RelocateDecision.Discard:
-						if (result.AppliedToAll) discardAll = true;
-						TryDelete(realPath + ".meta");
-						changed = true;
-						log($"Discarded {virtualPath}");
-						break;
-					case RelocateDecision.Skip:
-						log($"Skipped {virtualPath}");
-						break;
-				}
+					break;
+				case RelocateDecision.Skip:
+					log($"Skipped {virtualPath}");
+					break;
 			}
 		}
 
@@ -317,13 +206,12 @@ public static class AssetDatabase {
 	}
 
 	public static async Task RelocateMissingArtwork(Action<string> log) {
-		var db = LoadArtworkDatabase();
 		var changed = false;
 		var discardAll = false;
 
-		foreach (var (sourceVirtual, node) in db.ToList()) {
-			if (sourceVirtual is "version" or "type") continue;
-
+		// artwork without a hash counts as unchanged
+		foreach (var artwork in AssetStore.AllArtwork().Where(a => a.Hash is not null)) {
+			var sourceVirtual = artwork.Uri;
 			var realPath = ProjectContext.Resolve(sourceVirtual);
 			if (File.Exists(realPath)) continue;
 
@@ -331,7 +219,7 @@ public static class AssetDatabase {
 
 			// See RelocateMissingAssets()
 			if (discardAll) {
-				db.Remove(sourceVirtual);
+				AssetStore.DeleteArtwork(sourceVirtual);
 				changed = true;
 				log($"Removed link {sourceVirtual}");
 				continue;
@@ -352,16 +240,15 @@ public static class AssetDatabase {
 					}
 
 					// repoint every asset generated from this artwork at the new source, then move the artwork
-					// database entry (outputs + hash) onto the new key
+					// onto the new uri
 					RepointArtworkSource(sourceVirtual, newVirtual, log);
-					db.Remove(sourceVirtual); // detaches the node so it can be re-keyed
-					db[newVirtual] = node;
+					AssetStore.RenameArtwork(sourceVirtual, newVirtual);
 					changed = true;
 					log($"Relocated artwork {sourceVirtual} -> {newVirtual}");
 					break;
 				case RelocateDecision.Discard:
 					if (result.AppliedToAll) discardAll = true;
-					db.Remove(sourceVirtual);
+					AssetStore.DeleteArtwork(sourceVirtual);
 					changed = true;
 					log($"Removed link {sourceVirtual}");
 					break;
@@ -371,22 +258,19 @@ public static class AssetDatabase {
 			}
 		}
 
-		if (changed) SaveArtworkDatabase(db);
+		if (changed) RebuildAssetDatabase();
 	}
 
 	public static async Task CheckArtworkChanges(Action<string> log) {
-		var db = LoadArtworkDatabase();
 		var reimported = false;
 
-		foreach (var (sourceVirtual, node) in db.ToList()) {
-			if (sourceVirtual is "version" or "type") continue;
-			if (node is not JsonObject entry) continue;
-
+		foreach (var artwork in AssetStore.AllArtwork().Where(a => a.Hash is not null)) {
+			var sourceVirtual = artwork.Uri;
 			var realPath = ProjectContext.Resolve(sourceVirtual);
 			if (!File.Exists(realPath)) continue; // missing files are handled by RelocateMissingArtwork
 
 			var hash = ComputeHash(realPath);
-			if (entry["last_hash"]?.GetValue<string>() == hash) continue;
+			if (artwork.Hash == hash) continue;
 
 			log($"Artwork changed: {sourceVirtual}");
 			var reimport = await ShowChoice(new ModalConfig(
@@ -413,10 +297,7 @@ public static class AssetDatabase {
 	public static async Task Reimport(
 		string sourceVirtualPath, Action<string> log,
 		Action<double>? progress = null) {
-		var db = LoadArtworkDatabase();
-		var previous = db[sourceVirtualPath] is JsonObject entry
-			? ReadOutputs(entry)
-			: OutputsFromMeta(sourceVirtualPath);
+		var previous = GetArtworkOutputs(sourceVirtualPath);
 		if (previous.Count == 0) {
 			log($"No import record for {sourceVirtualPath}");
 			return;
@@ -489,39 +370,19 @@ public static class AssetDatabase {
 	}
 
 	private static Dictionary<string, string> ScanCurrentAssets() {
-		var scanned = new JsonObject();
-		foreach (var db in ProjectContext.Databases)
-			ScanDirectory(Path.Combine(ProjectContext.ProjectPath, db), scanned);
-		ScanDirectory(ProjectContext.CorePath, scanned);
-
 		var current = new Dictionary<string, string>();
-		foreach (var (_, collectionNode) in scanned)
-			if (collectionNode is JsonObject collection)
-				foreach (var (uid, pathNode) in collection)
-					if (pathNode?.GetValue<string>() is { } path)
-						current[uid] = path;
+		var roots = ProjectContext.DatabaseRoots.Append(ProjectContext.CorePath);
+		foreach (var root in roots) {
+			if (!Directory.Exists(root)) continue;
+			foreach (var metaPath in MetaFile.FindAll(root)) {
+				var header = MetaFile.ReadHeader(metaPath);
+				if (header is null) continue;
+				var virtualPath = ProjectContext.ToVirtual(metaPath[..^5]); // strip ".meta"
+				if (virtualPath is not null) current[header.Uid] = virtualPath;
+			}
+		}
 
 		return current;
-	}
-
-	// collections are created on demand
-	private static void ScanDirectory(string directory, JsonObject db) {
-		if (!Directory.Exists(directory)) return;
-		foreach (var metaPath in MetaFile.FindAll(directory)) {
-			var header = MetaFile.ReadHeader(metaPath);
-			if (header is null) continue;
-
-			var assetRealPath = metaPath[..^5]; // strip ".meta"
-			var virtualPath = ProjectContext.ToVirtual(assetRealPath);
-			if (virtualPath is null) continue;
-
-			if (db[header.Type] is not JsonObject collection) {
-				collection = new JsonObject();
-				db[header.Type] = collection;
-			}
-
-			collection[header.Uid] = virtualPath;
-		}
 	}
 
 	// finds the directory + import settings for a set of output UIDs by scanning their .meta sidecars
@@ -596,67 +457,6 @@ public static class AssetDatabase {
 		return settings;
 	}
 
-	private static JsonObject? LoadAssetDatabase() {
-		// Merge per-database manifests (<db>.json + core.json) into a single JsonObject
-		JsonObject? merged = null;
-
-		var sources = ProjectContext.Databases
-			.Select(db => $"cache://{db}.json")
-			.Append("cache://core.json");
-
-		foreach (var virtualPath in sources) {
-			var path = ProjectContext.Resolve(virtualPath);
-			if (!File.Exists(path)) continue;
-			JsonObject? obj;
-			try {
-				obj = JsonNode.Parse(File.ReadAllText(path)) as JsonObject;
-			} catch {
-				continue;
-			}
-
-			if (obj is null) continue;
-
-			if (merged is null) merged = new JsonObject { ["version"] = 2 };
-
-			// Union the per-type collections (skip metadata keys)
-			foreach (var (type, collectionNode) in obj) {
-				if (type is "version" or "generated_at") continue;
-				if (collectionNode is not JsonObject collection) continue;
-
-				if (merged[type] is not JsonObject target) {
-					target = new JsonObject();
-					merged[type] = target;
-				}
-
-				foreach (var (uid, value) in collection)
-					target[uid] = value?.GetValue<string>() is { } s ? JsonValue.Create(s) : null;
-			}
-		}
-
-		return merged;
-	}
-
-	private static JsonObject LoadArtworkDatabase() {
-		var path = ProjectContext.Resolve("cache://artwork_database.json");
-		if (!File.Exists(path))
-			return new JsonObject {
-				["version"] = 1,
-				["type"] = "artwork_database"
-			};
-		try {
-			return JsonNode.Parse(File.ReadAllText(path)) as JsonObject
-				?? new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
-		} catch {
-			return new JsonObject { ["version"] = 1, ["type"] = "artwork_database" };
-		}
-	}
-
-	private static void SaveArtworkDatabase(JsonObject db) {
-		var path = ProjectContext.Resolve("cache://artwork_database.json");
-		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-		File.WriteAllText(path, db.ToJsonString(s_prettyJson));
-	}
-
 	public static void TryDelete(string path) {
 		try {
 			if (!File.Exists(path)) return;
@@ -680,27 +480,7 @@ public static class AssetDatabase {
 	}
 
 	public static void RemoveArtworkOutputs(IEnumerable<string> uids) {
-		var targets = new HashSet<string>(uids, StringComparer.Ordinal);
-		if (targets.Count == 0) return;
-
-		var db = LoadArtworkDatabase();
-		var changed = false;
-		foreach (var key in db.Select(kv => kv.Key).ToList()) {
-			if (key is "version" or "type") continue;
-			if (db[key] is not JsonObject entry) continue;
-			if (entry["outputs"] is not JsonArray outputs) continue;
-			for (var i = outputs.Count - 1; i >= 0; i--) {
-				var output = outputs[i] is JsonObject record ? record["uid"]?.GetValue<string>() : outputs[i]?.GetValue<string>();
-				if (output is null || !targets.Contains(output)) continue;
-				outputs.RemoveAt(i);
-				changed = true;
-			}
-
-			if (outputs.Count == 0)
-				db.Remove(key);
-		}
-
-		if (changed) SaveArtworkDatabase(db);
+		AssetStore.UnlinkArtwork(uids);
 	}
 
 	private static async Task<RelocateResult> ShowRelocateModal(
