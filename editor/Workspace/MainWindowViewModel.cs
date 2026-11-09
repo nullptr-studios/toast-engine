@@ -1265,7 +1265,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			LoaderTask.Run(
 				$"cmake configure ({gameConfig})",
 				"cmake",
-				$"lib/ -B {cmakeCache} {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE={gameConfig}"
+				$"lib/ -B {cmakeCache} {cmakeGenerator} -DTOAST_PATH=\"{toastPath}\" -DCMAKE_BUILD_TYPE={gameConfig}"
 			),
 			// Build Game DLL
 			LoaderTask.Run(
