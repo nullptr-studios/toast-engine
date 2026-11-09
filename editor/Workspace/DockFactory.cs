@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm;
@@ -118,7 +120,21 @@ public class DockFactory : Factory {
 
 		m_rootDock = root;
 		m_documentDock = documentDock;
+		documentDock.PropertyChanged += OnDocumentDockChanged;
 		return root;
+	}
+
+	private void OnDocumentDockChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName != nameof(IDock.ActiveDockable) || !WorkspaceViewModel.AnyPlayActive) return;
+		if (m_documentDock?.ActiveDockable is not WorkspaceViewModel { IsPlayModeActive: false }) return;
+
+		var playing = m_documentDock.VisibleDockables?.OfType<WorkspaceViewModel>().FirstOrDefault(w => w.IsPlayModeActive);
+		if (playing is null) return;
+
+		Dispatcher.UIThread.Post(() => {
+			if (playing.IsPlayModeActive && m_documentDock?.VisibleDockables?.Contains(playing) == true)
+				SetActiveDockable(playing);
+		});
 	}
 
 	public override void InitLayout(IDockable layout) {

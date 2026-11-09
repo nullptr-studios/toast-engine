@@ -440,6 +440,8 @@
 									<Style Selector="DocumentTabStripItem">
 										<Setter Property="IsActive"
 										        Value="{Binding $parent[DocumentTabStrip].IsActive}" />
+										<Setter Property="IsEnabled"
+										        Value="{ReflectionBinding CanActivateTab, FallbackValue=True}" />
 									</Style>
 								</DocumentTabStrip.Styles>
 							</DocumentTabStrip>

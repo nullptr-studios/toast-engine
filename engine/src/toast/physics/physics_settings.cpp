@@ -493,6 +493,15 @@ void registerPhysicsSettings() {
 	     .max = 40.0f,
 	     .step = 0.5f},
 	    &Tunables::debris_max_speed);
+	flt("physics.debris.max_spin",
+	    20.0,
+	    {.label = "Max spin",
+	     .category = "Debris",
+	     .description = "Fastest a piece of debris can spin, in rad/s",
+	     .min = 1.0f,
+	     .max = 60.0f,
+	     .step = 1.0f},
+	    &Tunables::debris_max_spin);
 	flt("physics.debris.lifetime",
 	    12.0,
 	    {.label = "Lifetime", .category = "Debris", .min = 0.5, .max = 600.0, .step = 0.5},

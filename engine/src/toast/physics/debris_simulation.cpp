@@ -19,6 +19,8 @@ constexpr uint32_t k_debris_reset_entry = 0;
 constexpr uint32_t k_debris_integrate_entry = 1;
 constexpr uint32_t k_debris_spawn_entry = 2;
 constexpr uint32_t k_debris_retire_entry = 3;
+constexpr uint32_t k_debris_grid_clear_entry = 4;
+constexpr uint32_t k_debris_grid_build_entry = 5;
 constexpr float k_debris_min_lifetime = 0.5f;
 constexpr double k_debris_min_extrapolation = -0.1;
 constexpr double k_debris_max_extrapolation = 0.25;
@@ -33,7 +35,7 @@ auto debrisGroups(uint32_t count) -> uint32_t {
 DebrisSimulation::DebrisSimulation(uint32_t max_particles)
     : AsyncComputeTask({
         .shader_uri = "core://shaders/debris.slang",
-        .entries = {"resetMain", "integrateMain", "spawnMain", "retireMain"},
+        .entries = {"resetMain", "integrateMain", "spawnMain", "retireMain", "gridClearMain", "gridBuildMain"},
         .debug_name = "Debris"
 }),
       m_capacity(std::max(max_particles, 1u) + (std::max(max_particles, 1u) / k_cap_headroom_divisor)),
@@ -52,6 +54,7 @@ DebrisSimulation::DebrisSimulation(uint32_t max_particles)
 	m_spawns = addHostBuffer(sizeof(GpuSpawn) * k_max_spawns_per_step);
 	m_volumes = addHostBuffer(sizeof(GpuVolume) * k_max_volumes);
 	m_retires = addHostBuffer(sizeof(uint32_t) * k_max_spawns_per_step);
+	m_grid = addPersistentBuffer(sizeof(uint32_t) * k_grid_cells * k_grid_stride);
 	setAcquireUsage(m_draw_args, renderer::sync::Usage::indirect_read);
 
 	bind(0, m_particles, Copy::previous);
@@ -62,6 +65,7 @@ DebrisSimulation::DebrisSimulation(uint32_t max_particles)
 	bind(5, m_spawns);
 	bind(6, m_volumes);
 	bind(7, m_retires);
+	bind(8, m_grid);
 
 	const auto section = [this](renderer::VoxelGpuStorage::Section which) {
 		return [this, which]() -> vk::Buffer {
@@ -149,6 +153,8 @@ void DebrisSimulation::step(uint32_t steps, double fixed_delta, std::shared_ptr<
 	  .substeps = substeps,
 	  .clear = m_clear_pending ? 1u : 0u,
 	  .fade_out = k_fade_out_seconds,
+	  .max_speed = k_max_debris_speed,
+	  .max_spin = settings.debris_max_spin,
 	};
 
 	m_world = world;
@@ -177,6 +183,8 @@ void DebrisSimulation::step(uint32_t steps, double fixed_delta, std::shared_ptr<
 		    if (params.retire_count > 0) {
 			    ctx.dispatch(debrisGroups(params.retire_count), params, k_debris_retire_entry);
 		    }
+		    ctx.dispatch(debrisGroups(k_grid_cells), params, k_debris_grid_clear_entry);
+		    ctx.dispatch(debrisGroups(m_capacity), params, k_debris_grid_build_entry);
 		    ctx.dispatch(debrisGroups(m_capacity), params, k_debris_integrate_entry);
 		    if (params.spawn_count > 0) {
 			    ctx.dispatch(debrisGroups(params.spawn_count), params, k_debris_spawn_entry);

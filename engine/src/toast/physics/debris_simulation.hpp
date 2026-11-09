@@ -89,6 +89,8 @@ public:
 	static constexpr float k_fade_out_seconds = 0.6f;
 	/// Slots past the cap so pieces shrinking away still have room
 	static constexpr uint32_t k_cap_headroom_divisor = 4;
+	static constexpr uint32_t k_grid_cells = 1u << 16u;
+	static constexpr uint32_t k_grid_stride = 8;
 
 	explicit DebrisSimulation(uint32_t max_particles);
 	~DebrisSimulation() override;
@@ -149,10 +151,12 @@ private:
 		uint32_t clear = 0;
 		uint32_t retire_count = 0;
 		float fade_out = 0.0f;
-		uint32_t pad = 0;
+		float max_speed = 0.0f;
+		float max_spin = 0.0f;
+		std::array<uint32_t, 3> pad {};
 	};
 
-	static_assert(sizeof(Params) == 64, "Params is mirrored by debris.slang");
+	static_assert(sizeof(Params) == 80, "Params is mirrored by debris.slang");
 
 	static constexpr uint64_t k_step_history = 16;
 
@@ -182,6 +186,7 @@ private:
 	BufferId m_spawns = 0;
 	BufferId m_volumes = 0;
 	BufferId m_retires = 0;
+	BufferId m_grid = 0;
 
 	std::deque<GpuSpawn> m_pending;
 	bool m_clear_pending = false;
