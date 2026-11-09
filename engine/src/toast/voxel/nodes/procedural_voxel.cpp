@@ -538,7 +538,7 @@ void ProceduralVoxel::rebuild() {
 	refreshVolume();
 }
 
-void ProceduralVoxel::collect(Node& node, const glm::mat4& to_root, std::vector<Collected>& out) {
+void ProceduralVoxel::collect(Node& node, const glm::mat4& to_root, std::vector<Collected>& out, uint64_t group_key) {
 	for (const Box<Node>& child_box : node.children()) {
 		if (!child_box.exists() || !child_box->enabled()) {
 			continue;
@@ -551,11 +551,12 @@ void ProceduralVoxel::collect(Node& node, const glm::mat4& to_root, std::vector<
 			child_to_root = to_root * spatial->getTransform();
 		}
 		if (auto* piece = reflect_cast<VoxelPiece>(&child)) {
-			out.push_back({piece, child_to_root});
+			out.push_back({piece, child_to_root, group_key});
 			// A piece can hold pieces too, they land right after it
-			collect(child, child_to_root, out);
-		} else if (reflect_cast<VoxelGroup>(&child) != nullptr) {
-			collect(child, child_to_root, out);
+			collect(child, child_to_root, out, group_key);
+		} else if (auto* group = reflect_cast<VoxelGroup>(&child)) {
+			uint64_t inner = group_key != 0 ? group_key : (group->mergesVolumes() ? partKeyOf(*group) : 0);
+			collect(child, child_to_root, out, inner);
 		}
 	}
 }
@@ -597,6 +598,7 @@ auto ProceduralVoxel::keyOf(const std::vector<Collected>& pieces) -> uint64_t {
 		toast::hashCombine(key, entry.piece->uid().data());
 		toast::hashCombine(key, reinterpret_cast<uintptr_t>(entry.piece->info()));
 		toast::hashCombine(key, entry.piece->inputRevision());
+		toast::hashCombine(key, entry.group_key);
 		hashFloats(key, &entry.to_root[0][0], 16);
 	}
 
@@ -676,7 +678,7 @@ auto ProceduralVoxel::land(const std::vector<Collected>& pieces, bool wait) -> s
 		  .kind = entry.piece->kind(),
 		  .mode = entry.piece->writeMode(),
 		  .match_id = entry.piece->matchId(),
-		  .key = partKeyOf(*entry.piece),
+		  .key = entry.group_key != 0 ? entry.group_key : partKeyOf(*entry.piece),
 		});
 	}
 	return landings;
@@ -881,6 +883,9 @@ auto ProceduralVoxel::compose(const ComposeInput& input) -> std::shared_ptr<Comp
 	voxel::Volume owner(voxel::proceduralBrickPool(), target.brickDims());
 	std::vector<uint64_t> owner_keys;
 	const auto claim = [&](uint64_t key) -> uint8_t {
+		if (const auto found = std::ranges::find(owner_keys, key); found != owner_keys.end()) {
+			return static_cast<uint8_t>((found - owner_keys.begin()) + 1);
+		}
 		if (owner_keys.size() >= 255) {
 			out->too_many_parts = true;
 			return 255;
@@ -1178,7 +1183,14 @@ auto ProceduralVoxel::bakeParts() -> std::vector<BakedPart> {
 	std::vector<BakedPart> out;
 	out.reserve(output->parts.size());
 	for (ComposeOutput::Part& part : output->parts) {
-		out.push_back({.key = part.key, .origin = part.origin, .volume = std::move(part.volume)});
+		uint64_t lead = 0;
+		for (const Landing& landing : input->landings) {
+			if (landing.key == part.key && landing.kind == PieceKind::fill) {
+				lead = landing.piece->uid().data();
+				break;
+			}
+		}
+		out.push_back({.key = part.key, .lead = lead, .origin = part.origin, .volume = std::move(part.volume)});
 	}
 	return out;
 }

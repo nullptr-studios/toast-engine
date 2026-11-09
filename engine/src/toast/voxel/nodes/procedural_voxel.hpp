@@ -102,13 +102,14 @@ public:
 	};
 
 	[[nodiscard]]
-	static auto partKeyOf(const VoxelPiece& piece) noexcept -> uint64_t {
-		const uint64_t uid = piece.uid().data();
-		return uid != 0 ? uid : (uint64_t {1} << 63) | piece.rid();
+	static auto partKeyOf(const Node& node) noexcept -> uint64_t {
+		const uint64_t uid = node.uid().data();
+		return uid != 0 ? uid : (uint64_t {1} << 63) | node.rid();
 	}
 
 	struct BakedPart {
 		uint64_t key = 0;
+		uint64_t lead = 0;
 		glm::ivec3 origin {0};
 		std::unique_ptr<voxel::Volume> volume;
 	};
@@ -147,6 +148,7 @@ private:
 	struct Collected {
 		VoxelPiece* piece = nullptr;
 		glm::mat4 to_root {1.0f};
+		uint64_t group_key = 0;
 	};
 
 	/** Everything needed to write one piece */
@@ -164,7 +166,7 @@ private:
 	struct ComposeInput;
 	struct ComposeOutput;
 
-	void collect(Node& node, const glm::mat4& to_root, std::vector<Collected>& out);
+	void collect(Node& node, const glm::mat4& to_root, std::vector<Collected>& out, uint64_t group_key = 0);
 
 	struct BucketFill {
 		VoxelBucket* bucket = nullptr;
