@@ -261,7 +261,8 @@ Contact contactAt(float3 world, Candidates candidates) {
             continue;
         }
 
-        // Leaves through the nearest faceuint axis = 2u;
+        // Leaves through the nearest face
+        uint axis = 2u;
         float side = 1.0;
         float depthVoxels = 1e9;
         for (uint a = 0u; a < 3u; ++a) {
