@@ -35,10 +35,12 @@ public partial class VoxelEditorView : UserControl {
 		FrontViewHost.IsVisible = fourUp;
 		SideViewHost.IsVisible = fourUp;
 		TopViewHost.IsVisible = fourUp;
-		Grid.SetRow(ViewportHost, fourUp ? 1 : 0);
-		Grid.SetColumn(ViewportHost, fourUp ? 1 : 0);
-		Grid.SetRowSpan(ViewportHost, fourUp ? 1 : 2);
-		Grid.SetColumnSpan(ViewportHost, fourUp ? 1 : 2);
+		ViewsColumnSplitter.IsVisible = fourUp;
+		ViewsRowSplitter.IsVisible = fourUp;
+		Grid.SetRow(ViewportHost, fourUp ? 2 : 0);
+		Grid.SetColumn(ViewportHost, fourUp ? 2 : 0);
+		Grid.SetRowSpan(ViewportHost, fourUp ? 1 : 3);
+		Grid.SetColumnSpan(ViewportHost, fourUp ? 1 : 3);
 	}
 
 	private static bool IsTyping(KeyEventArgs e) {
@@ -72,6 +74,7 @@ public partial class VoxelEditorView : UserControl {
 			case Key.G when mods == KeyModifiers.Shift: vm.ShowVoxelGrid = !vm.ShowVoxelGrid; break;
 			case Key.G when mods == KeyModifiers.Alt: vm.ShowVoxelEdges = !vm.ShowVoxelEdges; break;
 			case Key.Space when mods == KeyModifiers.None: vm.ShowEdges = !vm.ShowEdges; break;
+			case Key.J when mods == KeyModifiers.None: vm.SnapToUnit = !vm.SnapToUnit; break;
 			case Key.Z when mods == KeyModifiers.None: vm.FourUp = !vm.FourUp; break;
 			case Key.F when mods == KeyModifiers.None: vm.ShowOthers = !vm.ShowOthers; break;
 			case Key.X when mods == KeyModifiers.None: vm.RotateSelection(HoveredAxis(), 1); break;

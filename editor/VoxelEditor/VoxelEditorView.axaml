@@ -127,7 +127,7 @@
 				</ToggleButton>
 				<ToggleButton Classes="snapTool"
 				              CornerRadius="0,6,6,0"
-				              ToolTip.Tip="Snap to unit"
+				              ToolTip.Tip="Snap to unit (J)"
 				              IsChecked="{Binding SnapToUnit}">
 					<LucideIcon Kind="Magnet" Size="18" StrokeWidth="2.5" />
 				</ToggleButton>
@@ -152,6 +152,7 @@
 							<MenuItem Header="Palette ID" Command="{Binding SetViewModeCommand}" CommandParameter="PaletteId" />
 							<MenuItem Header="Physics material ID" Command="{Binding SetViewModeCommand}" CommandParameter="PhysicsMaterial" />
 							<MenuItem Header="Voxel DDA steps" Command="{Binding SetViewModeCommand}" CommandParameter="DdaSteps" />
+								<MenuItem Header="Voxel volumes" Command="{Binding SetViewModeCommand}" CommandParameter="Volumes" />
 						</MenuFlyout>
 					</Button.Flyout>
 				</Button>
@@ -271,24 +272,34 @@
 		      ColumnDefinitions="*,4,340">
 			<Grid x:Name="Views"
 			      Grid.Column="0"
-			      RowDefinitions="*,*"
-			      ColumnDefinitions="*,*"
-			      RowSpacing="4"
-			      ColumnSpacing="4">
+			      RowDefinitions="*,4,*"
+			      ColumnDefinitions="*,4,*">
 				<Border x:Name="FrontViewHost" Grid.Row="0" Grid.Column="0" CornerRadius="6" ClipToBounds="True">
 					<ve:VoxelOrthoView x:Name="FrontView" Projection="Front" />
 				</Border>
-				<Border x:Name="SideViewHost" Grid.Row="0" Grid.Column="1" CornerRadius="6" ClipToBounds="True">
+				<Border x:Name="SideViewHost" Grid.Row="0" Grid.Column="2" CornerRadius="6" ClipToBounds="True">
 					<ve:VoxelOrthoView x:Name="SideView" Projection="Side" />
 				</Border>
-				<Border x:Name="TopViewHost" Grid.Row="1" Grid.Column="0" CornerRadius="6" ClipToBounds="True">
+				<Border x:Name="TopViewHost" Grid.Row="2" Grid.Column="0" CornerRadius="6" ClipToBounds="True">
 					<ve:VoxelOrthoView x:Name="TopView" Projection="Top" />
 				</Border>
+				<GridSplitter x:Name="ViewsColumnSplitter"
+				              Grid.Row="0"
+				              Grid.Column="1"
+				              Grid.RowSpan="3"
+				              ResizeDirection="Columns"
+				              Background="Transparent" />
+				<GridSplitter x:Name="ViewsRowSplitter"
+				              Grid.Row="1"
+				              Grid.Column="0"
+				              Grid.ColumnSpan="3"
+				              ResizeDirection="Rows"
+				              Background="Transparent" />
 				<Border x:Name="ViewportHost"
 				        Grid.Row="0"
 				        Grid.Column="0"
-				        Grid.RowSpan="2"
-				        Grid.ColumnSpan="2"
+				        Grid.RowSpan="3"
+				        Grid.ColumnSpan="3"
 				        CornerRadius="6"
 				        ClipToBounds="True">
 					<ws:ViewportControl x:Name="Viewport"
