@@ -555,7 +555,14 @@ void ProceduralVoxel::collect(Node& node, const glm::mat4& to_root, std::vector<
 			// A piece can hold pieces too, they land right after it
 			collect(child, child_to_root, out, group_key);
 		} else if (auto* group = reflect_cast<VoxelGroup>(&child)) {
-			uint64_t inner = group_key != 0 ? group_key : (group->mergesVolumes() ? partKeyOf(*group) : 0);
+			uint64_t inner;
+			if (group_key != 0) {
+				inner = group_key;
+			} else if (group->mergesVolumes()) {
+				inner = partKeyOf(*group);
+			} else {
+				inner = 0;
+			}
 			collect(child, child_to_root, out, inner);
 		}
 	}
