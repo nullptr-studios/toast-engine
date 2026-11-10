@@ -15,7 +15,7 @@ using editor.Git;
 namespace editor.Workspace;
 
 public class DockFactory : Factory {
-	private const double SidePanelProportion = 0.2;
+	private const double SidePanelProportion = 0.16;
 	private IDocumentDock? m_documentDock;
 
 	private bool m_genericClosePending;
@@ -73,7 +73,7 @@ public class DockFactory : Factory {
 		m_leftToolDock = leftToolDock;
 
 		var leftDock = new ProportionalDock {
-			Proportion = 0.2,
+			Proportion = SidePanelProportion,
 			AllowedDropOperations = DockOperationMask.None,
 			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(leftToolDock)
@@ -89,7 +89,7 @@ public class DockFactory : Factory {
 		m_rightToolDock = rightToolDock;
 
 		var rightDock = new ProportionalDock {
-			Proportion = 0.22,
+			Proportion = SidePanelProportion,
 			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(rightToolDock)
 		};

@@ -22,6 +22,7 @@
 				<ResourceInclude Source="avares://editor/Resources/EnumBox.axaml" />
 				<ResourceInclude Source="avares://editor/Resources/TagBox.axaml" />
 			</ResourceDictionary.MergedDictionaries>
+			<conv:NegateThicknessConverter x:Key="NegateThicknessConverter" />
 			<conv:PathToBitmapConverter x:Key="PathToBitmapConverter" />
 			<conv:SeverityToColorConverter x:Key="SeverityToColorConverter" />
 			<conv:SeverityBarColorConverter x:Key="SeverityBarColorConverter" />
@@ -486,6 +487,7 @@
 			<Setter Property="IsVisible"
 			        Value="False" />
 		</Style>
+		<StyleInclude Source="avares://editor/Resources/CompactStyles.axaml" />
 		<StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 	</Application.Styles>
 </Application>

@@ -23,9 +23,6 @@ namespace editor.Components.Elements;
 public abstract class ColorBoxBase : TemplatedControl {
 	private const double DragThreshold = 3.0;
 
-	private const double RootPadding = 16;
-	private const double SwatchSize = 20;
-	private const double Spacing = 8;
 	private const double BoxBreath = 6;
 
 	// Picker
@@ -279,7 +276,7 @@ public abstract class ColorBoxBase : TemplatedControl {
 			decimals = maxDecimals;
 			visible = true;
 		} else {
-			var valueWidth = availableWidth - RootPadding - SwatchSize - Spacing;
+			var valueWidth = availableWidth - 32 - Padding.Left - Padding.Right;
 			var floor = maxDecimals == 0 ? 0 : 1; // keep at least one decimal, else hide
 			decimals = -1;
 			for (var d = maxDecimals; d >= floor; d--)
@@ -508,7 +505,7 @@ public abstract class ColorBoxBase : TemplatedControl {
 		var box = new TextBox {
 			MinWidth = 96,
 			FontFamily = FontFamily ?? Font,
-			FontSize = FontSize
+			FontSize = 15
 		};
 		m_editBox = box;
 		box.KeyDown += (_, e) => {

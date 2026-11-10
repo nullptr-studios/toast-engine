@@ -121,9 +121,10 @@ public sealed class VoxelPalettePicker : UserControl {
 			Background = CheckerBrush.Instance, ClipToBounds = true, Child = m_swatch
 		};
 		var button = new Button {
-			Classes = { "chev" },
+			Classes = { "chev", "compact-control" },
+			Height = 26,
 			CornerRadius = new CornerRadius(6),
-			Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6, Children = { checker, m_label } },
+			Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { checker, m_label } },
 			Flyout = m_flyout
 		};
 		ToolTip.SetTip(button, "Palette ID new volumes, Paint and Bucket use, it also recolours the selected volume");

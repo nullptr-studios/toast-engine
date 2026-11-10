@@ -37,10 +37,7 @@ public partial class VoxelEditorView : UserControl {
 		TopViewHost.IsVisible = fourUp;
 		ViewsColumnSplitter.IsVisible = fourUp;
 		ViewsRowSplitter.IsVisible = fourUp;
-		Grid.SetRow(ViewportHost, fourUp ? 2 : 0);
-		Grid.SetColumn(ViewportHost, fourUp ? 2 : 0);
-		Grid.SetRowSpan(ViewportHost, fourUp ? 1 : 3);
-		Grid.SetColumnSpan(ViewportHost, fourUp ? 1 : 3);
+		Views.FourUp = fourUp;
 	}
 
 	private static bool IsTyping(KeyEventArgs e) {
