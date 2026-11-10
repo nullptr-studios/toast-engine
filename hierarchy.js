@@ -196,6 +196,7 @@ var hierarchy =
     [ "physics::DebrisVoxel", "structphysics_1_1DebrisVoxel.html", null ],
     [ "physics::Simulator::DebugDirtyBrick", "structphysics_1_1Simulator_1_1DebugDirtyBrick.html", null ],
     [ "Decorator", null, [
+      [ "editor.Components.Elements.AnimatedReveal", "classeditor_1_1Components_1_1Elements_1_1AnimatedReveal.html", null ],
       [ "editor.Components.Elements.DragVectorBoxBase", "classeditor_1_1Components_1_1Elements_1_1DragVectorBoxBase.html", [
         [ "editor.Components.Elements.DragVec2Box", "classeditor_1_1Components_1_1Elements_1_1DragVec2Box.html", null ],
         [ "editor.Components.Elements.DragVec3Box", "classeditor_1_1Components_1_1Elements_1_1DragVec3Box.html", null ],
@@ -929,6 +930,7 @@ var hierarchy =
       [ "editor.Converters.DockFocusBrushConverter", "classeditor_1_1Converters_1_1DockFocusBrushConverter.html", null ],
       [ "editor.Converters.EnabledToColorConverter", "classeditor_1_1Converters_1_1EnabledToColorConverter.html", null ],
       [ "editor.Converters.EnumEqualsConverter", "classeditor_1_1Converters_1_1EnumEqualsConverter.html", null ],
+      [ "editor.Converters.NegateThicknessConverter", "classeditor_1_1Converters_1_1NegateThicknessConverter.html", null ],
       [ "editor.Converters.PathToBitmapConverter", "classeditor_1_1Converters_1_1PathToBitmapConverter.html", null ],
       [ "editor.Converters.ScaleConverter", "classeditor_1_1Converters_1_1ScaleConverter.html", null ],
       [ "editor.Converters.SeverityBarColorConverter", "classeditor_1_1Converters_1_1SeverityBarColorConverter.html", null ],
@@ -961,6 +963,7 @@ var hierarchy =
     [ "physics::JointVoxelEnd", "structphysics_1_1JointVoxelEnd.html", null ],
     [ "assets::Data::KeepAllKeysTag", "structassets_1_1Data_1_1KeepAllKeysTag.html", null ],
     [ "input::KeyCode", "structinput_1_1KeyCode.html", null ],
+    [ "editor.Workspace.LabelWidthState", "classeditor_1_1Workspace_1_1LabelWidthState.html", null ],
     [ "assets::LatticeOrientation", "structassets_1_1LatticeOrientation.html", null ],
     [ "voxel::LatticeOrientation", "structvoxel_1_1LatticeOrientation.html", null ],
     [ "assets::LatticePlacement", "structassets_1_1LatticePlacement.html", null ],
@@ -1188,8 +1191,10 @@ var hierarchy =
     [ "voxel::PaletteEntry", "structvoxel_1_1PaletteEntry.html", null ],
     [ "voxel::PaletteRemap", "structvoxel_1_1PaletteRemap.html", null ],
     [ "Panel", null, [
+      [ "editor.Components.Elements.LabelValueRow", "classeditor_1_1Components_1_1Elements_1_1LabelValueRow.html", null ],
       [ "editor.Components.Elements.SpanPanel", "classeditor_1_1Components_1_1Elements_1_1SpanPanel.html", null ],
-      [ "editor.Components.Elements.TagStrip", "classeditor_1_1Components_1_1Elements_1_1TagStrip.html", null ]
+      [ "editor.Components.Elements.TagStrip", "classeditor_1_1Components_1_1Elements_1_1TagStrip.html", null ],
+      [ "editor.VoxelEditor.VoxelViewPanel", "classeditor_1_1VoxelEditor_1_1VoxelViewPanel.html", null ]
     ] ],
     [ "signals::ParamBinding", "structsignals_1_1ParamBinding.html", null ],
     [ "toast::ParameterInfo", "structtoast_1_1ParameterInfo.html", null ],

@@ -176,6 +176,7 @@ var annotated_dup =
           [ "CurveCanvasItem", "classeditor_1_1Components_1_1CurveCanvas_1_1CurveCanvasItem.html", null ]
         ] ],
         [ "Elements", "namespaceeditor_1_1Components_1_1Elements.html", [
+          [ "AnimatedReveal", "classeditor_1_1Components_1_1Elements_1_1AnimatedReveal.html", null ],
           [ "ArrayBox", "classeditor_1_1Components_1_1Elements_1_1ArrayBox.html", null ],
           [ "AssetBox", "classeditor_1_1Components_1_1Elements_1_1AssetBox.html", null ],
           [ "BoolBox", "classeditor_1_1Components_1_1Elements_1_1BoolBox.html", null ],
@@ -196,6 +197,7 @@ var annotated_dup =
           [ "IRowSplittable", "interfaceeditor_1_1Components_1_1Elements_1_1IRowSplittable.html", null ],
           [ "IRowVisible", "interfaceeditor_1_1Components_1_1Elements_1_1IRowVisible.html", null ],
           [ "IStructRow", "interfaceeditor_1_1Components_1_1Elements_1_1IStructRow.html", null ],
+          [ "LabelValueRow", "classeditor_1_1Components_1_1Elements_1_1LabelValueRow.html", null ],
           [ "LayerCell", "classeditor_1_1Components_1_1Elements_1_1LayerCell.html", null ],
           [ "LayerTagBox", "classeditor_1_1Components_1_1Elements_1_1LayerTagBox.html", null ],
           [ "NodeBox", "classeditor_1_1Components_1_1Elements_1_1NodeBox.html", null ],
@@ -255,7 +257,8 @@ var annotated_dup =
         [ "SnapValueConverter", "classeditor_1_1Converters_1_1SnapValueConverter.html", null ],
         [ "DockContentCornerRadiusConverter", "classeditor_1_1Converters_1_1DockContentCornerRadiusConverter.html", null ],
         [ "DockFocusBrushConverter", "classeditor_1_1Converters_1_1DockFocusBrushConverter.html", null ],
-        [ "PathToBitmapConverter", "classeditor_1_1Converters_1_1PathToBitmapConverter.html", null ]
+        [ "PathToBitmapConverter", "classeditor_1_1Converters_1_1PathToBitmapConverter.html", null ],
+        [ "NegateThicknessConverter", "classeditor_1_1Converters_1_1NegateThicknessConverter.html", null ]
       ] ],
       [ "Editors", "namespaceeditor_1_1Editors.html", [
         [ "ChannelOption", "classeditor_1_1Editors_1_1ChannelOption.html", null ],
@@ -338,7 +341,8 @@ var annotated_dup =
         [ "VoxelEditorViewModel", "classeditor_1_1VoxelEditor_1_1VoxelEditorViewModel.html", null ],
         [ "VoxelEditorWindow", "classeditor_1_1VoxelEditor_1_1VoxelEditorWindow.html", null ],
         [ "VoxelOrthoView", "classeditor_1_1VoxelEditor_1_1VoxelOrthoView.html", null ],
-        [ "VoxelPalettePicker", "classeditor_1_1VoxelEditor_1_1VoxelPalettePicker.html", null ]
+        [ "VoxelPalettePicker", "classeditor_1_1VoxelEditor_1_1VoxelPalettePicker.html", null ],
+        [ "VoxelViewPanel", "classeditor_1_1VoxelEditor_1_1VoxelViewPanel.html", null ]
       ] ],
       [ "Workspace", "namespaceeditor_1_1Workspace.html", [
         [ "AssetBrowserSettingsViewModel", "classeditor_1_1Workspace_1_1AssetBrowserSettingsViewModel.html", null ],
@@ -370,6 +374,7 @@ var annotated_dup =
         [ "InspectorView", "classeditor_1_1Workspace_1_1InspectorView.html", null ],
         [ "InspectorViewModel", "classeditor_1_1Workspace_1_1InspectorViewModel.html", null ],
         [ "IntSettingRow", "classeditor_1_1Workspace_1_1IntSettingRow.html", null ],
+        [ "LabelWidthState", "classeditor_1_1Workspace_1_1LabelWidthState.html", null ],
         [ "LayoutFile", "classeditor_1_1Workspace_1_1LayoutFile.html", null ],
         [ "LayoutNode", "classeditor_1_1Workspace_1_1LayoutNode.html", null ],
         [ "LayoutWindowNode", "classeditor_1_1Workspace_1_1LayoutWindowNode.html", null ],

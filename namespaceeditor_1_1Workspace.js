@@ -29,6 +29,7 @@ var namespaceeditor_1_1Workspace =
     [ "InspectorView", "classeditor_1_1Workspace_1_1InspectorView.html", null ],
     [ "InspectorViewModel", "classeditor_1_1Workspace_1_1InspectorViewModel.html", null ],
     [ "IntSettingRow", "classeditor_1_1Workspace_1_1IntSettingRow.html", null ],
+    [ "LabelWidthState", "classeditor_1_1Workspace_1_1LabelWidthState.html", null ],
     [ "LayoutFile", "classeditor_1_1Workspace_1_1LayoutFile.html", null ],
     [ "LayoutNode", "classeditor_1_1Workspace_1_1LayoutNode.html", null ],
     [ "LayoutWindowNode", "classeditor_1_1Workspace_1_1LayoutWindowNode.html", null ],

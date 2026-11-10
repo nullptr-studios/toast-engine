@@ -1,5 +1,15 @@
 var NAVTREEINDEX5 =
 {
+"classrenderer_1_1VoxelPass.html#a14be3f339a0f0f4733d5e9b476e72a75":[14,0,9,103,24],
+"classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4":[14,0,9,103,5],
+"classrenderer_1_1VoxelPass.html#a236cbd3049cf0bbc93e8e107adde3b86":[14,0,9,103,1],
+"classrenderer_1_1VoxelPass.html#a24b6924f3852da24b6bc15238975afd9":[14,0,9,103,10],
+"classrenderer_1_1VoxelPass.html#a24f2c9ba12ba266c1c25bcb5d6fd948a":[14,0,9,103,15],
+"classrenderer_1_1VoxelPass.html#a35d422b6a41d6324845d4c0f88c13159":[14,0,9,103,18],
+"classrenderer_1_1VoxelPass.html#a4ac25edb357683e5154b03bb0e6e1f1f":[14,0,9,103,8],
+"classrenderer_1_1VoxelPass.html#a56b5af37ed73efff85d04b6ce443494b":[14,0,9,103,23],
+"classrenderer_1_1VoxelPass.html#a6498df8bfa9f8fbb4aa5873184708fe4":[14,0,9,103,9],
+"classrenderer_1_1VoxelPass.html#a65ccc7ad91b774f83f5fe7788f9610fa":[14,0,9,103,12],
 "classrenderer_1_1VoxelPass.html#a707ca07b3d884e022989069429c6cd16":[14,0,9,103,19],
 "classrenderer_1_1VoxelPass.html#a86cfe941b78bf7fabbd28ea1e822c90f":[14,0,9,103,7],
 "classrenderer_1_1VoxelPass.html#a9beab196d01d75c0a41036b1c646763e":[14,0,9,103,13],
@@ -239,15 +249,5 @@ var NAVTREEINDEX5 =
 "classtoast_1_1AudioEmitter3D.html":[12,0,1,10],
 "classtoast_1_1AudioEmitter3D.html":[14,0,14,13],
 "classtoast_1_1AudioEmitter3D.html#aef07a439c273ac4a0ba88574a1b67005":[12,0,1,10,0],
-"classtoast_1_1AudioEmitter3D.html#aef07a439c273ac4a0ba88574a1b67005":[14,0,14,13,0],
-"classtoast_1_1AudioEmitterBase.html":[12,0,1,11],
-"classtoast_1_1AudioEmitterBase.html":[14,0,14,14],
-"classtoast_1_1AudioEmitterBase.html#a2a1b3c4296a9b467318627b9be2f656d":[12,0,1,11,0],
-"classtoast_1_1AudioEmitterBase.html#a2a1b3c4296a9b467318627b9be2f656d":[14,0,14,14,0],
-"classtoast_1_1AudioListener.html":[12,0,1,12],
-"classtoast_1_1AudioListener.html":[14,0,14,15],
-"classtoast_1_1AudioSphereEmitter.html":[12,0,1,13],
-"classtoast_1_1AudioSphereEmitter.html":[14,0,14,16],
-"classtoast_1_1AudioSphereEmitter.html#a176ebad647dae557b7935fab7c2e258b":[12,0,1,13,0],
-"classtoast_1_1AudioSphereEmitter.html#a176ebad647dae557b7935fab7c2e258b":[14,0,14,16,0]
+"classtoast_1_1AudioEmitter3D.html#aef07a439c273ac4a0ba88574a1b67005":[14,0,14,13,0]
 };

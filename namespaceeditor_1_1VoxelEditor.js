@@ -5,5 +5,6 @@ var namespaceeditor_1_1VoxelEditor =
     [ "VoxelEditorViewModel", "classeditor_1_1VoxelEditor_1_1VoxelEditorViewModel.html", null ],
     [ "VoxelEditorWindow", "classeditor_1_1VoxelEditor_1_1VoxelEditorWindow.html", null ],
     [ "VoxelOrthoView", "classeditor_1_1VoxelEditor_1_1VoxelOrthoView.html", null ],
-    [ "VoxelPalettePicker", "classeditor_1_1VoxelEditor_1_1VoxelPalettePicker.html", null ]
+    [ "VoxelPalettePicker", "classeditor_1_1VoxelEditor_1_1VoxelPalettePicker.html", null ],
+    [ "VoxelViewPanel", "classeditor_1_1VoxelEditor_1_1VoxelViewPanel.html", null ]
 ];

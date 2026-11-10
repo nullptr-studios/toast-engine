@@ -141,6 +141,12 @@ Collaboration diagram for editor.Workspace.HierarchyConnectorLayer:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a98963c1e0b57af58d2be3f70c3d8a58f" id="r_a98963c1e0b57af58d2be3f70c3d8a58f"><td class="memItemLeft"><a id="a98963c1e0b57af58d2be3f70c3d8a58f" name="a98963c1e0b57af58d2be3f70c3d8a58f"></a>
+void&#160;</td><td class="memItemRight"><b>RefreshGeometry</b> ()</td></tr>
+<tr class="memitem:adfaa6dad667c5bdeb6b04a244ab68db3" id="r_adfaa6dad667c5bdeb6b04a244ab68db3"><td class="memItemLeft"><a id="adfaa6dad667c5bdeb6b04a244ab68db3" name="adfaa6dad667c5bdeb6b04a244ab68db3"></a>
+double&#160;</td><td class="memItemRight"><b>GetRowTop</b> (int index)</td></tr>
+<tr class="memitem:a18b626838961cc199fb479ffd1318ffb" id="r_a18b626838961cc199fb479ffd1318ffb"><td class="memItemLeft"><a id="a18b626838961cc199fb479ffd1318ffb" name="a18b626838961cc199fb479ffd1318ffb"></a>
+int&#160;</td><td class="memItemRight"><b>GetRowAt</b> (double y)</td></tr>
 <tr class="memitem:a63d9441f2ab0e4fdc5a252a540de25b4" id="r_a63d9441f2ab0e4fdc5a252a540de25b4"><td class="memItemLeft"><a id="a63d9441f2ab0e4fdc5a252a540de25b4" name="a63d9441f2ab0e4fdc5a252a540de25b4"></a>
 void&#160;</td><td class="memItemRight"><b>SetDropLine</b> (int index, int depth)</td></tr>
 <tr class="memitem:a6890b6b7f1a09454301b6954d767509f" id="r_a6890b6b7f1a09454301b6954d767509f"><td class="memItemLeft"><a id="a6890b6b7f1a09454301b6954d767509f" name="a6890b6b7f1a09454301b6954d767509f"></a>
@@ -149,7 +155,7 @@ override void&#160;</td><td class="memItemRight"><b>Render</b> (DrawingContext c
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:aef2e15d9d1cfeef76508f45dfd9c2495" id="r_aef2e15d9d1cfeef76508f45dfd9c2495"><td class="memItemLeft"><a id="aef2e15d9d1cfeef76508f45dfd9c2495" name="aef2e15d9d1cfeef76508f45dfd9c2495"></a>
-const double&#160;</td><td class="memItemRight"><b>RowHeight</b> = 28</td></tr>
+const double&#160;</td><td class="memItemRight"><b>RowHeight</b> = 26</td></tr>
 <tr class="memitem:a099d0e1d91e019437f53dfa05fb435ed" id="r_a099d0e1d91e019437f53dfa05fb435ed"><td class="memItemLeft"><a id="a099d0e1d91e019437f53dfa05fb435ed" name="a099d0e1d91e019437f53dfa05fb435ed"></a>
 const double&#160;</td><td class="memItemRight"><b>IndentStep</b> = 20</td></tr>
 <tr class="memitem:a17b4732311ca89aacecb502fee7e0e01" id="r_a17b4732311ca89aacecb502fee7e0e01"><td class="memItemLeft"><a id="a17b4732311ca89aacecb502fee7e0e01" name="a17b4732311ca89aacecb502fee7e0e01"></a>
@@ -164,6 +170,8 @@ override Size&#160;</td><td class="memItemRight"><b>MeasureOverride</b> (Size av
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-properties" class="groupheader"><a id="properties" name="properties"></a>
 Properties</h2></td></tr>
+<tr class="memitem:ae0e658b8b9c3053f9b6f7a6bdae93fb4" id="r_ae0e658b8b9c3053f9b6f7a6bdae93fb4"><td class="memItemLeft"><a id="ae0e658b8b9c3053f9b6f7a6bdae93fb4" name="ae0e658b8b9c3053f9b6f7a6bdae93fb4"></a>
+int&#160;</td><td class="memItemRight"><b>HoveredIndex</b><code> [get, set]</code></td></tr>
 <tr class="memitem:a0a6715d01249189027e74bb0c3887813" id="r_a0a6715d01249189027e74bb0c3887813"><td class="memItemLeft"><a id="a0a6715d01249189027e74bb0c3887813" name="a0a6715d01249189027e74bb0c3887813"></a>
 IReadOnlyList&lt; <a class="el" href="classeditor_1_1Workspace_1_1HierarchyElement.html">HierarchyElement</a> &gt;&#160;</td><td class="memItemRight"><b>Rows</b><code> [get, set]</code></td></tr>
 <tr class="memitem:aa4ca7ae563ba7757ce10afba4e577222" id="r_aa4ca7ae563ba7757ce10afba4e577222"><td class="memItemLeft"><a id="aa4ca7ae563ba7757ce10afba4e577222" name="aa4ca7ae563ba7757ce10afba4e577222"></a>

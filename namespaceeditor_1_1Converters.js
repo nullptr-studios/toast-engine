@@ -14,5 +14,6 @@ var namespaceeditor_1_1Converters =
     [ "SnapValueConverter", "classeditor_1_1Converters_1_1SnapValueConverter.html", null ],
     [ "DockContentCornerRadiusConverter", "classeditor_1_1Converters_1_1DockContentCornerRadiusConverter.html", null ],
     [ "DockFocusBrushConverter", "classeditor_1_1Converters_1_1DockFocusBrushConverter.html", null ],
-    [ "PathToBitmapConverter", "classeditor_1_1Converters_1_1PathToBitmapConverter.html", null ]
+    [ "PathToBitmapConverter", "classeditor_1_1Converters_1_1PathToBitmapConverter.html", null ],
+    [ "NegateThicknessConverter", "classeditor_1_1Converters_1_1NegateThicknessConverter.html", null ]
 ];
