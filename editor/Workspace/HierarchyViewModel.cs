@@ -21,6 +21,11 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public class HierarchyElement : INotifyPropertyChanged {
+	private double? m_visualHeight;
+	public double VisualHeight {
+		get => m_visualHeight ?? HierarchyConnectorLayer.RowHeight;
+		set => SetField(ref m_visualHeight, (double?)value);
+	}
 	private string m_draftName = "";
 
 	private bool m_isDropTarget;

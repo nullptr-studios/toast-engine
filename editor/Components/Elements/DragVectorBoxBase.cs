@@ -18,11 +18,12 @@ namespace editor.Components.Elements;
 
 public abstract class DragVectorBoxBase : Decorator {
 	private const double Radius = 6;
-	private const double Spacing = 8;
-	private const double LabelWidth = 24;
+	private bool IsCompact => Classes.Contains("compact-vector");
+	private double Spacing => IsCompact ? 4 : 8;
+	private double LabelWidth => IsCompact ? 20 : 24;
 	private const double ThinLabelWidth = 4;
-	private const double FontSize = 15;
-	private const double BoxPadding = 16;
+	private double FontSize => IsCompact ? 13 : 15;
+	private double BoxPadding => IsCompact ? 12 : 16;
 	private const double SignWidth = 8;
 	private const double BoxBreath = 4;
 
@@ -241,6 +242,7 @@ public abstract class DragVectorBoxBase : Decorator {
 			[!DragFloatBox.CoarseStepProperty] = this[!CoarseStepProperty],
 			[!DragFloatBox.FineStepProperty] = this[!FineStepProperty]
 		};
+		if (IsCompact) box.Classes.Add("compact-field");
 		if (showUnit) box[!DragNumberBoxBase.UnitProperty] = this[!UnitProperty];
 		box.Decimals = decimals;
 

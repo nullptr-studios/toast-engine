@@ -10,9 +10,10 @@
              d:DesignWidth="300"
              d:DesignHeight="1000"
              x:Class="editor.Workspace.InspectorView"
-             Padding="8"
+             Padding="6"
              Background="{StaticResource Bg2}"
              x:DataType="vm:InspectorViewModel">
+
 
 	<Design.DataContext>
 		<vm:InspectorViewModel />
@@ -21,13 +22,13 @@
 	<UserControl.Resources>
 		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
 		<ItemsPanelTemplate x:Key="Spaced8">
-			<StackPanel Spacing="8" />
+			<StackPanel Spacing="4" />
 		</ItemsPanelTemplate>
 	</UserControl.Resources>
 
 	<UserControl.Styles>
 		<Style Selector="Panel.spaced">
-			<Setter Property="Margin" Value="0,8,0,0" />
+			<Setter Property="Margin" Value="0,4,0,0" />
 		</Style>
 		<Style Selector="Border:not(.card) > StackPanel > StackPanel > ItemsControl">
 			<Setter Property="Margin" Value="0" />
@@ -35,7 +36,7 @@
 		<Style Selector="Border.card">
 			<Setter Property="Background" Value="{StaticResource Bg3}" />
 			<Setter Property="CornerRadius" Value="8" />
-			<Setter Property="Padding" Value="8" />
+			<Setter Property="Padding" Value="6" />
 		</Style>
 		<Style Selector="Border.inspector-message.warning">
 			<Setter Property="Background"
@@ -67,7 +68,7 @@
 		<!-- One row -->
 		<Style Selector="Grid.row">
 			<Setter Property="ColumnSpacing"
-			        Value="8" />
+			        Value="4" />
 		</Style>
 
 		<!-- Name cell -->
@@ -97,6 +98,18 @@
 		</Style>
 
 		<!-- Header rename box -->
+		<Style Selector="Button.inspector-name">
+			<Setter Property="MinHeight" Value="0" />
+			<Setter Property="Template">
+				<ControlTemplate>
+					<ContentPresenter Content="{TemplateBinding Content}" VerticalAlignment="Center" />
+				</ControlTemplate>
+			</Setter>
+		</Style>
+		<Style Selector="TextBox.rename /template/ Border#PART_BorderElement">
+			<Setter Property="MinHeight" Value="0" />
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
 		<Style Selector="TextBox.rename">
 			<Setter Property="BorderThickness"
 			        Value="0" />
@@ -109,7 +122,7 @@
 			<Setter Property="FontWeight"
 			        Value="Bold" />
 			<Setter Property="FontSize"
-			        Value="16" />
+			        Value="14" />
 		</Style>
 
 		<!-- Collapsible header -->
@@ -216,8 +229,7 @@
 		<DataTemplate DataType="vm:FieldVM">
 			<Panel IsVisible="{Binding Visible}">
 				<!-- Scalar layout -->
-				<Grid Classes="row"
-				      ColumnDefinitions="110,*"
+				<elements:LabelValueRow Classes="row"
 				      IsVisible="{Binding !IsVectorLayout}">
 					<Grid Classes="name"
 					      ColumnDefinitions="*,Auto">
@@ -230,13 +242,13 @@
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:CompileBindings="False">
-									<TextBlock Classes="lbl"
+									<TextBlock Classes="lbl compact-text"
 									           Text="{Binding Text}"
 									           Classes.match="{Binding IsHighlighted}" />
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
-						<Button Classes="reset"
+						<Button Classes="reset compact-control"
 						        Grid.Column="1"
 						        Command="{Binding ResetCommand}"
 						        IsVisible="{Binding ShowReset}"
@@ -260,42 +272,42 @@
 						                       Maximum="{Binding Max}"
 						                       Unit="{Binding Unit}"
 						                       IsEnabled="{Binding Editable}"
-						                       IsVisible="{Binding IsFloat}" />
+						                       IsVisible="{Binding IsFloat}" Classes="compact-field" />
 						<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}"
 						                     Minimum="{Binding Min}"
 						                     Maximum="{Binding Max}"
 						                     Unit="{Binding Unit}"
 						                     IsEnabled="{Binding Editable}"
-						                     IsVisible="{Binding IsInt}" />
+						                     IsVisible="{Binding IsInt}" Classes="compact-field" />
 						<elements:EnumBox Value="{Binding EnumValue, Mode=TwoWay}"
 						                  Options="{Binding EnumOptions}"
 						                  IsEnabled="{Binding Editable}"
-						                  IsVisible="{Binding IsEnum}" />
+						                  IsVisible="{Binding IsEnum}" Classes="compact-field" />
 						<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
 						                  IsEnabled="{Binding Editable}"
-						                  IsVisible="{Binding IsBool}" />
+						                  IsVisible="{Binding IsBool}" Classes="compact-field" />
 						<elements:StringBox Value="{Binding String, Mode=TwoWay}"
 						                    IsEnabled="{Binding Editable}"
-						                    IsVisible="{Binding IsString}" />
+						                    IsVisible="{Binding IsString}" Classes="compact-field" />
 						<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}"
 						                   AssetType="{Binding RefType}"
 						                   FieldCopyCommand="{Binding CopyCommand}"
 						                   FieldPasteCommand="{Binding PasteCommand}"
 						                   IsEnabled="{Binding Editable}"
-						                   IsVisible="{Binding IsAssetRef}" />
+						                   IsVisible="{Binding IsAssetRef}" Classes="compact-field" />
 						<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}"
 						                  NodeType="{Binding RefType}"
 						                  FieldCopyCommand="{Binding CopyCommand}"
 						                  FieldPasteCommand="{Binding PasteCommand}"
 						                  IsEnabled="{Binding Editable}"
-						                  IsVisible="{Binding IsNodeRef}" />
+						                  IsVisible="{Binding IsNodeRef}" Classes="compact-field" />
 						<elements:Color3Box R="{Binding X, Mode=TwoWay}"
 						                    G="{Binding Y, Mode=TwoWay}"
 						                    B="{Binding Z, Mode=TwoWay}"
 						                    CopyCommand="{Binding CopyCommand}"
 						                    PasteCommand="{Binding PasteCommand}"
 						                    IsEnabled="{Binding Editable}"
-						                    IsVisible="{Binding IsColor3}" />
+						                    IsVisible="{Binding IsColor3}" Classes="compact-field" />
 						<elements:Color4Box R="{Binding X, Mode=TwoWay}"
 						                    G="{Binding Y, Mode=TwoWay}"
 						                    B="{Binding Z, Mode=TwoWay}"
@@ -303,7 +315,7 @@
 						                    CopyCommand="{Binding CopyCommand}"
 						                    PasteCommand="{Binding PasteCommand}"
 						                    IsEnabled="{Binding Editable}"
-						                    IsVisible="{Binding IsColor4}" />
+						                    IsVisible="{Binding IsColor4}" Classes="compact-field" />
 						<elements:ArrayBox IsVisible="{Binding IsArray}"
 						                   Items="{Binding ArrayItems}"
 						                   AddCommand="{Binding AddArrayItemCommand}"
@@ -318,7 +330,7 @@
 						                   RowBackground="{StaticResource Bg1}"
 						                   RowCornerRadius="6"
 						                   RowPadding="4,2"
-						                   AddLabel="Add Element">
+						                   AddLabel="Add Element" Classes="compact-array">
 							<elements:ArrayBox.ItemTemplate>
 								<DataTemplate DataType="vm:FieldVM">
 									<Panel>
@@ -335,38 +347,38 @@
 										                       Maximum="{Binding Max}"
 										                       Unit="{Binding Unit}"
 										                       IsEnabled="{Binding Editable}"
-										                       IsVisible="{Binding IsFloat}" />
+										                       IsVisible="{Binding IsFloat}" Classes="compact-field" />
 										<elements:DragIntBox Value="{Binding Int, Mode=TwoWay}"
 										                     Minimum="{Binding Min}"
 										                     Maximum="{Binding Max}"
 										                     Unit="{Binding Unit}"
 										                     IsEnabled="{Binding Editable}"
-										                     IsVisible="{Binding IsInt}" />
+										                     IsVisible="{Binding IsInt}" Classes="compact-field" />
 										<elements:BoolBox Value="{Binding Bool, Mode=TwoWay}"
 										                  IsEnabled="{Binding Editable}"
-										                  IsVisible="{Binding IsBool}" />
+										                  IsVisible="{Binding IsBool}" Classes="compact-field" />
 										<elements:StringBox Value="{Binding String, Mode=TwoWay}"
 										                    IsEnabled="{Binding Editable}"
-										                    IsVisible="{Binding IsString}" />
+										                    IsVisible="{Binding IsString}" Classes="compact-field" />
 										<elements:AssetBox Value="{Binding Ref, Mode=TwoWay}"
 										                   AssetType="{Binding RefType}"
 										                   FieldCopyCommand="{Binding CopyCommand}"
 										                   FieldPasteCommand="{Binding PasteCommand}"
 										                   IsEnabled="{Binding Editable}"
-										                   IsVisible="{Binding IsAssetRef}" />
+										                   IsVisible="{Binding IsAssetRef}" Classes="compact-field" />
 										<elements:NodeBox Value="{Binding Ref, Mode=TwoWay}"
 										                  NodeType="{Binding RefType}"
 										                  FieldCopyCommand="{Binding CopyCommand}"
 										                  FieldPasteCommand="{Binding PasteCommand}"
 										                  IsEnabled="{Binding Editable}"
-										                  IsVisible="{Binding IsNodeRef}" />
+										                  IsVisible="{Binding IsNodeRef}" Classes="compact-field" />
 										<elements:Color3Box R="{Binding X, Mode=TwoWay}"
 										                    G="{Binding Y, Mode=TwoWay}"
 										                    B="{Binding Z, Mode=TwoWay}"
 										                    CopyCommand="{Binding CopyCommand}"
 										                    PasteCommand="{Binding PasteCommand}"
 										                    IsEnabled="{Binding Editable}"
-										                    IsVisible="{Binding IsColor3}" />
+										                    IsVisible="{Binding IsColor3}" Classes="compact-field" />
 										<elements:Color4Box R="{Binding X, Mode=TwoWay}"
 										                    G="{Binding Y, Mode=TwoWay}"
 										                    B="{Binding Z, Mode=TwoWay}"
@@ -374,7 +386,7 @@
 										                    CopyCommand="{Binding CopyCommand}"
 										                    PasteCommand="{Binding PasteCommand}"
 										                    IsEnabled="{Binding Editable}"
-										                    IsVisible="{Binding IsColor4}" />
+										                    IsVisible="{Binding IsColor4}" Classes="compact-field" />
 										<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
 										                      Y="{Binding Y, Mode=TwoWay}"
 										                      Minimum="{Binding Min}"
@@ -383,7 +395,7 @@
 										                      CopyCommand="{Binding CopyCommand}"
 										                      PasteCommand="{Binding PasteCommand}"
 										                      IsEnabled="{Binding Editable}"
-										                      IsVisible="{Binding IsVec2}" />
+										                      IsVisible="{Binding IsVec2}" Classes="compact-vector" />
 										<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
 										                      Y="{Binding Y, Mode=TwoWay}"
 										                      Z="{Binding Z, Mode=TwoWay}"
@@ -393,7 +405,7 @@
 										                      CopyCommand="{Binding CopyCommand}"
 										                      PasteCommand="{Binding PasteCommand}"
 										                      IsEnabled="{Binding Editable}"
-										                      IsVisible="{Binding IsVec3}" />
+										                      IsVisible="{Binding IsVec3}" Classes="compact-vector" />
 										<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
 										                      Y="{Binding Y, Mode=TwoWay}"
 										                      Z="{Binding Z, Mode=TwoWay}"
@@ -404,7 +416,7 @@
 										                      CopyCommand="{Binding CopyCommand}"
 										                      PasteCommand="{Binding PasteCommand}"
 										                      IsEnabled="{Binding Editable}"
-										                      IsVisible="{Binding IsVec4}" />
+										                      IsVisible="{Binding IsVec4}" Classes="compact-vector" />
 									</Panel>
 								</DataTemplate>
 							</elements:ArrayBox.ItemTemplate>
@@ -412,12 +424,12 @@
 						<TextBlock Text="{Binding ReadOnlyText}"
 						           Foreground="{StaticResource TextMuted}"
 						           VerticalAlignment="Center"
-						           IsVisible="{Binding IsReadOnlyText}" />
+						           IsVisible="{Binding IsReadOnlyText}" Classes="compact-text" />
 					</Panel>
-				</Grid>
+				</elements:LabelValueRow>
 
 				<!-- Vector layout -->
-				<StackPanel Spacing="8"
+				<StackPanel Spacing="4"
 				            IsVisible="{Binding IsVectorLayout}">
 					<Grid Classes="name"
 					      ColumnDefinitions="*,Auto">
@@ -430,13 +442,13 @@
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:CompileBindings="False">
-									<TextBlock Classes="lbl"
+									<TextBlock Classes="lbl compact-text"
 									           Text="{Binding Text}"
 									           Classes.match="{Binding IsHighlighted}" />
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
 						</ItemsControl>
-						<Button Classes="reset"
+						<Button Classes="reset compact-control"
 						        Grid.Column="1"
 						        Command="{Binding ResetCommand}"
 						        IsVisible="{Binding ShowReset}"
@@ -455,7 +467,7 @@
 						                      CopyCommand="{Binding CopyCommand}"
 						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
-						                      IsVisible="{Binding IsVec2}" />
+						                      IsVisible="{Binding IsVec2}" Classes="compact-vector" />
 						<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
 						                      Y="{Binding Y, Mode=TwoWay}"
 						                      Z="{Binding Z, Mode=TwoWay}"
@@ -465,7 +477,7 @@
 						                      CopyCommand="{Binding CopyCommand}"
 						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
-						                      IsVisible="{Binding IsVec3}" />
+						                      IsVisible="{Binding IsVec3}" Classes="compact-vector" />
 						<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
 						                      Y="{Binding Y, Mode=TwoWay}"
 						                      Z="{Binding Z, Mode=TwoWay}"
@@ -476,13 +488,13 @@
 						                      CopyCommand="{Binding CopyCommand}"
 						                      PasteCommand="{Binding PasteCommand}"
 						                      IsEnabled="{Binding Editable}"
-						                      IsVisible="{Binding IsVec4}" />
+						                      IsVisible="{Binding IsVec4}" Classes="compact-vector" />
 						<elements:LayerTagBox Included="{Binding Mask}"
 						                      Excluded="{Binding LayersPartner.Mask, FallbackValue=0}"
 						                      Rows="{Binding LayerRows, Mode=TwoWay}"
 						                      Command="{Binding SetLayersCommand}"
 						                      IsEnabled="{Binding Editable}"
-						                      IsVisible="{Binding IsLayers}" />
+						                      IsVisible="{Binding IsLayers}" Classes="compact-tags" />
 					</Panel>
 				</StackPanel>
 			</Panel>
@@ -491,7 +503,7 @@
 		<!-- Subgroup -->
 		<DataTemplate DataType="vm:SubgroupVM">
 			<StackPanel IsVisible="{Binding Visible}">
-				<ToggleButton Classes="hdr"
+				<ToggleButton Classes="hdr compact-control"
 				              IsChecked="{Binding Expanded, Mode=TwoWay}">
 					<ToggleButton.ContextMenu>
 						<ContextMenu Opening="OnClipboardContextMenuOpening">
@@ -502,14 +514,14 @@
 						</ContextMenu>
 					</ToggleButton.ContextMenu>
 					<StackPanel Orientation="Horizontal"
-					            Spacing="6"
+					            Spacing="4"
 					            Margin="6,0,0,0">
 						<Border Width="2"
 						        Height="12"
 						        CornerRadius="1"
 						        VerticalAlignment="Center"
 						        Background="{StaticResource TextMuted}" />
-						<TextBlock Classes="subgroup"
+						<TextBlock Classes="subgroup compact-text"
 						           Text="{Binding Name}" />
 					</StackPanel>
 				</ToggleButton>
@@ -523,7 +535,7 @@
 		<!-- Group -->
 		<DataTemplate DataType="vm:GroupVM">
 			<StackPanel IsVisible="{Binding Visible}">
-				<ToggleButton Classes="hdr"
+				<ToggleButton Classes="hdr compact-control"
 				              IsChecked="{Binding Expanded, Mode=TwoWay}">
 					<ToggleButton.ContextMenu>
 						<ContextMenu Opening="OnClipboardContextMenuOpening">
@@ -534,18 +546,18 @@
 						</ContextMenu>
 					</ToggleButton.ContextMenu>
 					<StackPanel Orientation="Horizontal"
-					            Spacing="6">
+					            Spacing="4">
 						<Border Width="3"
 						        Height="14"
 						        CornerRadius="2"
 						        VerticalAlignment="Center"
 						        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
-						<TextBlock Classes="group"
+						<TextBlock Classes="group compact-text"
 						           Text="{Binding Name}" />
 					</StackPanel>
 				</ToggleButton>
 				<StackPanel Margin="10,0,0,0"
-				            Spacing="8"
+				            Spacing="4"
 				            IsVisible="{Binding Expanded}">
 					<ItemsControl ItemsSource="{Binding Fields}"
 					              ItemsPanel="{StaticResource Spaced8}" />
@@ -562,7 +574,7 @@
 			        HorizontalAlignment="Stretch"
 			        Background="{StaticResource Bg4}"
 			        CornerRadius="6"
-			        HorizontalContentAlignment="Center" />
+			        HorizontalContentAlignment="Center" Classes="compact-control" />
 		</DataTemplate>
 
 		<!-- Class card -->
@@ -570,7 +582,7 @@
 			<Border Classes.card="{Binding !IsPlain}"
 			        IsVisible="{Binding Visible}">
 				<StackPanel>
-					<ToggleButton Classes="hdr"
+					<ToggleButton Classes="hdr compact-control"
 					              IsVisible="{Binding !IsPlain}"
 					              IsChecked="{Binding Expanded, Mode=TwoWay}">
 						<ToggleButton.ContextMenu>
@@ -583,7 +595,7 @@
 						</ToggleButton.ContextMenu>
 						<StackPanel Orientation="Horizontal"
 						            HorizontalAlignment="Center"
-						            Spacing="8">
+						            Spacing="4">
 							<Border Width="16"
 							        Height="16"
 							        CornerRadius="4"
@@ -595,10 +607,11 @@
 							</Border>
 							<TextBlock Text="{Binding TypeName}"
 							           FontWeight="Bold"
-							           VerticalAlignment="Center" />
+							           VerticalAlignment="Center" Classes="compact-text" />
 						</StackPanel>
 					</ToggleButton>
-					<StackPanel IsVisible="{Binding Expanded}">
+					<elements:AnimatedReveal IsExpanded="{Binding Expanded}">
+					<StackPanel>
 						<ItemsControl Margin="0, 8, 0, 0"
 						              ItemsSource="{Binding Fields}"
 						              ItemsPanel="{StaticResource Spaced8}"
@@ -612,6 +625,7 @@
 						              ItemsPanel="{StaticResource Spaced8}"
 						              IsVisible="{Binding HasButtons}" />
 					</StackPanel>
+					</elements:AnimatedReveal>
 				</StackPanel>
 			</Border>
 		</DataTemplate>
@@ -622,14 +636,14 @@
 		<Border Grid.Row="0"
 		        Background="{StaticResource Bg3}"
 		        CornerRadius="8"
-		        Padding="8"
+		        Padding="6"
 		        IsVisible="{Binding ShowHeader}">
-			<StackPanel Spacing="8">
+			<StackPanel Spacing="4">
 				<Grid ColumnDefinitions="Auto,*,Auto"
-				      ColumnSpacing="8">
+				      ColumnSpacing="4">
 					<Border Grid.Column="0"
-					        Width="32"
-					        Height="32"
+					        Width="26"
+					        Height="26"
 					        Background="{Binding IconColorKey, Converter={StaticResource BrushFromKey}}">
 						<Border.OpacityMask>
 							<ImageBrush Source="{Binding LargeIcon}" />
@@ -645,21 +659,21 @@
 							        Padding="0"
 							        HorizontalAlignment="Left"
 							        Cursor="Hand"
-							        IsVisible="{Binding !IsEditingName}">
+							        IsVisible="{Binding !IsEditingName}" Classes="inspector-name">
 								<TextBlock Text="{Binding Name}"
 								           FontWeight="Bold"
-								           FontSize="16" />
+								           FontSize="14" />
 							</Button>
 							<TextBox x:Name="NameEditor"
-							         Classes="rename"
+							        Classes="rename"
 							         Text="{Binding NameDraft, Mode=TwoWay}"
 							         IsVisible="{Binding IsEditingName}" />
 						</Panel>
 						<TextBlock Text="{Binding TypeDisplay}"
-						           Foreground="{StaticResource TextMuted}" />
+						           Foreground="{StaticResource TextMuted}" Classes="compact-text" />
 					</StackPanel>
 					<CheckBox Grid.Column="2"
-					          Classes="tick"
+					         Classes="tick compact-control"
 					          VerticalAlignment="Center"
 					          IsChecked="{Binding Enabled, Mode=TwoWay}" />
 				</Grid>
@@ -668,7 +682,7 @@
 				         Background="{StaticResource Bg1}"
 				         Text="{Binding FilterText, Mode=TwoWay}"
 				         PlaceholderText="Filter parameters..."
-				         PlaceholderForeground="{StaticResource TextMuted}" />
+				         PlaceholderForeground="{StaticResource TextMuted}" Classes="compact-control" />
 			</StackPanel>
 		</Border>
 
@@ -684,17 +698,17 @@
 					        Classes.warning="{Binding !Error}"
 					        Classes.error="{Binding Error}"
 					        CornerRadius="8"
-					        Padding="8">
+					        Padding="6">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4"
 						            VerticalAlignment="Center">
 							<lucide:LucideIcon Kind="TriangleAlert"
-							                   Size="18"
+							                   Size="16"
 							                   Foreground="{StaticResource Bg1}"
 							                   StrokeWidth="2.5"
 							                   IsVisible="{Binding !Error}" />
 							<lucide:LucideIcon Kind="OctagonX"
-							                   Size="18"
+							                   Size="16"
 							                   Foreground="{StaticResource Bg1}"
 							                   StrokeWidth="2.5"
 							                   IsVisible="{Binding Error}" />
@@ -702,7 +716,7 @@
 							           Foreground="{StaticResource Bg1}"
 							           FontWeight="Bold"
 							           TextWrapping="Wrap"
-							           VerticalAlignment="Center" />
+							           VerticalAlignment="Center" Classes="compact-text" />
 						</StackPanel>
 					</Border>
 				</DataTemplate>
@@ -720,7 +734,7 @@
 				<ItemsControl ItemsSource="{Binding Cards}"
 				              ItemsPanel="{StaticResource Spaced8}" />
 			</ScrollViewer>
-			<StackPanel Spacing="8"
+			<StackPanel Spacing="4"
 			            HorizontalAlignment="Center"
 			            VerticalAlignment="Center"
 			            IsVisible="{Binding !HasSelection}">
@@ -731,7 +745,7 @@
 				                   HorizontalAlignment="Center" />
 				<TextBlock Text="No Node selected"
 				           FontWeight="SemiBold"
-				           FontSize="16"
+				           FontSize="14"
 				           Foreground="{StaticResource TextMuted}"
 				           HorizontalAlignment="Center" />
 				<TextBlock Text="Select a node in the Hierarchy to inspect it"
@@ -739,7 +753,7 @@
 				           Foreground="{StaticResource TextMuted}"
 				           HorizontalAlignment="Center"
 				           TextWrapping="Wrap"
-				           TextAlignment="Center" />
+				           TextAlignment="Center" Classes="compact-text" />
 			</StackPanel>
 		</Panel>
 	</Grid>

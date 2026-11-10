@@ -964,6 +964,7 @@ void Simulator::emitDebris(
 	const float energy_each =
 	    blast != nullptr ? blast->energy * k_joules_per_kilojoule / static_cast<float>(clusters.size()) : 0.0f;
 	const float speed_scale = tunables().debris_speed_scale;
+	const float max_speed = tunables().debris_max_speed;
 	const glm::vec3 push_direction = push != nullptr ? push->direction : glm::vec3 {0.0f};
 	const float push_length = glm::length(push_direction);
 
@@ -1031,6 +1032,7 @@ void Simulator::emitDebris(
 
 		// starts with the speed of the point it broke off from
 		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
+		glm::vec3 thrown {0.0f};
 
 		if (blast != nullptr) {
 			// thrown outward from the crater axis inside a cone
@@ -1040,82 +1042,62 @@ void Simulator::emitDebris(
 			const glm::vec3 axis_local =
 			    glm::dot(mouth, mouth) > 0.0f ? glm::normalize(mouth + (radial * k_debris_mouth_spread)) : radial;
 			const glm::vec3 axis = body->rotation * (shape->voxel.local_rotation * axis_local);
-			float speed = debrisSpeed(energy_each, mass, speed_scale, tunables().debris_max_speed);
+			float speed = debrisSpeed(energy_each * k_debris_ejecta_share, mass, speed_scale, max_speed);
 			if (blast->max_speed > 0.0f) {
 				speed = std::min(speed, blast->max_speed);
 			}
-			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
+			const float fling = rng.uniform();
+			speed *= glm::mix(k_debris_min_fling, 1.0f, fling * fling * fling);
+			thrown += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
 		}
 		glm::vec3 push_normal {0.0f};
 		const bool push_open =
 		    push_length > 1.0e-6f &&
 		    (blast == nullptr || not blocked_ahead(start, to_lattice * (push_direction / push_length), push_normal));
 		if (push != nullptr && push_open && mass > 0.0f) {
-			const float speed = std::min({push->speed, push->max_impulse / mass, tunables().debris_max_speed});
+			float speed = std::min({push->speed, push->max_impulse / mass, max_speed});
+			if (not together) {
+				speed *= rng.range(k_debris_min_fling, 1.0f);
+			}
 			if (std::isfinite(speed) && speed > 0.0f) {
-				velocity += (push_direction / push_length) * speed;
+				thrown += (push_direction / push_length) * speed;
 			}
 		}
 
-		float scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f);
-		const auto overlaps_solid = [&](float s) {
-			for (uint32_t bit = 0; bit < 8; ++bit) {
-				if ((cluster.mask & (1u << bit)) == 0) {
-					continue;
-				}
-				const glm::vec3 cube_center =
-				    start +
-				    (glm::vec3(static_cast<float>(bit & 1u), static_cast<float>((bit >> 1u) & 1u), static_cast<float>(bit >> 2u)) -
-						 0.5f) *
-				        s;
-				for (uint32_t corner = 0; corner < 8; ++corner) {
-					// corner on the border dorstnt counts the neighbour
-					const glm::vec3 sign =
-					    glm::vec3(
-					        static_cast<float>(corner & 1u), static_cast<float>((corner >> 1u) & 1u), static_cast<float>(corner >> 2u)
-					    ) -
-					    0.5f;
-					if (solid_at(glm::ivec3(glm::floor(cube_center + (sign * 0.96f * s))))) {
-						return true;
-					}
-				}
-			}
-			return false;
-		};
-		for (int attempt = 0; attempt < 3 && overlaps_solid(scale); ++attempt) {
-			scale *= 0.8f;
-		}
-		if (overlaps_solid(scale)) {
-			continue;
-		}
-
-		// a piece never goes into solid voxels
+		const float scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f);
 		if (not together && data->volume != nullptr) {
 			for (int pass = 0; pass < 2; ++pass) {
-				const float speed = glm::length(velocity);
+				const float speed = glm::length(thrown);
 				if (speed < 1.0e-3f) {
 					break;
 				}
 				glm::vec3 normal_local {0.0f};
-				if (not blocked_ahead(start, to_lattice * (velocity / speed), normal_local)) {
+				if (not blocked_ahead(start, to_lattice * (thrown / speed), normal_local)) {
 					break;
 				}
 
 				const glm::vec3 normal = lattice_rotation * normal_local;
-				const float into = glm::dot(velocity, normal);
+				const float into = glm::dot(thrown, normal);
 				if (into >= 0.0f) {
 					break;
 				}
-				velocity -= (1.0f + k_debris_spawn_restitution) * into * normal;
+				thrown -= into * normal;
 			}
 		}
+
+		if (const float speed = glm::length(thrown); speed > max_speed) {
+			thrown *= max_speed / speed;
+		}
+		velocity += thrown;
 
 		m_debris_spawns.push_back(
 		    DebrisSpawn {
 		      .position = position,
 		      .rotation = lattice_rotation,
 		      .velocity = velocity,
-		      .angular_velocity = together ? body->angular_velocity : rng.direction() * rng.range(0.0f, k_debris_max_spin),
+		      .angular_velocity = together
+					                        ? body->angular_velocity
+					                        : rng.direction() * rng.range(0.0f, std::min(k_debris_max_spin, tunables().debris_max_spin)),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |

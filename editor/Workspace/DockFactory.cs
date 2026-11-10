@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm;
@@ -13,7 +15,7 @@ using editor.Git;
 namespace editor.Workspace;
 
 public class DockFactory : Factory {
-	private const double SidePanelProportion = 0.2;
+	private const double SidePanelProportion = 0.16;
 	private IDocumentDock? m_documentDock;
 
 	private bool m_genericClosePending;
@@ -71,7 +73,7 @@ public class DockFactory : Factory {
 		m_leftToolDock = leftToolDock;
 
 		var leftDock = new ProportionalDock {
-			Proportion = 0.2,
+			Proportion = SidePanelProportion,
 			AllowedDropOperations = DockOperationMask.None,
 			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(leftToolDock)
@@ -87,7 +89,7 @@ public class DockFactory : Factory {
 		m_rightToolDock = rightToolDock;
 
 		var rightDock = new ProportionalDock {
-			Proportion = 0.22,
+			Proportion = SidePanelProportion,
 			Orientation = Orientation.Vertical,
 			VisibleDockables = CreateList<IDockable>(rightToolDock)
 		};
@@ -118,7 +120,21 @@ public class DockFactory : Factory {
 
 		m_rootDock = root;
 		m_documentDock = documentDock;
+		documentDock.PropertyChanged += OnDocumentDockChanged;
 		return root;
+	}
+
+	private void OnDocumentDockChanged(object? sender, PropertyChangedEventArgs e) {
+		if (e.PropertyName != nameof(IDock.ActiveDockable) || !WorkspaceViewModel.AnyPlayActive) return;
+		if (m_documentDock?.ActiveDockable is not WorkspaceViewModel { IsPlayModeActive: false }) return;
+
+		var playing = m_documentDock.VisibleDockables?.OfType<WorkspaceViewModel>().FirstOrDefault(w => w.IsPlayModeActive);
+		if (playing is null) return;
+
+		Dispatcher.UIThread.Post(() => {
+			if (playing.IsPlayModeActive && m_documentDock?.VisibleDockables?.Contains(playing) == true)
+				SetActiveDockable(playing);
+		});
 	}
 
 	public override void InitLayout(IDockable layout) {

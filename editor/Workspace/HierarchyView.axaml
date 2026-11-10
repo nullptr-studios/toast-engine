@@ -85,6 +85,21 @@
 			<Setter Property="Stroke"
 			        Value="{StaticResource Bg1}" />
 		</Style>
+        <Style Selector="Button.visibility-action">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Opacity" Value="0" />
+            <Setter Property="Template">
+                <ControlTemplate><ContentPresenter Content="{TemplateBinding Content}" Background="Transparent" /></ControlTemplate>
+            </Setter>
+        </Style>
+        <Style Selector="Border.row:pointerover Button.visibility-action, Button.visibility-action.node-disabled, Button.visibility-action:focus">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
 
 		<!-- highlights -->
 		<Style Selector="Border.row">
@@ -144,27 +159,27 @@
 	</UserControl.Styles>
 
 	<Border Background="{StaticResource Bg2}"
-	        Padding="8">
-		<DockPanel VerticalSpacing="8">
+	        Padding="6">
+		<DockPanel VerticalSpacing="4">
 			<!-- Header -->
 			<Border DockPanel.Dock="Top"
 			        Background="{StaticResource Bg3}"
-			        Padding="8"
+			        Padding="6"
 			        CornerRadius="8"
 			        IsVisible="{Binding ShowHeader}">
-				<StackPanel Spacing="8">
+				<StackPanel Spacing="4">
 					<Grid ColumnDefinitions="Auto, Auto, *, Auto, Auto, Auto, Auto"
 					      ColumnSpacing="4">
 						<Button Grid.Column="0"
 						        Command="{Binding AddNodeCommand}"
 						        CornerRadius="6"
-						        Background="{StaticResource Bg4}">
+						        Background="{StaticResource Bg4}" Classes="compact-control">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="2">
 								<LucideIcon Kind="Plus"
-								            Size="18"
+								            Size="16"
 								            StrokeWidth="3" />
-								<TextBlock Text="Add" />
+								<TextBlock Text="Add" Classes="compact-text" />
 							</StackPanel>
 							<ToolTip.Tip>
 								Add a new Node as child
@@ -173,13 +188,13 @@
 						<Button Grid.Column="1"
 						        Command="{Binding LoadNodeCommand}"
 						        CornerRadius="6"
-						        Background="{StaticResource Bg4}">
+						        Background="{StaticResource Bg4}" Classes="compact-control">
 							<StackPanel Orientation="Horizontal"
 							            Spacing="2">
 								<LucideIcon Kind="Package"
-								            Size="18"
+								            Size="16"
 								            StrokeWidth="2.5" />
-								<TextBlock Text="Load" />
+								<TextBlock Text="Load" Classes="compact-text" />
 							</StackPanel>
 							<ToolTip.Tip>
 								Load a Node File as child
@@ -188,10 +203,10 @@
 						<ToggleButton Grid.Column="3"
 						              IsChecked="{Binding ShowPrefabChildren}"
 						              CornerRadius="6"
-						              Classes="prefabToggle"
+						             Classes="prefabToggle compact-control"
 						              Background="{StaticResource Bg4}">
 							<LucideIcon Kind="FileBox"
-							            Size="18"
+							            Size="16"
 							            StrokeWidth="2" />
 							<ToolTip.Tip>
 								Show prefab children (read-only)
@@ -200,9 +215,9 @@
 						<Button Grid.Column="4"
 						        Command="{Binding ExpandAllCommand}"
 						        CornerRadius="6"
-						        Background="{StaticResource Bg4}">
+						        Background="{StaticResource Bg4}" Classes="compact-control">
 							<LucideIcon Kind="ChevronsUpDown"
-							            Size="18"
+							            Size="16"
 							            StrokeWidth="2.5" />
 							<ToolTip.Tip>
 								Expand all nodes
@@ -211,9 +226,9 @@
 						<Button Grid.Column="5"
 						        Command="{Binding CollapseAllCommand}"
 						        CornerRadius="6"
-						        Background="{StaticResource Bg4}">
+						        Background="{StaticResource Bg4}" Classes="compact-control">
 							<LucideIcon Kind="ChevronsDownUp"
-							            Size="18"
+							            Size="16"
 							            StrokeWidth="2.5" />
 							<ToolTip.Tip>
 								Collapse all nodes
@@ -225,13 +240,13 @@
 					         BorderThickness="0"
 					         CornerRadius="6"
 					         Background="{StaticResource Bg1}"
-					         VerticalContentAlignment="Center" />
+					         VerticalContentAlignment="Center" Classes="compact-control" />
 				</StackPanel>
 
 			</Border>
 
 			<Grid>
-				<StackPanel Spacing="8"
+				<StackPanel Spacing="4"
 				            HorizontalAlignment="Center"
 				            VerticalAlignment="Center"
 				            IsVisible="{Binding !HasNodes}">
@@ -242,7 +257,7 @@
 					                   HorizontalAlignment="Center" />
 					<TextBlock Text="No Node file opened"
 					           FontWeight="SemiBold"
-					           FontSize="16"
+					           FontSize="14"
 					           Foreground="{StaticResource TextMuted}"
 					           HorizontalAlignment="Center" />
 					<TextBlock Text="Open a Node file to browse its hierarchy"
@@ -250,7 +265,7 @@
 					           Foreground="{StaticResource TextMuted}"
 					           HorizontalAlignment="Center"
 					           TextWrapping="Wrap"
-					           TextAlignment="Center" />
+					           TextAlignment="Center" Classes="compact-text" />
 				</StackPanel>
 
 				<!-- tree -->
@@ -302,9 +317,10 @@
 							</ItemsControl.ItemsPanel>
 							<ItemsControl.ItemTemplate>
 								<DataTemplate x:DataType="vm:HierarchyElement">
-									<Border Height="28"
+									<Border Padding="0,0,8,0" Height="{Binding VisualHeight}" ClipToBounds="True"
+                                                 PointerEntered="OnRowPointerEntered" PointerExited="OnRowPointerExited"
 									        HorizontalAlignment="Stretch"
-									        Classes="row"
+									       Classes="row"
 									        Classes.drop="{Binding IsDropTarget}"
 									        DragDrop.AllowDrop="True"
 									        PointerPressed="OnItemPointerPressed"
@@ -570,7 +586,7 @@
 											           TextTrimming="CharacterEllipsis"
 											           VerticalAlignment="Center"
 											           Margin="8,0,0,0"
-											           Padding="0,0,3,0" />
+											           Padding="0,0,3,0" Classes="compact-text" />
 											<TextBox Grid.Column="2"
 											         IsVisible="{Binding IsRenaming}"
 											         Text="{Binding DraftName}"
@@ -580,20 +596,23 @@
 											         VerticalContentAlignment="Center"
 											         Margin="8,0,0,0"
 											         KeyDown="OnRenameKeyDown"
-											         LostFocus="OnRenameCommit" />
+											         LostFocus="OnRenameCommit" Classes="compact-control" />
 											<LucideIcon Grid.Column="3"
 											            Kind="Ellipsis"
 											            Size="16"
 											            StrokeWidth="2"
 											            IsVisible="{Binding IsFolded}"
 											            Margin="8,0,0,0" />
-											<CheckBox Grid.Column="5"
-											          Classes="tick"
-											          IsChecked="{Binding Enabled, Mode=OneWay}"
-											          IsEnabled="{Binding !IsInsidePrefab}"
-											          Command="{Binding Owner.ToggleEnabledCommand}"
-											          CommandParameter="{Binding}"
-											          Margin="8,0,0,0" />
+											<Button Grid.Column="5" Classes="visibility-action"
+                                                     Classes.node-disabled="{Binding !Enabled}"
+                                                     IsEnabled="{Binding !IsInsidePrefab}"
+                                                     Command="{Binding Owner.ToggleEnabledCommand}"
+                                                     CommandParameter="{Binding}" ToolTip.Tip="Toggle visibility">
+                                                <Panel>
+                                                    <LucideIcon Kind="Eye" Size="16" IsVisible="{Binding Enabled}" />
+                                                    <LucideIcon Kind="EyeOff" Size="16" IsVisible="{Binding !Enabled}" />
+                                                </Panel>
+                                            </Button>
 										</Grid>
 									</Border>
 								</DataTemplate>

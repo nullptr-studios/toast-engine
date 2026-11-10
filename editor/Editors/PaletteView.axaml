@@ -12,7 +12,7 @@
              x:Class="editor.Editors.PaletteView"
              x:DataType="vm:PaletteViewModel"
              Background="{StaticResource Bg2}"
-             Padding="8">
+             Padding="6">
 
 	<UserControl.KeyBindings>
 		<KeyBinding Gesture="Ctrl+S"
@@ -108,7 +108,7 @@
 			<Setter Property="CornerRadius"
 			        Value="8" />
 			<Setter Property="Padding"
-			        Value="8" />
+			        Value="6" />
 		</Style>
 		<Style Selector="Border.card.collapsed">
 			<Setter Property="Padding"
@@ -144,18 +144,18 @@
 
 			<!-- Labels -->
 			<Border Grid.Column="0"
-			        Classes="card"
+			       Classes="card"
 			        Classes.collapsed="{Binding IsLabelsCollapsed}">
 				<Panel>
-					<DockPanel VerticalSpacing="8"
+					<DockPanel VerticalSpacing="4"
 					           IsVisible="{Binding !IsLabelsCollapsed}">
 						<Border DockPanel.Dock="Top"
 						        Height="26"
-						        Classes="header"
+						       Classes="header"
 						        Tag="labels"
 						        Tapped="OnHeaderTapped">
 							<TextBlock Text="Labels"
-							           Classes="section" />
+							          Classes="section compact-text" />
 						</Border>
 						<Grid RowDefinitions="18,*">
 							<ItemsControl Grid.Row="1"
@@ -177,7 +177,7 @@
 												           HorizontalAlignment="Right"
 												           TextAlignment="Right"
 												           TextTrimming="CharacterEllipsis"
-												           Padding="0,0,3,0" />
+												           Padding="0,0,3,0" Classes="compact-text" />
 												<TextBox IsVisible="{Binding IsRenaming}"
 												         Text="{Binding DraftText}"
 												         TextAlignment="Right"
@@ -186,7 +186,7 @@
 												         Padding="0"
 												         VerticalContentAlignment="Center"
 												         KeyDown="OnLabelKeyDown"
-												         LostFocus="OnLabelLostFocus" />
+												         LostFocus="OnLabelLostFocus" Classes="compact-control" />
 											</Panel>
 										</Border>
 									</DataTemplate>
@@ -204,7 +204,7 @@
 								<RotateTransform Angle="90" />
 							</LayoutTransformControl.LayoutTransform>
 							<TextBlock Text="Labels"
-							           Classes="section" />
+							          Classes="section compact-text" />
 						</LayoutTransformControl>
 					</Border>
 				</Panel>
@@ -367,15 +367,15 @@
 
 			<!-- How the selected entry looks -->
 			<Border Grid.Column="4"
-			        Classes="card"
+			       Classes="card"
 			        Classes.collapsed="{Binding IsEntryCollapsed}">
 				<Panel>
 				<ScrollViewer IsVisible="{Binding !IsEntryCollapsed}">
-					<StackPanel Spacing="8">
+					<StackPanel Spacing="4">
 
 						<DockPanel>
 							<Button DockPanel.Dock="Right"
-							        Classes="icon-btn"
+							       Classes="icon-btn compact-control"
 							        Command="{Binding ClearEntryCommand}"
 							        IsEnabled="{Binding EntryInUse}"
 							        ToolTip.Tip="Remove this entry from the palette">
@@ -387,7 +387,7 @@
 							        Tag="entry"
 							        Tapped="OnHeaderTapped">
 								<TextBlock Text="{Binding SelectedLabel}"
-								           Classes="section" />
+								          Classes="section compact-text" />
 							</Border>
 						</DockPanel>
 
@@ -401,144 +401,144 @@
 							            HorizontalAlignment="Center">
 								<LucideIcon Kind="SquareDashedMousePointer"
 								            Foreground="{StaticResource Bg1}"
-								            Size="18"
+								            Size="16"
 								            StrokeWidth="2.5"/>
 								<TextBlock Text="This ID is empty"
 								           FontWeight="Bold"
 								           Foreground="{StaticResource Bg1}"
-								           TextWrapping="Wrap"/>
+								           TextWrapping="Wrap" Classes="compact-text" />
 							</StackPanel>
 						</Border>
 
 						<Grid ColumnDefinitions="Auto,*"
 						      RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
-						      RowSpacing="6"
-						      ColumnSpacing="8"
+						      RowSpacing="4"
+						      ColumnSpacing="4"
 						      Margin="0, -4, 0, 0">
-							<TextBlock Grid.Row="0" Grid.Column="0" Classes="lbl"
+							<TextBlock Grid.Row="0" Grid.Column="0" Classes="lbl compact-text"
 							           Text="Albedo" />
 							<elements:Color4Box Grid.Row="0"
 							                    Grid.Column="1"
 							                    R="{Binding AlbedoR, Mode=TwoWay}"
 							                    G="{Binding AlbedoG, Mode=TwoWay}"
 							                    B="{Binding AlbedoB, Mode=TwoWay}"
-							                    A="{Binding Alpha, Mode=TwoWay}"/>
+							                    A="{Binding Alpha, Mode=TwoWay}" Classes="compact-field" />
 
 							<TextBlock Grid.Row="1"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Roughness" />
 							<elements:DragFloatBox Grid.Row="1"
 							                       Grid.Column="1"
 							                       Value="{Binding Roughness, Mode=TwoWay}"
 							                       Minimum="0"
-							                       Maximum="1" />
+							                       Maximum="1" Classes="compact-field" />
 
 							<TextBlock Grid.Row="2"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Metallic" />
 							<elements:DragFloatBox Grid.Row="2"
 							                       Grid.Column="1"
 							                       Value="{Binding Metallic, Mode=TwoWay}"
 							                       Minimum="0"
-							                       Maximum="1" />
+							                       Maximum="1" Classes="compact-field" />
 
 							<TextBlock Grid.Row="3"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Reflectivity" />
 							<elements:DragFloatBox Grid.Row="3"
 							                       Grid.Column="1"
 							                       Value="{Binding Reflectivity, Mode=TwoWay}"
 							                       Minimum="0"
-							                       Maximum="1" />
+							                       Maximum="1" Classes="compact-field" />
 
 							<TextBlock Grid.Row="4"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Emissive" />
 							<elements:DragFloatBox Grid.Row="4"
 							                       Grid.Column="1"
 							                       Value="{Binding Emissive, Mode=TwoWay}"
 							                       Minimum="0"
-							                       Maximum="1" />
+							                       Maximum="1" Classes="compact-field" />
 							
 							<TextBlock Grid.Row="5"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="IOR" />
 							<elements:DragFloatBox Grid.Row="7"
 							                       Grid.Column="1"
 							                       Value="{Binding Ior, Mode=TwoWay}"
 							                       Minimum="1"
-							                       Maximum="3.55" />
+							                       Maximum="3.55" Classes="compact-field" />
 							
 							<TextBlock Grid.Row="7"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Max emissive" />
 							<elements:DragFloatBox Grid.Row="5"
 							                       Grid.Column="1"
 							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
-							                       Minimum="0" />
+							                       Minimum="0" Classes="compact-field" />
 
 							<TextBlock Grid.Row="8"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Detail layer" />
 							<elements:DragIntBox Grid.Row="8"
 							                     Grid.Column="1"
 							                     Value="{Binding DetailLayer, Mode=TwoWay}"
 							                     Minimum="0" Maximum="255"
-							                     ToolTip.Tip="Layer of the detail library texture array, 0 for none" />
+							                     ToolTip.Tip="Layer of the detail library texture array, 0 for none" Classes="compact-field" />
 
 							<TextBlock Grid.Row="9"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Detail scale" />
 							<elements:DragIntBox Grid.Row="9"
 							                     Grid.Column="1"
 							                     Value="{Binding DetailScale, Mode=TwoWay}"
 							                     Minimum="0" Maximum="255"
-							                     ToolTip.Tip="Texels per voxel edge, 0 for the default of 4" />
+							                     ToolTip.Tip="Texels per voxel edge, 0 for the default of 4" Classes="compact-field" />
 
 							<TextBlock Grid.Row="10"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Detail albedo" />
 							<elements:DragFloatBox Grid.Row="10"
 							                       Grid.Column="1"
 							                       Value="{Binding DetailAlbedo, Mode=TwoWay}"
 							                       Minimum="0" Maximum="1"
-							                       ToolTip.Tip="How much the texture red channel varies the color" />
+							                       ToolTip.Tip="How much the texture red channel varies the color" Classes="compact-field" />
 
 							<TextBlock Grid.Row="11"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Detail roughness" />
 							<elements:DragFloatBox Grid.Row="11"
 							                       Grid.Column="1"
 							                       Value="{Binding DetailRoughness, Mode=TwoWay}"
 							                       Minimum="0" Maximum="1"
-							                       ToolTip.Tip="How much the texture green channel varies roughness" />
+							                       ToolTip.Tip="How much the texture green channel varies roughness" Classes="compact-field" />
 
 							<TextBlock Grid.Row="12"
 							           Grid.Column="0"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Detail bump" />
 							<elements:DragFloatBox Grid.Row="12"
 							                       Grid.Column="1"
 							                       Value="{Binding DetailBump, Mode=TwoWay}"
 							                       Minimum="0" Maximum="1"
-							                       ToolTip.Tip="Normal strength from the texture height, stored for when bump lands" />
+							                       ToolTip.Tip="Normal strength from the texture height, stored for when bump lands" Classes="compact-field" />
 
 
 						</Grid>
 
 <Grid ColumnDefinitions="Auto,*"
-						      RowSpacing="6"
-						      ColumnSpacing="8">
+						      RowSpacing="4"
+						      ColumnSpacing="4">
 							
 						</Grid>
 
@@ -554,7 +554,7 @@
 							<RotateTransform Angle="90" />
 						</LayoutTransformControl.LayoutTransform>
 						<TextBlock Text="{Binding SelectedLabel}"
-						           Classes="section" />
+						          Classes="section compact-text" />
 					</LayoutTransformControl>
 				</Border>
 				</Panel>
@@ -565,38 +565,38 @@
 			              IsEnabled="{Binding !IsPhysicsCollapsed}"
 			              ResizeDirection="Columns" />
 			<Border Grid.Column="6"
-			        Classes="card"
+			       Classes="card"
 			        Classes.collapsed="{Binding IsPhysicsCollapsed}">
 				<Panel>
 				<ScrollViewer IsVisible="{Binding !IsPhysicsCollapsed}">
-					<StackPanel Spacing="8">
+					<StackPanel Spacing="4">
 
 						<Border Classes="header"
 						        Tag="physics"
 						        Tapped="OnHeaderTapped">
 							<TextBlock Text="Physics"
-							           Classes="section" />
+							          Classes="section compact-text" />
 						</Border>
 
 						<Grid ColumnDefinitions="Auto,*"
 						      RowDefinitions="Auto,Auto"
-						      RowSpacing="6"
-						      ColumnSpacing="8">
-							<TextBlock Classes="lbl"
+						      RowSpacing="4"
+						      ColumnSpacing="4">
+							<TextBlock Classes="lbl compact-text"
 							           Text="Slot" />
 							<elements:EnumBox Grid.Column="1"
 							                  Value="{Binding SelectedSlotLabel, Mode=TwoWay}"
 							                  Options="{Binding SlotLabels}"
-							                  ToolTip.Tip="Which material slot this voxel uses" />
+							                  ToolTip.Tip="Which material slot this voxel uses" Classes="compact-field" />
 
 							<TextBlock Grid.Row="1"
-							           Classes="lbl"
+							          Classes="lbl compact-text"
 							           Text="Burns into" />
 							<elements:DragIntBox Grid.Row="1"
 							                     Grid.Column="1"
 							                     Value="{Binding TransformsTo, Mode=TwoWay}"
 							                     Minimum="0"
-							                     Maximum="255" />
+							                     Maximum="255" Classes="compact-field" />
 						</Grid>
 
 						<ContentControl Content="{Binding EditableSlot}">
@@ -604,29 +604,29 @@
 								<DataTemplate x:DataType="vm:PaletteSlotVM">
 									<Grid ColumnDefinitions="Auto,*"
 									      RowDefinitions="Auto,Auto,Auto"
-									      RowSpacing="6"
-									      ColumnSpacing="8">
-										<TextBlock Classes="lbl"
+									      RowSpacing="4"
+									      ColumnSpacing="4">
+										<TextBlock Classes="lbl compact-text"
 										           Text="Name" />
 										<elements:StringBox Grid.Column="1"
 										                    Value="{Binding Name, Mode=TwoWay}"
-										                    Wrap="False" />
+										                    Wrap="False" Classes="compact-field" />
 
 										<TextBlock Grid.Row="1"
-										           Classes="lbl"
+										          Classes="lbl compact-text"
 										           Text="Physics" />
 										<elements:AssetBox Grid.Row="1"
 										                   Grid.Column="1"
 										                   Value="{Binding PhysicsUid, Mode=TwoWay}"
-										                   AssetType="physics_material" />
+										                   AssetType="physics_material" Classes="compact-field" />
 
 										<TextBlock Grid.Row="2"
-										           Classes="lbl"
+										          Classes="lbl compact-text"
 										           Text="Destruction" />
 										<elements:AssetBox Grid.Row="2"
 										                   Grid.Column="1"
 										                   Value="{Binding DestructionUid, Mode=TwoWay}"
-										                   AssetType="destruction_material" />
+										                   AssetType="destruction_material" Classes="compact-field" />
 									</Grid>
 								</DataTemplate>
 							</ContentControl.ContentTemplate>
@@ -644,7 +644,7 @@
 							<RotateTransform Angle="90" />
 						</LayoutTransformControl.LayoutTransform>
 						<TextBlock Text="Physics"
-						           Classes="section" />
+						          Classes="section compact-text" />
 					</LayoutTransformControl>
 				</Border>
 				</Panel>
@@ -653,7 +653,7 @@
 
 		<!-- Nothing open -->
 		<TextBlock Text="Open a .tpal from the Asset Browser"
-		           Classes="lbl"
+		          Classes="lbl compact-text"
 		           HorizontalAlignment="Center"
 		           VerticalAlignment="Center"
 		           IsVisible="{Binding !HasContent}" />

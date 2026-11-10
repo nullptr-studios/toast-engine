@@ -47,6 +47,15 @@
 			        Value="{StaticResource Red}" />
 		</Style>
 
+
+        <Style Selector="TreeView.folder-tree TreeViewItem">
+            <Setter Property="MinHeight" Value="24" />
+            <Setter Property="Padding" Value="2,0" />
+        </Style>
+        <Style Selector="TreeView.folder-tree TreeViewItem /template/ Border#PART_LayoutRoot">
+            <Setter Property="MinHeight" Value="24" />
+        </Style>
+
 		<!-- TreeView -->
 		<Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot:pointerover">
 			<Setter Property="Background"
@@ -118,7 +127,7 @@
 		</Style>
 	</UserControl.Styles>
 
-	<Grid ColumnDefinitions="250, 8, *"
+	<Grid ColumnDefinitions="200,4,*"
 	      Margin="8"
 	      ColumnSpacing="0">
 
@@ -126,21 +135,21 @@
 		<Border Grid.Column="0"
 		        Background="{StaticResource Bg3}"
 		        CornerRadius="8"
-		        Padding="8">
+		        Padding="6">
 			<DockPanel>
 				<!-- Header -->
 				<Border DockPanel.Dock="Top">
 					<Grid ColumnDefinitions="*, Auto, Auto">
 						<TextBlock Text="Folders"
 						           FontWeight="SemiBold"
-						           VerticalAlignment="Center" />
+						           VerticalAlignment="Center" Classes="compact-text" />
 						<Button Grid.Column="1"
 						        Command="{Binding ExpandAllCommand}"
 						        ToolTip.Tip="Expand All"
 						        Background="{StaticResource Bg4}"
 						        Padding="4"
 						        Margin="0,0,2,0"
-						        CornerRadius="6">
+						        CornerRadius="6" Classes="compact-control">
 							<LucideIcon Kind="ChevronsUpDown"
 							            Size="16"
 							            StrokeWidth="2.5" />
@@ -150,7 +159,7 @@
 						        ToolTip.Tip="Collapse All"
 						        Background="{StaticResource Bg4}"
 						        Padding="4"
-						        CornerRadius="6">
+						        CornerRadius="6" Classes="compact-control">
 							<LucideIcon Kind="ChevronsDownUp"
 							            Size="16"
 							            StrokeWidth="2.5" />
@@ -161,13 +170,13 @@
 				<ScrollViewer Margin="-6"
 				              Padding="6"
 				              HorizontalScrollBarVisibility="Disabled">
-					<TreeView ItemsSource="{Binding Folders}"
+					<TreeView Classes="folder-tree" ItemsSource="{Binding Folders}"
 					          DragDrop.AllowDrop="True"
 					          DragDrop.DragOver="OnFolderTargetDragOver"
 					          DragDrop.Drop="OnFolderTargetDrop"
 					          SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
 					          SelectionMode="Single"
-					          Margin="8"
+					          Margin="0,4,0,0"
 					          Background="Transparent">
 						<TreeView.Styles>
 							<Style Selector="TreeViewItem">
@@ -181,7 +190,7 @@
 							<TreeDataTemplate x:DataType="vm:AssetFolder"
 							                  ItemsSource="{Binding SubFolders}">
 								<TextBlock Text="{Binding Name}"
-								           TextTrimming="CharacterEllipsis">
+								           TextTrimming="CharacterEllipsis" Classes="compact-text">
 									<TextBlock.ContextMenu>
 										<ContextMenu x:DataType="vm:AssetFolder">
 											<MenuItem Command="{Binding Owner.RenameCommand}"
@@ -242,14 +251,14 @@
 		              Width="4" />
 
 		<DockPanel Grid.Column="2"
-		           VerticalSpacing="8">
+		           VerticalSpacing="4">
 			<!-- Toolbar -->
 			<Border DockPanel.Dock="Top"
 			        Background="{StaticResource Bg3}"
 			        CornerRadius="8"
-			        Padding="8">
+			        Padding="6">
 				<Grid ColumnDefinitions="85, 85, 85, *, Auto, Auto"
-				      ColumnSpacing="8">
+				      ColumnSpacing="4">
 					<!-- New -->
 					<Button Grid.Column="0"
 					        MinWidth="85"
@@ -257,14 +266,14 @@
 					        CornerRadius="6"
 					        Background="{StaticResource Red}"
 					        IsEnabled="{Binding CanWriteToSelectedFolder}"
-					        Click="OnNewButtonClick">
+					        Click="OnNewButtonClick" Classes="compact-control">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="Plus"
 							            Size="16"
 							            StrokeWidth="3.5" />
 							<TextBlock Text="New"
-							           FontWeight="Bold" />
+							           FontWeight="Bold" Classes="compact-text" />
 						</StackPanel>
 					</Button>
 
@@ -274,13 +283,13 @@
 					        HorizontalContentAlignment="Center"
 					        CornerRadius="6"
 					        Command="{Binding CreateFolderCommand}"
-					        Background="{StaticResource Bg4}">
+					        Background="{StaticResource Bg4}" Classes="compact-control">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="FolderPlus"
 							            Size="16"
 							            StrokeWidth="2" />
-							<TextBlock Text="Folder" />
+							<TextBlock Text="Folder" Classes="compact-text" />
 						</StackPanel>
 					</Button>
 
@@ -291,13 +300,13 @@
 					        HorizontalContentAlignment="Center"
 					        CornerRadius="6"
 					        Background="{StaticResource Bg4}"
-					        IsEnabled="{Binding CanWriteToSelectedFolder}">
+					        IsEnabled="{Binding CanWriteToSelectedFolder}" Classes="compact-control">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="Download"
 							            Size="16"
 							            StrokeWidth="2" />
-							<TextBlock Text="Import" />
+							<TextBlock Text="Import" Classes="compact-text" />
 						</StackPanel>
 					</Button>
 
@@ -321,12 +330,12 @@
 									            VerticalAlignment="Center">
 										<Button Content="{Binding Label}"
 										        Command="{Binding Navigate}"
-										        Classes="breadcrumb" />
-										<TextBlock Text=" /"
+										       Classes="breadcrumb compact-control" />
+										<TextBlock Text="/"
 										           IsVisible="{Binding !IsLast}"
 										           VerticalAlignment="Center"
 										           Opacity="0.4"
-										           Margin="0,0,2,0" />
+										           Margin="2,-2,2,0" Classes="compact-text" />
 									</StackPanel>
 								</DataTemplate>
 							</ItemsControl.ItemTemplate>
@@ -342,19 +351,19 @@
 					         CornerRadius="6"
 					         BorderThickness="0"
 					         VerticalContentAlignment="Center"
-					         Background="{StaticResource Bg1}" />
+					         Background="{StaticResource Bg1}" Classes="compact-control" />
 
 					<!-- Filters -->
 					<Button Grid.Column="5"
 					        CornerRadius="6"
-					        Padding="8"
-					        Background="{StaticResource Bg4}">
+					        Padding="6,4"
+					        Background="{StaticResource Bg4}" Classes="compact-control">
 						<StackPanel Orientation="Horizontal"
 						            Spacing="4">
 							<LucideIcon Kind="Funnel"
 							            Size="16"
 							            StrokeWidth="2.5" />
-							<TextBlock Text="Filter" />
+							<TextBlock Text="Filter" Classes="compact-text" />
 						</StackPanel>
 						<Button.Flyout>
 							<Flyout Placement="BottomEdgeAlignedRight">
@@ -412,7 +421,7 @@
 										           Foreground="{StaticResource TextMuted}"
 										           FontSize="12" />
 										<Button Command="{Binding ManageTagsCommand}"
-										        Classes="breadcrumb"
+										       Classes="breadcrumb"
 										        FontSize="12"
 										        Padding="0,2"
 										        Foreground="{StaticResource Blue}"
@@ -499,7 +508,7 @@
 					</ContextMenu>
 				</Border.ContextMenu>
 
-				<DockPanel VerticalSpacing="8">
+				<DockPanel VerticalSpacing="4">
 					<!-- Item counter -->
 					<TextBlock DockPanel.Dock="Bottom"
 					           Text="{Binding ItemCount}"

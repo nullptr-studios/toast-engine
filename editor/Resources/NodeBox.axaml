@@ -24,6 +24,7 @@
 		        Value="15" />
 		<Setter Property="MinHeight"
 		        Value="34" />
+		<Setter Property="Padding" Value="8" />
 		<Setter Property="HorizontalAlignment"
 		        Value="Stretch" />
 		<Setter Property="CornerRadius"
@@ -38,7 +39,7 @@
 							<!-- Data side -->
 							<DockPanel Grid.Column="0"
 							           LastChildFill="True"
-							           Margin="8"
+							           Margin="{TemplateBinding Padding}"
 							           VerticalAlignment="Center">
 								<Border x:Name="PART_Icon"
 								        DockPanel.Dock="Left"
@@ -61,7 +62,7 @@
 							        Grid.Column="1"
 							        Background="{StaticResource Bg4}"
 							        CornerRadius="0,6,6,0"
-							        Padding="8"
+							        Padding="{TemplateBinding Padding}"
 							        VerticalAlignment="Stretch">
 								<lucide:LucideIcon Kind="ListTree"
 								                   Size="16"
