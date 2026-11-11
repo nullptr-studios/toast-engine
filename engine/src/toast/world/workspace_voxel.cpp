@@ -16,6 +16,7 @@
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/window/window_events.hpp>
+#include <unordered_set>
 
 namespace toast {
 
@@ -1143,6 +1144,7 @@ void Workspace::subscribeVoxelEditing() {
 			};
 			// by piece
 			std::unordered_map<uint64_t, Written> written;
+			std::unordered_set<uint64_t> used_files;
 
 			{
 				std::unordered_map<uint64_t, std::string_view> paths;
@@ -1155,8 +1157,9 @@ void Workspace::subscribeVoxelEditing() {
 					std::string_view path;
 					if (part.key == 0) {
 						path = e.base_path;
-					} else if (const auto found = paths.find(part.key); found != paths.end()) {
+					} else if (const auto found = paths.find(part.lead); found != paths.end()) {
 						path = found->second;
+						used_files.insert(part.lead);
 					}
 					if (path.empty()) {
 						continue;
@@ -1194,7 +1197,7 @@ void Workspace::subscribeVoxelEditing() {
 				leftovers.unused.push_back(e.base_path);
 			}
 			for (const event::VoxelBakePiece& piece : e.pieces) {
-				if (!written.contains(piece.uid.data())) {
+				if (!used_files.contains(piece.uid.data())) {
 					leftovers.unused.push_back(piece.path);
 				}
 			}
@@ -1264,7 +1267,8 @@ void Workspace::subscribeVoxelEditing() {
 
 				// groups stay groups
 				// every other piece becomes a VoxelNode
-				const auto mirror = [&](this auto&& self, Node& source, Box<Node> into, const glm::mat4& into_to_shape) -> void {
+				const auto mirror =
+				    [&](this auto&& self, Node& source, Box<Node> into, const glm::mat4& into_to_shape, bool merged) -> void {
 					std::vector<Box<Node>> others;
 					for (const Box<Node>& child_box : source.children()) {
 						if (!child_box.exists()) {
@@ -1286,17 +1290,25 @@ void Workspace::subscribeVoxelEditing() {
 							made_3d->rotation = group->rotation;
 							made_3d->scale = group->scale;
 							made_3d->syncTransform();
-							self(child, made, into_to_shape * group->getTransform());
+							const glm::mat4 group_to_shape = into_to_shape * group->getTransform();
+							bool inside = merged;
+							if (!merged && group->mergesVolumes()) {
+								inside = true;
+								if (const auto found = written.find(ProceduralVoxel::partKeyOf(*group)); found != written.end()) {
+									make_model(made, group_to_shape, group->name(), found->second);
+								}
+							}
+							self(child, made, group_to_shape, inside);
 						} else if (auto* piece = reflect_cast<VoxelPiece>(&child)) {
 							if (!child.enabled()) {
 								continue;
 							}
-							if (piece->kind() == PieceKind::fill) {
+							if (!merged && piece->kind() == PieceKind::fill) {
 								if (const auto found = written.find(ProceduralVoxel::partKeyOf(*piece)); found != written.end()) {
 									make_model(into, into_to_shape, piece->name(), found->second);
 								}
 							}
-							self(child, into, into_to_shape);
+							self(child, into, into_to_shape, merged);
 						} else if (reflect_cast<VoxelBucket>(&child) == nullptr) {
 							others.push_back(child_box);
 						}
@@ -1305,7 +1317,7 @@ void Workspace::subscribeVoxelEditing() {
 						voxelReparent(other, into, into->m_children.size());
 					}
 				};
-				mirror(*shape, root, glm::mat4(1.0f));
+				mirror(*shape, root, glm::mat4(1.0f), false);
 
 				std::erase(parent->m_children, target);
 				destroyOwnedTree(target);

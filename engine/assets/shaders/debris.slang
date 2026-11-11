@@ -14,7 +14,11 @@ struct Params {
     uint clear;
     uint retireCount;
     float fadeOut;
+    float maxSpeed;
+    float maxSpin;
     uint pad0;
+    uint pad1;
+    uint pad2;
 };
 
 [[vk::push_constant]]
@@ -84,6 +88,8 @@ StructuredBuffer<DebrisSpawn> gSpawns;
 StructuredBuffer<DebrisVolume> gVolumes;
 [[vk::binding(7, 0)]]
 StructuredBuffer<uint> gRetires;
+[[vk::binding(8, 0)]]
+RWStructuredBuffer<uint> gGrid;
 
 struct VolumeRecord {
     uint brickDimsX;
@@ -123,12 +129,27 @@ static const float kSpawnScale = 0.4;       // grows from this share of its size
 
 static const float kSleepSpeed = 0.2;       // below this speed a piece may sleep
 static const uint kSleepSteps = 15;
-static const float kBounceSpeed = 0.5;      // slower impact sticks
+static const float kBounceSpeed = 0.5;
 static const float kContactSlop = 0.001;    // next step does not start touching
 static const float kFloorZ = 0.0f;          // lowest height a piece reaches
 static const uint kMaxSweeps = 8;
 static const float kSleepSpin = 1.0;
-static const float kMaxSpin = 30.0;
+static const uint kMaxContacts = 12;
+static const uint kContactPasses = 2;
+static const float kMaxCorrection = 0.5;    // voxels a piece is moved out per sweep
+static const float kInertia = 0.667;
+static const float kAirDrag = 0.15;
+static const float kSpinDrag = 0.3;
+static const float kRollDrag = 6.0;
+static const float kSpawnGrace = 0.25;      // seconds a new piece ignores being buried
+static const uint kGridCells = 1u << 16;    // mirrors DebrisSimulation::k_grid_cells
+static const uint kGridStride = 8;          // mirrors DebrisSimulation::k_grid_stride
+static const uint kGridSlots = kGridStride - 1u;
+static const float kCrowdRelax = 0.6;
+static const float kMaxCrowdPush = 0.5;     // units a piece is moved by the others per step
+static const float kCrowdFriction = 0.3;
+static const float kSupportSpeed = 0.5;
+static const float kWakeSpeed = 1.0;       // a hit faster than this wakes a sleeping piece
 
 // Graphics queue patches sections in place unordered with this queue so new records can still be uninitialized headroom
 // No robust buffer access so every index is checked against the buffer
@@ -206,6 +227,18 @@ bool latticePresent(uint mask, int3 p) {
     return false;
 }
 
+int3 gridCell(float3 position) {
+    return int3(floor(position / (2.0 * gParams.voxelSize)));
+}
+
+uint gridHash(int3 cell) {
+    return ((uint(cell.x) * 73856093u) ^ (uint(cell.y) * 19349663u) ^ (uint(cell.z) * 83492791u)) & (kGridCells - 1u);
+}
+
+float pieceRadius(uint mask, float scale) {
+    return gParams.voxelSize * scale * lerp(0.6, 1.0, float(countbits(mask & kMaskBits)) / 8.0);
+}
+
 // Grows in after spawning and shrinks away before dying
 float displayScale(DebrisMotion motion) {
     float grow = lerp(kSpawnScale, 1.0, saturate(motion.age / max(gParams.fadeIn, 1e-4)));
@@ -241,7 +274,7 @@ Candidates gatherCandidates(float3 centre, float radius) {
     return candidates;
 }
 
-Contact contactAt(float3 world, Candidates candidates) {
+Contact contactAt(float3 world, Candidates candidates, bool buried) {
     // Deepest overlap of a point
     Contact contact;
     contact.hit = false;
@@ -282,6 +315,9 @@ Contact contactAt(float3 world, Candidates candidates) {
         }
 
         if (depthVoxels > 1e8) {
+            if (!buried) {
+                continue;
+            }
             // Buried so leave towards world up
             float3 up = mul(volume.worldToVoxel, float4(0.0, 0.0, 1.0, 0.0)).xyz;
             float3 magnitude = abs(up);
@@ -356,6 +392,34 @@ void retireMain(uint3 id : SV_DispatchThreadID) {
 
 [shader("compute")]
 [numthreads(kGroupSize, 1, 1)]
+void gridClearMain(uint3 id : SV_DispatchThreadID) {
+    if (id.x < kGridCells) {
+        gGrid[id.x * kGridStride] = 0u;
+    }
+}
+
+// Bins every live piece by where the last step left it
+[shader("compute")]
+[numthreads(kGroupSize, 1, 1)]
+void gridBuildMain(uint3 id : SV_DispatchThreadID) {
+    uint i = id.x;
+    if (i >= gParams.capacity || gParams.clear != 0u) {
+        return;
+    }
+    DebrisParticle particle = gPrevious[i];
+    if ((particle.packed & kMaskBits) == 0u) {
+        return;
+    }
+    uint bucket = gridHash(gridCell(particle.position)) * kGridStride;
+    uint place = 0u;
+    InterlockedAdd(gGrid[bucket], 1u, place);
+    if (place < kGridSlots) {
+        gGrid[bucket + 1u + place] = i;
+    }
+}
+
+[shader("compute")]
+[numthreads(kGroupSize, 1, 1)]
 void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupThreadID) {
     // Before any early return so every thread reaches the barrier
     uint volumeCount = min(gParams.volumeCount, kMaxVolumes);
@@ -387,19 +451,80 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
         gMotion[i] = motion;
         return;
     }
-    particle.scale = displayScale(motion);
     const bool glass = (particle.packed & kFlagGlass) != 0u;
+    const bool asleep = (particle.packed & kFlagAsleep) != 0u;
+    const float unit = gParams.voxelSize * motion.baseScale;
+
+    // Other pieces count as spheres and are read where the last step left them
+    float3 crowdPush = float3(0.0, 0.0, 0.0);
+    float3 crowdVelocity = float3(0.0, 0.0, 0.0);
+    float3 supportSum = float3(0.0, 0.0, 0.0);
+    bool struck = false;
+    {
+        float radius = pieceRadius(mask, particle.scale);
+        int3 base = gridCell(particle.position);
+        for (int cz = -1; cz <= 1; ++cz) {
+            for (int cy = -1; cy <= 1; ++cy) {
+                for (int cx = -1; cx <= 1; ++cx) {
+                    int3 cell = base + int3(cx, cy, cz);
+                    uint bucket = gridHash(cell) * kGridStride;
+                    uint count = min(gGrid[bucket], kGridSlots);
+                    for (uint slot = 0u; slot < count; ++slot) {
+                        uint j = gGrid[bucket + 1u + slot];
+                        if (j == i || j >= gParams.capacity) {
+                            continue;
+                        }
+                        DebrisParticle other = gPrevious[j];
+                        uint otherMask = other.packed & kMaskBits;
+                        if (otherMask == 0u || any(gridCell(other.position) != cell)) {
+                            continue;
+                        }
+
+                        float3 delta = particle.position - other.position;
+                        float reach = radius + pieceRadius(otherMask, other.scale);
+                        float distanceSq = dot(delta, delta);
+                        if (distanceSq >= reach * reach) {
+                            continue;
+                        }
+                        float distance = sqrt(distanceSq);
+                        float3 normal = distance > 1e-5 ? delta / distance : float3(0.0, 0.0, i > j ? 1.0 : -1.0);
+                        bool otherAsleep = (other.packed & kFlagAsleep) != 0u;
+                        float share = otherAsleep ? 1.0 : 0.5;
+
+                        float extra = (reach - distance) * share - dot(crowdPush, normal);
+                        if (extra > 0.0) {
+                            crowdPush += normal * extra;
+                        }
+
+                        float3 relative = particle.velocity + crowdVelocity - other.velocity;
+                        float closing = dot(relative, normal);
+                        if (closing < 0.0) {
+                            crowdVelocity -= normal * (closing * share);
+                            float3 slide = relative - closing * normal;
+                            crowdVelocity -= slide * (share * kCrowdFriction * saturate(gParams.friction));
+                            struck = struck || (!otherAsleep && closing < -kWakeSpeed);
+                        }
+                        if (normal.z > 0.3 && dot(other.velocity, other.velocity) < kSupportSpeed * kSupportSpeed) {
+                            supportSum += normal;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    const bool heldUp = dot(supportSum, supportSum) > 1e-6;
+    const float3 supportNormal = heldUp ? normalize(supportSum) : float3(0.0, 0.0, 1.0);
 
     // Farthest point plus the floor probe below it plus how far gravity and velocity carry it this step
-    float travel = (length(particle.velocity) + length(gParams.gravity) * stepTime) * stepTime;
-    float reach = 1.74 * gParams.voxelSize * motion.baseScale + 1.5 * gParams.voxelSize + travel;
+    float travel = (length(particle.velocity) + length(crowdVelocity) + length(gParams.gravity) * stepTime) * stepTime;
+    float reach = 1.74 * unit + 1.5 * gParams.voxelSize + travel + kMaxCrowdPush * unit;
     Candidates candidates = gatherCandidates(particle.position, reach);
+    const bool settled = motion.age > kSpawnGrace;
 
-    if ((particle.packed & kFlagAsleep) != 0u) {
+    if (asleep) {
         // Wakes once nothing supports it
         // probes under the corners
-        float sleepUnit = gParams.voxelSize * motion.baseScale;
-        bool supported = false;
+        bool supported = heldUp;
         for (int pz = -1; pz <= 1 && !supported; ++pz) {
             for (int py = -1; py <= 1 && !supported; ++py) {
                 for (int px = -1; px <= 1 && !supported; ++px) {
@@ -407,14 +532,15 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
                     if (all(p == 0) || !latticePresent(mask, p)) {
                         continue;
                     }
-                    float3 corner = particle.position + rotateByQuat(particle.rotation, float3(p) * sleepUnit);
+                    float3 corner = particle.position + rotateByQuat(particle.rotation, float3(p) * unit);
                     supported = corner.z <= kFloorZ + 2.0 * kContactSlop ||
-                                contactAt(corner - float3(0.0, 0.0, 0.25 * gParams.voxelSize), candidates).hit;
+                                contactAt(corner - float3(0.0, 0.0, 0.25 * gParams.voxelSize), candidates, true).hit;
                 }
             }
         }
 
-        if (supported) {
+        if (supported && !struck) {
+            particle.scale = displayScale(motion);
             gCurrent[i] = particle;
             gMotion[i] = motion;
             appendVoxels(i, mask, glass);
@@ -424,10 +550,27 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
         motion.restSteps = 0u;
     }
 
-    bool touching = false;
+    particle.velocity += crowdVelocity;
+    float crowdDistance = length(crowdPush) * kCrowdRelax;
+    if (crowdDistance > 1e-6) {
+        particle.position += crowdPush * (kCrowdRelax * min(1.0, kMaxCrowdPush * unit / crowdDistance));
+    }
+
+    // Unit mass solid cube two units wide
+    const float invInertia = 1.0 / max(kInertia * unit * unit, 1e-8);
+    bool touching = heldUp;
     for (uint s = 0u; s < gParams.substeps; ++s) {
         float dt = gParams.dt;
         particle.velocity += gParams.gravity * dt;
+        particle.velocity *= 1.0 - saturate(kAirDrag * dt);
+        motion.angular *= 1.0 - saturate(kSpinDrag * dt);
+        if (heldUp) {
+            // The pieces under it carry it
+            float sinking = dot(particle.velocity, supportNormal);
+            if (sinking < 0.0) {
+                particle.velocity -= supportNormal * sinking;
+            }
+        }
 
         uint sweeps = clamp(uint(ceil(length(particle.velocity) * dt / (0.5 * gParams.voxelSize))), 1u, kMaxSweeps);
         float sweepDt = dt / float(sweeps);
@@ -440,14 +583,10 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
             }
 
             // The piece is tested by the corners of its cubes
-            float unit = gParams.voxelSize * motion.baseScale;
-            float floorDepth = 0.0;
-            Contact deepest;
-            deepest.hit = false;
-            deepest.normal = float3(0.0, 0.0, 1.0);
-            deepest.depth = 0.0;
-            float3 hitOffsetSum = float3(0.0, 0.0, 0.0);
-            float hitCount = 0.0;
+            float3 contactOffset[kMaxContacts];
+            float3 contactNormal[kMaxContacts];
+            uint contactCount = 0u;
+            float3 correction = float3(0.0, 0.0, 0.0);
             for (int pz = -1; pz <= 1; ++pz) {
                 for (int py = -1; py <= 1; ++py) {
                     for (int px = -1; px <= 1; ++px) {
@@ -457,61 +596,86 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
                         }
                         float3 offset = rotateByQuat(particle.rotation, float3(p) * unit);
                         float3 point = particle.position + offset;
-                        floorDepth = max(floorDepth, kFloorZ - point.z);
-                        Contact contact = contactAt(point, candidates);
-                        if (contact.hit) {
-                            hitOffsetSum += offset;
-                            hitCount += 1.0;
-                            if (!deepest.hit || contact.depth > deepest.depth) {
-                                deepest = contact;
-                            }
+
+                        // Nothing goes under the ground plane
+                        Contact contact = contactAt(point, candidates, settled);
+                        float floorDepth = kFloorZ - point.z;
+                        if (floorDepth > 0.0 && (!contact.hit || floorDepth > contact.depth)) {
+                            contact.hit = true;
+                            contact.normal = float3(0.0, 0.0, 1.0);
+                            contact.depth = floorDepth;
+                        }
+                        if (!contact.hit) {
+                            continue;
+                        }
+
+                        // Leaves along every normal by the deepest point on it
+                        float extra = contact.depth - dot(correction, contact.normal);
+                        if (extra > 0.0) {
+                            correction += contact.normal * extra;
+                        }
+                        if (contactCount < kMaxContacts) {
+                            contactOffset[contactCount] = offset;
+                            contactNormal[contactCount] = contact.normal;
+                            ++contactCount;
                         }
                     }
                 }
             }
 
-            // Nothing goes under the ground plane
-            if (floorDepth > 0.0) {
-                particle.position.z += floorDepth;
-                // It stops dead, otherwise it keeps spinning and sliding along the floor
-                particle.velocity = float3(0.0, 0.0, 0.0);
-                motion.angular = float3(0.0, 0.0, 0.0);
-                touching = true;
+            if (contactCount == 0u) {
+                continue;
+            }
+            touching = true;
+
+            float correctionLength = length(correction);
+            if (correctionLength > 1e-7) {
+                float moved = min(correctionLength, kMaxCorrection * gParams.voxelSize) + kContactSlop;
+                particle.position += correction * (moved / correctionLength);
             }
 
-            if (deepest.hit) {
-                touching = true;
-                particle.position += deepest.normal * (deepest.depth + kContactSlop);
+            for (uint pass = 0u; pass < kContactPasses; ++pass) {
+                for (uint c = 0u; c < contactCount; ++c) {
+                    float3 arm = contactOffset[c];
+                    float3 normal = contactNormal[c];
+                    float3 pointVelocity = particle.velocity + cross(motion.angular, arm);
+                    float approach = dot(pointVelocity, normal);
+                    if (approach >= 0.0) {
+                        continue;
+                    }
 
-                float approach = dot(particle.velocity, deepest.normal);
-                if (approach < 0.0) {
-                    float3 before = particle.velocity;
-                    float3 tangent = particle.velocity - approach * deepest.normal;
-                    float bounce = -approach > kBounceSpeed ? -approach * gParams.restitution : 0.0;
+                    float3 armNormal = cross(arm, normal);
+                    float normalMass = 1.0 + invInertia * dot(armNormal, armNormal);
+                    // slower impact sticks
+                    float bounce = (pass == 0u && -approach > kBounceSpeed) ? gParams.restitution : 0.0;
+                    float normalImpulse = -(1.0 + bounce) * approach / normalMass;
+                    float3 impulse = normal * normalImpulse;
 
                     // Friction only takes what the normal impulse allows
-                    float tangentSpeed = length(tangent);
-                    float grip = min(tangentSpeed, gParams.friction * (-approach + bounce));
-                    if (tangentSpeed > 1e-6) {
-                        tangent -= tangent * (grip / tangentSpeed);
+                    float3 slide = pointVelocity - approach * normal;
+                    float slideSpeed = length(slide);
+                    if (slideSpeed > 1e-5) {
+                        float3 tangent = slide / slideSpeed;
+                        float3 armTangent = cross(arm, tangent);
+                        float tangentMass = 1.0 + invInertia * dot(armTangent, armTangent);
+                        impulse -= tangent * min(slideSpeed / tangentMass, gParams.friction * normalImpulse);
                     }
-                    particle.velocity = tangent + bounce * deepest.normal;
 
-                    if (-approach > kBounceSpeed) {
-                        // cube inertia
-                        float3 contactOffset = hitOffsetSum / max(hitCount, 1.0);
-                        float size = gParams.voxelSize * motion.baseScale;
-                        motion.angular *= saturate(1.0 - gParams.friction);
-                        motion.angular += cross(contactOffset, particle.velocity - before) * (1.5 / max(size * size, 1e-6));
-                        float angularSpeed = length(motion.angular);
-                        if (angularSpeed > kMaxSpin) {
-                            motion.angular *= kMaxSpin / angularSpeed;
-                        }
-                    } else {
-                        motion.angular *= 0.5;
-                    }
+                    particle.velocity += impulse;
+                    motion.angular += invInertia * cross(arm, impulse);
                 }
             }
+
+            motion.angular *= 1.0 - saturate(kRollDrag * sweepDt);
+        }
+
+        float speed = length(particle.velocity);
+        if (gParams.maxSpeed > 0.0 && speed > gParams.maxSpeed) {
+            particle.velocity *= gParams.maxSpeed / speed;
+        }
+        float angularSpeed = length(motion.angular);
+        if (gParams.maxSpin > 0.0 && angularSpeed > gParams.maxSpin) {
+            motion.angular *= gParams.maxSpin / angularSpeed;
         }
     }
 
@@ -527,6 +691,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
         particle.packed |= kFlagAsleep;
     }
 
+    particle.scale = displayScale(motion);
     gCurrent[i] = particle;
     gMotion[i] = motion;
     appendVoxels(i, mask, glass);

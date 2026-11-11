@@ -19,7 +19,7 @@ public sealed class VoxelOrthoView : Control {
 		AvaloniaProperty.Register<VoxelOrthoView, OrthoProjection>(nameof(Projection));
 
 	private const double HandleSize = 8;
-	private const double MinScale = 1;
+	private const double MinScale = 0.01;    // only keeps the maths finite
 	private const double MaxScale = 80;
 
 	private static readonly Typeface s_labelFont = new("Consolas");

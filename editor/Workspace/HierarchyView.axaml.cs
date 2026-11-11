@@ -6,6 +6,8 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -30,6 +32,9 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private Point m_pressPoint;
 	private bool m_pressWasSelected;
 	private HierarchyViewModel? m_vm;
+	private HierarchyElement? m_hoveredItem;
+	private DispatcherTimer? m_expansionTimer;
+	private Action? m_finishExpansion;
 
 	public HierarchyView() {
 		InitializeComponent();
@@ -42,6 +47,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private HierarchyViewModel? Vm => DataContext as HierarchyViewModel;
 
 	protected override void OnDataContextChanged(EventArgs e) {
+		CompleteExpansion();
 		base.OnDataContextChanged(e);
 		if (m_vm is not null) {
 			m_vm.HierarchyChanged -= RefreshConnector;
@@ -50,6 +56,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		}
 
 		m_vm = DataContext as HierarchyViewModel;
+		m_hoveredItem = null;
 		if (m_vm is not null) {
 			m_vm.HierarchyChanged += RefreshConnector;
 			m_vm.PropertyChanged += OnVmPropertyChanged;
@@ -76,6 +83,52 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		}
 
 		Connector.SelectedIndex = selected;
+		Connector.HoveredIndex = m_hoveredItem is null ? -1 : vm.Rows.IndexOf(m_hoveredItem);
+	}
+
+	private void OnRowPointerEntered(object? sender, PointerEventArgs e) {
+		if (sender is Control { DataContext: HierarchyElement node }) {
+			m_hoveredItem = node; Connector.HoveredIndex = node.Index;
+		}
+	}
+	private void OnRowPointerExited(object? sender, PointerEventArgs e) {
+		if (sender is Control { DataContext: HierarchyElement node } && ReferenceEquals(node, m_hoveredItem)) {
+			m_hoveredItem = null; Connector.HoveredIndex = -1;
+		}
+	}
+
+	private void CompleteExpansion() {
+		m_expansionTimer?.Stop(); m_expansionTimer = null;
+		var finish = m_finishExpansion; m_finishExpansion = null; finish?.Invoke();
+	}
+	private void AnimateToggle(HierarchyElement node) {
+		CompleteExpansion();
+		if (Vm is not { } vm) return;
+		if (!string.IsNullOrEmpty(vm.FilterText)) { vm.ToggleExpand(node); return; }
+		var collapsing = node.IsExpanded;
+		if (!collapsing) vm.ToggleExpand(node);
+		var descendants = vm.Rows.Skip(node.Index + 1).TakeWhile(n => n.Depth > node.Depth).ToArray();
+		if (descendants.Length == 0) { if (collapsing) vm.ToggleExpand(node); return; }
+		foreach (var child in descendants) child.VisualHeight = collapsing ? HierarchyConnectorLayer.RowHeight : 0;
+		m_finishExpansion = () => {
+			foreach (var child in descendants) child.VisualHeight = HierarchyConnectorLayer.RowHeight;
+			if (collapsing) vm.ToggleExpand(node);
+			Connector.RefreshGeometry();
+		};
+		var clock = Stopwatch.StartNew();
+		var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(8) };
+		m_expansionTimer = timer;
+		timer.Tick += (_, _) => {
+			var t = Math.Min(clock.Elapsed.TotalMilliseconds / 180, 1);
+			var progress = 1 - Math.Pow(1 - t, 3);
+			foreach (var child in descendants) child.VisualHeight = HierarchyConnectorLayer.RowHeight * (collapsing ? 1 - progress : progress);
+			Connector.RefreshGeometry();
+			if (t >= 1) CompleteExpansion();
+		};
+		Connector.RefreshGeometry(); timer.Start();
+	}
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+		CompleteExpansion(); base.OnDetachedFromVisualTree(e);
 	}
 
 	private void OnEmptySpaceMenuOpening(object? sender, CancelEventArgs e) {
@@ -83,7 +136,9 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	}
 
 	private void OnItemPointerPressed(object? sender, PointerPressedEventArgs e) {
+		if (m_expansionTimer is not null) CompleteExpansion();
 		if (sender is not Control { DataContext: HierarchyElement el } || Vm is not { } vm) return;
+		if (!vm.Rows.Contains(el)) return;
 		if (el.IsInsidePrefab) return; // prefab interior nodes are read-only
 
 		var props = e.GetCurrentPoint(this).Properties;
@@ -128,7 +183,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 
 	private void OnItemPointerReleased(object? sender, PointerReleasedEventArgs e) {
 		// a click on the already-selected node toggles fold
-		if (m_pressItem is { } item && m_pressWasSelected) Vm?.ToggleExpand(item);
+		if (m_pressItem is { } item && m_pressWasSelected) AnimateToggle(item);
 		ClearPress();
 	}
 
@@ -190,7 +245,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private (DropMode mode, HierarchyElement? target) ResolveDrop(DragEventArgs e) {
 		if (Vm is not { HasCurrentHierarchy: true } vm) return (DropMode.None, null);
 		var position = e.GetPosition(Rows);
-		var index = (int)Math.Floor(position.Y / HierarchyConnectorLayer.RowHeight);
+		var index = Connector.GetRowAt(position.Y);
 		var target = position.X >= 0 && position.X < Rows.Bounds.Width && index >= 0 && index < vm.Rows.Count
 			? vm.Rows[index] : null;
 		if (target is null) return (DropMode.None, null);
@@ -205,7 +260,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 
 		if (target.IsRoot) return target.CanAddChildren ? (DropMode.Into, target) : (DropMode.None, null);
 
-		var local = e.GetPosition(Rows).Y - target.Index * HierarchyConnectorLayer.RowHeight;
+		var local = e.GetPosition(Rows).Y - Connector.GetRowTop(target.Index);
 		if (local < HierarchyConnectorLayer.RowHeight * 0.25 && target.Parent?.CanAddChildren == true) return (DropMode.Before, target);
 		if (local > HierarchyConnectorLayer.RowHeight * 0.75 && target.Parent?.CanAddChildren == true) return (DropMode.After, target);
 		return target.CanAddChildren ? (DropMode.Into, target) : (DropMode.None, null);

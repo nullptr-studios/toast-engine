@@ -24,6 +24,7 @@
 		        Value="15" />
 		<Setter Property="MinHeight"
 		        Value="34" />
+		<Setter Property="Padding" Value="8" />
 		<Setter Property="HorizontalAlignment"
 		        Value="Stretch" />
 		<Setter Property="CornerRadius"
@@ -38,7 +39,7 @@
 							<!-- Data side -->
 							<DockPanel Grid.Column="0"
 							           LastChildFill="True"
-							           Margin="8"
+							           Margin="{TemplateBinding Padding}"
 							           VerticalAlignment="Center">
 								<LucideIcon Kind="{TemplateBinding IconKind}"
 								            Size="16"
@@ -46,7 +47,7 @@
 								            Foreground="{TemplateBinding IconColor}"
 								            HorizontalAlignment="Center"
 								            VerticalAlignment="Center"
-								            Margin="0, 0, 8, 0"
+								            Margin="0,0,8,0"
 								            IsVisible="{TemplateBinding HasAsset}" />
 
 								<TextBlock x:Name="PART_Display"
@@ -60,7 +61,7 @@
 							        Grid.Column="1"
 							        Background="{StaticResource Bg4}"
 							        CornerRadius="0,6,6,0"
-							        Padding="8"
+							        Padding="{TemplateBinding Padding}"
 							        VerticalAlignment="Stretch">
 								<lucide:LucideIcon Kind="Package"
 								                   Size="16"
