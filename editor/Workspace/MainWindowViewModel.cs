@@ -384,7 +384,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	}
 
 	partial void OnLuaEditorVisibleChanged(bool value) {
-		if (m_applyingLayout) return;
+		if (m_applyingLayout || value == LuaEditor.LuaEditorWindow.IsOpen) return;
 		if (value && m_toastZoneFactory.LuaEditorVm is { } vm) ShowLuaWindow(vm);
 		else if (!value) LuaEditor.LuaEditorWindow.CloseOpen();
 	}
@@ -392,16 +392,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private void ShowLuaWindow(LuaEditor.LuaGraphEditorViewModel vm) {
 		// old layouts may still contain a docked lua editor
 		m_toastZoneFactory.EvictLuaTool();
-		LuaEditor.LuaEditorWindow.ShowFor(vm, App.MainWindow, () => {
-			if (m_luaEditorVisible) {
-				m_luaEditorVisible = false;
-				OnPropertyChanged(nameof(LuaEditorVisible));
-			}
-		});
-		if (!m_luaEditorVisible) {
-			m_luaEditorVisible = true;
-			OnPropertyChanged(nameof(LuaEditorVisible));
-		}
+		LuaEditor.LuaEditorWindow.ShowFor(vm, App.MainWindow, () => LuaEditorVisible = false);
+		LuaEditorVisible = true;
 	}
 
 	partial void OnShowDebugWindowsChanged(bool value) {

@@ -78,7 +78,7 @@ public sealed class TypePicker : UserControl {
 				new Setter(ListBoxItem.CornerRadiusProperty, new CornerRadius(4))
 			}
 		});
-		m_list.Tapped += (_, _) => Tapped();
+		m_list.Tapped += (_, _) => ActivateSelection();
 		m_search.TextChanged += (_, _) => Fill();
 		m_search.KeyDown += OnKey;
 
@@ -186,7 +186,7 @@ public sealed class TypePicker : UserControl {
 		}, DispatcherPriority.Loaded);
 	}
 
-	private void Tapped() {
+	private void ActivateSelection() {
 		if (m_list.SelectedItem is not PickRow row) return;
 		if (row.IsGroup) Toggle(row);
 		else Choose(row);
@@ -224,7 +224,7 @@ public sealed class TypePicker : UserControl {
 				Toggle(open, false);
 				break;
 			case Key.Enter:
-				Tapped();
+				ActivateSelection();
 				break;
 			case Key.Escape:
 				m_popup.IsOpen = false;

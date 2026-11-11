@@ -65,7 +65,7 @@ public sealed partial class LuaGraphEditorViewModel {
 		var result = await new MessageModal(new ModalConfig("Unsaved Changes", $"Save changes to '{Title}'?", ModalButtons.OkNoCancel, OkLabel: "Save")).ShowDialog<bool?>(owner);
 		if (result is null) return false;
 		if (result is true) {
-			Save();
+			await Save();
 			return !IsDirty;
 		}
 		Workspace.AutosaveService.Delete(CurrentUid, ".lua");
@@ -90,7 +90,7 @@ public sealed partial class LuaGraphEditorViewModel {
 			});
 			watcher.Changed += handler;
 			watcher.Created += handler;
-			watcher.Renamed += (_, _) => handler(null, null!);
+			watcher.Renamed += (sender, e) => handler(sender, e);
 			m_watchers.Add(watcher);
 		} catch (Exception e) when (e is ArgumentException or IOException) {
 			Status = "could not watch " + folder;

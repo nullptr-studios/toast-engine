@@ -20,11 +20,11 @@ public sealed partial class ParamRow : ObservableObject {
 	internal Action<ParamRow, string, string>? Changed { get; set; }
 	internal bool Loading { get; set; }
 
-	partial void OnNameChanged(string oldValue, string newValue) {
-		if (!Loading) Changed?.Invoke(this, oldValue, newValue);
+	partial void OnNameChanged(string? oldValue, string newValue) {
+		if (!Loading) Changed?.Invoke(this, oldValue ?? "", newValue);
 	}
 
-	partial void OnTypeTextChanged(string oldValue, string newValue) {
+	partial void OnTypeTextChanged(string value) {
 		if (!Loading) Changed?.Invoke(this, "", "");
 	}
 }

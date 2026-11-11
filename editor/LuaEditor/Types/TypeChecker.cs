@@ -119,7 +119,11 @@ public sealed class TypeChecker(TypeUniverse universe) {
 		if (s.Name == t.Name) {
 			if (t.Args.Count == 0 || s.Args.Count == 0) return CompatResult.Ok;
 			var same = s.Args.Count == t.Args.Count
-				&& s.Args.Zip(t.Args).All(p => universe.ResolveAliases(p.First) == universe.ResolveAliases(p.Second));
+				&& s.Args.Zip(t.Args).All(p => {
+					var source = universe.ResolveAliases(p.First);
+					var target = universe.ResolveAliases(p.Second);
+					return IsAny(source) || IsAny(target) || source == target;
+				});
 			return same ? CompatResult.Ok : CompatResult.Block($"{s} cannot connect to {t}: the type arguments differ");
 		}
 		if (universe.IsSubclassOf(s.Name, t.Name)) return CompatResult.Ok;
