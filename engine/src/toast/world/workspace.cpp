@@ -2827,6 +2827,7 @@ void Workspace::tick() {
 				f.min = d.min;
 				f.max = d.max;
 				f.unit = d.unit;
+				f.enum_options = d.enum_options;
 				return f;
 			};
 

@@ -40,11 +40,11 @@ public sealed class TypeEditor : UserControl {
 	public TypeEditor() {
 		// reparenting a picker during a popup click crashes avalonia
 		foreach (var (container, tip) in new[] { (Container.Value, "Value"), (Container.Array, "Array"), (Container.Dictionary, "Dictionary"), (Container.Table, "Table") }) {
-			var icon = new PinShapeIcon { Width = 20, Height = 20, IsPair = container == Container.Dictionary };
+			var icon = new PinShapeIcon { Width = 16, Height = 16, IsPair = container == Container.Dictionary };
 			var button = new Button {
 				Content = icon,
 				Width = 40,
-				Height = 34,
+				Height = 26,
 				MinHeight = 0,
 				Padding = new Thickness(0),
 				HorizontalContentAlignment = HorizontalAlignment.Center,

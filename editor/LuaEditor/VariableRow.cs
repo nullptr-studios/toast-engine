@@ -17,6 +17,7 @@ public sealed partial class VariableRow(string id, VariableRow? parent, string n
 	[ObservableProperty] private bool m_isSelected;
 	[ObservableProperty] private bool m_isExpanded = true;
 	[ObservableProperty] private bool m_isFolded;
+	[ObservableProperty] private double m_visualHeight = HierarchyConnectorLayer.RowHeight;
 	public string Id { get; } = id;
 	public VariableRow? Parent { get; } = parent;
 	public string Name { get; } = name;

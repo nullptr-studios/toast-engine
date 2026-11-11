@@ -10,7 +10,7 @@
              x:Class="editor.Logger.LogsView"
              x:DataType="vm:LogsViewModel"
              Background="{StaticResource Bg2}"
-             Padding="8">
+             Padding="6">
 
 	<UserControl.Styles>
 		<!-- Checked -->
@@ -41,24 +41,24 @@
 		<!-- Toolbar -->
 		<Border DockPanel.Dock="Top"
 		        Background="{StaticResource Bg3}"
-		        Padding="8"
+		        Padding="6"
 		        CornerRadius="8">
 			<Grid ColumnDefinitions="Auto,Auto,Auto,8,Auto,8,*,8,Auto"
 			      ColumnSpacing="4">
 				<ToggleButton Grid.Column="0"
-				              Classes="toolbar-btn"
+				             Classes="toolbar-btn compact-control"
 				              IsChecked="{Binding AutoScroll, Mode=TwoWay}"
 				              Background="{Binding AutoScroll, Converter={StaticResource BoolFillConverter}, ConverterParameter=Red}"
 				              CornerRadius="6"
 				              ToolTip.Tip="Auto-scroll to latest">
 					<Panel>
 						<LucideIcon Kind="Lock"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding AutoScroll}"
 						            Foreground="{Binding AutoScroll, Converter={StaticResource ToggleForegroundConverter}}" />
 						<LucideIcon Kind="LockOpen"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding !AutoScroll}"
 						            Foreground="{Binding AutoScroll, Converter={StaticResource ToggleForegroundConverter}}" />
@@ -66,24 +66,24 @@
 				</ToggleButton>
 
 				<Button Grid.Column="1"
-				        Classes="toolbar-btn"
+				       Classes="toolbar-btn compact-control"
 				        Command="{Binding ClearLogsCommand}"
 				        Background="{StaticResource Bg4}"
 				        CornerRadius="6"
 				        ToolTip.Tip="Clear logs">
 					<LucideIcon Kind="Eraser"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</Button>
 
 				<ToggleButton Grid.Column="2"
-				              Classes="toolbar-btn"
+				             Classes="toolbar-btn compact-control"
 				              IsChecked="{Binding ShowTimestamps, Mode=TwoWay}"
 				              Background="{Binding ShowTimestamps, Converter={StaticResource BoolFillConverter}, ConverterParameter=Red}"
 				              CornerRadius="6"
 				              ToolTip.Tip="Show precise timestamps">
 					<LucideIcon Kind="Timer"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5"
 					            Foreground="{Binding ShowTimestamps, Converter={StaticResource ToggleForegroundConverter}}" />
 				</ToggleButton>
@@ -98,10 +98,10 @@
 					</ItemsControl.ItemsPanel>
 					<ItemsControl.ItemTemplate>
 						<DataTemplate x:DataType="vm:SeverityFilterViewModel">
-							<ToggleButton Classes="severity-toggle"
+							<ToggleButton Classes="severity-toggle compact-control"
 							              IsChecked="{Binding IsEnabled, Mode=TwoWay}"
 							              CornerRadius="6"
-							              Padding="8,6"
+							              Padding="6,4"
 							              ToolTip.Tip="{Binding Label}">
 								<ToggleButton.Background>
 									<MultiBinding Converter="{StaticResource SeverityFillConverter}">
@@ -115,7 +115,7 @@
 									            Size="16"
 									            StrokeWidth="2.5"
 									            Foreground="{Binding IsEnabled, Converter={StaticResource ToggleForegroundConverter}}" />
-									<TextBlock Classes="severity-badge"
+									<TextBlock Classes="severity-badge compact-text"
 									           Text="{Binding Badge}"
 									           FontFamily="FiraCode Nerd Font,Consolas,monospace"
 									           FontWeight="Bold"
@@ -133,18 +133,18 @@
 				         CornerRadius="6"
 				         VerticalContentAlignment="Center"
 				         Background="{StaticResource Bg1}"
-				         KeyDown="OnSearchKeyDown" />
+				         KeyDown="OnSearchKeyDown" Classes="compact-control" />
 
 				<Button Grid.Column="8"
-				        Classes="toolbar-btn"
+				       Classes="toolbar-btn compact-control"
 				        Background="{StaticResource Bg4}"
 				        CornerRadius="6">
 					<StackPanel Orientation="Horizontal"
 					            Spacing="4">
 						<LucideIcon Kind="Funnel"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5" />
-						<TextBlock Text="Filter" />
+						<TextBlock Text="Filter" Classes="compact-text" />
 					</StackPanel>
 					<Button.Flyout>
 						<Flyout Placement="BottomEdgeAlignedRight">
@@ -156,7 +156,7 @@
 									           FontWeight="SemiBold"
 									           VerticalAlignment="Center" />
 									<Button Grid.Column="1"
-									        Classes="toolbar-btn"
+									       Classes="toolbar-btn"
 									        Command="{Binding ResetSinkFiltersCommand}"
 									        Background="{StaticResource Bg4}"
 									        CornerRadius="6"
@@ -180,7 +180,7 @@
 												<Grid ColumnDefinitions="Auto,Auto"
 												      ColumnSpacing="8">
 													<Button Grid.Column="0"
-													        Classes="toolbar-btn"
+													       Classes="toolbar-btn"
 													        Command="{Binding #SinksList.((vm:LogsViewModel)DataContext).ToggleSinkQuickCommand}"
 													        CommandParameter="{Binding}"
 													        Background="Transparent"
@@ -354,7 +354,7 @@
 									           Foreground="{Binding Severity, Converter={StaticResource SeverityToColorConverter}}"
 									           FontFamily="FiraCode Nerd Font,Consolas,monospace"
 									           FontWeight="Bold"
-									           VerticalAlignment="Center" />
+									           VerticalAlignment="Center" Classes="compact-text" />
 								</StackPanel>
 								<!-- Sink -->
 								<TextBlock Grid.Column="1"
@@ -367,7 +367,7 @@
 								           TextWrapping="NoWrap"
 								           MaxLines="1"
 								           Width="{Binding $parent[ListBox].((vm:LogsViewModel)DataContext).SinkColumnWidth}"
-								           VerticalAlignment="Center" />
+								           VerticalAlignment="Center" Classes="compact-text" />
 								<!-- File and Line -->
 								<TextBlock Grid.Column="2"
 								           b:TextHighlight.Text="{Binding DisplayFileLine}"
@@ -378,7 +378,7 @@
 								           TextWrapping="NoWrap"
 								           MaxLines="1"
 								           Width="{Binding $parent[ListBox].((vm:LogsViewModel)DataContext).FileColumnWidth}"
-								           VerticalAlignment="Center" />
+								           VerticalAlignment="Center" Classes="compact-text" />
 								<!-- Message -->
 								<TextBlock Grid.Column="3"
 								           b:TextHighlight.Text="{Binding DisplayMessage}"
@@ -388,7 +388,7 @@
 								           TextTrimming="CharacterEllipsis"
 								           TextWrapping="NoWrap"
 								           MaxLines="1"
-								           VerticalAlignment="Center" />
+								           VerticalAlignment="Center" Classes="compact-text" />
 								<!-- Timestamp -->
 								<TextBlock Grid.Column="4"
 								           Text="{Binding PreciseTime}"
@@ -396,7 +396,7 @@
 								           Foreground="{Binding Severity, Converter={StaticResource TraceForegroundConverter}}"
 								           FontFamily="FiraCode Nerd Font,Consolas,monospace"
 								           Width="{Binding $parent[ListBox].((vm:LogsViewModel)DataContext).TimestampColumnWidth}"
-								           VerticalAlignment="Center" />
+								           VerticalAlignment="Center" Classes="compact-text" />
 							</Grid>
 						</Border>
 					</DataTemplate>

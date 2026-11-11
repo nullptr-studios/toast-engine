@@ -225,7 +225,7 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 	private void OpenChoiceMenu(InputPin pin, Avalonia.Rect screen, IReadOnlyList<GraphSession.PinChoice> choices) {
 		var menu = new ContextMenu();
 		foreach (var choice in choices) {
-			var item = new MenuItem { Header = choice.Label, FontWeight = choice.IsCurrent ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal };
+			var item = new MenuItem { Classes = { "compact-menu" }, Header = choice.Label, FontWeight = choice.IsCurrent ? Avalonia.Media.FontWeight.Bold : Avalonia.Media.FontWeight.Normal };
 			var apply = choice.Apply;
 			item.Click += (_, _) => apply();
 			menu.Items.Add(item);
@@ -245,18 +245,18 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 		if (call is not null && session.CanSwitchCallStyle(call)) {
 			var method = call.Style == CallStyle.Method;
 			var name = call.Method ?? (call.Target.Source?.Owner as MemberGet)?.Name ?? "fn";
-			var item = new MenuItem { Header = method ? $"Write as a.{name}(a)" : $"Write as a:{name}()" };
+			var item = new MenuItem { Classes = { "compact-menu" }, Header = method ? $"Write as a.{name}(a)" : $"Write as a:{name}()" };
 			item.Click += (_, _) => session.SetCallStyle(call, method ? CallStyle.Function : CallStyle.Method);
 			menu.Items.Add(item);
 		}
 		if (node is TableNode table) {
 			var kind = GraphSession.EntryKindOf(table);
-			var add = new MenuItem { Header = kind switch { TableFieldKind.Positional => "Add item", TableFieldKind.Keyed => "Add entry  [key] = value", _ => "Add field  name = value" } };
+			var add = new MenuItem { Classes = { "compact-menu" }, Header = kind switch { TableFieldKind.Positional => "Add item", TableFieldKind.Keyed => "Add entry  [key] = value", _ => "Add field  name = value" } };
 			add.Click += (_, _) => session.AddTableEntry(table, kind);
 			menu.Items.Add(add);
 			foreach (var entry in table.Fields.Where(f => f.Kind != TableFieldKind.Positional).ToList()) {
 				var target = entry;
-				var rename = new MenuItem { Header = entry.Kind == TableFieldKind.Named ? $"Rename field {entry.Name}..." : $"Change key [{NodeShape.KeyText(entry.Key!)}]..." };
+				var rename = new MenuItem { Classes = { "compact-menu" }, Header = entry.Kind == TableFieldKind.Named ? $"Rename field {entry.Name}..." : $"Change key [{NodeShape.KeyText(entry.Key!)}]..." };
 				rename.Click += (_, _) => {
 					var box = new Avalonia.Rect(screen.X, screen.Y, 220, 24);
 					if (target.Kind == TableFieldKind.Named) OpenTextEditor(box, target.Name ?? "", text => session.RenameTableField(table, target, text.Trim()));
@@ -266,7 +266,7 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 			}
 			for (var index = table.Fields.Count - 1; index >= 0; index--) {
 				var at = index;
-				var removeEntry = new MenuItem { Header = $"Remove {FieldText(table.Fields[at])}" };
+				var removeEntry = new MenuItem { Classes = { "compact-menu" }, Header = $"Remove {FieldText(table.Fields[at])}" };
 				removeEntry.Click += (_, _) => session.RemoveTableEntry(table, at);
 				menu.Items.Add(removeEntry);
 			}
@@ -275,40 +275,40 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 		if (node is MemberGet { Object.Source: not { Binding: { } } } || node is AssignStatement { Targets: [{ Kind: TargetKind.Member }] }) {
 			var access = node;
 			var current = node is MemberGet member ? member.Name : ((AssignStatement)node).Targets[0].Name ?? "";
-			var renameAccess = new MenuItem { Header = $"Rename field {current}..." };
+			var renameAccess = new MenuItem { Classes = { "compact-menu" }, Header = $"Rename field {current}..." };
 			renameAccess.Click += (_, _) => OpenTextEditor(new Avalonia.Rect(screen.X, screen.Y, 220, 24), current, text => session.RenameAccess(access, text.Trim()));
 			menu.Items.Add(renameAccess);
 		}
 		if (call is not null) {
-			var add = new MenuItem { Header = "Add argument" };
+			var add = new MenuItem { Classes = { "compact-menu" }, Header = "Add argument" };
 
 			add.Click += (_, _) => session.AddCallArgument(call);
 			menu.Items.Add(add);
 			if (call.Args.Count > 0) {
-				var remove = new MenuItem { Header = "Remove last argument" };
+				var remove = new MenuItem { Classes = { "compact-menu" }, Header = "Remove last argument" };
 				remove.Click += (_, _) => session.RemoveLastCallArgument(call);
 				menu.Items.Add(remove);
 			}
 		}
 		if (node is Statement statement) {
 			var current = string.Join(" ", statement.LeadingLines.Where(l => !l.TrimStart().StartsWith("---@", StringComparison.Ordinal)).Select(l => l.TrimStart('-', ' ')));
-			var edit = new MenuItem { Header = "Edit comment..." };
+			var edit = new MenuItem { Classes = { "compact-menu" }, Header = "Edit comment..." };
 			edit.Click += (_, _) => OpenTextEditor(new Avalonia.Rect(screen.X, screen.Y, 260, 24), current, text => session.SetComment(statement, text.Length == 0 ? null : text));
 			menu.Items.Add(edit);
 		}
-		var copy = new MenuItem { Header = "Copy", InputGesture = new KeyGesture(Key.C, KeyModifiers.Control) };
+		var copy = new MenuItem { Classes = { "compact-menu" }, Header = "Copy", InputGesture = new KeyGesture(Key.C, KeyModifiers.Control) };
 		copy.Click += (_, _) => GraphView.Execute(CanvasAction.Copy);
 		menu.Items.Add(copy);
-		var paste = new MenuItem { Header = "Paste", InputGesture = new KeyGesture(Key.V, KeyModifiers.Control) };
+		var paste = new MenuItem { Classes = { "compact-menu" }, Header = "Paste", InputGesture = new KeyGesture(Key.V, KeyModifiers.Control) };
 		paste.Click += (_, _) => GraphView.Execute(CanvasAction.Paste);
 		menu.Items.Add(paste);
-		var group = new MenuItem { Header = "Group into a function", InputGesture = new KeyGesture(Key.G) };
+		var group = new MenuItem { Classes = { "compact-menu" }, Header = "Group into a function", InputGesture = new KeyGesture(Key.G) };
 		group.Click += (_, _) => session.GroupSelectionAsFunction();
 		menu.Items.Add(group);
-		var duplicate = new MenuItem { Header = "Duplicate" };
+		var duplicate = new MenuItem { Classes = { "compact-menu" }, Header = "Duplicate" };
 		duplicate.Click += (_, _) => session.Duplicate();
 		menu.Items.Add(duplicate);
-		var delete = new MenuItem { Header = "Delete" };
+		var delete = new MenuItem { Classes = { "compact-menu" }, Header = "Delete" };
 		delete.Click += (_, _) => session.Delete(session.Selection.ToList());
 		menu.Items.Add(delete);
 		menu.Open(GraphView);
@@ -355,8 +355,12 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 	}
 
 	private LuaGraphEditorViewModel? m_treeVm;
+	private VariableRow? m_hoveredRow;
+	private readonly HierarchyExpansion m_expansion = new();
 
 	private void WireTree() {
+		m_expansion.Complete();
+		m_hoveredRow = null;
 		if (m_treeVm is not null) {
 			m_treeVm.Variables.CollectionChanged -= OnRowsChanged;
 			m_treeVm.PropertyChanged -= OnTreeVmChanged;
@@ -378,6 +382,23 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 		if (m_treeVm is not { } vm) return;
 		Connector.Rows = vm.Variables.ToList();
 		Connector.SelectedIndex = vm.SelectedVariable is { } selected ? vm.Variables.IndexOf(selected) : -1;
+		Connector.HoveredIndex = m_hoveredRow is { } hovered ? vm.Variables.IndexOf(hovered) : -1;
+	}
+
+	private void OnRowEntered(object? sender, PointerEventArgs e) {
+		m_hoveredRow = (sender as Control)?.DataContext as VariableRow;
+		Connector.HoveredIndex = m_hoveredRow is { } row && Vm is { } vm ? vm.Variables.IndexOf(row) : -1;
+	}
+
+	private void OnRowExited(object? sender, PointerEventArgs e) {
+		if (!ReferenceEquals((sender as Control)?.DataContext, m_hoveredRow)) return;
+		m_hoveredRow = null;
+		Connector.HoveredIndex = -1;
+	}
+
+	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+		m_expansion.Complete();
+		base.OnDetachedFromVisualTree(e);
 	}
 
 	private readonly HierarchyRowPress<VariableRow> m_rowPress = new();
@@ -385,6 +406,7 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 	private void OnRowPressed(object? sender, PointerPressedEventArgs e) {
 		if (sender is not Control control || control.DataContext is not VariableRow row || Vm is not { } vm) return;
 		var properties = e.GetCurrentPoint(control).Properties;
+		m_expansion.Complete();
 		m_rowPress.Clear();
 		if (properties.IsRightButtonPressed) {
 			if (row.Kind is VariableRowKind.Field or VariableRowKind.Tick && row.Variable is not null)
@@ -414,7 +436,11 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 		if (m_rowPress.TakeClick(e) is not { } click) return;
 		if (click.Row.Kind == VariableRowKind.Method && click.Row.Variable?.Declaration is FunctionDecl function)
 			GraphView.ShowFunction(function);
-		else if (click.WasSelected) Vm?.SetSection(click.Row);
+		else if (click.WasSelected && click.Row.HasChildren && Vm is { } vm) {
+			if (string.IsNullOrWhiteSpace(vm.FilterText))
+				m_expansion.Toggle(click.Row, vm.Variables, click.Row.IsExpanded, () => vm.SetSection(click.Row), Connector);
+			else vm.SetSection(click.Row);
+		}
 	}
 
 	private void OpenRowMenu(Control control, VariableRow row) {
@@ -422,7 +448,7 @@ SearchList.DoubleTapped += (_, _) => CommitSearch();
 		vm.SelectRow(row);
 		var items = new List<MenuItem>();
 		void Item(string title, Action action) {
-			var item = new MenuItem { Header = title };
+			var item = new MenuItem { Classes = { "compact-menu" }, Header = title };
 			item.Click += (_, _) => action();
 			items.Add(item);
 		}

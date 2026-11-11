@@ -1,0 +1,110 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
+        xmlns:lucide="using:Lucide.Avalonia"
+        xmlns:e="using:editor.Components.Elements">
+    <Styles.Resources>
+        <sys:Double x:Key="CompactControlHeight">26</sys:Double>
+        <sys:Double x:Key="CompactFontSize">13</sys:Double>
+        <sys:Double x:Key="CompactHeadingSize">14</sys:Double>
+        <sys:Double x:Key="CompactIconSize">16</sys:Double>
+        <sys:Double x:Key="CompactGap">4</sys:Double>
+        <Thickness x:Key="CompactPanelPadding">6</Thickness>
+        <Thickness x:Key="CompactFieldPadding">6,4</Thickness>
+    </Styles.Resources>
+
+    <Style Selector="Thumb.voxel-divider">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border Background="Transparent" />
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="TextBlock.compact-text">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+    </Style>
+    <Style Selector="Button.compact-control, ToggleButton.compact-control, TextBox.compact-control, ComboBox.compact-control, NumericUpDown.compact-control, AutoCompleteBox.compact-control">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="Padding" Value="{StaticResource CompactFieldPadding}" />
+    </Style>
+    <Style Selector="MenuItem.compact-menu">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="Padding" Value="{StaticResource CompactFieldPadding}" />
+    </Style>
+    <Style Selector="CheckBox.compact-control">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="TextBox.compact-control">
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ComboBox.compact-control ComboBoxItem">
+        <Setter Property="FontSize" Value="14" />
+    </Style>
+    <Style Selector="CheckBox.compact-control, e|BoolBox.compact-field /template/ CheckBox#PART_Check">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6" VerticalAlignment="Center">
+                    <Border Name="NormalRectangle" Width="16" Height="16" CornerRadius="3"
+                            BorderThickness="1" BorderBrush="{StaticResource TextMuted}"
+                            Background="Transparent" VerticalAlignment="Center">
+                        <lucide:LucideIcon Kind="Check" Size="12" StrokeWidth="2.5"
+                                           Foreground="{StaticResource Bg1}"
+                                           IsVisible="{TemplateBinding IsChecked}" />
+                    </Border>
+                    <ContentPresenter Grid.Column="1" Name="PART_ContentPresenter"
+                                      Content="{TemplateBinding Content}"
+                                      ContentTemplate="{TemplateBinding ContentTemplate}"
+                                      VerticalAlignment="Center" />
+                </Grid>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="CheckBox.compact-control:checked /template/ Border#NormalRectangle, e|BoolBox.compact-field /template/ CheckBox#PART_Check:checked /template/ Border#NormalRectangle">
+        <Setter Property="Background" Value="{StaticResource Red}" />
+        <Setter Property="BorderBrush" Value="{StaticResource Red}" />
+    </Style>
+    <Style Selector="e|BoolBox.compact-field /template/ CheckBox#PART_Check">
+        <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style Selector="NumericUpDown.compact-control /template/ ButtonSpinner#PART_Spinner">
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+    </Style>
+    <Style Selector="NumericUpDown.compact-control /template/ TextBox#PART_TextBox">
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+    </Style>
+    <Style Selector="NumericUpDown.compact-control /template/ ButtonSpinner#PART_Spinner /template/ Border, NumericUpDown.compact-control /template/ TextBox#PART_TextBox /template/ Border#PART_BorderElement">
+        <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="Button.compact-small, ToggleButton.compact-small, TextBox.compact-small, CheckBox.compact-small">
+        <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="Button.compact-icon, ToggleButton.compact-icon">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="e|DragNumberBoxBase.compact-field, e|StringBox.compact-field, e|BoolBox.compact-field, e|EnumBox.compact-field, e|ColorBoxBase.compact-field, e|AssetBox.compact-field, e|NodeBox.compact-field">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="Padding" Value="{StaticResource CompactFieldPadding}" />
+    </Style>
+    <Style Selector="e|ArrayBox.compact-array">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="Padding" Value="4" />
+        <Setter Property="ItemSpacing" Value="{StaticResource CompactGap}" />
+    </Style>
+    <Style Selector="e|ArrayBox.compact-array /template/ Button#PART_Add">
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="6,4" />
+    </Style>
+    <Style Selector="e|LayerTagBox.compact-tags">
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="Padding" Value="6" />
+    </Style>
+</Styles>

@@ -16,7 +16,7 @@ namespace editor.VoxelEditor;
 
 public enum VoxelTool { Select, Move, Extrude, Buildup, Carve, Paint, Bucket, Split, Slice }
 
-public enum VoxelViewMode { Lit, Albedo, MetallicRoughness, PaletteId, PhysicsMaterial, DdaSteps }
+public enum VoxelViewMode { Lit, Albedo, MetallicRoughness, PaletteId, PhysicsMaterial, DdaSteps, Volumes }
 
 public sealed record VoxelPieceInfo(
 	string Uid,
@@ -621,6 +621,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 			VoxelViewMode.PaletteId => RenderMode.VoxelPaletteId,
 			VoxelViewMode.PhysicsMaterial => RenderMode.VoxelMaterials,
 			VoxelViewMode.DdaSteps => RenderMode.VoxelSteps,
+			VoxelViewMode.Volumes => RenderMode.VoxelVolumes,
 			_ => RenderMode.Lit
 		};
 	}

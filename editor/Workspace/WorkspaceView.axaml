@@ -9,159 +9,161 @@
              x:Class="editor.Workspace.WorkspaceView"
              x:DataType="vm:WorkspaceViewModel"
              Background="{StaticResource Bg2}"
-             Padding="8">
+             Padding="6">
 	<UserControl.Styles>
 		<StyleInclude Source="avares://editor/Resources/ToolbarStyles.axaml" />
 	</UserControl.Styles>
 
-	<DockPanel VerticalSpacing="8">
-		<Grid DockPanel.Dock="Top"
+	<DockPanel VerticalSpacing="4">
+		<ScrollViewer x:Name="ToolbarScroll" DockPanel.Dock="Top"
+		              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+		<Grid MinWidth="{Binding #ToolbarScroll.Bounds.Width}"
 		      ColumnDefinitions="Auto,0,Auto,Auto,0,Auto,*,Auto,Auto"
 		      ColumnSpacing="4">
 			<StackPanel Grid.Column="0"
 			            Orientation="Horizontal">
-				<ToggleButton Classes="tool purple"
+				<ToggleButton Classes="tool purple compact-control compact-icon"
 				              CornerRadius="6, 0, 0, 6"
 				              ToolTip.Tip="Select (Q)"
 				              Command="{Binding SetToolCommand}"
 				              CommandParameter="Select"
 				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Select, Mode=OneWay}">
 					<LucideIcon Kind="MousePointer2"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="tool red compact-control compact-icon"
 				              CornerRadius="0"
 				              ToolTip.Tip="Move (E)"
 				              Command="{Binding SetToolCommand}"
 				              CommandParameter="Translate"
 				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Translate, Mode=OneWay}">
 					<LucideIcon Kind="Move3d"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
-				<ToggleButton Classes="tool green"
+				<ToggleButton Classes="tool green compact-control compact-icon"
 				              CornerRadius="0"
 				              ToolTip.Tip="Rotate (R)"
 				              Command="{Binding SetToolCommand}"
 				              CommandParameter="Rotate"
 				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Rotate, Mode=OneWay}">
 					<LucideIcon Kind="Rotate3d"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
-				<ToggleButton Classes="tool blue"
+				<ToggleButton Classes="tool blue compact-control compact-icon"
 				              CornerRadius="0"
 				              ToolTip.Tip="Scale (T)"
 				              Command="{Binding SetToolCommand}"
 				              CommandParameter="Scale"
 				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Scale, Mode=OneWay}">
 					<LucideIcon Kind="Scale3d"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
-				<ToggleButton Classes="tool orange"
+				<ToggleButton Classes="tool orange compact-control compact-icon"
 				              CornerRadius="0, 6, 6, 0"
 				              ToolTip.Tip="Ruler (Y)"
 				              Command="{Binding SetToolCommand}"
 				              CommandParameter="Ruler"
 				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Ruler, Mode=OneWay}">
 					<LucideIcon Kind="Ruler"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
 			</StackPanel>
 
 			<StackPanel Grid.Column="2"
 			            Orientation="Horizontal">
-				<ToggleButton Classes="tool blue"
+				<ToggleButton Classes="tool blue compact-control compact-icon"
 				              CornerRadius="6, 0, 0, 6"
 				              ToolTip.Tip="World coordinates (F)"
 				              Command="{Binding SetSpaceCommand}"
 				              CommandParameter="World"
 				              IsChecked="{Binding WorldSpace, Mode=OneWay}">
 					<LucideIcon Kind="Globe"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="tool red compact-control compact-icon"
 				              CornerRadius="0, 6, 6, 0"
 				              ToolTip.Tip="Local coordinates (F)"
 				              Command="{Binding SetSpaceCommand}"
 				              CommandParameter="Local"
 				              IsChecked="{Binding !WorldSpace, Mode=OneWay}">
 					<LucideIcon Kind="Box"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
 			</StackPanel>
 
 			<StackPanel Grid.Column="3"
 			            Orientation="Horizontal">
-				<ToggleButton Classes="snapTool red"
+				<ToggleButton Classes="snapTool red compact-control"
 				              CornerRadius="6, 0, 0, 6"
 				              ToolTip.Tip="Grid snapping (G)"
 				              IsChecked="{Binding TranslateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
-					            Spacing="8"
+					            Spacing="4"
 					            VerticalAlignment="Center">
 						<LucideIcon Kind="Grid2x2"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5" />
-						<TextBlock Classes="snapValue"
+						<TextBlock Classes="snapValue compact-text"
 						           Text="Off"
 						           VerticalAlignment="Center"
 						           IsVisible="{Binding !TranslateSnapEnabled}" />
-						<TextBlock Classes="snapValue"
+						<TextBlock Classes="snapValue compact-text"
 						           Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}"
 						           IsVisible="{Binding TranslateSnapEnabled}"
 						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
-				<ToggleButton Classes="snapTool green"
+				<ToggleButton Classes="snapTool green compact-control"
 				              CornerRadius="0"
 				              ToolTip.Tip="Rotate snapping (Shift+G)"
 				              IsChecked="{Binding RotateSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
 					            VerticalAlignment="Center"
-					            Spacing="8">
+					            Spacing="4">
 						<LucideIcon Kind="RotateCw"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5" />
-						<TextBlock Classes="snapValue"
+						<TextBlock Classes="snapValue compact-text"
 						           Text="Off"
 						           VerticalAlignment="Center"
 						           IsVisible="{Binding !RotateSnapEnabled}" />
-						<TextBlock Classes="snapValue"
+						<TextBlock Classes="snapValue compact-text"
 						           Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}"
 						           IsVisible="{Binding RotateSnapEnabled}"
 						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
-				<ToggleButton Classes="snapTool blue"
+				<ToggleButton Classes="snapTool blue compact-control"
 				              CornerRadius="0"
 				              ToolTip.Tip="Scale snapping (Alt+G)"
 				              IsChecked="{Binding ScaleSnapEnabled}">
 					<StackPanel Orientation="Horizontal"
 					            VerticalAlignment="Center"
-					            Spacing="8">
+					            Spacing="4">
 						<LucideIcon Kind="Maximize2"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5" />
-						<TextBlock Classes="snapValue"
+						<TextBlock Classes="snapValue compact-text"
 						           Text="Off"
 						           VerticalAlignment="Center"
 						           IsVisible="{Binding !ScaleSnapEnabled}" />
-						<TextBlock Classes="snapValue"
+						<TextBlock Classes="snapValue compact-text"
 						           Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}"
 						           IsVisible="{Binding ScaleSnapEnabled}"
 						           VerticalAlignment="Center"
 						           HorizontalAlignment="Right" />
 					</StackPanel>
 				</ToggleButton>
-				<Button Classes="chev"
+				<Button Classes="chev compact-control compact-icon"
 				        CornerRadius="0, 6, 6, 0"
 				        ToolTip.Tip="Snap values">
 					<Button.Flyout>
@@ -176,12 +178,12 @@
 									            StrokeWidth="2.5"
 									            VerticalAlignment="Center" />
 									<TextBlock Grid.Column="1"
-									           Classes="snapValue"
+									          Classes="snapValue"
 									           Text="{Binding TranslateSnap, Converter={StaticResource SnapValueConverter}}"
 									           VerticalAlignment="Center"
 									           HorizontalAlignment="Right" />
 									<Button Grid.Column="2"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -192,7 +194,7 @@
 										            StrokeWidth="2.5" />
 									</Button>
 									<Button Grid.Column="3"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -211,12 +213,12 @@
 									            StrokeWidth="2.5"
 									            VerticalAlignment="Center" />
 									<TextBlock Grid.Column="1"
-									           Classes="snapValue"
+									          Classes="snapValue"
 									           Text="{Binding RotateSnap, Converter={StaticResource SnapValueConverter}, ConverterParameter=int}"
 									           VerticalAlignment="Center"
 									           HorizontalAlignment="Right" />
 									<Button Grid.Column="2"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -227,7 +229,7 @@
 										            StrokeWidth="2.5" />
 									</Button>
 									<Button Grid.Column="3"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -246,12 +248,12 @@
 									            StrokeWidth="2.5"
 									            VerticalAlignment="Center" />
 									<TextBlock Grid.Column="1"
-									           Classes="snapValue"
+									          Classes="snapValue"
 									           Text="{Binding ScaleSnap, Converter={StaticResource SnapValueConverter}}"
 									           VerticalAlignment="Center"
 									           HorizontalAlignment="Right" />
 									<Button Grid.Column="2"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -262,7 +264,7 @@
 										            StrokeWidth="2.5" />
 									</Button>
 									<Button Grid.Column="3"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -277,7 +279,7 @@
 						</Flyout>
 					</Button.Flyout>
 					<LucideIcon Kind="ChevronDown"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</Button>
 			</StackPanel>
@@ -286,7 +288,7 @@
 			            Orientation="Horizontal">
 				<Button Background="{StaticResource Bg3}"
 				        CornerRadius="6, 0, 0, 6"
-				        ToolTip.Tip="Change viewport mode">
+				        ToolTip.Tip="Change viewport mode" Classes="compact-control">
 					<Button.Flyout>
 						<MenuFlyout>
 							<MenuItem Header="Lit"
@@ -403,17 +405,17 @@
 						</MenuFlyout>
 					</Button.Flyout>
 					<StackPanel Orientation="Horizontal"
-					            Spacing="8">
+					            Spacing="4">
 						<LucideIcon Kind="Eclipse"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5" />
-						<TextBlock Text="{Binding ActiveRenderMode}" />
+						<TextBlock Text="{Binding ActiveRenderMode}" Classes="compact-text" />
 					</StackPanel>
 				</Button>
 				<Button Background="{StaticResource Bg3}"
 				        CornerRadius="0, 6, 6, 0"
 				        ToolTip.Tip="Toggle render passes visibility"
-				        Command="{Binding RefreshRenderPassesCommand}">
+				        Command="{Binding RefreshRenderPassesCommand}" Classes="compact-control">
 					<Button.Flyout>
 						<Flyout Placement="Bottom">
 							<StackPanel MinWidth="180"
@@ -437,39 +439,39 @@
 						</Flyout>
 					</Button.Flyout>
 					<LucideIcon Kind="Eye"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</Button>
 			</StackPanel>
 
 			<StackPanel Grid.Column="8"
 			            Orientation="Horizontal">
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="tool red compact-control"
 				              CornerRadius="6, 0, 0, 6"
 				              ToolTip.Tip="Switch between editor and game camera"
 				              IsChecked="{Binding GameCamera}">
 					<StackPanel Orientation="Horizontal"
-					            Spacing="8">
+					            Spacing="4">
 						<LucideIcon Kind="Video"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5" />
 						<TextBlock Text="Editor"
-						           IsVisible="{Binding !GameCamera}" />
+						           IsVisible="{Binding !GameCamera}" Classes="compact-text" />
 						<TextBlock Text="Game"
-						           IsVisible="{Binding GameCamera}" />
+						           IsVisible="{Binding GameCamera}" Classes="compact-text" />
 					</StackPanel>
 				</ToggleButton>
 				<Button CornerRadius="0, 6, 6, 0"
 				        Background="{StaticResource Bg3}"
 				        ToolTip.Tip="Camera settings"
-				        IsEnabled="{Binding !GameCamera}">
+				        IsEnabled="{Binding !GameCamera}" Classes="compact-control">
 					<Button.Flyout>
 						<Flyout Placement="BottomEdgeAlignedRight">
 							<StackPanel Spacing="8"
 							            MinWidth="180">
 								<Grid ColumnDefinitions="*,*">
 									<ToggleButton Grid.Column="0"
-									              Classes="tool red camMode"
+									             Classes="tool red camMode"
 									              CornerRadius="6, 0, 0, 6"
 									              HorizontalAlignment="Stretch"
 									              HorizontalContentAlignment="Left"
@@ -485,7 +487,7 @@
 										</StackPanel>
 									</ToggleButton>
 									<ToggleButton Grid.Column="1"
-									              Classes="tool red camMode"
+									             Classes="tool red camMode"
 									              CornerRadius="0, 6, 6, 0"
 									              HorizontalAlignment="Stretch"
 									              HorizontalContentAlignment="Left"
@@ -509,12 +511,12 @@
 									            StrokeWidth="2.5"
 									            VerticalAlignment="Center" />
 									<TextBlock Grid.Column="1"
-									           Classes="snapValue"
+									          Classes="snapValue"
 									           Text="{Binding CameraSpeed, Converter={StaticResource SnapValueConverter}}"
 									           VerticalAlignment="Center"
 									           HorizontalAlignment="Right" />
 									<Button Grid.Column="2"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -525,7 +527,7 @@
 										            StrokeWidth="2.5" />
 									</Button>
 									<Button Grid.Column="3"
-									        Classes="chev"
+									       Classes="chev"
 									        Width="24"
 									        Height="24"
 									        Padding="0"
@@ -540,72 +542,73 @@
 						</Flyout>
 					</Button.Flyout>
 					<LucideIcon Kind="ChevronDown"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</Button>
 			</StackPanel>
 
 			<StackPanel Grid.Column="7"
 			            Orientation="Horizontal">
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="tool red compact-control compact-icon"
 				              CornerRadius="6, 0, 0, 6"
 				              ToolTip.Tip="Play (F5)"
 				              Command="{Binding TogglePlayCommand}"
 				              IsChecked="{Binding IsPlaying, Mode=OneWay}">
 					<Panel>
 						<LucideIcon Kind="Play"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding !IsPlaying}" />
 						<LucideIcon Kind="Square"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding IsPlaying}" />
 					</Panel>
 				</ToggleButton>
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="tool red compact-control compact-icon"
 				              CornerRadius="0"
 				              ToolTip.Tip="Simulate (Shift+F5)"
 				              Command="{Binding ToggleSimulateCommand}"
 				              IsChecked="{Binding IsSimulating, Mode=OneWay}">
 					<Panel>
 						<LucideIcon Kind="BugPlay"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding !IsSimulating}" />
 						<LucideIcon Kind="Square"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding IsSimulating}" />
 					</Panel>
 				</ToggleButton>
-				<ToggleButton Classes="tool orange"
+				<ToggleButton Classes="tool orange compact-control compact-icon"
 				              CornerRadius="0"
 				              ToolTip.Tip="Pause"
 				              IsEnabled="{Binding CanPause}"
 				              IsChecked="{Binding IsPaused}">
 					<LucideIcon Kind="Pause"
-					            Size="18"
+					            Size="16"
 					            StrokeWidth="2.5" />
 				</ToggleButton>
-				<ToggleButton Classes="tool red"
+				<ToggleButton Classes="tool red compact-control compact-icon"
 				              CornerRadius="0, 6, 6, 0"
 				              ToolTip.Tip="Play on external window (F6)"
 				              Command="{Binding TogglePlayExternalCommand}"
 				              IsChecked="{Binding IsPlayingExternal, Mode=OneWay}">
 					<Panel>
 						<LucideIcon Kind="MonitorPlay"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding !IsPlayingExternal}" />
 						<LucideIcon Kind="MonitorStop"
-						            Size="18"
+						            Size="16"
 						            StrokeWidth="2.5"
 						            IsVisible="{Binding IsPlayingExternal}" />
 					</Panel>
 				</ToggleButton>
 			</StackPanel>
 		</Grid>
+		</ScrollViewer>
 		<Panel x:Name="ViewportPanel">
 			<vm:ViewportControl x:Name="Viewport"
 			                    PlayMode="{Binding IsPlayingInViewport}"
@@ -618,7 +621,7 @@
 				           Foreground="{StaticResource TextMuted}"
 				           FontStyle="Italic"
 				           HorizontalAlignment="Center"
-				           VerticalAlignment="Center" />
+				           VerticalAlignment="Center" Classes="compact-text" />
 			</Border>
 		</Panel>
 	</DockPanel>

@@ -23,6 +23,7 @@
 		        Value="15" />
 		<Setter Property="MinHeight"
 		        Value="34" />
+		<Setter Property="Padding" Value="8,4" />
 		<Setter Property="HorizontalAlignment"
 		        Value="Stretch" />
 		<Setter Property="CornerRadius"
@@ -35,7 +36,7 @@
 				<Panel>
 					<Border x:Name="PART_Root"
 					        CornerRadius="{TemplateBinding CornerRadius}"
-					        Padding="8,4">
+					        Padding="{TemplateBinding Padding}">
 						<Grid ColumnDefinitions="*,Auto"
 						      ColumnSpacing="4">
 							<TextBlock x:Name="PART_Display"

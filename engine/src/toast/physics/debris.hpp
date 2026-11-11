@@ -63,12 +63,13 @@ struct DebrisBlast {
 };
 
 inline constexpr float k_max_debris_speed = 40.0f;
-inline constexpr float k_debris_cone_spread = 0.5f;
+inline constexpr float k_debris_cone_spread = 0.8f;
 inline constexpr float k_debris_max_spin = 8.0f;
 inline constexpr float k_debris_min_scale = 0.55f;
 inline constexpr float k_debris_lookahead_voxels = 3.0f;
-inline constexpr float k_debris_spawn_restitution = 0.3f;
-inline constexpr float k_debris_mouth_spread = 0.6f;
+inline constexpr float k_debris_ejecta_share = 0.25f;
+inline constexpr float k_debris_min_fling = 0.15f;
+inline constexpr float k_debris_mouth_spread = 1.0f;
 
 [[nodiscard]]
 constexpr auto debrisBit(const glm::ivec3& local) -> uint32_t {

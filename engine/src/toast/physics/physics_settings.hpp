@@ -49,6 +49,7 @@ struct Tunables {
 	float debris_speed_scale = 1.0f;
 	float debris_density_multiplier = 1.0f;
 	float debris_max_speed = 12.0f;
+	float debris_max_spin = 20.0f;
 	float debris_lifetime = 12.0f;
 	float debris_lifetime_jitter = 0.3f;
 	uint32_t debris_max_particles = 16384;

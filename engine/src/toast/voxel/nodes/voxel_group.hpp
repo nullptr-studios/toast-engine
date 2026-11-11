@@ -17,8 +17,21 @@ public:
 	[[nodiscard, Reflect]]
 	auto getShape() -> Box<Node>;
 
+	/** @returns true when everything inside the group becomes one voxel volume */
+	[[nodiscard, Reflect]]
+	auto mergesVolumes() const noexcept -> bool {
+		return m_merge_volumes;
+	}
+
 protected:
 	void updateInspectorMessages() override;
+
+	/**
+	 * Makes everything inside the group one voxel volume
+	 * @note It renders, collides, breaks and bakes as a single volume, the pieces still apply in order and keep their fill modes
+	 */
+	[[Reflect, Name("Merge Volumes")]]
+	bool m_merge_volumes = false;
 };
 
 }

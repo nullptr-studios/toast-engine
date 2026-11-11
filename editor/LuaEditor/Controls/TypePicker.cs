@@ -57,9 +57,9 @@ public sealed class TypePicker : UserControl {
 		m_button.HorizontalAlignment = HorizontalAlignment.Stretch;
 		m_button.HorizontalContentAlignment = HorizontalAlignment.Left;
 		m_button.CornerRadius = new CornerRadius(6);
-		m_button.Padding = new Thickness(8, 4);
-		m_button.MinHeight = 34;
-		m_button.FontSize = 15;
+		m_button.Padding = new Thickness(6, 4);
+		m_button.MinHeight = 26;
+		m_button.FontSize = 13;
 		m_button.FontFamily = new FontFamily("FiraCode Nerd Font,Consolas,monospace");
 		m_button.VerticalContentAlignment = VerticalAlignment.Center;
 		m_button.Background = Brush("Bg1");
@@ -85,7 +85,7 @@ public sealed class TypePicker : UserControl {
 		var card = new Border {
 			Background = Brush("Bg3"),
 			CornerRadius = new CornerRadius(8),
-			Padding = new Thickness(8),
+			Padding = new Thickness(6),
 			BorderBrush = Brush("Bg4"),
 			BorderThickness = new Thickness(1),
 			Child = new StackPanel {

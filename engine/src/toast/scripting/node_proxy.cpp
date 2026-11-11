@@ -415,7 +415,14 @@ auto innerBoxType(std::string_view type) -> std::string_view {
 }
 
 auto lookupField(const toast::NodeInfo* info, std::string_view key) -> const toast::FieldInfo* {
-	return info->getField(key);
+	if (const auto* field = info->getField(key)) {
+		return field;
+	}
+	// drop m_ on lua scripting
+	if (!key.starts_with("m_")) {
+		return info->getField("m_" + std::string(key));
+	}
+	return nullptr;
 }
 
 // Looks up a NodeInfo by short or fully-qualified name
