@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -1200,7 +1199,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			}
 		}
 
-		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
+		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir) {
 			var stageDir = Path.Combine(stageRoot, dbName);
 			if (Directory.Exists(stageDir)) {
 					foreach (var f in Directory.EnumerateFiles(stageDir, "*", SearchOption.AllDirectories))
@@ -1214,6 +1213,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			await Task.Run(() => {
 				foreach (var srcFile in Directory.EnumerateFiles(dbSourceDir, "*", SearchOption.AllDirectories)) {
 					var rel = Path.GetRelativePath(dbSourceDir, srcFile);
+					if (rel.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+						continue;
 					var dest = Path.Combine(stageDir, rel);
 					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 					File.Copy(srcFile, dest, true);
@@ -1221,32 +1222,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				}
 			});
 
-			// Read the manifest JSON to find all node UIDs, then overwrite their staged files with binary
 			log($"  baking nodes in {dbName}/ ...");
-			if (File.Exists(manifestJsonPath)) {
-				var manifestJson = JsonNode.Parse(File.ReadAllText(manifestJsonPath));
-				if (manifestJson?["node"] is JsonObject nodeCollection)
-					foreach (var (uid, pathNode) in nodeCollection) {
-						var virtualPath = pathNode?.GetValue<string>();
-						if (virtualPath is null) continue;
-						var sep = virtualPath.IndexOf("://", StringComparison.Ordinal);
-						if (sep < 0) continue;
-						var rel = virtualPath[(sep + 3)..];
-						var dest = Path.Combine(stageDir, rel.Replace('/', Path.DirectorySeparatorChar));
-						Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-						log($"    bake {rel}");
-						if (!await Task.Run(() => ToastEngine.BakeAsset(uid, dest)))
-							throw new Exception($"could not bake node {virtualPath}");
-					}
-			}
-
-			// Copy the manifest JSON into the stage folder root
-			var manifestDest = Path.Combine(stageDir, $"{dbName}.json");
-			if (File.Exists(manifestJsonPath)) {
-				log($"  copying manifest {dbName}.json");
-				await Task.Run(() => File.Copy(manifestJsonPath, manifestDest, true));
-			} else {
-				log($"  warning: manifest not found at {manifestJsonPath}");
+			foreach (var node in AssetStore.ListByType("node").Where(n => n.Db == dbName)) {
+				var dest = Path.Combine(stageDir, node.Path.Replace('/', Path.DirectorySeparatorChar));
+				Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+				log($"    bake {node.Path}");
+				if (!await Task.Run(() => ToastEngine.BakeAsset(node.Uid, dest)))
+					throw new Exception($"could not bake node {node.Virtual}");
 			}
 
 			// Run the Rust packer on the staging directory
@@ -1307,17 +1289,24 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		};
 
 		// Bake assets
+		var paks = new List<(string Db, string File)>();
 		foreach (var db in ProjectContext.Databases) {
 			var dbSource = Path.Combine(ProjectContext.ProjectPath, db);
-			var manifestJs = Path.Combine(ProjectContext.CachePath, $"{db}.json");
 			var dbCapture = db;
-			tasks.Add(LoaderTask.Do($"bake & pack {db}://", log => BakeAndPack(log, dbCapture, dbSource, manifestJs)));
+			paks.Add((db, $"{db}.pak"));
+			tasks.Add(LoaderTask.Do($"bake & pack {db}://", log => BakeAndPack(log, dbCapture, dbSource)));
 		}
 
 		// Bake core
-		var coreManifest = Path.Combine(ProjectContext.CachePath, "core.json");
+		paks.Add((AssetStore.CoreDb, $"{AssetStore.CoreDb}.pak"));
 		tasks.Add(LoaderTask.Do("bake & pack core://",
-			log => BakeAndPack(log, "core", ProjectContext.CorePath, coreManifest)));
+			log => BakeAndPack(log, AssetStore.CoreDb, ProjectContext.CorePath)));
+
+		tasks.Add(LoaderTask.Do("write game.db", async log => {
+			var path = Path.Combine(outputDir, AssetStore.RuntimeDatabaseName);
+			await Task.Run(() => AssetStore.ExportRuntimeDatabase(path, paks));
+			log($"  wrote {AssetStore.RuntimeDatabaseName} ({paks.Count} pak(s))");
+		}));
 
 		var vm = new LoaderViewModel(tasks);
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);

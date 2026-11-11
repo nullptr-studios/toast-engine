@@ -1332,6 +1332,13 @@ void toast_set_load_mode(int mode) noexcept {
 	assets::AssetManager::setLoadMode(mode == 1 ? assets::SaveMode::game : assets::SaveMode::editor);
 }
 
+auto toast_open_asset_database(const char* db_path) noexcept -> int {
+	if (!db_path) {
+		return 0;
+	}
+	return assets::AssetManager::openDatabase(std::filesystem::path(db_path)) ? 1 : 0;
+}
+
 void toast_mount_pack(const char* scheme, const char* pak_path) noexcept {
 	if (!scheme || !pak_path) {
 		return;
