@@ -11,7 +11,7 @@
              x:Class="editor.Editors.SchemaView"
              x:DataType="vm:SchemaViewModel"
              Background="{StaticResource Bg2}"
-             Padding="8">
+             Padding="6">
 
 	<UserControl.Styles>
 		<Style Selector="TextBlock.lbl">
@@ -28,7 +28,7 @@
 			<Setter Property="BorderThickness"
 			        Value="0" />
 			<Setter Property="Padding"
-			        Value="6" />
+			        Value="6,4" />
 			<Setter Property="CornerRadius"
 			        Value="6" />
 			<Setter Property="Cursor"
@@ -91,88 +91,88 @@
 		<!-- Enum option row -->
 		<DataTemplate x:DataType="vm:StringOptionVM">
 			<elements:StringBox Value="{Binding Value, Mode=TwoWay}"
-			                    Wrap="False" />
+			                    Wrap="False" Classes="compact-field" />
 		</DataTemplate>
 
 		<!-- Type switch case row -->
 		<DataTemplate x:DataType="vm:TypeSwitchCaseVM">
 			<StackPanel Spacing="4">
 				<Grid ColumnDefinitions="60,*"
-				      ColumnSpacing="8">
-					<TextBlock Classes="lbl"
+				      ColumnSpacing="4">
+					<TextBlock Classes="lbl compact-text"
 					           Text="Case" />
 					<elements:StringBox Grid.Column="1"
 					                    Value="{Binding CaseValue, Mode=TwoWay}"
-					                    Wrap="False" />
+					                    Wrap="False" Classes="compact-field" />
 				</Grid>
 				<Grid ColumnDefinitions="60,*"
-				      ColumnSpacing="8">
-					<TextBlock Classes="lbl"
+				      ColumnSpacing="4">
+					<TextBlock Classes="lbl compact-text"
 					           Text="Type" />
 					<elements:EnumBox Grid.Column="1"
 					                  Value="{Binding TypeKey, Mode=TwoWay}"
-					                  Options="{Binding AvailableTypes, x:CompileBindings=False}" />
+					                  Options="{Binding AvailableTypes, x:CompileBindings=False}" Classes="compact-field" />
 				</Grid>
 				<Grid ColumnDefinitions="60,*"
-				      ColumnSpacing="8">
-					<TextBlock Classes="lbl"
+				      ColumnSpacing="4">
+					<TextBlock Classes="lbl compact-text"
 					           Text="Default" />
 					<elements:StringBox Grid.Column="1"
 					                    Value="{Binding DefaultString, Mode=TwoWay}"
-					                    Wrap="False" />
+					                    Wrap="False" Classes="compact-field" />
 				</Grid>
 			</StackPanel>
 		</DataTemplate>
 
 		<!-- Schema field card -->
 		<DataTemplate x:DataType="vm:SchemaFieldItemVM">
-			<StackPanel Spacing="8">
+			<StackPanel Spacing="4">
 
 				<!-- Name -->
 				<elements:StringBox Value="{Binding Name, Mode=TwoWay}"
-				                    Wrap="False" />
+				                    Wrap="False" Classes="compact-field" />
 
 				<!-- Type -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8">
-					<TextBlock Classes="lbl"
+				      ColumnSpacing="4">
+					<TextBlock Classes="lbl compact-text"
 					           Text="Type" />
 					<elements:EnumBox Grid.Column="1"
 					                  Value="{Binding TypeKey, Mode=TwoWay}"
-					                  Options="{Binding AvailableTypes, x:CompileBindings=False}" />
+					                  Options="{Binding AvailableTypes, x:CompileBindings=False}" Classes="compact-field" />
 				</Grid>
 
 				<!-- Array toggle -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8">
-					<TextBlock Classes="lbl"
+				      ColumnSpacing="4">
+					<TextBlock Classes="lbl compact-text"
 					           Text="Array" />
 					<elements:BoolBox Grid.Column="1"
-					                  Value="{Binding IsArray, Mode=TwoWay}" />
+					                  Value="{Binding IsArray, Mode=TwoWay}" Classes="compact-field" />
 				</Grid>
 
 				<!-- Type switch toggle -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
+				      ColumnSpacing="4"
 				      IsVisible="{Binding AdvancedView}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Type Switch" />
 					<elements:BoolBox Grid.Column="1"
-					                  Value="{Binding UseTypeSwitch, Mode=TwoWay}" />
+					                  Value="{Binding UseTypeSwitch, Mode=TwoWay}" Classes="compact-field" />
 				</Grid>
 
 				<!-- Type switch controller + cases -->
-				<StackPanel Spacing="8"
+				<StackPanel Spacing="4"
 				            IsVisible="{Binding UseTypeSwitch}">
 					<Grid ColumnDefinitions="150,*"
-					      ColumnSpacing="8">
-						<TextBlock Classes="lbl"
+					      ColumnSpacing="4">
+						<TextBlock Classes="lbl compact-text"
 						           Text="Controller Field" />
 						<elements:EnumBox Grid.Column="1"
 						                  Value="{Binding TypeSwitchField, Mode=TwoWay}"
-						                  Options="{Binding TypeSwitchFieldOptions, x:CompileBindings=False}" />
+						                  Options="{Binding TypeSwitchFieldOptions, x:CompileBindings=False}" Classes="compact-field" />
 					</Grid>
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Cases" />
 					<elements:ArrayBox Background="{StaticResource Bg0}"
 					                   Padding="4"
@@ -180,32 +180,32 @@
 					                   AddLabel="Add Case"
 					                   AddCommand="{Binding AddTypeSwitchCaseCommand}"
 					                   CanReorder="True"
-					                   CanAddRemove="True" />
+					                   CanAddRemove="True" Classes="compact-array" />
 				</StackPanel>
 
 				<!-- Asset / Node subtype constraint -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
+				      ColumnSpacing="4"
 				      IsVisible="{Binding IsAssetType}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Asset Type" />
 					<elements:EnumBox Grid.Column="1"
 					                  Value="{Binding RefTypeString, Mode=TwoWay}"
-					                  Options="{Binding AssetTypeOptions}" />
+					                  Options="{Binding AssetTypeOptions}" Classes="compact-field" />
 				</Grid>
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
+				      ColumnSpacing="4"
 				      IsVisible="{Binding IsNodeType}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Node Type" />
 					<elements:EnumBox Grid.Column="1"
 					                  Value="{Binding RefTypeString, Mode=TwoWay}"
-					                  Options="{Binding NodeTypeOptions}" />
+					                  Options="{Binding NodeTypeOptions}" Classes="compact-field" />
 				</Grid>
 
 				<!-- Min / Max -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
+				      ColumnSpacing="4"
 				      IsVisible="{Binding HasMinMax}">
 					<Grid.IsVisible>
 						<MultiBinding Converter="{x:Static BoolConverters.And}">
@@ -213,92 +213,92 @@
 							<Binding Path="AdvancedView" />
 						</MultiBinding>
 					</Grid.IsVisible>
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Min" />
 					<elements:StringBox Grid.Column="1"
 					                    Value="{Binding MinString, Mode=TwoWay}"
-					                    Wrap="False" />
+					                    Wrap="False" Classes="compact-field" />
 				</Grid>
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8">
+				      ColumnSpacing="4">
 					<Grid.IsVisible>
 						<MultiBinding Converter="{x:Static BoolConverters.And}">
 							<Binding Path="HasMinMax" />
 							<Binding Path="AdvancedView" />
 						</MultiBinding>
 					</Grid.IsVisible>
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Max" />
 					<elements:StringBox Grid.Column="1"
 					                    Value="{Binding MaxString, Mode=TwoWay}"
-					                    Wrap="False" />
+					                    Wrap="False" Classes="compact-field" />
 				</Grid>
 
 				<!-- Default -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
+				      ColumnSpacing="4"
 				      IsVisible="{Binding HasTypedDefault}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Default" />
 					<Panel Grid.Column="1">
 						<elements:BoolBox Value="{Binding DefaultBool,   Mode=TwoWay}"
-						                  IsVisible="{Binding IsBoolType}" />
+						                  IsVisible="{Binding IsBoolType}" Classes="compact-field" />
 						<elements:DragIntBox Value="{Binding DefaultInt,    Mode=TwoWay}"
-						                     IsVisible="{Binding IsIntType}" />
+						                     IsVisible="{Binding IsIntType}" Classes="compact-field" />
 						<elements:DragFloatBox Value="{Binding DefaultFloat,  Mode=TwoWay}"
-						                       IsVisible="{Binding IsFloatType}" />
+						                       IsVisible="{Binding IsFloatType}" Classes="compact-field" />
 						<elements:StringBox Value="{Binding DefaultString, Mode=TwoWay}"
 						                    Wrap="False"
-						                    IsVisible="{Binding IsStringType}" />
+						                    IsVisible="{Binding IsStringType}" Classes="compact-field" />
 						<elements:EnumBox Value="{Binding DefaultString, Mode=TwoWay}"
 						                  Options="{Binding EnumOptionsStrings}"
-						                  IsVisible="{Binding IsEnum}" />
+						                  IsVisible="{Binding IsEnum}" Classes="compact-field" />
 						<elements:NodeBox Value="{Binding DefaultString, Mode=TwoWay}"
-						                  IsVisible="{Binding IsNodeType}" />
+						                  IsVisible="{Binding IsNodeType}" Classes="compact-field" />
 						<elements:AssetBox Value="{Binding DefaultString, Mode=TwoWay}"
-						                   IsVisible="{Binding IsAssetType}" />
+						                   IsVisible="{Binding IsAssetType}" Classes="compact-field" />
 						<elements:Color3Box R="{Binding DefaultX, Mode=TwoWay}"
 						                    G="{Binding DefaultY, Mode=TwoWay}"
 						                    B="{Binding DefaultZ, Mode=TwoWay}"
-						                    IsVisible="{Binding IsColor3Type}" />
+						                    IsVisible="{Binding IsColor3Type}" Classes="compact-field" />
 						<elements:Color4Box R="{Binding DefaultX, Mode=TwoWay}"
 						                    G="{Binding DefaultY, Mode=TwoWay}"
 						                    B="{Binding DefaultZ, Mode=TwoWay}"
 						                    A="{Binding DefaultW, Mode=TwoWay}"
-						                    IsVisible="{Binding IsColor4Type}" />
+						                    IsVisible="{Binding IsColor4Type}" Classes="compact-field" />
 					</Panel>
 				</Grid>
 				<!-- Vec defaults -->
 				<StackPanel Spacing="4"
 				            IsVisible="{Binding IsVec2Type}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Default" />
 					<elements:DragVec2Box X="{Binding DefaultX, Mode=TwoWay}"
-					                      Y="{Binding DefaultY, Mode=TwoWay}" />
+					                      Y="{Binding DefaultY, Mode=TwoWay}" Classes="compact-vector" />
 				</StackPanel>
 				<StackPanel Spacing="4"
 				            IsVisible="{Binding IsVec3Type}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Default" />
 					<elements:DragVec3Box X="{Binding DefaultX, Mode=TwoWay}"
 					                      Y="{Binding DefaultY, Mode=TwoWay}"
-					                      Z="{Binding DefaultZ, Mode=TwoWay}" />
+					                      Z="{Binding DefaultZ, Mode=TwoWay}" Classes="compact-vector" />
 				</StackPanel>
 
 				<!-- Description (Advanced) -->
 				<Grid ColumnDefinitions="150,*"
-				      ColumnSpacing="8"
+				      ColumnSpacing="4"
 				      IsVisible="{Binding AdvancedView}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Description" />
 					<elements:StringBox Grid.Column="1"
-					                    Value="{Binding Description, Mode=TwoWay}" />
+					                    Value="{Binding Description, Mode=TwoWay}" Classes="compact-field" />
 				</Grid>
 
 				<!-- Enum options  -->
 				<StackPanel Spacing="4"
 				            IsVisible="{Binding IsEnum}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Options" />
 					<elements:ArrayBox Background="{StaticResource Bg0}"
 					                   Padding="4"
@@ -306,13 +306,13 @@
 					                   AddLabel="Add Option"
 					                   AddCommand="{Binding AddEnumOptionCommand}"
 					                   CanReorder="True"
-					                   CanAddRemove="True" />
+					                   CanAddRemove="True" Classes="compact-array" />
 				</StackPanel>
 
 				<!-- Variants (Advanced) -->
 				<StackPanel Spacing="4"
 				            IsVisible="{Binding AdvancedView}">
-					<TextBlock Classes="lbl"
+					<TextBlock Classes="lbl compact-text"
 					           Text="Variants" />
 					<elements:ArrayBox Background="{StaticResource Bg0}"
 					                   Padding="4"
@@ -320,7 +320,7 @@
 					                   AddLabel="Add Variant"
 					                   AddCommand="{Binding AddVariantCommand}"
 					                   CanReorder="True"
-					                   CanAddRemove="True" />
+					                   CanAddRemove="True" Classes="compact-array" />
 				</StackPanel>
 
 			</StackPanel>
@@ -328,16 +328,16 @@
 
 		<!--Struct type card -->
 		<DataTemplate x:DataType="vm:StructTypeVM">
-			<StackPanel Spacing="8">
+			<StackPanel Spacing="4">
 
 				<!-- header -->
-				<Button Classes="struct-hdr"
+				<Button Classes="struct-hdr compact-control"
 				        Command="{Binding BeginEditNameCommand}"
 				        IsVisible="{Binding !IsEditingName}"
-				        Height="32"
+				        Height="26"
 				        VerticalContentAlignment="Center">
 					<TextBlock Text="{Binding Name}"
-					           FontWeight="Bold" />
+					           FontWeight="Bold" Classes="compact-text" />
 				</Button>
 				<TextBox Text="{Binding NameDraft, Mode=TwoWay}"
 				         IsVisible="{Binding IsEditingName}"
@@ -345,7 +345,7 @@
 				         CornerRadius="4"
 				         Padding="6,3"
 				         Background="{StaticResource Bg1}"
-				         FontWeight="Bold">
+				         FontWeight="Bold" Classes="compact-control">
 					<TextBox.KeyBindings>
 						<KeyBinding Gesture="Return"
 						            Command="{Binding CommitEditNameCommand}" />
@@ -354,16 +354,16 @@
 					</TextBox.KeyBindings>
 				</TextBox>
 
-				<StackPanel Spacing="8">
+				<StackPanel Spacing="4">
 					<!-- Discriminator (Advanced) -->
 					<Grid ColumnDefinitions="150,*"
-					      ColumnSpacing="8"
+					      ColumnSpacing="4"
 					      IsVisible="{Binding AdvancedView}">
-						<TextBlock Classes="lbl"
+						<TextBlock Classes="lbl compact-text"
 						           Text="Discriminator" />
 						<elements:EnumBox Grid.Column="1"
 						                  Value="{Binding Discriminator, Mode=TwoWay}"
-						                  Options="{Binding DiscriminatorOptions}" />
+						                  Options="{Binding DiscriminatorOptions}" Classes="compact-field" />
 					</Grid>
 
 					<!-- fields -->
@@ -374,24 +374,24 @@
 					                   RowPadding="6,5"
 					                   Items="{Binding Fields, Mode=TwoWay}"
 					                   CanReorder="True"
-					                   CanAddRemove="True" />
+					                   CanAddRemove="True" Classes="compact-array" />
 
 					<!-- Property button -->
 					<Button HorizontalAlignment="Stretch"
 					        HorizontalContentAlignment="Center"
 					        CornerRadius="6"
-					        Padding="6"
+					        Padding="6,4"
 					        Command="{Binding AddFieldCommand}"
-					        Background="{StaticResource Bg4}">
+					        Background="{StaticResource Bg4}" Classes="compact-control">
 						<StackPanel Orientation="Horizontal"
-						            Spacing="6">
+						            Spacing="4">
 							<lucide:LucideIcon Kind="Plus"
 							                   Size="14"
 							                   StrokeWidth="2.5"
 							                   Foreground="{StaticResource TextMuted}" />
 							<TextBlock Text="Add Property"
 							           VerticalAlignment="Center"
-							           Foreground="{StaticResource TextMuted}" />
+							           Foreground="{StaticResource TextMuted}" Classes="compact-text" />
 						</StackPanel>
 					</Button>
 				</StackPanel>
@@ -402,37 +402,37 @@
 	</UserControl.DataTemplates>
 
 	<Grid RowDefinitions="Auto,*"
-	      RowSpacing="8">
+	      RowSpacing="4">
 
 		<!-- Header -->
 		<Border Grid.Row="0"
 		        Background="{StaticResource Bg3}"
 		        CornerRadius="8"
-		        Padding="10">
+		        Padding="6">
 			<Grid ColumnDefinitions="*,Auto"
-			      ColumnSpacing="8">
+			      ColumnSpacing="4">
 				<StackPanel Grid.Column="0"
 				            Spacing="2"
 				            VerticalAlignment="Center">
 					<TextBlock Text="{Binding DisplayTitle}"
 					           FontWeight="Bold"
-					           FontSize="16" />
+					           FontSize="14" />
 					<TextBlock Text="{Binding CurrentPath}"
 					           Foreground="{StaticResource TextMuted}"
-					           TextTrimming="CharacterEllipsis" />
+					           TextTrimming="CharacterEllipsis" Classes="compact-text" />
 				</StackPanel>
 				<Button Grid.Column="1"
 				        Command="{Binding SaveCommand}"
 				        Background="{StaticResource Red}"
 				        CornerRadius="6"
-				        Padding="10,6">
+				        Padding="10,6" Classes="compact-control">
 					<StackPanel Orientation="Horizontal"
 					            Spacing="4">
 						<lucide:LucideIcon Kind="Save"
 						                   Size="14"
 						                   StrokeWidth="2.5" />
 						<TextBlock Text="Save"
-						           FontWeight="SemiBold" />
+						           FontWeight="SemiBold" Classes="compact-text" />
 					</StackPanel>
 				</Button>
 			</Grid>
@@ -443,65 +443,65 @@
 			<ScrollViewer HorizontalScrollBarVisibility="Disabled"
 			              IsVisible="{Binding HasContent, x:CompileBindings=False}">
 
-				<StackPanel Spacing="8">
-					<Grid ColumnDefinitions="Auto,*,Auto">
-						<StackPanel Grid.Column="1"
+				<StackPanel Spacing="4">
+					<WrapPanel x:Name="SchemaToolbar" Orientation="Horizontal" ItemSpacing="8" LineSpacing="4">
+						<StackPanel
 						            Orientation="Horizontal"
-						            HorizontalAlignment="Center"
-						            Spacing="8">
-							<Button Classes="tab-btn"
+						            HorizontalAlignment="Left"
+						            Spacing="4">
+							<Button Classes="tab-btn compact-control"
 							        Classes.selected="{Binding ShowProperties}"
 							        Command="{Binding SelectPropertiesTabCommand}">
 								<StackPanel Orientation="Horizontal"
-								            Spacing="6">
+								            Spacing="4">
 									<LucideIcon Kind="TableProperties"
 									            Size="16"
 									            StrokeWidth="2.5"
 									            Foreground="{StaticResource Text}" />
 									<TextBlock Text="Fields"
-									           Foreground="{StaticResource Text}" />
+									           Foreground="{StaticResource Text}" Classes="compact-text" />
 								</StackPanel>
 							</Button>
-							<Button Classes="tab-btn"
+							<Button Classes="tab-btn compact-control"
 							        Classes.selected="{Binding ShowTypes}"
 							        Command="{Binding SelectTypesTabCommand}">
 								<StackPanel Orientation="Horizontal"
-								            Spacing="6">
+								            Spacing="4">
 									<LucideIcon Kind="Settings2"
 									            Size="16"
 									            StrokeWidth="2.5"
 									            Foreground="{StaticResource Text}" />
 									<TextBlock Text="Types"
-									           Foreground="{StaticResource Text}" />
+									           Foreground="{StaticResource Text}" Classes="compact-text" />
 								</StackPanel>
 							</Button>
 						</StackPanel>
 
 						<!-- Advanced view toggle -->
-						<StackPanel Grid.Column="2"
+						<StackPanel
 						            Orientation="Horizontal"
-						            Spacing="6"
+						            Spacing="4"
 						            VerticalAlignment="Center">
-							<TextBlock Classes="lbl"
+							<TextBlock Classes="lbl compact-text"
 							           Text="Advanced" />
-							<elements:BoolBox Value="{Binding AdvancedView, Mode=TwoWay}" />
+							<elements:BoolBox Value="{Binding AdvancedView, Mode=TwoWay}" Classes="compact-field" />
 						</StackPanel>
-					</Grid>
+					</WrapPanel>
 
 					<!-- Root discriminator (Advanced, Fields tab) -->
 					<Grid ColumnDefinitions="150,*"
-					      ColumnSpacing="8">
+					      ColumnSpacing="4">
 						<Grid.IsVisible>
 							<MultiBinding Converter="{x:Static BoolConverters.And}">
 								<Binding Path="ShowProperties" />
 								<Binding Path="AdvancedView" />
 							</MultiBinding>
 						</Grid.IsVisible>
-						<TextBlock Classes="lbl"
+						<TextBlock Classes="lbl compact-text"
 						           Text="Root Discriminator" />
 						<elements:EnumBox Grid.Column="1"
 						                  Value="{Binding RootDiscriminator, Mode=TwoWay}"
-						                  Options="{Binding RootDiscriminatorOptions}" />
+						                  Options="{Binding RootDiscriminatorOptions}" Classes="compact-field" />
 					</Grid>
 
 					<!-- Properties list -->
@@ -510,26 +510,26 @@
 					                   Padding="0"
 					                   RowBackground="{StaticResource Bg3}"
 					                   RowCornerRadius="6"
-					                   RowPadding="8,6"
-					                   ItemSpacing="8"
+					                   RowPadding="6,3"
+					                   ItemSpacing="4"
 					                   Items="{Binding Fields, Mode=TwoWay}"
 					                   CanReorder="True"
 					                   CanAddRemove="True"
-					                   IsVisible="{Binding ShowProperties}" />
+					                   IsVisible="{Binding ShowProperties}" Classes="compact-array" />
 
 					<!-- Property button -->
-					<Button Classes="add-btn"
+					<Button Classes="add-btn compact-control"
 					        Command="{Binding AddFieldCommand}"
 					        IsVisible="{Binding ShowProperties}">
 						<StackPanel Orientation="Horizontal"
-						            Spacing="6">
+						            Spacing="4">
 							<lucide:LucideIcon Kind="Plus"
 							                   Size="14"
 							                   StrokeWidth="2.5"
 							                   Foreground="{StaticResource TextMuted}" />
 							<TextBlock Text="Add Field"
 							           VerticalAlignment="Center"
-							           Foreground="{StaticResource TextMuted}" />
+							           Foreground="{StaticResource TextMuted}" Classes="compact-text" />
 						</StackPanel>
 					</Button>
 
@@ -539,32 +539,32 @@
 					                   Padding="0"
 					                   RowBackground="{StaticResource Bg3}"
 					                   RowCornerRadius="6"
-					                   RowPadding="8,6"
-					                   ItemSpacing="8"
+					                   RowPadding="6,3"
+					                   ItemSpacing="4"
 					                   Items="{Binding StructTypes, Mode=TwoWay}"
 					                   CanReorder="True"
 					                   CanAddRemove="True"
-					                   IsVisible="{Binding ShowTypes}" />
+					                   IsVisible="{Binding ShowTypes}" Classes="compact-array" />
 
 					<!-- Object Type -->
-					<Button Classes="add-btn"
+					<Button Classes="add-btn compact-control"
 					        Command="{Binding AddStructTypeCommand}"
 					        IsVisible="{Binding ShowTypes}">
 						<StackPanel Orientation="Horizontal"
-						            Spacing="6">
+						            Spacing="4">
 							<lucide:LucideIcon Kind="Plus"
 							                   Size="14"
 							                   StrokeWidth="2.5"
 							                   Foreground="{StaticResource TextMuted}" />
 							<TextBlock Text="Add Type"
 							           VerticalAlignment="Center"
-							           Foreground="{StaticResource TextMuted}" />
+							           Foreground="{StaticResource TextMuted}" Classes="compact-text" />
 						</StackPanel>
 					</Button>
 				</StackPanel>
 			</ScrollViewer>
 
-			<StackPanel Spacing="8"
+			<StackPanel Spacing="4"
 			            HorizontalAlignment="Center"
 			            VerticalAlignment="Center"
 			            IsVisible="{Binding !HasContent, x:CompileBindings=False}">
@@ -575,7 +575,7 @@
 				                   HorizontalAlignment="Center" />
 				<TextBlock Text="No schema file open"
 				           FontWeight="SemiBold"
-				           FontSize="16"
+				           FontSize="14"
 				           Foreground="{StaticResource TextMuted}"
 				           HorizontalAlignment="Center" />
 				<TextBlock Text="Double-click a schema asset in the Asset Browser"
@@ -583,7 +583,7 @@
 				           Foreground="{StaticResource TextMuted}"
 				           HorizontalAlignment="Center"
 				           TextWrapping="Wrap"
-				           TextAlignment="Center" />
+				           TextAlignment="Center" Classes="compact-text" />
 			</StackPanel>
 		</Panel>
 

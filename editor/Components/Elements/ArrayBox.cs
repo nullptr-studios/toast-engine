@@ -370,7 +370,7 @@ public sealed class ArrayBox : TemplatedControl {
 		var card = new Border {
 			Background = Brush("Bg3"),
 			CornerRadius = new CornerRadius(6),
-			Padding = new Thickness(8),
+			Padding = new Thickness(Classes.Contains("compact-array") ? 6 : 8),
 			Child = grid
 		};
 		// Container RowBackground is null

@@ -19,6 +19,7 @@
 			        Value="Transparent" />
 		</Style>
 		<Style Selector="ListBox.signal-tree ListBoxItem">
+			<Setter Property="MinHeight" Value="26" />
 			<Setter Property="Padding"
 			        Value="0" />
 			<Setter Property="HorizontalContentAlignment"
@@ -90,14 +91,14 @@
 					<DataTemplate x:DataType="vm:SignalCardViewModel">
 						<Border Background="{StaticResource Bg3}"
 						        CornerRadius="8"
-						        Padding="8"
+						        Padding="6"
 						        Margin="0,0,0,8">
 							<StackPanel>
-								<ToggleButton Classes="card-header"
+								<ToggleButton Classes="card-header compact-control"
 								              IsChecked="{Binding Expanded, Mode=TwoWay}">
 									<StackPanel Orientation="Horizontal"
 									            HorizontalAlignment="Center"
-									            Spacing="8">
+									            Spacing="4">
 										<Border Width="16"
 										        Height="16"
 										        Background="{Binding Color}">
@@ -107,7 +108,7 @@
 										</Border>
 										<TextBlock Text="{Binding TypeName}"
 										           FontWeight="Bold"
-										           VerticalAlignment="Center" />
+										           VerticalAlignment="Center" Classes="compact-text" />
 									</StackPanel>
 								</ToggleButton>
 								<ListBox Classes="signal-tree"
@@ -120,7 +121,7 @@
 											<StackPanel>
 												<Border Classes="signal-row"
 											        CornerRadius="6"
-											        Height="28"
+											        Height="26"
 											        Padding="4,0"
 												        DoubleTapped="OnSignalDoubleTapped">
 													<Border.ContextMenu>
@@ -141,14 +142,14 @@
 														           Text="{Binding Signature}"
 														           Margin="8,0,0,0"
 														           VerticalAlignment="Center"
-														           TextTrimming="CharacterEllipsis" />
+														           TextTrimming="CharacterEllipsis" Classes="compact-text" />
 													</Grid>
 												</Border>
 										<ItemsControl ItemsSource="{Binding Connections}"
 										              Margin="7,0,0,0">
 													<ItemsControl.ItemTemplate>
 														<DataTemplate x:DataType="vm:SignalConnectionViewModel">
-													<Grid Height="28"
+													<Grid Height="26"
 													      ColumnDefinitions="12,*">
 														<Grid>
 															<Border Width="2"
@@ -182,12 +183,12 @@
 																		            StrokeWidth="2.5"
 																		            Foreground="{Binding Color}" />
 																		<TextBlock Text="{Binding Label}"
-																		           TextTrimming="CharacterEllipsis">
+																		           TextTrimming="CharacterEllipsis" Classes="compact-text">
 																			<ToolTip.Tip>
 																				<StackPanel Spacing="4"
 																				            Margin="4">
-																					<TextBlock Text="{Binding TargetType}" />
-																					<TextBlock Text="{Binding Detail}" />
+																					<TextBlock Text="{Binding TargetType}" Classes="compact-text" />
+																					<TextBlock Text="{Binding Detail}" Classes="compact-text" />
 																				</StackPanel>
 																			</ToolTip.Tip>
 																		</TextBlock>
@@ -214,6 +215,6 @@
 		           VerticalAlignment="Center"
 		           TextAlignment="Center"
 		           TextWrapping="Wrap"
-		           Margin="24" />
+		           Margin="24" Classes="compact-text" />
 	</Grid>
 </UserControl>

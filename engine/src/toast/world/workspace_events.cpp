@@ -743,6 +743,9 @@ struct ProtoTraits<InspectorLuaContent::LuaField> {
 		p.set_min(e.min);
 		p.set_max(e.max);
 		p.set_unit(e.unit);
+		for (const auto& option : e.enum_options) {
+			p.add_enum_options(option);
+		}
 		return p;
 	}
 
@@ -760,7 +763,8 @@ struct ProtoTraits<InspectorLuaContent::LuaField> {
 		  p.hidden(),
 		  p.min(),
 		  p.max(),
-		  p.unit()
+		  p.unit(),
+		  {p.enum_options().begin(), p.enum_options().end()}
 		};
 	}
 };

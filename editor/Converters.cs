@@ -247,3 +247,14 @@ file static class ConverterHelpers {
 		return null;
 	}
 }
+
+public sealed class NegateThicknessConverter : IValueConverter {
+	public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+		value is Thickness t
+			? new Thickness(parameter as string == "Vertical" ? 0 : -t.Left, -t.Top,
+				parameter as string == "Vertical" ? 0 : -t.Right, -t.Bottom)
+			: default(Thickness);
+
+	public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+		throw new NotSupportedException();
+}

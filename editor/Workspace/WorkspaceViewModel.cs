@@ -138,6 +138,11 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public bool IsPlayingInViewport => PlayState is PlayState.Playing or PlayState.Simulating;
 	public bool IsPlayingExternal => PlayState == PlayState.PlayingExternal;
 	public bool IsPlayModeActive => PlayState != PlayState.Stopped;
+	public bool CanActivateTab => !AnyPlayActive || IsPlayModeActive;
+
+	public void RefreshCanActivateTab() {
+		OnPropertyChanged(nameof(CanActivateTab));
+	}
 	public bool CanPause => PlayState != PlayState.Stopped;
 	public bool IsOrbitCamera => CameraMode == CameraMode.Orbit;
 

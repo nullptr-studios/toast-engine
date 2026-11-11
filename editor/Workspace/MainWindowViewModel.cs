@@ -203,6 +203,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		SaveAllNodesCommand.NotifyCanExecuteChanged();
 		PlayCommand.NotifyCanExecuteChanged();
 		PlayInWindowCommand.NotifyCanExecuteChanged();
+		NewNodeCommand.NotifyCanExecuteChanged();
+		OpenNodeFileCommand.NotifyCanExecuteChanged();
+		foreach (var workspace in m_workspaces.Values) workspace.RefreshCanActivateTab();
 	}
 
 	private IEnumerable<IAutosavable> EnumerateAutosavables() {
@@ -403,6 +406,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (file.Definition is not { CanBeEdited: true } def) return;
 		if (file.Uid is not { } uid) return;
 		if (!AssetDatabase.TryResolve(uid, out var virtualPath, out _)) return;
+		if (def.EditorTool == "NodeEditor" && !CanOpenNodes()) return;
 
 		// Opening a lockable asset nobody holds takes its lock
 		if (def is not ProjectSettingsAsset && def.EditorTool != "NodeEditor")
@@ -823,7 +827,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (string.Equals(ActiveLayoutName, name, StringComparison.Ordinal)) ResetLayout();
 	}
 
-	[RelayCommand]
+	// no tab may open under a running game
+	private static bool CanOpenNodes() {
+		return !WorkspaceViewModel.AnyPlayActive;
+	}
+
+	[RelayCommand(CanExecute = nameof(CanOpenNodes))]
 	private async Task NewNode() {
 		if (App.MainWindow is not { } owner) return;
 		var popup = new NodeTypeTree();
@@ -835,7 +844,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		SyncActiveWorkspace();
 	}
 
-	[RelayCommand]
+	[RelayCommand(CanExecute = nameof(CanOpenNodes))]
 	private async Task OpenNodeFile() {
 		if (App.MainWindow is not { } owner) return;
 		var uid = await new AssetList("Node").ShowDialog<string?>(owner);

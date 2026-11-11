@@ -46,7 +46,7 @@ public sealed class LayerTagBox : TemplatedControl {
 	public const int Columns = 4;
 	public const int MinRows = 1;
 	public const int MaxRows = PhysicsLayers.Count / Columns;
-	private const double RowStep = 36.0; // cell height + row spacing
+	private double RowStep => Classes.Contains("compact-tags") ? 30 : 36; // cell height + row spacing
 
 	public static readonly StyledProperty<uint> IncludedProperty =
 		AvaloniaProperty.Register<LayerTagBox, uint>(nameof(Included));

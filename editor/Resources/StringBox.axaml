@@ -26,6 +26,7 @@
 		        Value="15" />
 		<Setter Property="MinHeight"
 		        Value="34" />
+		<Setter Property="Padding" Value="8" />
 		<Setter Property="HorizontalAlignment"
 		        Value="Stretch" />
 		<Setter Property="CornerRadius"
@@ -35,7 +36,7 @@
 			<ControlTemplate>
 				<Border x:Name="PART_Root"
 				        CornerRadius="{TemplateBinding CornerRadius}"
-				        Padding="8,8">
+				        Padding="{TemplateBinding Padding}">
 					<Panel>
 						<TextBlock x:Name="PART_Display"
 						           Text="{TemplateBinding Value}"
@@ -47,8 +48,8 @@
 						         Background="{StaticResource Bg1}"
 						         Foreground="{StaticResource Text}"
 						         BorderThickness="0"
-						         Padding="8"
-						         Margin="-8"
+						         Padding="{TemplateBinding Padding}"
+						         Margin="{Binding Padding, RelativeSource={RelativeSource TemplatedParent}, Converter={StaticResource NegateThicknessConverter}}"
 						         MinHeight="0"
 						         TextWrapping="{TemplateBinding WrapMode}"
 						         AcceptsReturn="False"
