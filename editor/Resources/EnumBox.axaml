@@ -61,13 +61,24 @@
 						        Padding="4"
 						        BorderBrush="{StaticResource Bg4}"
 						        BorderThickness="1">
-							<ItemsControl x:Name="PART_List">
-								<ItemsControl.ItemsPanel>
-									<ItemsPanelTemplate>
-										<StackPanel Spacing="2" />
-									</ItemsPanelTemplate>
-								</ItemsControl.ItemsPanel>
-							</ItemsControl>
+							<StackPanel Spacing="4">
+								<TextBox x:Name="PART_Search"
+								         PlaceholderText="Search..."
+								         IsVisible="False"
+								         MinHeight="0"
+								         Padding="8,5"
+								         FontSize="14" />
+								<ScrollViewer MaxHeight="320"
+								              HorizontalScrollBarVisibility="Disabled">
+									<ItemsControl x:Name="PART_List">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Spacing="2" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+									</ItemsControl>
+								</ScrollViewer>
+							</StackPanel>
 						</Border>
 					</Popup>
 				</Panel>

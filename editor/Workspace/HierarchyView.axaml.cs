@@ -19,16 +19,10 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
-	private const double DragThreshold = 4;
-
 	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
 
 	private HierarchyElement? m_dropTarget;
-	private PointerPressedEventArgs? m_pressArgs;
-
-	private HierarchyElement? m_pressItem;
-	private Point m_pressPoint;
-	private bool m_pressWasSelected;
+	private readonly HierarchyRowPress<HierarchyElement> m_rowPress = new();
 	private HierarchyViewModel? m_vm;
 
 	public HierarchyView() {
@@ -99,43 +93,24 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 
 		// remember the press so a small move can promote to a drag, and a click
 		// can fall through to fold/unfold on release
-		m_pressItem = el;
-		m_pressArgs = e;
-		m_pressPoint = e.GetPosition(this);
-		m_pressWasSelected = ReferenceEquals(el, vm.SelectedNode);
-		if (!m_pressWasSelected) vm.SelectedNode = el;
+		var wasSelected = ReferenceEquals(el, vm.SelectedNode);
+		m_rowPress.Begin(el, e, this, wasSelected);
+		if (!wasSelected) vm.SelectedNode = el;
 		Focus();
 	}
 
 	private async void OnItemPointerMoved(object? sender, PointerEventArgs e) {
-		if (m_pressItem is null || m_pressArgs is null) return;
-		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-
-		var delta = e.GetPosition(this) - m_pressPoint;
-		if (delta.X * delta.X + delta.Y * delta.Y < DragThreshold * DragThreshold) return;
-
-		var item = m_pressItem;
-		var args = m_pressArgs;
-		ClearPress();
-		if (item.IsRoot) return; // the root cannot be reparented
+		if (m_rowPress.TakeDrag(e, this) is not { } drag || drag.Row.IsRoot) return; // the root cannot be reparented
 
 		var data = new DataTransfer();
-		data.Add(DataTransferItem.Create(NodeDragData.Format, item));
-		await DragDrop.DoDragDropAsync(args, data, DragDropEffects.Copy | DragDropEffects.Move);
+		data.Add(DataTransferItem.Create(NodeDragData.Format, drag.Row));
+		await DragDrop.DoDragDropAsync(drag.Args, data, DragDropEffects.Copy | DragDropEffects.Move);
 		SetDropTarget(null);
 		Connector.SetDropLine(-1, 0);
 	}
 
 	private void OnItemPointerReleased(object? sender, PointerReleasedEventArgs e) {
-		// a click on the already-selected node toggles fold
-		if (m_pressItem is { } item && m_pressWasSelected) Vm?.ToggleExpand(item);
-		ClearPress();
-	}
-
-	private void ClearPress() {
-		m_pressItem = null;
-		m_pressArgs = null;
-		m_pressWasSelected = false;
+		if (m_rowPress.TakeClick(e) is { WasSelected: true } click) Vm?.ToggleExpand(click.Row);
 	}
 
 	private void OnRenameStarted(HierarchyElement element) {

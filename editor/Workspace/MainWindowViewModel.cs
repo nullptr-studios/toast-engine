@@ -44,6 +44,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private ulong m_activeWorkspaceHandle;
 	private bool m_applyingLayout;
 	[ObservableProperty] private bool m_curveEditorVisible;
+	[ObservableProperty] private bool m_luaEditorVisible;
 	[ObservableProperty] private bool m_genericEditorVisible;
 	[ObservableProperty] private bool m_hapticsEditorVisible;
 	[ObservableProperty] private bool m_paletteEditorVisible;
@@ -128,11 +129,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			if (e.Dockable == m_toastZoneFactory.CurveEditorVm) m_curveEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.TableEditorVm) m_tableEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.PaletteEditorVm) m_paletteEditorVisible = false;
+			if (e.Dockable == m_toastZoneFactory.LuaEditorVm) m_luaEditorVisible = false;
 
 			OnPropertyChanged(nameof(LogsVisible));
 			OnPropertyChanged(nameof(HapticsEditorVisible));
 			OnPropertyChanged(nameof(CurveEditorVisible));
 			OnPropertyChanged(nameof(TableEditorVisible));
+			OnPropertyChanged(nameof(LuaEditorVisible));
 			OnPropertyChanged(nameof(PaletteEditorVisible));
 		};
 
@@ -212,6 +215,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
 		if (m_toastZoneFactory.TableEditorVm is { } table) yield return table;
 		if (m_toastZoneFactory.PaletteEditorVm is { } palette) yield return palette;
+		if (m_toastZoneFactory.LuaEditorVm is { } lua) yield return lua;
 	}
 
 	[RelayCommand]
@@ -376,6 +380,27 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		ToggleToastTool("Curve", value);
 	}
 
+	partial void OnLuaEditorVisibleChanged(bool value) {
+		if (m_applyingLayout) return;
+		if (value && m_toastZoneFactory.LuaEditorVm is { } vm) ShowLuaWindow(vm);
+		else if (!value) LuaEditor.LuaEditorWindow.CloseOpen();
+	}
+
+	private void ShowLuaWindow(LuaEditor.LuaGraphEditorViewModel vm) {
+		// old layouts may still contain a docked lua editor
+		m_toastZoneFactory.EvictLuaTool();
+		LuaEditor.LuaEditorWindow.ShowFor(vm, App.MainWindow, () => {
+			if (m_luaEditorVisible) {
+				m_luaEditorVisible = false;
+				OnPropertyChanged(nameof(LuaEditorVisible));
+			}
+		});
+		if (!m_luaEditorVisible) {
+			m_luaEditorVisible = true;
+			OnPropertyChanged(nameof(LuaEditorVisible));
+		}
+	}
+
 	partial void OnShowDebugWindowsChanged(bool value) {
 		ToastEngine.SetShowDebugWindows(value);
 	}
@@ -439,6 +464,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				if (m_toastZoneFactory.TableEditorVm is { } tableVm) {
 					_ = OpenToastEditorAsync(tableVm, uid, virtualPath, def, recoverPath);
 					TableEditorVisible = true;
+				}
+
+				break;
+			case "LuaEditor":
+				if (m_toastZoneFactory.LuaEditorVm is { } luaVm) {
+					_ = OpenToastEditorAsync(luaVm, uid, virtualPath, def, recoverPath);
+					ShowLuaWindow(luaVm);
 				}
 
 				break;
@@ -636,6 +668,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true }) dirty.Add("Haptics");
 		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true }) dirty.Add("Table");
 		if (m_toastZoneFactory.PaletteEditorVm is { IsDirty: true }) dirty.Add("Palette");
+		if (m_toastZoneFactory.LuaEditorVm is { IsDirty: true }) dirty.Add("Lua");
 		return dirty;
 	}
 
@@ -673,6 +706,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.PaletteEditorVm is { } palette)
 			AddEditor("Palette", palette.IsDirty, palette.CurrentPath, palette.CurrentUid, palette.SaveCommand,
 				() => palette.IsDirty);
+		if (m_toastZoneFactory.LuaEditorVm is { } luaGraph)
+			AddEditor("Lua", luaGraph.IsDirty, luaGraph.CurrentPath, luaGraph.CurrentUid, luaGraph.SaveCommand, () => luaGraph.IsDirty);
 
 		return items;
 	}
@@ -708,11 +743,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			case "Haptics": HapticsEditorVisible = true; break;
 			case "Table": TableEditorVisible = true; break;
 			case "Palette": PaletteEditorVisible = true; break;
+			case "Lua": LuaEditorVisible = true; break;
 		}
 	}
 
 #pragma warning disable MVVMTK0034
 	private void SyncVisibilityFromDocks() {
+		m_toastZoneFactory.EvictLuaTool();
 		m_hierarchyVisible = m_dockFactory.IsToolVisible("Hierarchy");
 		m_historyVisible = m_dockFactory.IsToolVisible("History");
 		m_locksVisible = m_dockFactory.IsToolVisible("Locks");
@@ -725,6 +762,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		m_curveEditorVisible = m_toastZoneFactory.IsToolVisible("Curve");
 		m_tableEditorVisible = m_toastZoneFactory.IsToolVisible("Table");
 		m_paletteEditorVisible = m_toastZoneFactory.IsToolVisible("Palette");
+		m_luaEditorVisible = LuaEditor.LuaEditorWindow.IsOpen;
 
 		OnPropertyChanged(nameof(HierarchyVisible));
 		OnPropertyChanged(nameof(HistoryVisible));
@@ -737,6 +775,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		OnPropertyChanged(nameof(HapticsEditorVisible));
 		OnPropertyChanged(nameof(CurveEditorVisible));
 		OnPropertyChanged(nameof(TableEditorVisible));
+		OnPropertyChanged(nameof(LuaEditorVisible));
 		OnPropertyChanged(nameof(PaletteEditorVisible));
 	}
 #pragma warning restore MVVMTK0034

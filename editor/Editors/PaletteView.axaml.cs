@@ -93,21 +93,7 @@ public partial class PaletteView : UserControl {
 		m_timers[column]?.Stop();
 
 		var definition = Root.ColumnDefinitions[column];
-		var clock = Stopwatch.StartNew();
-		var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(8) };
-		m_timers[column] = timer;
-		timer.Tick += (_, _) => {
-			var t = Math.Min(clock.ElapsedMilliseconds / (double)AnimationMs, 1.0);
-			var eased = 1 - Math.Pow(1 - t, 3);
-			if (t >= 1) {
-				timer.Stop();
-				definition.Width = final;
-				return;
-			}
-
-			definition.Width = new GridLength(from + (to - from) * eased);
-		};
-		timer.Start();
+		m_timers[column] = Components.Elements.CollapseAnimator.Run(from, to, width => definition.Width = new GridLength(width), () => definition.Width = final);
 	}
 
 	private void OnLabelTapped(object? sender, TappedEventArgs e) {

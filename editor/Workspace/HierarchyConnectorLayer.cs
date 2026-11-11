@@ -6,6 +6,10 @@ using Avalonia.Media;
 namespace editor.Workspace;
 
 // You dont even know how much this took -x
+public interface IHierarchyRow {
+	int Depth { get; }
+}
+
 public sealed class HierarchyConnectorLayer : Control {
 	public const double RowHeight = 28;
 	public const double IndentStep = 20;
@@ -22,10 +26,10 @@ public sealed class HierarchyConnectorLayer : Control {
 	private int m_dropLineDepth;
 	private int m_dropLineIndex = -1; // row boundary to draw the insertion line at; -1 = none
 
-	private IReadOnlyList<HierarchyElement> m_rows = [];
+	private IReadOnlyList<IHierarchyRow> m_rows = [];
 	private int m_selectedIndex = -1;
 
-	public IReadOnlyList<HierarchyElement> Rows {
+	public IReadOnlyList<IHierarchyRow> Rows {
 		get => m_rows;
 		set {
 			m_rows = value;

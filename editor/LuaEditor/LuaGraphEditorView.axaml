@@ -1,0 +1,587 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:editor.LuaEditor"
+             xmlns:cv="using:editor.LuaEditor.Canvas"
+             xmlns:ed="using:editor.LuaEditor.Editing"
+             xmlns:el="using:editor.Components.Elements"
+             xmlns:ws="using:editor.Workspace"
+             xmlns:conv="using:editor.Components.Converters"
+             xmlns:ctl="using:editor.LuaEditor.Controls"
+             mc:Ignorable="d"
+             d:DesignWidth="1500"
+             d:DesignHeight="800"
+             x:Class="editor.LuaEditor.LuaGraphEditorView"
+             x:DataType="vm:LuaGraphEditorViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="8">
+
+	<Design.DataContext>
+		<vm:LuaGraphEditorViewModel />
+	</Design.DataContext>
+
+	<UserControl.Resources>
+		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
+	</UserControl.Resources>
+
+	<UserControl.Styles>
+		<StyleInclude Source="avares://editor/Resources/ToolbarStyles.axaml" />
+
+		<Style Selector="Border.card">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+			<Setter Property="CornerRadius" Value="8" />
+			<Setter Property="Padding" Value="8" />
+			<Setter Property="ClipToBounds" Value="True" />
+		</Style>
+		<Style Selector="TextBlock.muted">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+		</Style>
+		<Style Selector="TextBlock.title">
+			<Setter Property="FontWeight" Value="Bold" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+
+		<Style Selector="Border.row">
+			<Setter Property="Background" Value="Transparent" />
+		</Style>
+		<Style Selector="TextBlock.selected">
+			<Setter Property="FontWeight" Value="SemiBold" />
+		</Style>
+		<Style Selector="TextBlock.lbl">
+			<Setter Property="Foreground" Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+			<Setter Property="TextTrimming" Value="CharacterEllipsis" />
+		</Style>
+		<Style Selector="TextBlock.group">
+			<Setter Property="FontWeight" Value="SemiBold" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="Grid.row">
+			<Setter Property="ColumnSpacing" Value="8" />
+		</Style>
+
+		<Style Selector="Button.reset">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="Width" Value="20" />
+			<Setter Property="Height" Value="20" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="VerticalAlignment" Value="Center" />
+		</Style>
+		<Style Selector="Button.reset /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="Button.reset:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+
+		<Style Selector="TextBox.field">
+			<Setter Property="BorderThickness" Value="0" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Background" Value="{StaticResource Bg1}" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+		</Style>
+		<Style Selector="AutoCompleteBox.field">
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="Button.add">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+			<Setter Property="CornerRadius" Value="6" />
+			<Setter Property="Padding" Value="6,4" />
+		</Style>
+
+		<Style Selector="ListBox.rows">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="Padding" Value="0" />
+		</Style>
+		<Style Selector="ListBox.rows ListBoxItem">
+			<Setter Property="Padding" Value="4,3" />
+			<Setter Property="MinHeight" Value="26" />
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="ListBox.rows ListBoxItem:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ListBox.rows ListBoxItem:selected /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ListBox.rows ListBoxItem:selected:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg5}" />
+		</Style>
+
+		<Style Selector="CheckBox.tick:checked /template/ Border#NormalRectangle">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="CheckBox.tick:checked:pointerover /template/ Border#NormalRectangle">
+			<Setter Property="Background" Value="{StaticResource Red}" />
+			<Setter Property="BorderBrush" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="CheckBox.tick:checked /template/ Path#CheckGlyph">
+			<Setter Property="Fill" Value="{StaticResource Bg1}" />
+			<Setter Property="Stroke" Value="{StaticResource Bg1}" />
+		</Style>
+	</UserControl.Styles>
+
+	<Grid ColumnDefinitions="300,4,*">
+
+			<Grid x:Name="LeftPanel" Grid.Column="0" RowDefinitions="3*,4,2*">
+
+				<Border Grid.Row="0" Background="{StaticResource Bg2}">
+					<DockPanel VerticalSpacing="8">
+						<Border DockPanel.Dock="Top" Background="{StaticResource Bg3}" Padding="8" CornerRadius="8">
+							<StackPanel Spacing="8">
+								<Grid ColumnDefinitions="*,*,*" ColumnSpacing="3">
+									<Button Grid.Column="0" Command="{Binding AddFieldCommand}" CornerRadius="6" Background="{StaticResource Bg4}" Padding="2,5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Add a field">
+										<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+											<LucideIcon Kind="Plus" Size="18" StrokeWidth="3" />
+											<TextBlock Text="Field" />
+										</StackPanel>
+									</Button>
+									<Button Grid.Column="2" Command="{Binding AddLocalCommand}" CornerRadius="6" Background="{StaticResource Bg4}" Padding="2,5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Add a module local">
+										<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+											<LucideIcon Kind="Plus" Size="18" StrokeWidth="3" />
+											<TextBlock Text="Local" />
+										</StackPanel>
+									</Button>
+									<Button Grid.Column="1" Command="{Binding AddFunctionCommand}" CornerRadius="6" Background="{StaticResource Bg4}" Padding="2,5" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Add a function">
+										<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+											<LucideIcon Kind="Plus" Size="18" StrokeWidth="3" />
+											<TextBlock Text="Method" />
+										</StackPanel>
+									</Button>
+								</Grid>
+								<TextBox PlaceholderText="Filter variables..."
+								         Text="{Binding FilterText}"
+								         BorderThickness="0"
+								         CornerRadius="6"
+								         Background="{StaticResource Bg1}"
+								         VerticalContentAlignment="Center" />
+							</StackPanel>
+						</Border>
+						<ScrollViewer HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+							<Grid>
+								<ws:HierarchyConnectorLayer x:Name="Connector" HorizontalAlignment="Stretch" VerticalAlignment="Top" />
+								<ItemsControl x:Name="Rows" HorizontalAlignment="Stretch" ItemsSource="{Binding Variables}">
+									<ItemsControl.ItemsPanel>
+										<ItemsPanelTemplate>
+											<VirtualizingStackPanel />
+										</ItemsPanelTemplate>
+									</ItemsControl.ItemsPanel>
+									<ItemsControl.ItemTemplate>
+										<DataTemplate x:DataType="vm:VariableRow">
+											<Border Height="28" HorizontalAlignment="Stretch" Classes="row" PointerPressed="OnRowPressed">
+												<Grid VerticalAlignment="Center" Background="Transparent" ColumnDefinitions="Auto,Auto,Auto,*" Opacity="{Binding Opacity}">
+													<Grid Margin="{Binding ContentMargin}" Width="16" Height="16">
+														<LucideIcon Kind="{Binding Icon}" Size="16" StrokeWidth="2.5" IsVisible="{Binding UsesLucide}" Foreground="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
+														<Border IsVisible="{Binding UsesBitmap}" Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}">
+															<Border.OpacityMask>
+																<ImageBrush Source="{Binding Bitmap}" />
+															</Border.OpacityMask>
+														</Border>
+														<Path Data="{Binding Glyph}" IsVisible="{Binding UsesGlyph}" Stretch="Uniform" Stroke="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" StrokeThickness="1.6" StrokeLineCap="Round" StrokeJoin="Round" />
+													</Grid>
+													<TextBlock Grid.Column="1" Text="{Binding Name}" Classes.selected="{Binding IsSelected}" FontStyle="{Binding FontStyle}"
+													           TextTrimming="CharacterEllipsis" VerticalAlignment="Center" Margin="8,0,0,0" />
+													<TextBlock Grid.Column="2" Text="{Binding Detail}" Classes="lbl" FontSize="11" Margin="8,0,0,0" TextTrimming="CharacterEllipsis" />
+													<LucideIcon Grid.Column="3" Kind="Ellipsis" Size="16" StrokeWidth="2" IsVisible="{Binding IsFolded}" Margin="8,0,0,0" HorizontalAlignment="Left" />
+												</Grid>
+											</Border>
+										</DataTemplate>
+									</ItemsControl.ItemTemplate>
+								</ItemsControl>
+							</Grid>
+						</ScrollViewer>
+					</DockPanel>
+				</Border>
+
+				<GridSplitter Grid.Row="1" ResizeDirection="Rows" Background="Transparent" />
+
+				<Border x:Name="DetailsCard" Grid.Row="2" Classes="card" ClipToBounds="True" IsVisible="{Binding CanEdit}">
+					<DockPanel VerticalSpacing="8">
+						<StackPanel x:Name="InspectorHeader" DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Background="Transparent" Cursor="Hand" ToolTip.Tip="Click to fold or open" PointerPressed="OnInspectorHeaderPressed">
+							<LucideIcon x:Name="InspectorChevron" Kind="ChevronDown" Size="16" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}" />
+							<LucideIcon Kind="Settings2" Size="16" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}" />
+							<TextBlock Text="{Binding InspectorTitle}" Classes="group" TextTrimming="CharacterEllipsis" />
+						</StackPanel>
+						<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+							<StackPanel Spacing="8">
+								<StackPanel Spacing="8" IsVisible="{Binding InspectorIsScript}">
+									<Grid Classes="row" ColumnDefinitions="110,*">
+										<TextBlock Classes="lbl" Text="Name" />
+										<el:StringBox Grid.Column="1" Value="{Binding InspectorName, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*">
+										<TextBlock Classes="lbl" Text="Class" ToolTip.Tip="The name of the script's class, written as ---@class above the script table" />
+										<el:StringBox Grid.Column="1" Value="{Binding ScriptClass, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*">
+										<TextBlock Classes="lbl" Text="Extends" ToolTip.Tip="The engine class the script builds on: its members become available on self and the script table" />
+										<ctl:TypePicker Grid.Column="1" Value="{Binding ScriptBase, Mode=TwoWay}" Items="{Binding ScriptBaseItems}" />
+									</Grid>
+								</StackPanel>
+								<StackPanel Spacing="8" IsVisible="{Binding InspectorIsVariable}">
+
+									<Grid Classes="row" ColumnDefinitions="110,*">
+										<TextBlock Classes="lbl" Text="Name" />
+										<el:StringBox Grid.Column="1" Value="{Binding InspectorName, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding !InspectorIsFunction}">
+										<TextBlock Classes="lbl" Text="Type" />
+										<ctl:TypeEditor Grid.Column="1" TypeText="{Binding InspectorType, Mode=TwoWay}" Items="{Binding TypeItems}" />
+									</Grid>
+									<StackPanel Spacing="6" IsVisible="{Binding InspectorIsTableField}">
+										<TextBlock Classes="group" Text="Table fields" />
+										<ItemsControl ItemsSource="{Binding TableRows}">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<StackPanel Spacing="8" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:DataType="vm:TableEntryRow">
+													<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+														<StackPanel Spacing="6">
+															<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+																<el:StringBox Value="{Binding Name, Mode=TwoWay}" IsEnabled="{Binding IsNamed}" />
+																<Button Grid.Column="1" Classes="reset" ToolTip.Tip="Remove"
+																        Command="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).RemoveTableEntryRowCommand}"
+																        CommandParameter="{Binding}">
+																	<LucideIcon Kind="Trash2" Size="14" StrokeWidth="2.5" />
+																</Button>
+															</Grid>
+															<ctl:TypeEditor TypeText="{Binding TypeText, Mode=TwoWay}" Items="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).TypeItems}" />
+														</StackPanel>
+													</Border>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+										<Grid ColumnDefinitions="*,*" ColumnSpacing="6">
+											<Button Command="{Binding AddTableFieldCommand}" CornerRadius="6" Background="{StaticResource Bg4}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Add a named field: name = value">
+												<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+													<LucideIcon Kind="Plus" Size="16" StrokeWidth="3" />
+													<TextBlock Text="Field" />
+												</StackPanel>
+											</Button>
+											<Button Grid.Column="1" Command="{Binding AddTableItemCommand}" CornerRadius="6" Background="{StaticResource Bg4}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" ToolTip.Tip="Add an item: a list entry">
+												<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+													<LucideIcon Kind="Plus" Size="16" StrokeWidth="3" />
+													<TextBlock Text="Item" />
+												</StackPanel>
+											</Button>
+										</Grid>
+									</StackPanel>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding !InspectorIsFunction}">
+										<TextBlock Classes="lbl" Text="Optional" />
+
+										<el:BoolBox Grid.Column="1" Value="{Binding InspectorNullable, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding InspectorCanExport}">
+										<TextBlock Classes="lbl" Text="Exported" ToolTip.Tip="A field whose name starts with an underscore is private to the script. Exported fields are the ones other scripts and the editor can use." />
+										<el:BoolBox Grid.Column="1" Value="{Binding InspectorExported, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding DefaultKind, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=integer}">
+										<TextBlock Classes="lbl" Text="Default" />
+										<el:StringBox Grid.Column="1" Value="{Binding DefaultInteger, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding DefaultKind, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=number}">
+										<TextBlock Classes="lbl" Text="Default" />
+										<el:DragFloatBox Grid.Column="1" Value="{Binding DefaultNumber, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding DefaultKind, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=boolean}">
+										<TextBlock Classes="lbl" Text="Default" />
+										<el:BoolBox Grid.Column="1" Value="{Binding DefaultBool, Mode=TwoWay}" />
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*" IsVisible="{Binding DefaultKind, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=string}">
+										<TextBlock Classes="lbl" Text="Default" />
+										<el:StringBox Grid.Column="1" Value="{Binding DefaultText, Mode=TwoWay}" />
+									</Grid>
+									<StackPanel Spacing="6" IsVisible="{Binding InspectorIsFunction}">
+										<TextBlock Classes="group" Text="Parameters" />
+										<ItemsControl ItemsSource="{Binding ParamRows}">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<StackPanel Spacing="8" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:DataType="vm:ParamRow">
+													<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+														<StackPanel Spacing="6">
+															<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+																<el:StringBox Value="{Binding Name, Mode=TwoWay}" />
+																<Button Grid.Column="1" Classes="reset" ToolTip.Tip="Remove parameter"
+																        Command="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).RemoveParameterCommand}"
+																        CommandParameter="{Binding}">
+																	<LucideIcon Kind="Trash2" Size="14" StrokeWidth="2.5" />
+																</Button>
+															</Grid>
+															<ctl:TypeEditor TypeText="{Binding TypeText, Mode=TwoWay}" Items="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).TypeItems}" />
+														</StackPanel>
+													</Border>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+										<Button Command="{Binding AddParameterCommand}" CornerRadius="6" Background="{StaticResource Bg4}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+											<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+												<LucideIcon Kind="Plus" Size="16" StrokeWidth="3" />
+												<TextBlock Text="Parameter" />
+											</StackPanel>
+										</Button>
+										<TextBlock Classes="group" Text="Returns" Margin="0,6,0,0" />
+										<ItemsControl ItemsSource="{Binding ReturnRows}">
+											<ItemsControl.ItemsPanel>
+												<ItemsPanelTemplate>
+													<StackPanel Spacing="8" />
+												</ItemsPanelTemplate>
+											</ItemsControl.ItemsPanel>
+											<ItemsControl.ItemTemplate>
+												<DataTemplate x:DataType="vm:ReturnRow">
+													<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+														<Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+															<ctl:TypeEditor TypeText="{Binding TypeText, Mode=TwoWay}" Items="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).TypeItems}" />
+															<Button Grid.Column="1" Classes="reset" VerticalAlignment="Top" ToolTip.Tip="Remove return value"
+															        Command="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).RemoveReturnCommand}"
+															        CommandParameter="{Binding}">
+																<LucideIcon Kind="Trash2" Size="14" StrokeWidth="2.5" />
+															</Button>
+														</Grid>
+													</Border>
+												</DataTemplate>
+											</ItemsControl.ItemTemplate>
+										</ItemsControl>
+										<Button Command="{Binding AddReturnCommand}" CornerRadius="6" Background="{StaticResource Bg4}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+											<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+												<LucideIcon Kind="Plus" Size="16" StrokeWidth="3" />
+												<TextBlock Text="Return value" />
+											</StackPanel>
+										</Button>
+									</StackPanel>
+									<Grid Classes="row" ColumnDefinitions="110,*">
+										<TextBlock Classes="lbl" Text="Tags" VerticalAlignment="Top" Margin="0,4,0,0" ToolTip.Tip="Lines written as ---@name ... above the variable: readonly, unit m/s, enum Mode, and so on" />
+										<StackPanel Grid.Column="1" Spacing="4">
+											<ItemsControl ItemsSource="{Binding Tags}">
+												<ItemsControl.ItemsPanel>
+													<ItemsPanelTemplate>
+														<StackPanel Spacing="4" />
+													</ItemsPanelTemplate>
+												</ItemsControl.ItemsPanel>
+												<ItemsControl.ItemTemplate>
+													<DataTemplate x:DataType="vm:TagRow">
+														<Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+															<el:StringBox Value="{Binding Text, Mode=TwoWay}" />
+															<Button Grid.Column="1" Classes="reset" ToolTip.Tip="Remove tag"
+															        Command="{Binding $parent[UserControl].((vm:LuaGraphEditorViewModel)DataContext).RemoveTagCommand}"
+															        CommandParameter="{Binding}">
+																<LucideIcon Kind="X" Size="12" StrokeWidth="2.5" />
+															</Button>
+														</Grid>
+													</DataTemplate>
+												</ItemsControl.ItemTemplate>
+											</ItemsControl>
+											<Button Command="{Binding AddTagCommand}" CornerRadius="6" Background="{StaticResource Bg4}" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center">
+												<StackPanel Orientation="Horizontal" Spacing="4" HorizontalAlignment="Center">
+													<LucideIcon Kind="Plus" Size="16" StrokeWidth="3" />
+													<TextBlock Text="Tag" />
+												</StackPanel>
+											</Button>
+										</StackPanel>
+									</Grid>
+									<Grid Classes="row" ColumnDefinitions="110,*">
+										<TextBlock Classes="lbl" Text="Doc" />
+										<el:StringBox Grid.Column="1" Wrap="True" Value="{Binding InspectorDoc, Mode=TwoWay}" />
+									</Grid>
+								</StackPanel>
+								<StackPanel Spacing="2" IsVisible="{Binding !InspectorIsVariable}">
+									<TextBlock Classes="lbl" Text="{Binding InspectorName}" />
+									<TextBlock Classes="lbl" Text="{Binding InspectorType}" TextWrapping="Wrap" />
+								</StackPanel>
+							</StackPanel>
+						</ScrollViewer>
+					</DockPanel>
+				</Border>
+			</Grid>
+
+		<GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+		<Grid Grid.Column="2" RowDefinitions="Auto,8,*">
+
+		<Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="12">
+		<WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+			<StackPanel Orientation="Horizontal">
+				<Button Classes="chev" CornerRadius="6,0,0,6" ToolTip.Tip="Undo (Ctrl+Z)" Tag="Undo" Click="OnAction">
+					<LucideIcon Kind="Undo2" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0,6,6,0" ToolTip.Tip="Redo (Ctrl+Y)" Tag="Redo" Click="OnAction">
+					<LucideIcon Kind="Redo2" Size="18" StrokeWidth="2.5" />
+				</Button>
+			</StackPanel>
+			<StackPanel Orientation="Horizontal">
+				<Button Classes="chev" CornerRadius="6,0,0,6" ToolTip.Tip="Copy (Ctrl+C)" Tag="Copy" Click="OnAction">
+					<LucideIcon Kind="Copy" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Cut (Ctrl+X)" Tag="Cut" Click="OnAction">
+					<LucideIcon Kind="Scissors" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Paste (Ctrl+V)" Tag="Paste" Click="OnAction">
+					<LucideIcon Kind="ClipboardPaste" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Duplicate (Ctrl+W)" Tag="Duplicate" Click="OnAction">
+					<LucideIcon Kind="CopyPlus" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0,6,6,0" ToolTip.Tip="Delete (Del)" Tag="Delete" Click="OnAction">
+					<LucideIcon Kind="Trash2" Size="18" StrokeWidth="2.5" />
+				</Button>
+			</StackPanel>
+			<StackPanel Orientation="Horizontal">
+				<Button Classes="chev" CornerRadius="6,0,0,6" ToolTip.Tip="Align top (Shift+W)" Tag="AlignTop" Click="OnAction">
+					<LucideIcon Kind="AlignStartHorizontal" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Align left (Shift+A)" Tag="AlignLeft" Click="OnAction">
+					<LucideIcon Kind="AlignStartVertical" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Align bottom (Shift+S)" Tag="AlignBottom" Click="OnAction">
+					<LucideIcon Kind="AlignEndHorizontal" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Align right (Shift+D)" Tag="AlignRight" Click="OnAction">
+					<LucideIcon Kind="AlignEndVertical" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Straighten wires (Q)" Tag="Straighten" Click="OnAction">
+					<LucideIcon Kind="Spline" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0,6,6,0" ToolTip.Tip="Tidy (T)" Tag="Tidy" Click="OnAction">
+					<LucideIcon Kind="LayoutDashboard" Size="18" StrokeWidth="2.5" />
+				</Button>
+			</StackPanel>
+			<StackPanel Orientation="Horizontal">
+				<Button Classes="chev" CornerRadius="6,0,0,6" ToolTip.Tip="Comment box around the selection (C)" Tag="CommentBox" Click="OnAction">
+					<LucideIcon Kind="MessageSquare" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Group the selection as a sequence, or make one (S)" Tag="Sequence" Click="OnAction">
+					<LucideIcon Kind="ListTree" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0,6,6,0" ToolTip.Tip="Group the selection into a new function (G)" Tag="GroupAsFunction" Click="OnAction">
+					<LucideIcon Kind="Braces" Size="18" StrokeWidth="2.5" />
+				</Button>
+			</StackPanel>
+			<Button Classes="chev" CornerRadius="6" Margin="0,3,14,3" ToolTip.Tip="Add a node">
+				<StackPanel Orientation="Horizontal" Spacing="6">
+					<LucideIcon Kind="Plus" Size="18" StrokeWidth="2.5" />
+					<TextBlock Text="Add" VerticalAlignment="Center" />
+				</StackPanel>
+				<Button.Flyout>
+					<MenuFlyout>
+						<MenuItem Header="if  (B)" Tag="Branch" Click="OnAction" />
+						<MenuItem Header="sequence  (S)" Tag="Sequence" Click="OnAction" />
+						<MenuItem Header="for in  (F)" Tag="ForEach" Click="OnAction" />
+						<MenuItem Header="{}{ }  (M)" Tag="MakeTable" Click="OnAction" />
+						<MenuItem Header="number  (1)" Tag="Number" Click="OnAction" />
+						<MenuItem Header="vec2  (2)" Tag="Vec2" Click="OnAction" />
+						<MenuItem Header="vec3  (3)" Tag="Vec3" Click="OnAction" />
+						<MenuItem Header="quat  (4)" Tag="Quat" Click="OnAction" />
+						<Separator />
+						<MenuItem Header="+  (Shift+=)" Tag="Add" Click="OnAction" />
+						<MenuItem Header="-  (-)" Tag="Subtract" Click="OnAction" />
+						<MenuItem Header="*  (Shift+8)" Tag="Multiply" Click="OnAction" />
+						<MenuItem Header="/  (/)" Tag="Divide" Click="OnAction" />
+						<MenuItem Header="&gt;  (Shift+.)" Tag="Greater" Click="OnAction" />
+						<MenuItem Header="&lt;  (Shift+,)" Tag="Less" Click="OnAction" />
+						<MenuItem Header="==  (=)" Tag="Equal" Click="OnAction" />
+						<MenuItem Header="not  (Shift+1)" Tag="Not" Click="OnAction" />
+					</MenuFlyout>
+				</Button.Flyout>
+			</Button>
+			<StackPanel Orientation="Horizontal">
+				<Button Classes="chev" CornerRadius="6,0,0,6" ToolTip.Tip="Select all (Ctrl+A)" Tag="SelectAll" Click="OnAction">
+					<LucideIcon Kind="SquareDashedMousePointer" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0" ToolTip.Tip="Find node (N)" Tag="Search" Click="OnAction">
+					<LucideIcon Kind="Search" Size="18" StrokeWidth="2.5" />
+				</Button>
+				<Button Classes="chev" CornerRadius="0,6,6,0" ToolTip.Tip="Frame all (Home)" Tag="Home" Click="OnAction">
+					<LucideIcon Kind="Maximize" Size="18" StrokeWidth="2.5" />
+				</Button>
+			</StackPanel>
+		</WrapPanel>
+		<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+			<TextBlock Classes="muted" Text="{Binding Status}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+			<TextBlock Classes="title" Text="{Binding Title}" VerticalAlignment="Center" />
+			<Button Classes="chev" CornerRadius="6" Command="{Binding SaveCommand}" ToolTip.Tip="Save (Ctrl+S)">
+				<StackPanel Orientation="Horizontal" Spacing="6">
+					<LucideIcon Kind="Save" Size="18" StrokeWidth="2.5" />
+					<TextBlock Text="Save" VerticalAlignment="Center" />
+				</StackPanel>
+			</Button>
+		</StackPanel>
+	</Grid>
+
+			<Grid Grid.Row="2" RowDefinitions="*,8,Auto">
+				<Border Grid.Row="0" CornerRadius="6" ClipToBounds="True">
+					<Grid>
+						<cv:GraphCanvas x:Name="GraphView" Session="{Binding Session}" />
+						<Border IsVisible="{Binding Banner, Converter={x:Static ObjectConverters.IsNotNull}}" Background="{StaticResource DarkRed}" VerticalAlignment="Top" Padding="12,8">
+							<StackPanel Orientation="Horizontal" Spacing="8">
+								<LucideIcon Kind="TriangleAlert" Size="18" StrokeWidth="2.5" />
+								<TextBlock Text="{Binding Banner}" TextWrapping="Wrap" />
+							</StackPanel>
+						</Border>
+						<TextBox x:Name="ConstantBox" Classes="field" IsVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top" MinHeight="0" Padding="4,1" FontSize="12" />
+						<TextBox x:Name="GroupBox" Classes="field" IsVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top" MinHeight="0" Padding="6,2" FontSize="13" />
+						<Border x:Name="SearchPanel" Classes="card" IsVisible="False" HorizontalAlignment="Left" VerticalAlignment="Top" Width="360" MaxHeight="420" BoxShadow="0 8 24 0 #99000000">
+							<DockPanel VerticalSpacing="8">
+								<TextBox x:Name="SearchBox" Classes="field" DockPanel.Dock="Top" PlaceholderText="Search nodes..." />
+								<ListBox x:Name="SearchList" Classes="rows">
+									<ListBox.ItemTemplate>
+										<DataTemplate x:DataType="vm:SearchRow">
+											<Grid ColumnDefinitions="Auto,Auto,*,Auto" Height="26" Margin="{Binding Indent}">
+												<LucideIcon Grid.Column="0" Kind="{Binding Chevron}" Size="14" StrokeWidth="2.5" Margin="0,0,4,0" IsVisible="{Binding IsGroup}" Foreground="{StaticResource TextMuted}" />
+												<LucideIcon Grid.Column="1" Kind="{Binding Icon}" Size="15" StrokeWidth="2.5" Margin="2,0,8,0" IsVisible="{Binding ShowIcon}"
+												            Foreground="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
+												<TextBlock Grid.Column="2" Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Classes.group="{Binding IsGroup}" />
+												<TextBlock Grid.Column="3" Text="{Binding Count}" Classes="muted" FontSize="11" VerticalAlignment="Center" Margin="8,0,4,0" />
+											</Grid>
+
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</DockPanel>
+						</Border>
+					</Grid>
+				</Border>
+
+				<Border Grid.Row="2" Classes="card" MaxHeight="160" MinHeight="40">
+					<DockPanel VerticalSpacing="6">
+						<StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8">
+							<LucideIcon Kind="CircleAlert" Size="16" StrokeWidth="2.5" Foreground="{StaticResource TextMuted}" />
+							<TextBlock Text="Problems" Classes="title" />
+							<TextBlock Text="{Binding Problems.Count}" Classes="muted" VerticalAlignment="Center" />
+						</StackPanel>
+						<ListBox Classes="rows" ItemsSource="{Binding Problems}" SelectionChanged="OnProblemSelected">
+							<ListBox.ItemTemplate>
+													<DataTemplate x:DataType="vm:ProblemRow">
+										<Grid ColumnDefinitions="Auto,*" ColumnSpacing="16" Height="24" TextElement.FontSize="13">
+											<Border Grid.ColumnSpan="2" CornerRadius="8" IsHitTestVisible="False"
+											        Background="{Binding Level, Converter={StaticResource SeverityRowGradientConverter}}" />
+											<StackPanel Orientation="Horizontal" Spacing="4" Width="76">
+												<Border Background="{Binding Level, Converter={StaticResource SeverityBarColorConverter}}" Width="4" Height="22" CornerRadius="2" />
+												<TextBlock Text="{Binding ShortName}"
+												           Foreground="{Binding Level, Converter={StaticResource SeverityToColorConverter}}"
+												           FontFamily="FiraCode Nerd Font,Consolas,monospace" FontWeight="Bold" VerticalAlignment="Center" />
+											</StackPanel>
+											<TextBlock Grid.Column="1" Text="{Binding Text}"
+											           FontFamily="FiraCode Nerd Font,Consolas,monospace"
+											           TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" MaxLines="1" VerticalAlignment="Center" />
+										</Grid>
+									</DataTemplate>
+
+							</ListBox.ItemTemplate>
+						</ListBox>
+					</DockPanel>
+				</Border>
+			</Grid>
+		</Grid>
+	</Grid>
+</UserControl>

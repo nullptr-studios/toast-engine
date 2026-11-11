@@ -14,12 +14,12 @@ public sealed class ScriptAsset : BaseAsset {
 	public override bool CanBeCreated => true;
 	public override string Category => "Logic";
 	public override bool HasThumbnail => false;
-	public override bool CanBeEdited => false;
-	public override string EditorTool => "";
+	public override bool CanBeEdited => true;
+	public override string EditorTool => "LuaEditor";
 	public override string SchemaPath => "";
 
 	public override Task CreateAsync(string path) {
-		File.WriteAllText(path, "-- Toast Script\n");
+		File.WriteAllText(path, "-- Toast Script\nlocal M = {}\n\nreturn M\n");
 		return Task.CompletedTask;
 	}
 }

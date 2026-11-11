@@ -20,7 +20,7 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
-public class HierarchyElement : INotifyPropertyChanged {
+public class HierarchyElement : INotifyPropertyChanged, IHierarchyRow {
 	private string m_draftName = "";
 
 	private bool m_isDropTarget;
