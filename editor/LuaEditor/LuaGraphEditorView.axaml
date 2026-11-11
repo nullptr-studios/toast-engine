@@ -411,7 +411,7 @@
 		<Grid Grid.Column="2" RowDefinitions="Auto,4,*">
 
 		<Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource CompactGap}">
-		<WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+		<WrapPanel Orientation="Horizontal" VerticalAlignment="Center" ItemSpacing="4" LineSpacing="4">
 			<StackPanel Orientation="Horizontal">
 				<Button Classes="chev compact-control compact-icon" CornerRadius="6,0,0,6" ToolTip.Tip="Undo (Ctrl+Z)" Tag="Undo" Click="OnAction">
 					<LucideIcon Kind="Undo2" Size="{StaticResource CompactIconSize}" StrokeWidth="2.5" />
@@ -468,7 +468,7 @@
 					<LucideIcon Kind="Braces" Size="{StaticResource CompactIconSize}" StrokeWidth="2.5" />
 				</Button>
 			</StackPanel>
-			<Button Classes="chev compact-control" CornerRadius="6" Margin="4,0" ToolTip.Tip="Add a node">
+			<Button Classes="chev compact-control" CornerRadius="6" ToolTip.Tip="Add a node">
 				<StackPanel Orientation="Horizontal" Spacing="6">
 					<LucideIcon Kind="Plus" Size="{StaticResource CompactIconSize}" StrokeWidth="2.5" />
 					<TextBlock Text="Add" VerticalAlignment="Center" />
