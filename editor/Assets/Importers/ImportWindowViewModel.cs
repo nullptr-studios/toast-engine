@@ -574,6 +574,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			var importer = m_importers.First(i => i.CanHandle(realSourcePath));
 			var outputs = await ArtworkImport.RunAsync(importer, realSourcePath, sourceVirtual, destDir,
 				AssetDatabase.GetArtworkOutputs(sourceVirtual), log, progress);
+			if (outputs is null) return;
 			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, outputs);
 			log("Done.");
 		} catch (Exception ex) {

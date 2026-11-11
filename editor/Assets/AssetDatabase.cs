@@ -37,11 +37,11 @@ public static class AssetDatabase {
 
 	public static void UpdateArtworkDatabase(
 		string sourceVirtualPath, string hash, IEnumerable<ArtworkOutput> artworkOutputs) {
-		// the importer just wrote the .meta files
+		AssetStore.Sync();
 		var id = AssetStore.UpsertArtwork(sourceVirtualPath);
-		AssetStore.SetArtworkHash(sourceVirtualPath, hash);
 		foreach (var output in artworkOutputs)
 			AssetStore.SetOutputInfo(output.Uid, output.Name, output.Hash, id);
+		AssetStore.SetArtworkHash(sourceVirtualPath, hash);
 	}
 
 	public static void SyncArtworkHashes(Action<string>? log = null) {
@@ -273,22 +273,8 @@ public static class AssetDatabase {
 			if (artwork.Hash == hash) continue;
 
 			log($"Artwork changed: {sourceVirtual}");
-			var reimport = await ShowChoice(new ModalConfig(
-				"Artwork changed",
-				$"Artwork file {sourceVirtual} has changed, do you wish to reimport the assets generated from it?",
-				ModalButtons.OkCancel,
-				LucideIconKind.RefreshCw,
-				new SolidColorBrush(Color.Parse("#4a9eff")),
-				"Reimport",
-				CancelLabel: "Skip",
-				OkIcon: LucideIconKind.FileInput));
-
-			if (reimport == true) {
-				await Reimport(sourceVirtual, log);
-				reimported = true;
-			} else {
-				log($"Skipped {sourceVirtual}");
-			}
+			await Reimport(sourceVirtual, log);
+			reimported = true;
 		}
 
 		if (reimported) RebuildAssetDatabase();
@@ -309,10 +295,8 @@ public static class AssetDatabase {
 			return;
 		}
 
-		var uids = previous.Select(o => o.Uid).ToList();
-
 		// find where the existing outputs live + the settings they were imported with
-		var (destDir, textureSection, psdSection, gltfSection, voxSection) = LocateOutputs(uids);
+		var (destDir, textureSection, psdSection, gltfSection, voxSection) = LocateOutputs(previous, realSource);
 
 		var textureSettings = SettingsFromMeta(textureSection);
 		var ext = Path.GetExtension(realSource).ToLowerInvariant();
@@ -330,9 +314,11 @@ public static class AssetDatabase {
 		};
 
 		log($"Reimporting {sourceVirtualPath}...");
+		var sourceHash = ComputeHash(realSource);
 		var outputs = await ArtworkImport.RunAsync(importer, realSource, sourceVirtualPath,
 			destDir ?? ProjectContext.AssetsPath, previous, log, progress);
-		UpdateArtworkDatabase(sourceVirtualPath, ComputeHash(realSource), outputs);
+		if (outputs is null) return;
+		UpdateArtworkDatabase(sourceVirtualPath, sourceHash, outputs);
 		log("Reimport done.");
 	}
 
@@ -385,27 +371,17 @@ public static class AssetDatabase {
 		return current;
 	}
 
-	// finds the directory + import settings for a set of output UIDs by scanning their .meta sidecars
 	private static (string? destDir, TextureMetaSection? texture, PsdMetaSection? psd, GltfMetaSection? gltf,
-		VoxMetaSection? vox)
-		LocateOutputs(IReadOnlyCollection<string> uids) {
-		if (uids.Count == 0 || !Directory.Exists(ProjectContext.AssetsPath))
-			return (null, null, null, null, null);
-
-		var wanted = new HashSet<string>(uids);
-		foreach (var metaPath in MetaFile.FindAll(ProjectContext.AssetsPath)) {
-			var header = MetaFile.ReadHeader(metaPath);
-			if (header is null || !wanted.Contains(header.Uid)) continue;
-
-			var assetReal = metaPath[..^5];
-			return (Path.GetDirectoryName(assetReal),
-				MetaFile.ReadTextureSection(metaPath),
-				MetaFile.ReadPsdSection(metaPath),
-				MetaFile.ReadGltfSection(metaPath),
-				MetaFile.ReadVoxSection(metaPath));
-		}
-
-		return (null, null, null, null, null);
+		VoxMetaSection? vox) LocateOutputs(IReadOnlyList<ArtworkOutput> outputs, string sourcePath) {
+		var sourceName = Path.GetFileName(sourcePath);
+		var paths = outputs.OrderByDescending(output =>
+			string.Equals(output.Name, sourceName, StringComparison.OrdinalIgnoreCase))
+			.Select(output => ProjectContext.Resolve(output.Uri)).ToList();
+		var texture = paths.Select(MetaFile.ReadTextureSection).FirstOrDefault(section => section is not null);
+		var psd = paths.Select(MetaFile.ReadPsdSection).FirstOrDefault(section => section is not null);
+		var gltf = paths.Select(MetaFile.ReadGltfSection).FirstOrDefault(section => section is not null);
+		var vox = paths.Select(MetaFile.ReadVoxSection).FirstOrDefault(section => section is not null);
+		return (Path.GetDirectoryName(paths[0]), texture, psd, gltf, vox);
 	}
 
 	private static TextureImporter.Settings SettingsFromMeta(TextureMetaSection? s) {
@@ -511,10 +487,6 @@ public static class AssetDatabase {
 					return new RelocateResult(RelocateDecision.Skip, null, false);
 			}
 		}
-	}
-
-	private static async Task<bool?> ShowChoice(ModalConfig cfg) {
-		return (await ShowChoiceEx(cfg)).Choice;
 	}
 
 	private static async Task<(bool? Choice, bool AppliedToAll)> ShowChoiceEx(ModalConfig cfg) {

@@ -87,7 +87,7 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 		log("Importing strings bank...");
 		var destPath = Path.Combine(ctx.DestDir, Path.GetFileName(realSourcePath));
 		File.Copy(realSourcePath, destPath, true);
-		var uid = ctx.UidFor(current);
+		var uid = UidGenerator.Generate();
 		uids.Add(uid);
 		var header = new MetaHeader
 			{ Uid = uid, Type = AssetTypeRegistry.ByType("audio_strings")!.Type, Source = ctx.SourceVirtualPath };
@@ -121,7 +121,7 @@ public partial class AudioStringImporter(AudioStringImporter.Settings settings) 
 					destPath = Path.Combine(ctx.DestDir, $"{name}{ext}");
 				}
 
-				uid = ctx.UidFor(current);
+				uid = UidGenerator.Generate();
 				uids.Add(uid);
 				header = new MetaHeader {
 					Uid = uid,

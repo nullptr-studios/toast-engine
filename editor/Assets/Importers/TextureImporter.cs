@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -83,7 +83,7 @@ public partial class TextureImporter : IAssetImporter {
 	public async Task<IReadOnlyList<string>> Import(
 		string realSourcePath, ImportContext ctx, Action<string> log,
 		Action<double>? progress = null) {
-		var uid = ctx.UidFor(0);
+		var uid = UidGenerator.Generate();
 		var name = Path.GetFileNameWithoutExtension(realSourcePath);
 		var destPath = Path.Combine(ctx.DestDir, name + ".ktx2");
 		Directory.CreateDirectory(ctx.DestDir);
