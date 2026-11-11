@@ -33,7 +33,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**" />
+        <AvaloniaResource Include="Resources\**\*" Exclude="Resources\native\**;Resources\lua\**" />
+        <Content Include="Resources\lua\**" CopyToOutputDirectory="PreserveNewest" />
     </ItemGroup>
 
     <ItemGroup>
@@ -60,6 +61,7 @@
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
         <PackageReference Include="JsonSchema.Net" Version="9.2.2" />
+        <PackageReference Include="Loretta.CodeAnalysis.Lua" Version="0.2.13" />
         <PackageReference Include="Lucide.Avalonia" Version="0.2.0" />
         <PackageReference Include="Magick.NET-Q16-AnyCPU" Version="14.*" />
         <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.11" />
