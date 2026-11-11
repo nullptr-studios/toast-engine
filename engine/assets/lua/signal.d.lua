@@ -15,8 +15,9 @@ function Signal:clear() end
 
 function Signal:fire() end
 
+-- the concrete signal type depends on the argument count
 ---@param ... string
----@return Signal
+---@return any
 function Signal:create(...) end
 
 ---@class Signal0

@@ -41,6 +41,9 @@ public:
 	[[nodiscard]]
 	static auto registeredLuaNames() -> const std::unordered_map<std::string, std::string>&;
 
+	[[nodiscard]]
+	static auto luaStubs() -> std::string;
+
 private:
 	static std::unordered_map<std::string, RawLoader> s_raw;
 	static std::unordered_map<std::string, TomlLoader> s_toml;

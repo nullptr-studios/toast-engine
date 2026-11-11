@@ -2,6 +2,7 @@
 
 #include "application.hpp"
 #include "assets/asset_manager.hpp"
+#include "assets/asset_registry.hpp"
 #include "assets/data_schema_codegen.hpp"
 #include "assets/prefab.hpp"
 #include "audio/audio_system.hpp"
@@ -1404,6 +1405,25 @@ auto toast_generate_data_schema_stubs(const char* out_path) noexcept -> int {
 		return assets::generateDataSchemaLuaStubs(out_path) ? 1 : 0;
 	} catch (const std::exception& e) {
 		TOAST_ERROR("Engine", "toast_generate_data_schema_stubs: {}", e.what());
+		return 0;
+	}
+}
+
+auto toast_generate_asset_type_stubs(const char* out_path) noexcept -> int {
+	ZoneScoped;
+	if (!out_path) {
+		return 0;
+	}
+	try {
+		std::ofstream out(out_path, std::ios::binary | std::ios::trunc);
+		if (!out.is_open()) {
+			TOAST_ERROR("Engine", "toast_generate_asset_type_stubs: cannot open {}", out_path);
+			return 0;
+		}
+		out << assets::AssetRegistry::luaStubs();
+		return out.good() ? 1 : 0;
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Engine", "toast_generate_asset_type_stubs: {}", e.what());
 		return 0;
 	}
 }

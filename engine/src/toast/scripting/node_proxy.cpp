@@ -1166,6 +1166,18 @@ auto NodeProxy::create(const std::string& type, lua_State* l) -> luabridge::LuaR
 	return {l, NodeProxy(result)};
 }
 
+auto NodeProxy::create(const TypeMarker& type, lua_State* l) -> luabridge::LuaRef {
+	if (!m_box.exists()) {
+		luaL_error(l, "NodeProxy::create: node reference is dead");
+		return {l};
+	}
+	const toast::NodeInfo* info = resolveMarker(type, "create", l);
+	if (!info) {
+		return {l};
+	}
+	return create(std::string(info->type), l);
+}
+
 void NodeProxy::addDependsOn(const NodeProxy& other) {
 	if (!m_box.exists() || !other.m_box.exists()) {
 		return;
@@ -1338,6 +1350,16 @@ auto nodeProxyDispatchMethod(NodeProxy& np, std::string_view name, lua_State* l,
 		return 1;
 	}
 	if (name == "create") {
+		if (n_args >= 1 && lua_isuserdata(l, args_base)) {
+			auto marker = luabridge::Stack<TypeMarker>::get(l, args_base);
+			if (!marker) {
+				luaL_error(l, "create: expected a node type");
+				return 0;
+			}
+			result = np.create(*marker, l);
+			result.push(l);
+			return 1;
+		}
 		const char* type_name = n_args >= 1 ? lua_tostring(l, args_base) : "toast::Node";
 		result = np.create(type_name ? type_name : "toast::Node", l);
 		result.push(l);
