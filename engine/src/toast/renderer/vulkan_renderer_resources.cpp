@@ -298,13 +298,16 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for the scene target!");
 	}
 
-	const auto create = [&](
-	                        SceneColorResources& target, vk::Format format, std::string_view label, vk::ImageUsageFlags usage = {}
-	                    ) {
+	const auto create = [&](SceneColorResources& target,
+	                        vk::Format format,
+	                        std::string_view label,
+	                        vk::ImageUsageFlags usage = {},
+	                        uint32_t divide = 1) {
 		target.view.reset();
 		target.image.reset();
 
-		const auto image_ci = colorTargetImageInfo(extent, format, usage);
+		const vk::Extent2D size {(extent.width + divide - 1) / divide, (extent.height + divide - 1) / divide};
+		const auto image_ci = colorTargetImageInfo(size, format, usage);
 
 		vma::AllocationCreateInfo allocation_ci {};
 		allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
@@ -337,6 +340,7 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_voxel_detail_normal, k_voxel_face_normal_format, "VoxelDetailNormal");
 	create(m_voxel_noisy_diffuse, k_voxel_noisy_format, "VoxelNoisyDiffuse");
 	create(m_voxel_noisy_specular, k_voxel_noisy_format, "VoxelNoisySpecular");
+	create(m_voxel_gi, k_voxel_gi_format, "VoxelGi", {}, 2);
 	create(m_voxel_reservoirs[0], k_voxel_reservoir_format, "VoxelReservoirs0");
 	create(m_voxel_reservoirs[1], k_voxel_reservoir_format, "VoxelReservoirs1");
 	create(m_voxel_candidate_reservoirs, k_voxel_reservoir_format, "VoxelCandidateReservoirs");

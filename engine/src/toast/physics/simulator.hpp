@@ -548,6 +548,8 @@ private:
 
 	static void setShapeEnabled(ShapeID shape, bool enabled);
 	void syncEnabledState();
+	/// Teleports to a node pose, kinematic bodies also get the step velocity so they push what they hit
+	void followNodeTransform(BodyID id, const glm::vec3& position, const glm::quat& rotation);
 
 	[[nodiscard]]
 	auto queryCandidates(BodyID ignored, const AABB& bounds, std::optional<LayerFilter> layers = std::nullopt) const

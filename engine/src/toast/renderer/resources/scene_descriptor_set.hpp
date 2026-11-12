@@ -10,6 +10,7 @@
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/shaders/shader_reflection.hpp"
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -50,6 +51,12 @@ private:
 
 	std::optional<uint32_t> m_detail_binding;
 	DescriptorCache<vk::ImageView> m_bound_detail;
+
+	std::optional<uint32_t> m_clip_frame_binding;
+	std::optional<uint32_t> m_clip_radiance_binding;
+	std::optional<uint32_t> m_clip_material_binding;
+	std::optional<uint32_t> m_clip_ambient_binding;
+	DescriptorCache<std::array<vk::ImageView, 2>> m_bound_clip;
 
 	/// Handle plus generation since a recreated structure can reuse a destroyed handle value
 	DescriptorCache<std::pair<vk::AccelerationStructureKHR, uint64_t>> m_bound_tlas;

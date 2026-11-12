@@ -18,6 +18,16 @@ void MeshNode::updateInspectorMessages() {
 	}
 }
 
+auto MeshNode::inspectorOptions(std::string_view field_name) -> std::vector<std::string> {
+	std::vector<std::string> options;
+	if (field_name == "m_skin_name" && m_skin_animation.hasValue()) {
+		for (const auto& skin : m_skin_animation->skins()) {
+			options.push_back(skin.name);
+		}
+	}
+	return options;
+}
+
 void MeshNode::init() {
 	renderer::registerMeshNodeProxy(this);
 	m_registered_proxy = true;

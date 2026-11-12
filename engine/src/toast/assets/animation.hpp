@@ -27,7 +27,7 @@ namespace assets {
 
 namespace _detail {
 /// Binary layout version for .tanim; readers reject anything they don't recognise
-inline constexpr uint32_t animation_format_version = 3;
+inline constexpr uint32_t animation_format_version = 4;
 }
 
 /// @brief How a sampler interpolates between two keyframes, matching glTF's three modes
@@ -96,6 +96,28 @@ struct NodePose {
 	float _pad;
 };
 
+/// Local bone transform, trivially copyable since .tanim writes it raw
+struct BonePose {
+	glm::quat rotation {1.0f, 0.0f, 0.0f, 0.0f};
+	glm::vec3 translation {0.0f};
+	glm::vec3 scale {1.0f};
+};
+
+struct TOAST_API Bone {
+	std::string name;
+	int32_t parent = -1;    ///< always below this bone index
+	BonePose rest;
+};
+
+struct TOAST_API Skeleton {
+	std::string name;
+	std::vector<Bone> bones;
+
+	/// @returns bone index or -1
+	[[nodiscard]]
+	auto find(std::string_view bone_name) const -> int32_t;
+};
+
 /// @brief A named set of tracks that play together
 struct TOAST_API AnimationClip {
 	std::string name;
@@ -109,6 +131,9 @@ struct TOAST_API AnimationClip {
 	 */
 	[[nodiscard]]
 	auto sample(float time) const -> std::unordered_map<std::string, NodePose>;
+
+	/// Writes tracks whose @p track_to_bone entry is a valid bone into @p pose, no allocation
+	void sampleInto(float time, std::span<const int32_t> track_to_bone, std::span<BonePose> pose) const;
 
 	/// @brief Wraps @p time into [0, duration], for looping playback
 	[[nodiscard]]
@@ -177,17 +202,29 @@ public:
 		return m_skins;
 	}
 
+	[[nodiscard]]
+	auto skeletons() const noexcept -> const std::vector<Skeleton>& {
+		return m_skeletons;
+	}
+
+	/// @returns the skeleton with this name, the first one for an empty name, or nullptr
+	[[nodiscard]]
+	auto findSkeleton(std::string_view name) const -> const Skeleton*;
+
 	/// @returns the clip with this name, or nullptr
 	[[nodiscard]]
 	auto findClip(std::string_view name) const -> const AnimationClip*;
 
 	/// @brief Serialises clips + skins into the binary .tanim layout the constructor reads back
 	[[nodiscard]]
-	static auto toBinary(const std::vector<AnimationClip>& clips, const std::vector<Skin>& skins) -> std::vector<uint8_t>;
+	static auto
+	    toBinary(const std::vector<AnimationClip>& clips, const std::vector<Skin>& skins, const std::vector<Skeleton>& skeletons)
+	        -> std::vector<uint8_t>;
 
 private:
 	std::vector<AnimationClip> m_clips;
 	std::vector<Skin> m_skins;
+	std::vector<Skeleton> m_skeletons;
 };
 
 }

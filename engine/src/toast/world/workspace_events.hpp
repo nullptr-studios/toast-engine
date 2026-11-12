@@ -479,8 +479,12 @@ struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;
 		std::string value;
+		std::vector<std::string> options;
 
-		InspectorField(std::string_view name, std::string_view value) : name(name), value(value) { }
+		InspectorField(std::string_view name, std::string_view value, std::vector<std::string> options = {})
+		    : name(name),
+		      value(value),
+		      options(std::move(options)) { }
 	};
 
 	std::string uid;

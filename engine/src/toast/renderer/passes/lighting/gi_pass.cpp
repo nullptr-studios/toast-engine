@@ -407,9 +407,9 @@ void GiPass::createBuffers(const VulkanCore& core) {
 	m_readback.clear();
 	m_dirty.clear();
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
-		m_dirty.push_back(
-		    hostBuffer(core, sizeof(glm::vec4) * (1 + (2 * k_max_dirty)), storage, false, std::format("GiPass Dirty[{}]", i))
-		);
+		m_dirty.push_back(hostBuffer(
+		    core, sizeof(glm::vec4) * (1 + (2 * GiDirtyBoxes::k_max_boxes)), storage, false, std::format("GiPass Dirty[{}]", i)
+		));
 		const auto& dirty_allocation = m_dirty.back().getAllocation();
 		std::memset(dirty_allocation.getInfo().pMappedData, 0, sizeof(glm::vec4));
 		dirty_allocation.flush(0, sizeof(glm::vec4));
@@ -739,92 +739,31 @@ void GiPass::recordChange(vk::CommandBuffer cmd, uint32_t frame_index, vk::Image
 }
 
 void GiPass::gatherDirty() {
-	ZoneScoped;
-	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	const auto add = [&](glm::vec3 low, glm::vec3 high) {
-		if (m_dirty_scratch.size() < 2 * k_max_dirty) {
-			m_dirty_scratch.push_back(low);
-			m_dirty_scratch.push_back(high);
-			return;
-		}
-		auto last = m_dirty_scratch.end() - 2;
-		last[0] = glm::min(last[0], low);
-		last[1] = glm::max(last[1], high);
-	};
-
-	Stats& counts = m_dirty_pending;
-	const float threshold = std::max(VulkanRenderer::instance->giSettings().motion_threshold.load(std::memory_order_relaxed), 0.0f);
-
-	for (const auto& proxy : frame->voxel_instances) {
-		if (proxy.has_previous && proxy.model == proxy.previous_model) {
-			continue;
-		}
-		const glm::vec3 previous = glm::vec3(proxy.previous_model * proxy.inverse_model * glm::vec4(proxy.bounds_center, 1.0f));
-		if (proxy.has_previous) {
-			// Centre shift plus what the change of the linear part can move a point of the bounds
-			const glm::mat3 change = glm::mat3(proxy.model) - glm::mat3(proxy.previous_model);
-			const float spread =
-			    std::sqrt(glm::dot(change[0], change[0]) + glm::dot(change[1], change[1]) + glm::dot(change[2], change[2]));
-			const float scale = std::max(glm::length(glm::vec3(proxy.model[0])), 1e-6f);
-			const float motion = glm::distance(proxy.bounds_center, previous) + (spread * proxy.bounds_radius / scale);
-			counts.largest_motion = std::max(counts.largest_motion, motion);
-			if (motion < threshold) {
-				continue;
-			}
-			++counts.moved;
-		} else {
-			++counts.appeared;
-		}
-		const glm::vec3 radius(proxy.bounds_radius);
-		add(glm::min(proxy.bounds_center, previous) - radius, glm::max(proxy.bounds_center, previous) + radius);
-	}
-
-	bool known = true;
-	if (frame->voxel_storage) {
-		const uint64_t generation = frame->voxel_storage->generation();
-		if (generation != m_region_generation && m_region_generation != 0) {
-			m_model_scratch.clear();
-			for (const auto& proxy : frame->voxel_instances) {
-				m_model_scratch.emplace(proxy.node_rid, proxy.model * glm::scale(glm::mat4(1.0f), glm::vec3(voxel::k_voxel_size)));
-			}
-			known = frame->voxel_storage->changeHistory().forEachSince(m_region_generation, [&](const VoxelRegion& region) {
-				const auto found = m_model_scratch.find(region.node_rid);
-				if (found == m_model_scratch.end()) {
-					return;
-				}
-				++counts.edits;
-				glm::vec3 low(std::numeric_limits<float>::max());
-				glm::vec3 high(std::numeric_limits<float>::lowest());
-				for (uint32_t corner = 0; corner < 8; ++corner) {
-					const glm::vec3 local(
-					    (corner & 1) != 0 ? region.max.x : region.min.x,
-					    (corner & 2) != 0 ? region.max.y : region.min.y,
-					    (corner & 4) != 0 ? region.max.z : region.min.z
-					);
-					const glm::vec3 world = glm::vec3(found->second * glm::vec4(local, 1.0f));
-					low = glm::min(low, world);
-					high = glm::max(high, world);
-				}
-				add(low, high);
-			});
-		}
-		m_region_generation = generation;
-	}
-	m_dirty_known = m_dirty_known && known;
+	m_dirty_boxes.gather(
+	    *VulkanRenderer::instance->renderingFrame(),
+	    VulkanRenderer::instance->giSettings().motion_threshold.load(std::memory_order_relaxed)
+	);
 }
 
 auto GiPass::writeDirty(uint32_t frame_index) -> bool {
-	m_dirty_stats[frame_index] = std::exchange(m_dirty_pending, Stats {});
-	const bool known = std::exchange(m_dirty_known, true);
-	const auto count = static_cast<uint32_t>(m_dirty_scratch.size() / 2);
+	GiDirtyBoxes::Counts counts;
+	const bool known = m_dirty_boxes.take(counts);
+	Stats& stats = m_dirty_stats[frame_index];
+	stats = Stats {};
+	stats.moved = counts.moved;
+	stats.appeared = counts.appeared;
+	stats.edits = counts.edits;
+	stats.largest_motion = counts.largest_motion;
+	const auto boxes = m_dirty_boxes.boxes();
+	const auto count = static_cast<uint32_t>(boxes.size() / 2);
 	const auto& allocation = m_dirty[frame_index].getAllocation();
 	auto* mapped = static_cast<glm::vec4*>(allocation.getInfo().pMappedData);
 	mapped[0] = glm::vec4(static_cast<float>(count), 0.0f, 0.0f, 0.0f);
 	for (uint32_t i = 0; i < count * 2; ++i) {
-		mapped[1 + i] = glm::vec4(m_dirty_scratch[i], 0.0f);
+		mapped[1 + i] = glm::vec4(boxes[i], 0.0f);
 	}
 	allocation.flush(0, sizeof(glm::vec4) * (1 + (count * 2)));
-	m_dirty_scratch.clear();
+	m_dirty_boxes.clear();
 	return known;
 }
 
@@ -1066,7 +1005,8 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	const auto* renderer = VulkanRenderer::instance;
 	const auto* frame = renderer->renderingFrame();
 	const GiSettings& settings = renderer->giSettings();
-	const bool enabled = settings.enabled.load(std::memory_order_relaxed);
+	const bool enabled = settings.enabled.load(std::memory_order_relaxed) &&
+	                     settings.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_cascades;
 	// Lighting falls back to the flat ambient once the frame it reads says no GI
 	if (!enabled && m_published_valid) {
 		sync::BarrierBatch barriers;

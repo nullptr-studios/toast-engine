@@ -237,6 +237,32 @@ auto AnimationClip::sample(float time) const -> std::unordered_map<std::string, 
 	return poses;
 }
 
+void AnimationClip::sampleInto(float time, std::span<const int32_t> track_to_bone, std::span<BonePose> pose) const {
+	ZoneScoped;
+	const size_t count = std::min(tracks.size(), track_to_bone.size());
+	for (size_t i = 0; i < count; ++i) {
+		const int32_t bone = track_to_bone[i];
+		if (bone < 0 || std::cmp_greater_equal(bone, pose.size())) {
+			continue;
+		}
+		const auto& track = tracks[i];
+		switch (track.target) {
+			case TrackTarget::translation: pose[bone].translation = track.sampleVec3(time); break;
+			case TrackTarget::rotation: pose[bone].rotation = track.sampleQuat(time); break;
+			case TrackTarget::scale: break;    // ignored like sample()
+		}
+	}
+}
+
+auto Skeleton::find(std::string_view bone_name) const -> int32_t {
+	for (size_t i = 0; i < bones.size(); ++i) {
+		if (bones[i].name == bone_name) {
+			return static_cast<int32_t>(i);
+		}
+	}
+	return -1;
+}
+
 Animation::Animation(std::span<const uint8_t> data) {
 	ZoneScoped;
 	Reader reader(data);
@@ -293,6 +319,27 @@ Animation::Animation(std::span<const uint8_t> data) {
 		m_skins.push_back(std::move(skin));
 	}
 
+	const auto skeleton_count = reader.read<uint32_t>();
+	m_skeletons.reserve(skeleton_count);
+	for (uint32_t i = 0; i < skeleton_count && !reader.overflowed(); ++i) {
+		Skeleton skeleton;
+		skeleton.name = reader.readString();
+		const auto bone_count = reader.read<uint32_t>();
+		skeleton.bones.reserve(bone_count);
+		for (uint32_t b = 0; b < bone_count && !reader.overflowed(); ++b) {
+			Bone bone;
+			bone.name = reader.readString();
+			bone.parent = reader.read<int32_t>();
+			bone.rest = reader.read<BonePose>();
+			// Parent below child is what lets SkeletalNode pose in one forward pass
+			if (bone.parent >= static_cast<int32_t>(b)) {
+				bone.parent = -1;
+			}
+			skeleton.bones.push_back(std::move(bone));
+		}
+		m_skeletons.push_back(std::move(skeleton));
+	}
+
 	if (reader.overflowed()) {
 		TOAST_ERROR("Animation", "Truncated .tanim file; loaded {} clip(s) before running out of data", m_clips.size());
 	}
@@ -307,7 +354,21 @@ auto Animation::findClip(std::string_view name) const -> const AnimationClip* {
 	return nullptr;
 }
 
-auto Animation::toBinary(const std::vector<AnimationClip>& clips, const std::vector<Skin>& skins) -> std::vector<uint8_t> {
+auto Animation::findSkeleton(std::string_view name) const -> const Skeleton* {
+	if (name.empty()) {
+		return m_skeletons.empty() ? nullptr : &m_skeletons.front();
+	}
+	for (const auto& skeleton : m_skeletons) {
+		if (skeleton.name == name) {
+			return &skeleton;
+		}
+	}
+	return nullptr;
+}
+
+auto Animation::toBinary(
+    const std::vector<AnimationClip>& clips, const std::vector<Skin>& skins, const std::vector<Skeleton>& skeletons
+) -> std::vector<uint8_t> {
 	ZoneScoped;
 	Writer writer;
 	writer.write(k_magic);
@@ -338,6 +399,17 @@ auto Animation::toBinary(const std::vector<AnimationClip>& clips, const std::vec
 			writer.writeString(joint);
 		}
 		writer.writeArray(skin.inverse_bind_matrices);
+	}
+
+	writer.write(static_cast<uint32_t>(skeletons.size()));
+	for (const auto& skeleton : skeletons) {
+		writer.writeString(skeleton.name);
+		writer.write(static_cast<uint32_t>(skeleton.bones.size()));
+		for (const auto& bone : skeleton.bones) {
+			writer.writeString(bone.name);
+			writer.write(bone.parent);
+			writer.write(bone.rest);
+		}
 	}
 
 	return writer.take();

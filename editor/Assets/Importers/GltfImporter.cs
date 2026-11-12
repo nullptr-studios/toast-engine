@@ -325,7 +325,7 @@ public partial class GltfImporter : IAssetImporter {
 						    animationUids.TryGetValue(skinAnimNode.GetValue<string>(), out var skinAnimUid))
 							p["skin_animation"] = skinAnimUid;
 					}
-				} else if (nodeType == "toast::AnimationPlayer") {
+				} else if (nodeType is "toast::AnimationPlayer" or "toast::SkeletalNode") {
 					var p = node["params"]?.AsObject();
 					if (p != null && p["animation"] is { } animNode &&
 					    animationUids.TryGetValue(animNode.GetValue<string>(), out var animUid))

@@ -1428,7 +1428,9 @@ void Simulator::queuePendingFragments(std::span<const ConnectivityResult> result
 		}
 
 		const Body* source_body = tryGetBody(shape->owner);
-		if (source_body != nullptr && source_body->type == BodyType::dynamic_body && not components_to_spawn.empty()) {
+		const bool keeps_largest =
+		    source_body != nullptr && (source_body->type == BodyType::dynamic_body || data->anchor_mask == k_anchor_null);
+		if (keeps_largest && not components_to_spawn.empty()) {
 			components_to_spawn.erase(std::ranges::max_element(components_to_spawn, {}, &DetachedComponent::voxel_count));
 		}
 
@@ -1963,11 +1965,14 @@ void Simulator::syncEnabledState() {
 			    glm::any(glm::greaterThan(glm::abs(body->position - binding.node->world_position), glm::vec3(1.0e-5f)));
 			const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.node->world_rotation)) > 1.0e-5f;
 			if (position_changed || rotation_changed) {
-				setTransform(binding.body, binding.node->world_position, binding.node->world_rotation);
+				followNodeTransform(binding.body, binding.node->world_position, binding.node->world_rotation);
 				body = tryGetBody(binding.body);
 				if (body == nullptr) {
 					continue;
 				}
+			} else if (body->type == BodyType::kinematic_body) {
+				body->linear_velocity = glm::vec3 {0.0f};
+				body->angular_velocity = glm::vec3 {0.0f};
 			}
 		}
 		for (ColliderBinding& collider_binding : binding.colliders) {
@@ -2006,11 +2011,14 @@ void Simulator::syncEnabledState() {
 			    glm::any(glm::greaterThan(glm::abs(body->position - binding.node->world_position), glm::vec3(1.0e-5f)));
 			const bool rotation_changed = 1.0f - std::abs(glm::dot(body->rotation, binding.node->world_rotation)) > 1.0e-5f;
 			if (position_changed || rotation_changed) {
-				setTransform(binding.body, binding.node->world_position, binding.node->world_rotation);
+				followNodeTransform(binding.body, binding.node->world_position, binding.node->world_rotation);
 				body = tryGetBody(binding.body);
 				if (body == nullptr) {
 					continue;
 				}
+			} else if (body->type == BodyType::kinematic_body) {
+				body->linear_velocity = glm::vec3 {0.0f};
+				body->angular_velocity = glm::vec3 {0.0f};
 			}
 		}
 
@@ -4392,6 +4400,9 @@ auto Simulator::createVoxelShape(BodyID owner, toast::VoxelNode& node, toast::Vo
 	const Shape* stored_shape = tryGetShape(shape);
 	if (stored_shape != nullptr) {
 		if (VoxelShapeData* data = tryGetVoxelData(stored_shape->voxel.data)) {
+			if (node.break_anchor == toast::BreakAnchor::largest_piece) {
+				data->anchor_mask = k_anchor_null;
+			}
 			data->source_revision = part != nullptr ? part->revision : node.revision();
 			data->palette_uid = node.paletteUid();
 			bool& split_pending = part != nullptr ? part->split_pending : node.m_split_pending;
@@ -4859,6 +4870,33 @@ auto Simulator::setTransform(BodyID body, const glm::vec3& position, const glm::
 	wakeBody(body);
 	wakeBodiesTouching(body);
 	return true;
+}
+
+void Simulator::followNodeTransform(BodyID id, const glm::vec3& position, const glm::quat& rotation) {
+	Body* body = tryGetBody(id);
+	if (body == nullptr || body->type != BodyType::kinematic_body) {
+		setTransform(id, position, rotation);
+		return;
+	}
+
+	// Kinematic bodies never integrate so the velocity only feeds contacts, letting an animated body push
+	const float dt = static_cast<float>(Accumulator::fixedDelta());
+	const glm::vec3 previous_center = body->worldCenterOfMass();
+	glm::quat delta = glm::normalize(rotation) * glm::conjugate(body->rotation);
+	if (delta.w < 0.0f) {
+		delta = -delta;
+	}
+	if (not setTransform(id, position, rotation)) {
+		return;
+	}
+	body = tryGetBody(id);
+	if (body == nullptr || not std::isfinite(dt) || dt <= 0.0f) {
+		return;
+	}
+	body->linear_velocity = (body->worldCenterOfMass() - previous_center) / dt;
+	const float angle = 2.0f * std::acos(std::clamp(delta.w, -1.0f, 1.0f));
+	const float sin_half = std::sqrt(std::max(1.0f - (delta.w * delta.w), 0.0f));
+	body->angular_velocity = sin_half > 1.0e-6f ? glm::vec3(delta.x, delta.y, delta.z) / sin_half * (angle / dt) : glm::vec3 {0.0f};
 }
 
 auto Simulator::setLinearVelocity(BodyID body, const glm::vec3& velocity) -> bool {

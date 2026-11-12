@@ -142,8 +142,7 @@
   "overrides": [
     {
       "name": "tracy",
-      "version": "0.14.1",
-      "port-version": 1
+      "version": "0.15.0"
     },
     {
       "name": "lua",

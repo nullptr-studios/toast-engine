@@ -73,6 +73,14 @@ public:
 	/// Writes scene colour indirect rounded normal and noisy diffuse while reading the G-buffer and depth
 	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
 
+	[[nodiscard]]
+	auto giGatherActive() const noexcept -> bool {
+		return m_gi_gather;
+	}
+
+	/// Inside a scope over the half resolution GI target and before recordLighting() which upsamples it
+	void recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
+
 	/// After prepare() whether recordAmbient() has rays to trace
 	[[nodiscard]]
 	auto ambientRaysActive() const noexcept -> bool {
@@ -110,6 +118,8 @@ public:
 	auto refractsGlass() const -> bool;
 
 	void setBackdropCaptured(bool captured) noexcept { m_backdrop_captured = captured; }
+
+	void setBackdropDepthValid(bool valid) noexcept { m_backdrop_depth_valid = valid; }
 
 	/// After prepare() whether the lighting scope writes denoised terms
 	[[nodiscard]]
@@ -370,7 +380,11 @@ private:
 	uint32_t m_shadow_instance_count = 0;
 
 	/// Albedo face normal material and depth last written into each set
-	DescriptorCache<std::array<vk::ImageView, 11>> m_bound_gbuffer;
+	DescriptorCache<std::array<vk::ImageView, 12>> m_bound_gbuffer;
+	auto updateGbufferSet(uint32_t frame_index) -> bool;
+	VulkanPipeline m_gi_gather_pipeline;
+	bool m_gi_gather = false;
+	bool m_gi_clipmap = false;
 	VulkanPipeline m_spatial_pipeline;
 	VulkanPipeline m_spatial_opaque_pipeline;
 	VulkanPipeline m_marched_pipeline;
@@ -379,6 +393,7 @@ private:
 	bool m_spatial_active = false;
 	bool m_scene_glass = false;
 	bool m_backdrop_captured = false;
+	bool m_backdrop_depth_valid = false;
 	bool m_glass_dual_source = false;
 	vk::raii::Sampler m_backdrop_sampler = nullptr;
 	vk::raii::Sampler m_backdrop_depth_sampler = nullptr;
@@ -441,6 +456,7 @@ private:
 		float refraction_distance = 0.0f;
 		uint32_t refraction_voxels = 0;
 		uint32_t lit_surfaces = 0;
+		uint32_t depth_test = 0;
 	};
 
 	ShaderLayout m_glass_layout;

@@ -826,7 +826,18 @@ static const uint kShadowProbeTaps = 4u;
 static const float kWidePenumbraTexels = 6.0;
 static const uint kWidePenumbraTaps = 16u;
 
-/// Walked per frame so TAA averages the rotation
+
+/// Indirect diffuse a shader worked out before shading as xyz irradiance over pi and w the open sky share
+/// Below 0 means none and lighting never gathers on its own so each shader compiles only the gather it calls
+static float4 gGiGathered = float4(0.0, 0.0, 0.0, -1.0);
+
+bool giSurfaceIrradiance(out float3 irradiance, out float sky)
+{
+    irradiance = gGiGathered.rgb;
+    sky = gGiGathered.w;
+    return gGiGathered.w >= 0.0;
+}
+
 float interleavedGradientNoise(float2 pixel)
 {
     const float2 shifted = pixel + 5.588238 * float(uint(gCamera.noiseParams.z) & 63u);
@@ -1504,14 +1515,15 @@ float4 evaluateDebugView(Surface surface, ClusterCell cluster)
     case 5:
         {
             float3 cascadeIrradiance;
-            if (sampleRadianceCascades(surface.worldPosition, N, cascadeIrradiance))
-            {
-                return float4(cascadeIrradiance, 1.0);
-            }
-            return float4(
+            float cascadeSky;
+            const float3 ambientIrradiance =
                 gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a +
-                    (gCamera.environmentParams.x >= 0.5 ? gIrradianceMap.SampleLevel(N, 0.0).rgb : float3(0.0, 0.0, 0.0)),
-                1.0);
+                (gCamera.environmentParams.x >= 0.5 ? gIrradianceMap.SampleLevel(N, 0.0).rgb : float3(0.0, 0.0, 0.0));
+            if (giSurfaceIrradiance(cascadeIrradiance, cascadeSky))
+            {
+                return float4(cascadeIrradiance + cascadeSky * ambientIrradiance, 1.0);
+            }
+            return float4(ambientIrradiance, 1.0);
         }
     case 6:
         {
@@ -1895,7 +1907,8 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     const float3 prefiltered = ambientSpecularRadiance(surface.worldPosition, reflect(-V, N), roughness, bestProbe, bestProbeWeight);
 
     float3 cascadeIrradiance;
-    const bool hasCascades = sampleRadianceCascades(surface.worldPosition, N, cascadeIrradiance);
+    float cascadeSky;
+    const bool hasCascades = giSurfaceIrradiance(cascadeIrradiance, cascadeSky);
 
     float3 volumeIrradiance = float3(0.0, 0.0, 0.0);
     bool hasVolumeIrradiance = !hasCascades && sampleIrradianceVolumes(surface.worldPosition, N, volumeIrradiance);
@@ -1922,8 +1935,9 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     // The cascades already hold the sky and what it bounces off so they replace ambient and baked volumes
     if (hasCascades)
     {
-        irradiance = cascadeIrradiance;
-        result.contactReach = radianceCascadesContactReach(surface.worldPosition);
+        // The clipmap leaves the open share of the hemisphere to the ambient above and the cascades leave none
+        irradiance = cascadeIrradiance + cascadeSky * irradiance;
+        result.contactReach = giContactReach(surface.worldPosition);
     }
 
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo, metallic);

@@ -33,6 +33,7 @@
 #include "toast/renderer/passes/debug/grid_pass.hpp"
 #include "toast/renderer/passes/geometry/voxel_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/passes/lighting/gi_clipmap_pass.hpp"
 #include "toast/renderer/passes/lighting/gi_pass.hpp"
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
@@ -127,6 +128,8 @@ auto addScenePasses(
 	// Before the passes whose scene sets bind its cascades
 	auto gi_pass = std::make_unique<renderer::GiPass>(core, scene_format, extent);
 	renderer.setGiPass(gi_pass.get());
+	auto gi_clipmap_pass = std::make_unique<renderer::GiClipmapPass>(core, scene_format, extent);
+	renderer.setGiClipmapPass(gi_clipmap_pass.get());
 
 	// Recorded in its own scopes so registration order here does not matter
 	auto voxel_pass = std::make_unique<renderer::VoxelPass>(core, scene_format, depth_format, extent);
@@ -139,6 +142,7 @@ auto addScenePasses(
 
 	// First in the chain so the probes read depth before any post pass
 	renderer.addPostProcessPass(std::move(gi_pass));
+	renderer.addPostProcessPass(std::move(gi_clipmap_pass));
 
 	if (core.isRayTracingSupported()) {
 		renderer.addPostProcessPass(std::make_unique<renderer::TracedShadowPass>(core, scene_format, extent));

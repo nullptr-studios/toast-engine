@@ -261,7 +261,10 @@ void VulkanRenderer::updateVoxelTraceScene() {
 	m_trace_volumes.clear();
 	const VoxelGpuStorage* storage = render_frame->voxel_storage.get();
 	if (storage != nullptr && storage->isReady()) {
-		const auto cap = std::min<size_t>(voxelShadowInstances(), VoxelTraceScene::k_max_volumes);
+		// The clipmap fill reads this list so a capped volume would vanish from GI
+		const bool clipmap = m_gi_settings.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_clipmap;
+		const auto cap =
+		    clipmap ? VoxelTraceScene::k_max_volumes : std::min<size_t>(voxelShadowInstances(), VoxelTraceScene::k_max_volumes);
 		// Drawn volumes first so the cap drops off screen ones
 		for (const bool visible : {true, false}) {
 			for (const VoxelVolumeProxy& proxy : render_frame->voxel_instances) {
@@ -425,6 +428,7 @@ void VulkanRenderer::recordMeshScene(
 	}
 	if (m_voxel_pass != nullptr) {
 		m_voxel_pass->setBackdropCaptured(refract);
+		m_voxel_pass->setBackdropDepthValid(m_glass_backdrop_captured);
 	}
 
 	{
@@ -670,6 +674,40 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_voxel_reservoirs[1 - m_voxel_reservoir_parity].state, sync::Usage::fragment_sampled);
 	barriers.image(m_scene_motion.state, sync::Usage::fragment_sampled);
 	barriers.flush(cmd);
+
+	if (m_voxel_gi.view.has_value()) {
+		if (m_voxel_pass->giGatherActive()) {
+			barriers.image(m_voxel_gi.state, sync::Usage::color_attachment);
+			barriers.flush(cmd);
+			const vk::Rect2D half {
+			  {                             0,                               0},
+        {(scissor.extent.width + 1) / 2, (scissor.extent.height + 1) / 2}
+			};
+			const std::array gather_attachments {attachment(m_voxel_gi, vk::AttachmentLoadOp::eDontCare, clear_zero)};
+			vk::RenderingInfo gather_info {};
+			gather_info.renderArea = half;
+			gather_info.layerCount = 1;
+			gather_info.colorAttachmentCount = static_cast<uint32_t>(gather_attachments.size());
+			gather_info.pColorAttachments = gather_attachments.data();
+
+			cmd.beginRendering(gather_info);
+			cmd.setViewport(
+			    0,
+			    std::array {
+			      vk::Viewport {0.0f, 0.0f, static_cast<float>(half.extent.width), static_cast<float>(half.extent.height), 0.0f, 1.0f}
+			}
+			);
+			cmd.setScissor(0, std::array {half});
+			{
+				TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelGiGather");
+				const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel GI gather");
+				m_voxel_pass->recordGiGather(cmd, m_current_frame, scissor.extent);
+			}
+			cmd.endRendering();
+		}
+		barriers.image(m_voxel_gi.state, sync::Usage::fragment_sampled);
+		barriers.flush(cmd);
+	}
 
 	// A frame without voxel lighting in between or a probe capture leaves reservoirs another view wrote
 	const auto* lit_frame = renderingFrame();
@@ -1532,7 +1570,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		return false;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
-		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to acquire the next output image!");
+		TOAST_CRITICAL("Render", "Failed to acquire the next output image!");
 	}
 
 	const uint32_t image_index = acquired.value;

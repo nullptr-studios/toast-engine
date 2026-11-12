@@ -7,6 +7,7 @@
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
+#include "toast/renderer/lighting/gi_dirty_boxes.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
 #include "toast/renderer/resources/scene_descriptor_set.hpp"
@@ -140,8 +141,6 @@ private:
 	static constexpr uint32_t k_counter_pixel_hits = 39;
 	/// Hits queued by point rays
 	static constexpr uint32_t k_counter_point_hits = 40;
-	/// Mirrors gi_probes gDirty and past it every extra region grows the last box
-	static constexpr uint32_t k_max_dirty = 64;
 
 	struct Cascade {
 		uint32_t table_offset = 0;
@@ -281,11 +280,8 @@ private:
 	std::vector<vma::raii::Buffer> m_dirty;
 
 	std::vector<Stats> m_dirty_stats;
-	std::vector<glm::vec3> m_dirty_scratch;
-	Stats m_dirty_pending;
-	bool m_dirty_known = true;
-	std::unordered_map<uint64_t, glm::mat4> m_model_scratch;
-	uint64_t m_region_generation = 0;
+	/// gi_probes gDirty holds GiDirtyBoxes::k_max_boxes
+	GiDirtyBoxes m_dirty_boxes;
 	uint32_t m_skipped = 0;
 	Quality m_quality;
 	/// Kept in shader read layout between frames

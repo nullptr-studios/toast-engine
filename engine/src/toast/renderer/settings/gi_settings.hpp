@@ -43,6 +43,18 @@ struct GiSettings {
 	std::atomic<uint32_t> debug_view {0};
 	/// Mirrors gi_debug.slang kGiDebug with 0 cells 1 interval radiance 2 coverage 3 irradiance 4 history depth 5 change
 	std::atomic<uint32_t> debug_mode {0};
+
+	static constexpr uint32_t k_backend_cascades = 0;
+	static constexpr uint32_t k_backend_clipmap = 1;
+	std::atomic<uint32_t> backend {k_backend_cascades};
+	/// Meters per level 0 cell
+	std::atomic<float> clip_cell {0.2f};
+	std::atomic<uint32_t> clip_resolution {128};
+	std::atomic<uint32_t> clip_levels {4};
+	/// 0 off and otherwise 1 + the level drawn
+	std::atomic<uint32_t> clip_debug_view {0};
+	/// 0 albedo 1 emission 2 opacity 3 radiance
+	std::atomic<uint32_t> clip_debug_mode {0};
 };
 
 }

@@ -64,7 +64,7 @@ TOAST_TEST_NAMED("Assets", "assets/02-animation-binary", test_assets_02_animatio
 	skin.joints = {"Hips", "Spine", "Head"};
 	skin.inverse_bind_matrices = {glm::mat4(1.0f), glm::mat4(2.0f), glm::mat4(3.0f)};
 
-	const auto bytes = assets::Animation::toBinary({clip}, {skin});
+	const auto bytes = assets::Animation::toBinary({clip}, {skin}, {});
 	assert(!bytes.empty());
 
 	const assets::Animation loaded(bytes);

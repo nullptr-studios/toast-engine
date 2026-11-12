@@ -93,6 +93,7 @@ class SkinningPass;
 class VoxelPass;
 class DebrisPass;
 class GiPass;
+class GiClipmapPass;
 class TracedSpecularPass;
 class TaaPass;
 class RayTracingScene;
@@ -343,6 +344,11 @@ public:
 	[[nodiscard]]
 	auto getVoxelFaceNormalView() const noexcept -> vk::ImageView {
 		return m_voxel_face_normal.view.has_value() ? **m_voxel_face_normal.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelGiView() const noexcept -> vk::ImageView {
+		return m_voxel_gi.view.has_value() ? **m_voxel_gi.view : vk::ImageView {};
 	}
 
 	/// Marched and sampled diffuse over albedo before denoising
@@ -888,6 +894,13 @@ public:
 	void setDebrisPass(DebrisPass* pass) noexcept { m_debris_pass = pass; }
 
 	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
+
+	void setGiClipmapPass(GiClipmapPass* pass) noexcept { m_gi_clipmap_pass = pass; }
+
+	[[nodiscard]]
+	auto giClipmapPass() const noexcept -> GiClipmapPass* {
+		return m_gi_clipmap_pass;
+	}
 
 	/// Still registered with addPostProcessPass so it runs in the post chain
 	void setTracedSpecularPass(TracedSpecularPass* pass) noexcept { m_traced_specular_pass = pass; }
@@ -1460,6 +1473,7 @@ private:
 
 	DebrisPass* m_debris_pass = nullptr;
 	GiPass* m_gi_pass = nullptr;
+	GiClipmapPass* m_gi_clipmap_pass = nullptr;
 	bool m_glass_backdrop_captured = false;
 
 	mutable std::mutex m_detail_mutex;
@@ -1503,6 +1517,8 @@ private:
 	SceneColorResources m_voxel_face_normal;
 	SceneColorResources m_voxel_detail_normal;
 	SceneColorResources m_voxel_noisy_diffuse;
+	/// Half the render extent
+	SceneColorResources m_voxel_gi;
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
 	std::array<SceneColorResources, 2> m_voxel_reservoirs;

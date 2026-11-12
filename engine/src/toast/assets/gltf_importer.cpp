@@ -20,9 +20,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <nlohmann/json.hpp>
+#include <numeric>
 #include <span>
 #include <toast/uid.hpp>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #define TINYGLTF3_IMPLEMENTATION
 #define TINYGLTF3_ENABLE_FS
@@ -1109,8 +1111,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	constexpr double k_physical_intensity_threshold = 100.0;
 	size_t physical_intensity_lights = 0;
 
-	auto node_transform = [&](const tg3_node& node) -> nlohmann::json {
-		nlohmann::json transform;
+	auto node_local_pose = [&](const tg3_node& node) -> BonePose {
 		glm::mat4 local_transform = glm::mat4(1.0F);
 
 		if (node.has_matrix) {
@@ -1148,13 +1149,232 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			r = glm::quat(1.0F, 0.0F, 0.0F, 0.0F);
 		}
 
-		transform["pos"] = {t.x, t.y, t.z};
-		transform["rot"] = {r.x, r.y, r.z, r.w};
-		transform["scl"] = {s.x, s.y, s.z};
+		return BonePose {.rotation = r, .translation = t, .scale = s};
+	};
+
+	auto pose_json = [](const BonePose& pose) -> nlohmann::json {
+		nlohmann::json transform;
+		transform["pos"] = {pose.translation.x, pose.translation.y, pose.translation.z};
+		transform["rot"] = {pose.rotation.x, pose.rotation.y, pose.rotation.z, pose.rotation.w};
+		transform["scl"] = {pose.scale.x, pose.scale.y, pose.scale.z};
 		return transform;
 	};
 
-	std::function<nlohmann::json(int32_t)> walk_node = [&](int32_t node_idx) -> nlohmann::json {
+	auto node_transform = [&](const tg3_node& node) -> nlohmann::json { return pose_json(node_local_pose(node)); };
+
+	const auto node_count = static_cast<int32_t>(model.nodes_count);
+	std::vector<int32_t> node_parent(node_count, -1);
+	for (int32_t i = 0; i < node_count; ++i) {
+		for (uint32_t c = 0; c < model.nodes[i].children_count; ++c) {
+			const int32_t child = model.nodes[i].children[c];
+			if (child >= 0 && child < node_count) {
+				node_parent[child] = i;
+			}
+		}
+	}
+
+	std::vector<uint8_t> is_joint(node_count, 0);
+	for (uint32_t sk = 0; sk < model.skins_count; ++sk) {
+		for (uint32_t j = 0; j < model.skins[sk].joints_count; ++j) {
+			const int32_t joint = model.skins[sk].joints[j];
+			if (joint >= 0 && joint < node_count) {
+				is_joint[joint] = 1;
+			}
+		}
+	}
+
+	const auto has_content = [&](int32_t idx) {
+		const auto& node = model.nodes[idx];
+		return node.mesh != -1 || node.light != -1 || node.camera != -1;
+	};
+
+	// Bit 1 joint somewhere in the subtree, bit 2 content somewhere in the subtree
+	std::vector<uint8_t> subtree_flags(node_count, 0);
+	std::vector<uint8_t> subtree_done(node_count, 0);
+	std::function<uint8_t(int32_t)> compute_subtree = [&](int32_t idx) -> uint8_t {
+		if (subtree_done[idx] != 0) {
+			return subtree_flags[idx];
+		}
+		subtree_done[idx] = 1;
+		auto flags = static_cast<uint8_t>((is_joint[idx] != 0 ? 1 : 0) | (has_content(idx) ? 2 : 0));
+		for (uint32_t c = 0; c < model.nodes[idx].children_count; ++c) {
+			const int32_t child = model.nodes[idx].children[c];
+			if (child >= 0 && child < node_count) {
+				flags |= compute_subtree(child);
+			}
+		}
+		subtree_flags[idx] = flags;
+		return flags;
+	};
+	for (int32_t i = 0; i < node_count; ++i) {
+		compute_subtree(i);
+	}
+
+	// Empty transform subtrees under a bone stay bones (leaf tails) rather than becoming attachments
+	const auto is_bone_child = [&](int32_t idx) { return (subtree_flags[idx] & 1) != 0 || (subtree_flags[idx] & 2) == 0; };
+
+	std::vector<size_t> skin_group(skins.size());
+	std::iota(skin_group.begin(), skin_group.end(), size_t {0});
+	std::function<size_t(size_t)> group_of = [&](size_t sk) -> size_t {
+		return skin_group[sk] == sk ? sk : skin_group[sk] = group_of(skin_group[sk]);
+	};
+	{
+		std::unordered_map<int32_t, size_t> joint_owner;
+		for (uint32_t sk = 0; sk < model.skins_count && sk < skins.size(); ++sk) {
+			for (uint32_t j = 0; j < model.skins[sk].joints_count; ++j) {
+				const auto [it, inserted] = joint_owner.try_emplace(model.skins[sk].joints[j], sk);
+				if (!inserted) {
+					skin_group[group_of(sk)] = group_of(it->second);
+				}
+			}
+		}
+	}
+
+	struct SkeletonPlan {
+		int32_t host = -1;    ///< glTF node the SkeletalNode goes under, -1 for scene top level
+		std::vector<int32_t> bone_nodes;
+		std::vector<int32_t> skinned_nodes;
+	};
+
+	std::vector<Skeleton> skeletons;
+	std::vector<SkeletonPlan> skeleton_plans;
+	std::vector<int32_t> skin_skeleton(skins.size(), -1);
+	std::vector<int32_t> node_skeleton(node_count, -1);
+
+	for (size_t sk = 0; sk < skins.size(); ++sk) {
+		const size_t group = group_of(sk);
+		if (group != sk) {
+			continue;
+		}
+
+		std::vector<int32_t> joints;
+		for (size_t other = 0; other < skins.size(); ++other) {
+			if (group_of(other) != group) {
+				continue;
+			}
+			for (uint32_t j = 0; j < model.skins[other].joints_count; ++j) {
+				const int32_t joint = model.skins[other].joints[j];
+				if (joint >= 0 && joint < node_count) {
+					joints.push_back(joint);
+				}
+			}
+		}
+		if (joints.empty()) {
+			continue;
+		}
+
+		std::vector<int32_t> chain;
+		for (int32_t cursor = joints.front(); cursor >= 0; cursor = node_parent[cursor]) {
+			chain.push_back(cursor);
+		}
+		size_t lca_at = 0;
+		for (const int32_t joint : joints) {
+			std::unordered_set<int32_t> ancestors;
+			for (int32_t cursor = joint; cursor >= 0; cursor = node_parent[cursor]) {
+				ancestors.insert(cursor);
+			}
+			while (lca_at < chain.size() && !ancestors.contains(chain[lca_at])) {
+				++lca_at;
+			}
+		}
+
+		SkeletonPlan plan;
+		std::vector<int32_t> roots;
+		if (lca_at >= chain.size()) {
+			// Joints spread over separate top level trees, each tree root is a root bone
+			for (const int32_t joint : joints) {
+				int32_t top = joint;
+				while (node_parent[top] >= 0) {
+					top = node_parent[top];
+				}
+				if (std::ranges::find(roots, top) == roots.end()) {
+					roots.push_back(top);
+				}
+			}
+		} else if (const int32_t lca = chain[lca_at]; is_joint[lca] != 0) {
+			plan.host = node_parent[lca];
+			roots.push_back(lca);
+		} else {
+			// A non joint ancestor like the Blender Armature keeps its transform as a plain node
+			plan.host = lca;
+			for (uint32_t c = 0; c < model.nodes[lca].children_count; ++c) {
+				const int32_t child = model.nodes[lca].children[c];
+				if (child >= 0 && child < node_count && (subtree_flags[child] & 1) != 0) {
+					roots.push_back(child);
+				}
+			}
+		}
+
+		const auto skeleton_index = static_cast<int32_t>(skeletons.size());
+		Skeleton skeleton;
+		skeleton.name = plan.host >= 0 ? node_name_at(plan.host) : node_name_at(roots.front());
+
+		// Depth first so a parent always precedes its children
+		std::function<void(int32_t, int32_t)> add_bone = [&](int32_t idx, int32_t parent_bone) {
+			const auto bone_index = static_cast<int32_t>(skeleton.bones.size());
+			skeleton.bones.push_back(
+			    Bone {.name = node_name_at(idx), .parent = parent_bone, .rest = node_local_pose(model.nodes[idx])}
+			);
+			plan.bone_nodes.push_back(idx);
+			node_skeleton[idx] = skeleton_index;
+			for (uint32_t c = 0; c < model.nodes[idx].children_count; ++c) {
+				const int32_t child = model.nodes[idx].children[c];
+				if (child >= 0 && child < node_count && node_skeleton[child] < 0 && is_bone_child(child)) {
+					add_bone(child, bone_index);
+				}
+			}
+		};
+		for (const int32_t root : roots) {
+			if (node_skeleton[root] < 0) {
+				add_bone(root, -1);
+			}
+		}
+
+		for (size_t other = 0; other < skins.size(); ++other) {
+			if (group_of(other) == group) {
+				skin_skeleton[other] = skeleton_index;
+			}
+		}
+		skeletons.push_back(std::move(skeleton));
+		skeleton_plans.push_back(std::move(plan));
+	}
+
+	// Skinned meshes move directly under their SkeletalNode, glTF ignores their transform anyway
+	std::vector<int32_t> pulled_skeleton(node_count, -1);
+	for (int32_t i = 0; i < node_count; ++i) {
+		const int32_t skin = model.nodes[i].skin;
+		if (model.nodes[i].mesh != -1 && skin >= 0 && std::cmp_less(skin, skins.size()) && skin_skeleton[skin] >= 0 &&
+		    node_skeleton[i] < 0) {
+			pulled_skeleton[i] = skin_skeleton[skin];
+			skeleton_plans[skin_skeleton[skin]].skinned_nodes.push_back(i);
+		}
+	}
+
+	const auto skipped_in_walk = [&](int32_t idx) { return node_skeleton[idx] >= 0 || pulled_skeleton[idx] >= 0; };
+
+	std::unordered_set<std::string> skeleton_covered;
+	std::function<void(int32_t)> cover_subtree = [&](int32_t idx) {
+		skeleton_covered.insert(node_name_at(idx));
+		for (uint32_t c = 0; c < model.nodes[idx].children_count; ++c) {
+			const int32_t child = model.nodes[idx].children[c];
+			if (child >= 0 && child < node_count) {
+				cover_subtree(child);
+			}
+		}
+	};
+	for (const auto& plan : skeleton_plans) {
+		for (const int32_t bone : plan.bone_nodes) {
+			cover_subtree(bone);
+		}
+		for (const int32_t skinned : plan.skinned_nodes) {
+			cover_subtree(skinned);
+		}
+	}
+
+	std::function<nlohmann::json(int32_t)> walk_node;
+	std::function<nlohmann::json(size_t)> emit_skeleton;
+
+	walk_node = [&](int32_t node_idx) -> nlohmann::json {
 		const tg3_node& node = model.nodes[node_idx];
 		nlohmann::json n;
 		// Must match node_name_at()'s "node_N" fallback exactly - animation tracks target nodes by this
@@ -1269,15 +1489,76 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			n["type"] = "toast::Node3D";
 		}
 
-		if (node.children_count > 0) {
+		const auto add_child = [&](nlohmann::json child) {
 			if (!n.contains("children")) {
 				n["children"] = nlohmann::json::array();
 			}
-			for (uint32_t i = 0; i < node.children_count; i++) {
-				n["children"].push_back(walk_node(node.children[i]));
+			n["children"].push_back(std::move(child));
+		};
+		for (uint32_t i = 0; i < node.children_count; i++) {
+			const int32_t child = node.children[i];
+			if (child >= 0 && child < node_count && !skipped_in_walk(child)) {
+				add_child(walk_node(child));
+			}
+		}
+		if (node_skeleton[node_idx] < 0) {
+			for (size_t sk = 0; sk < skeleton_plans.size(); ++sk) {
+				if (skeleton_plans[sk].host == node_idx) {
+					add_child(emit_skeleton(sk));
+				}
 			}
 		}
 
+		return n;
+	};
+
+	emit_skeleton = [&](size_t sk) -> nlohmann::json {
+		const auto& plan = skeleton_plans[sk];
+		nlohmann::json n;
+		n["name"] = skeletons[sk].name + " Skeleton";
+		n["type"] = "toast::SkeletalNode";
+		n["transform"] = pose_json(BonePose {});
+		// Bare filename patched to a UID by GltfImporter.cs, every .tanim carries the skeletons
+		n["params"]["animation"] = skin_file_name;
+		n["params"]["skeleton_name"] = skeletons[sk].name;
+		if (!clips.empty()) {
+			n["params"]["clip"] = clips.front().name;
+		}
+		n["children"] = nlohmann::json::array();
+
+		for (const int32_t skinned : plan.skinned_nodes) {
+			nlohmann::json mesh = walk_node(skinned);
+			mesh["transform"] = pose_json(BonePose {});
+			n["children"].push_back(std::move(mesh));
+		}
+
+		for (const int32_t bone : plan.bone_nodes) {
+			nlohmann::json attached = nlohmann::json::array();
+			if (has_content(bone)) {
+				nlohmann::json content = walk_node(bone);
+				content["transform"] = pose_json(BonePose {});
+				attached.push_back(std::move(content));
+			} else {
+				const auto& bone_node = model.nodes[bone];
+				for (uint32_t c = 0; c < bone_node.children_count; ++c) {
+					const int32_t child = bone_node.children[c];
+					if (child >= 0 && child < node_count && !skipped_in_walk(child)) {
+						attached.push_back(walk_node(child));
+					}
+				}
+			}
+			if (attached.empty()) {
+				continue;
+			}
+
+			nlohmann::json attachment;
+			attachment["name"] = node_name_at(bone) + " Attachment";
+			attachment["type"] = "toast::BoneAttachment";
+			attachment["transform"] = pose_json(BonePose {});
+			attachment["params"]["bone"] = node_name_at(bone);
+			attachment["children"] = std::move(attached);
+			n["children"].push_back(std::move(attachment));
+		}
 		return n;
 	};
 
@@ -1291,14 +1572,30 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		scene_json["name"] = name;
 		scene_json["children"] = nlohmann::json::array();
 
+		std::vector<uint8_t> emitted_skeleton(skeleton_plans.size(), 0);
 		for (uint32_t j = 0; j < scene.nodes_count; j++) {
-			scene_json["children"].push_back(walk_node(scene.nodes[j]));
+			const int32_t top = scene.nodes[j];
+			if (top < 0 || top >= node_count) {
+				continue;
+			}
+			if (const int32_t sk = node_skeleton[top]; sk >= 0 && skeleton_plans[sk].host < 0) {
+				if (emitted_skeleton[sk] == 0) {
+					emitted_skeleton[sk] = 1;
+					scene_json["children"].push_back(emit_skeleton(static_cast<size_t>(sk)));
+				}
+				continue;
+			}
+			if (!skipped_in_walk(top)) {
+				scene_json["children"].push_back(walk_node(top));
+			}
 		}
 
-		// Has to be an ancestor of every joint, every skinned MeshNode and every animated node at once.
-		// Wrapping the whole scene is the only placement that satisfies all three without knowing in advance
-		// what the glTF targets
-		if (!clips.empty() || !skins.empty()) {
+		const bool needs_player = std::ranges::any_of(clips, [&](const AnimationClip& clip) {
+			return std::ranges::any_of(clip.tracks, [&](const AnimationTrack& track) {
+				return !skeleton_covered.contains(track.target_node);
+			});
+		});
+		if (needs_player) {
 			scene_json["type"] = "toast::AnimationPlayer";
 			// The first clip's asset, since a player holds one animation at a time; the rest import alongside
 			// it as their own assets for the user to swap in. Bare filename, see skin_animation above
@@ -1364,14 +1661,14 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	// Save animations - one .tanim per clip, each with this glTF's skins alongside it (see
 	// animation_file_names above for why)
 	for (size_t i = 0; i < clips.size(); ++i) {
-		const auto binary = Animation::toBinary({clips[i]}, skins);
+		const auto binary = Animation::toBinary({clips[i]}, skins, skeletons);
 		const std::filesystem::path out = cache_dir / (animation_file_names[i] + ".tanim");
 		std::ofstream f(out, std::ios::binary);
 		f.write(reinterpret_cast<const char*>(binary.data()), static_cast<std::streamsize>(binary.size()));
 	}
 	if (clips.empty() && !skins.empty()) {
 		// Skeleton with no animation: still needs a file for MeshNode::skin_animation to resolve against
-		const auto binary = Animation::toBinary({}, skins);
+		const auto binary = Animation::toBinary({}, skins, skeletons);
 		const std::filesystem::path out = cache_dir / (skin_file_name + ".tanim");
 		std::ofstream f(out, std::ios::binary);
 		f.write(reinterpret_cast<const char*>(binary.data()), static_cast<std::streamsize>(binary.size()));
@@ -1500,7 +1797,7 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 
 		// AnimationPlayer: "animation" is the .tanim UID (patched by GltfImporter.cs like mesh/material
 		// above), "clip" is a plain string naming which clip to autoplay
-		else if (basic.type == "toast::AnimationPlayer" && n.contains("params")) {
+		else if ((basic.type == "toast::AnimationPlayer" || basic.type == "toast::SkeletalNode") && n.contains("params")) {
 			const auto& params = n["params"];
 			if (params.contains("animation")) {
 				const auto animation_uid = params["animation"].get<std::string>();
@@ -1518,6 +1815,17 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 			}
 			if (params.contains("clip")) {
 				basic.fields.push_back({"m_clip_name", toast::FieldType::string_t, false, params["clip"].get<std::string>()});
+			}
+			if (params.contains("skeleton_name")) {
+				basic.fields.push_back(
+				    {"m_skeleton_name", toast::FieldType::string_t, false, params["skeleton_name"].get<std::string>()}
+				);
+			}
+		}
+
+		else if (basic.type == "toast::BoneAttachment" && n.contains("params")) {
+			if (n["params"].contains("bone")) {
+				basic.fields.push_back({"m_bone", toast::FieldType::string_t, false, n["params"]["bone"].get<std::string>()});
 			}
 		}
 

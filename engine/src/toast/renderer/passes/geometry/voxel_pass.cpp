@@ -90,6 +90,10 @@ constexpr uint32_t k_scene_glass = 4;
 constexpr uint32_t k_ambient_ray_query = 8;
 /// Bits 8 to 15 carry the max roughness in 255ths
 constexpr uint32_t k_traced_specular = 16;
+/// Mirrors voxel_lighting.slang kGiGather
+constexpr uint32_t k_gi_gather = 32;
+/// Mirrors voxel_lighting.slang kGiClipmap
+constexpr uint32_t k_gi_clipmap = 64;
 
 /// ReSTIR reuse of last frame's reservoir at the reprojected pixel and two around it
 constexpr uint32_t k_reused_reservoirs = 3;
@@ -449,6 +453,17 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.depth_test = false;
 	config.depth_write = false;
 	m_lighting_pipeline.rebuild(core, config);
+
+	{
+		VulkanPipeline::Config gather = config;
+		gather.debug_name = "VoxelGiGather";
+		gather.fragment_entry = "fragmentGiGather";
+		gather.color_format = k_voxel_gi_format;
+		gather.extra_color_formats = {};
+		gather.write_extra_color = false;
+		gather.write_color_alpha = true;
+		m_gi_gather_pipeline.rebuild(core, gather);
+	}
 
 	config.debug_name = "VoxelSpatialReuse";
 	config.fragment_entry = "fragmentSpatial";
@@ -844,6 +859,8 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	m_shadow_instance_count = 0;
 	m_marched_lights = false;
 	m_ambient_rays = false;
+	m_gi_gather = false;
+	m_gi_clipmap = false;
 	m_denoise_active = false;
 	m_spatial_active = false;
 	m_scene_glass = false;
@@ -929,6 +946,11 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 
 	// Debug views and probe captures skip the denoiser
 	const bool capture = frame->probe_capture_index >= 0 || frame->irradiance_capture_index >= 0;
+	const GiSettings& gi = VulkanRenderer::instance->giSettings();
+	m_gi_clipmap =
+	    gi.enabled.load(std::memory_order_relaxed) && gi.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_clipmap;
+	// The gather target is sized for the main view so captures take the one cone path
+	m_gi_gather = m_gi_clipmap && !capture && m_gi_gather_pipeline.isReady();
 	m_denoise_active = (m_marched_lights || m_ambient_rays) && frame->render_mode == 0 && !capture &&
 	                   m_denoise_temporal_pipeline.isReady() && m_denoise_composite_pipeline.isReady() &&
 	                   (frame_index * 2) + 1 < m_denoise_sets.size() && m_denoise_history[1][1].isReady();
@@ -1415,37 +1437,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		return;
 	}
 
-	const std::array<vk::ImageView, 11> views {
-	  instance->getVoxelAlbedoView(),
-	  instance->getVoxelFaceNormalView(),
-	  instance->getVoxelMaterialView(),
-	  instance->getDepthView(),
-	  instance->getVoxelPreviousReservoirView(),
-	  instance->getSceneMotionView(),
-	  instance->getVoxelCandidateReservoirView(),
-	  instance->getSceneNormalView(),
-	  instance->getVoxelNoisyDiffuseView(),
-	  instance->getVoxelNoisySpecularView(),
-	  instance->getVoxelDetailNormalView(),
-	};
-	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
+	if (!updateGbufferSet(frame_index)) {
 		return;
-	}
-
-	// Safe since the fence of this slot was waited on
-	if (m_bound_gbuffer.update(frame_index, views)) {
-		DescriptorWriter writer;
-		for (uint32_t binding = 0; binding < views.size(); ++binding) {
-			writer.image(
-			    *m_gbuffer_sets[frame_index],
-			    binding,
-			    vk::DescriptorType::eCombinedImageSampler,
-			    *m_point_sampler,
-			    views[binding],
-			    binding == k_depth_binding ? vk::ImageLayout::eDepthReadOnlyOptimal : vk::ImageLayout::eShaderReadOnlyOptimal
-			);
-		}
-		writer.flush(m_core->getDevice());
 	}
 
 	m_lighting_scene_sets.updateTlas(frame_index);
@@ -1469,7 +1462,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
 		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
-		          traced_specular | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		          (m_gi_gather ? k_gi_gather : 0u) | (m_gi_clipmap ? k_gi_clipmap : 0u) | traced_specular |
+		          (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
 		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
@@ -1488,7 +1482,8 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
 		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
-		          traced_specular | (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
+		          (m_gi_gather ? k_gi_gather : 0u) | (m_gi_clipmap ? k_gi_clipmap : 0u) | traced_specular |
+		          (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
 		      m_ambient_rays ? static_cast<uint32_t>(std::lround(instance->voxelAmbientReach() * 100.0f)) : 0u
@@ -1605,6 +1600,8 @@ void VoxelPass::recordGlassBricks(
 	  .refraction_distance = renderer->voxelGlassRefractionDistance(),
 	  .refraction_voxels = renderer->voxelGlassRefractionVoxels(),
 	  .lit_surfaces = renderer->voxelGlassLitSurfaces(),
+	  // Only the blended pass lights glass and it tests closer than the opaque depth
+	  .depth_test = m_backdrop_depth_valid && &pipeline == &m_glass_pipeline ? 1u : 0u,
 	};
 	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(GlassPush), &push);
 	cmd.draw(36, count, 0, 0);
@@ -1860,6 +1857,72 @@ void VoxelPass::recordMarched(vk::CommandBuffer cmd, uint32_t frame_index) {
 		return;
 	}
 	bindMarched(cmd, frame_index, m_marched_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
+auto VoxelPass::updateGbufferSet(uint32_t frame_index) -> bool {
+	const auto* instance = VulkanRenderer::instance;
+	const std::array<vk::ImageView, 12> views {
+	  instance->getVoxelAlbedoView(),
+	  instance->getVoxelFaceNormalView(),
+	  instance->getVoxelMaterialView(),
+	  instance->getDepthView(),
+	  instance->getVoxelPreviousReservoirView(),
+	  instance->getSceneMotionView(),
+	  instance->getVoxelCandidateReservoirView(),
+	  instance->getSceneNormalView(),
+	  instance->getVoxelNoisyDiffuseView(),
+	  instance->getVoxelNoisySpecularView(),
+	  instance->getVoxelDetailNormalView(),
+	  instance->getVoxelGiView(),
+	};
+	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
+		return false;
+	}
+
+	// Safe since the fence of this slot was waited on
+	if (m_bound_gbuffer.update(frame_index, views)) {
+		DescriptorWriter writer;
+		for (uint32_t binding = 0; binding < views.size(); ++binding) {
+			writer.image(
+			    *m_gbuffer_sets[frame_index],
+			    binding,
+			    vk::DescriptorType::eCombinedImageSampler,
+			    *m_point_sampler,
+			    views[binding],
+			    binding == k_depth_binding ? vk::ImageLayout::eDepthReadOnlyOptimal : vk::ImageLayout::eShaderReadOnlyOptimal
+			);
+		}
+		writer.flush(m_core->getDevice());
+	}
+	return true;
+}
+
+void VoxelPass::recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport) {
+	ZoneScoped;
+	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	if (!m_gi_gather || frame == nullptr || frame_index >= m_gbuffer_sets.size() || frame_index >= m_lighting_storage_sets.size() ||
+	    !m_lighting_scene_sets.get(frame_index) || !updateGbufferSet(frame_index)) {
+		return;
+	}
+	m_lighting_scene_sets.updateTlas(frame_index);
+
+	const LightingPushConstants push {
+	  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
+	  .viewport = glm::vec4(static_cast<float>(viewport.width), static_cast<float>(viewport.height), 0.0f, 0.0f),
+	};
+	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gi_gather_pipeline.getPipeline());
+	cmd.bindDescriptorSets(
+	    vk::PipelineBindPoint::eGraphics,
+	    layout,
+	    k_scene_set,
+	    std::array<vk::DescriptorSet, 3> {
+	      m_lighting_scene_sets.get(frame_index), *m_lighting_storage_sets[frame_index], *m_gbuffer_sets[frame_index]
+	    },
+	    {}
+	);
+	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(LightingPushConstants), &push);
 	cmd.draw(3, 1, 0, 0);
 }
 
