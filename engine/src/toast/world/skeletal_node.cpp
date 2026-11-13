@@ -68,7 +68,7 @@ void SkeletalNode::drawBones() {
 	for (size_t bone = 0; bone < m_model.size(); ++bone) {
 		const glm::vec3 position {world * m_model[bone][3]};
 		if (m_parents[bone] >= 0) {
-			debug::drawLine(glm::vec3(world * m_model[m_parents[bone]][3]), position, k_bone_color);
+			debug::drawArrow(glm::vec3(world * m_model[m_parents[bone]][3]), position, k_bone_color);
 		} else {
 			debug::drawSphere(position, 0.03f, k_bone_color, 8);
 		}

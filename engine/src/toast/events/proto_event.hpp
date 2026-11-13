@@ -63,7 +63,7 @@ void registerProtoEvent() {
 			          try {
 				          Proto p = Traits::toProto(ev);
 				          std::string bytes = p.SerializeAsString();
-				          std::string name {Proto::descriptor()->full_name()};
+				          std::string name {Proto::default_instance().GetTypeName()};
 				          return callback(
 				                     name.c_str(),
 				                     reinterpret_cast<const uint8_t*>(bytes.data()),
@@ -72,7 +72,7 @@ void registerProtoEvent() {
 				                 ) != 0;
 			          } catch (const std::exception& e) {
 				          // swallow serialization failures so one bad event doesn't kill the whole chain
-				          TOAST_WARN("Events", "Failed to serialize event {}: {}", Proto::descriptor()->full_name(), e.what());
+				          TOAST_WARN("Events", "Failed to serialize event {}: {}", Proto::default_instance().GetTypeName(), e.what());
 				          return false;
 			          }
 		          },
@@ -82,7 +82,7 @@ void registerProtoEvent() {
 	  .unsubscribe = [](Listener& l, const char* label) { l.unsubscribe<T>(std::string_view {label}); },
 	};
 
-	_detail::registerProtoEntry(std::string {Proto::descriptor()->full_name()}, entry);
+	_detail::registerProtoEntry(std::string {Proto::default_instance().GetTypeName()}, entry);
 }
 
 namespace _detail {
