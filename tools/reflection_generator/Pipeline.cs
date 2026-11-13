@@ -3,6 +3,7 @@ using ReflectionGenerator.Model;
 using ReflectionGenerator.Output;
 using ReflectionGenerator.Parsing;
 using ReflectionGenerator.Rules;
+using Spectre.Console;
 
 namespace ReflectionGenerator;
 
@@ -17,23 +18,46 @@ internal sealed class Pipeline(Options options)
 			Warn("no [[ToastNode]] headers found in the given --input directories");
 		}
 
-		var (nodes, events) = ParseHeaders(headers);
-		WriteOrWarn(options.Database, Database.Serialize(nodes, events));
+		IReadOnlyList<NodeType> ordered = [];
 
-		var ordered = InheritanceOrder.Sort(nodes);
-		var templates = new Templates();
+		try {
+			AnsiConsole.Progress()
+				.AutoClear(true)
+				.Columns(new BarColumn())
+				.Start(ctx => {
+					var task = ctx.AddTask("starting", maxValue: headers.Count + 3);
+					void Step(string what) {
+						task.Description = what;
+						task.Increment(1);
+					}
 
-		new CppOutput(templates, options.Output, options.RegisterFn, options.SplitTypeInfo).Write(ordered, events);
+					var (nodes, events) = ParseHeaders(headers, Step);
 
-		if (options.LuaStubs is { } luaStubs) {
-			WriteOrWarn(luaStubs, LuaOutput.NodeStubs(templates, ordered));
+					Step("database");
+					WriteOrWarn(options.Database, Database.Serialize(nodes, events));
+
+					ordered = InheritanceOrder.Sort(nodes);
+					var templates = new Templates();
+
+					Step("cpp");
+					new CppOutput(templates, options.Output, options.RegisterFn, options.SplitTypeInfo).Write(ordered, events);
+
+					Step("lua stubs");
+					if (options.LuaStubs is { } luaStubs) {
+						WriteOrWarn(luaStubs, LuaOutput.NodeStubs(templates, ordered));
+					}
+					if (options.EventLuaStubs is { } eventLuaStubs) {
+						WriteOrWarn(eventLuaStubs, LuaOutput.EventStubs(templates, events));
+					}
+				});
+		} finally {
+			foreach (var message in m_messages) Console.Error.WriteLine(message);
 		}
-		if (options.EventLuaStubs is { } eventLuaStubs) {
-			WriteOrWarn(eventLuaStubs, LuaOutput.EventStubs(templates, events));
-		}
 
-		Console.WriteLine($"refgen: generated {ordered.Count} type(s) -> '{options.Output}' (fn: {options.RegisterFn})");
+		if (!Console.IsOutputRedirected) Console.WriteLine($"refgen: generated {ordered.Count} type(s) -> '{options.Output}' (fn: {options.RegisterFn})");
 	}
+
+	private readonly List<string> m_messages = [];
 
 	private void CheckDirectories()
 	{
@@ -45,22 +69,24 @@ internal sealed class Pipeline(Options options)
 		}
 	}
 
-	private (List<NodeType> Nodes, List<EventType> Events) ParseHeaders(IEnumerable<string> headers)
+	private (List<NodeType> Nodes, List<EventType> Events) ParseHeaders(IEnumerable<string> headers, Action<string> step)
 	{
 		var nodes = new List<NodeType>();
 		var events = new List<EventType>();
 
 		foreach (var header in headers) {
+			var includePath = IncludePath(header);
+			step(includePath);
+
 			string source;
 			try {
 				source = File.ReadAllText(header);
 			} catch (Exception e) when (e is IOException or UnauthorizedAccessException) {
-				Console.Error.WriteLine($"error reading '{header}': {e.Message}");
+				m_messages.Add($"error reading '{header}': {e.Message}");
 				continue;
 			}
 
 			var text = ExportMacros.Strip(source);
-			var includePath = IncludePath(header);
 
 			foreach (var node in NodeParser.Parse(text, includePath)) {
 				Validation.Check(node);
@@ -73,7 +99,7 @@ internal sealed class Pipeline(Options options)
 	}
 
 	// the same event can be seen from several headers
-	private static List<EventType> DistinctEvents(IEnumerable<EventType> events)
+	private List<EventType> DistinctEvents(IEnumerable<EventType> events)
 	{
 		var distinct = events
 			.OrderBy(e => e.QualifiedName, StringComparer.Ordinal)
@@ -81,10 +107,6 @@ internal sealed class Pipeline(Options options)
 			.Select(group => group.First())
 			.ToList();
 
-		var skipped = distinct.Count(e => !e.Supported);
-		if (skipped > 0) {
-			Warn($"skipped {skipped} Lua events");
-		}
 		return distinct;
 	}
 
@@ -99,7 +121,7 @@ internal sealed class Pipeline(Options options)
 		return Path.GetFileName(file);
 	}
 
-	private static void WriteOrWarn(string path, string content)
+	private void WriteOrWarn(string path, string content)
 	{
 		try {
 			OutputFile.WriteIfChanged(path, content);
@@ -108,5 +130,5 @@ internal sealed class Pipeline(Options options)
 		}
 	}
 
-	private static void Warn(string message) => Console.Error.WriteLine($"warning: {message}");
+	private void Warn(string message) => m_messages.Add($"warning: {message}");
 }

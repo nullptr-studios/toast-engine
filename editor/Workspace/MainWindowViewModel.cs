@@ -1249,23 +1249,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 					FileName = packerBin,
 					Arguments = $"\"{stageDir}\" \"{pakOut}\"",
 					WorkingDirectory = ProjectContext.ProjectPath,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true
 				};
-				proc.OutputDataReceived += (_, e) => {
-					if (e.Data is not null) log(e.Data);
-				};
-				proc.ErrorDataReceived += (_, e) => {
-					if (e.Data is not null) log(e.Data);
-				};
-				proc.Start();
-				proc.BeginOutputReadLine();
-				proc.BeginErrorReadLine();
-				proc.WaitForExit();
-				if (proc.ExitCode != 0)
-					throw new Exception($"packer exited with code {proc.ExitCode} for {dbName}");
+				var exitCode = TerminalReader.Run(proc, log);
+				if (exitCode != 0)
+					throw new Exception($"packer exited with code {exitCode} for {dbName}");
 			});
 		}
 
