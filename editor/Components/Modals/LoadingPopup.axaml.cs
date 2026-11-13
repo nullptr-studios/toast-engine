@@ -9,4 +9,8 @@ public partial class LoadingPopup : Window {
 		InitializeComponent();
 		Message.Text = text;
 	}
+
+	public void SetText(string text) {
+		Message.Text = text;
+	}
 }

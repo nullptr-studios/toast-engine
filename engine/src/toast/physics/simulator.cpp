@@ -9,6 +9,7 @@
 #include "nodes/capsule_collider.hpp"
 #include "nodes/collider.hpp"
 #include "nodes/dynamic_rigidbody.hpp"
+#include "nodes/kinematic_rigidbody.hpp"
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
 #include "nodes/trigger.hpp"
@@ -464,6 +465,12 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 namespace {
 
 [[nodiscard]]
+inline auto isMovingKinematic(const Body& body) noexcept -> bool {
+	return glm::dot(body.linear_velocity, body.linear_velocity) > 0.0f ||
+	       glm::dot(body.angular_velocity, body.angular_velocity) > 0.0f;
+}
+
+[[nodiscard]]
 constexpr auto bodyTypeOf(toast::SimulationType type) noexcept -> BodyType {
 	switch (type) {
 		case toast::SimulationType::static_body: return BodyType::static_body;
@@ -511,6 +518,8 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 		      .allow_sleep = node.allow_sleep,
 		      .position = node.world_position,
 		      .rotation = node.world_rotation,
+		      .linear_velocity = body_type == BodyType::kinematic_body && part == nullptr ? node.linear_velocity : glm::vec3 {0.0f},
+		      .angular_velocity = body_type == BodyType::kinematic_body && part == nullptr ? node.angular_velocity : glm::vec3 {0.0f},
 		      .mass = 1.0f, // calculated later
 		      .gravity_scale = node.gravity_scale,
 		      .linear_damping = node.linear_damping,
@@ -964,6 +973,7 @@ void Simulator::emitDebris(
 	const float energy_each =
 	    blast != nullptr ? blast->energy * k_joules_per_kilojoule / static_cast<float>(clusters.size()) : 0.0f;
 	const float speed_scale = tunables().debris_speed_scale;
+	const float max_speed = tunables().debris_max_speed;
 	const glm::vec3 push_direction = push != nullptr ? push->direction : glm::vec3 {0.0f};
 	const float push_length = glm::length(push_direction);
 
@@ -1031,6 +1041,7 @@ void Simulator::emitDebris(
 
 		// starts with the speed of the point it broke off from
 		glm::vec3 velocity = body->linear_velocity + glm::cross(body->angular_velocity, position - world_com);
+		glm::vec3 thrown {0.0f};
 
 		if (blast != nullptr) {
 			// thrown outward from the crater axis inside a cone
@@ -1040,82 +1051,62 @@ void Simulator::emitDebris(
 			const glm::vec3 axis_local =
 			    glm::dot(mouth, mouth) > 0.0f ? glm::normalize(mouth + (radial * k_debris_mouth_spread)) : radial;
 			const glm::vec3 axis = body->rotation * (shape->voxel.local_rotation * axis_local);
-			float speed = debrisSpeed(energy_each, mass, speed_scale, tunables().debris_max_speed);
+			float speed = debrisSpeed(energy_each * k_debris_ejecta_share, mass, speed_scale, max_speed);
 			if (blast->max_speed > 0.0f) {
 				speed = std::min(speed, blast->max_speed);
 			}
-			velocity += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
+			const float fling = rng.uniform();
+			speed *= glm::mix(k_debris_min_fling, 1.0f, fling * fling * fling);
+			thrown += debrisConeDirection(axis, rng, k_debris_cone_spread) * speed;
 		}
 		glm::vec3 push_normal {0.0f};
 		const bool push_open =
 		    push_length > 1.0e-6f &&
 		    (blast == nullptr || not blocked_ahead(start, to_lattice * (push_direction / push_length), push_normal));
 		if (push != nullptr && push_open && mass > 0.0f) {
-			const float speed = std::min({push->speed, push->max_impulse / mass, tunables().debris_max_speed});
+			float speed = std::min({push->speed, push->max_impulse / mass, max_speed});
+			if (not together) {
+				speed *= rng.range(k_debris_min_fling, 1.0f);
+			}
 			if (std::isfinite(speed) && speed > 0.0f) {
-				velocity += (push_direction / push_length) * speed;
+				thrown += (push_direction / push_length) * speed;
 			}
 		}
 
-		float scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f);
-		const auto overlaps_solid = [&](float s) {
-			for (uint32_t bit = 0; bit < 8; ++bit) {
-				if ((cluster.mask & (1u << bit)) == 0) {
-					continue;
-				}
-				const glm::vec3 cube_center =
-				    start +
-				    (glm::vec3(static_cast<float>(bit & 1u), static_cast<float>((bit >> 1u) & 1u), static_cast<float>(bit >> 2u)) -
-						 0.5f) *
-				        s;
-				for (uint32_t corner = 0; corner < 8; ++corner) {
-					// corner on the border dorstnt counts the neighbour
-					const glm::vec3 sign =
-					    glm::vec3(
-					        static_cast<float>(corner & 1u), static_cast<float>((corner >> 1u) & 1u), static_cast<float>(corner >> 2u)
-					    ) -
-					    0.5f;
-					if (solid_at(glm::ivec3(glm::floor(cube_center + (sign * 0.96f * s))))) {
-						return true;
-					}
-				}
-			}
-			return false;
-		};
-		for (int attempt = 0; attempt < 3 && overlaps_solid(scale); ++attempt) {
-			scale *= 0.8f;
-		}
-		if (overlaps_solid(scale)) {
-			continue;
-		}
-
-		// a piece never goes into solid voxels
+		const float scale = cluster.whole ? cluster.scale : rng.range(k_debris_min_scale, 1.0f);
 		if (not together && data->volume != nullptr) {
 			for (int pass = 0; pass < 2; ++pass) {
-				const float speed = glm::length(velocity);
+				const float speed = glm::length(thrown);
 				if (speed < 1.0e-3f) {
 					break;
 				}
 				glm::vec3 normal_local {0.0f};
-				if (not blocked_ahead(start, to_lattice * (velocity / speed), normal_local)) {
+				if (not blocked_ahead(start, to_lattice * (thrown / speed), normal_local)) {
 					break;
 				}
 
 				const glm::vec3 normal = lattice_rotation * normal_local;
-				const float into = glm::dot(velocity, normal);
+				const float into = glm::dot(thrown, normal);
 				if (into >= 0.0f) {
 					break;
 				}
-				velocity -= (1.0f + k_debris_spawn_restitution) * into * normal;
+				thrown -= into * normal;
 			}
 		}
+
+		if (const float speed = glm::length(thrown); speed > max_speed) {
+			thrown *= max_speed / speed;
+		}
+		velocity += thrown;
 
 		m_debris_spawns.push_back(
 		    DebrisSpawn {
 		      .position = position,
 		      .rotation = lattice_rotation,
 		      .velocity = velocity,
-		      .angular_velocity = together ? body->angular_velocity : rng.direction() * rng.range(0.0f, k_debris_max_spin),
+		      .angular_velocity = together
+					                        ? body->angular_velocity
+					                        : rng.direction() * rng.range(0.0f, std::min(k_debris_max_spin, tunables().debris_max_spin)),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
@@ -1953,6 +1944,10 @@ void Simulator::syncEnabledState() {
 					continue;
 				}
 			}
+			if (const auto kinematic_node = binding.node.as<KinematicRigidbody>(); kinematic_node.exists()) {
+				body->linear_velocity = kinematic_node->linear_velocity;
+				body->angular_velocity = kinematic_node->angular_velocity;
+			}
 		}
 		for (ColliderBinding& collider_binding : binding.colliders) {
 			Shape* shape = tryGetShape(collider_binding.shape);
@@ -1995,6 +1990,10 @@ void Simulator::syncEnabledState() {
 				if (body == nullptr) {
 					continue;
 				}
+			}
+			if (body->type == BodyType::kinematic_body) {
+				body->linear_velocity = binding.node->linear_velocity;
+				body->angular_velocity = binding.node->angular_velocity;
 			}
 		}
 
@@ -2431,7 +2430,8 @@ auto Simulator::publishTransform(NodeBinding& binding) -> bool {
 		return false;
 	}
 
-	if (body->enabled && body->type == BodyType::dynamic_body) {
+	const bool moved = body->type == BodyType::dynamic_body || (body->type == BodyType::kinematic_body && isMovingKinematic(*body));
+	if (body->enabled && moved) {
 		binding.node->applyPhysicsTransform(body->position, body->rotation);
 	}
 	if (auto dynamic_node = binding.node.as<DynamicRigidbody>(); dynamic_node.exists()) {
@@ -2471,6 +2471,9 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 				binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
 			}
 		}
+	} else if (body->type == BodyType::kinematic_body && part == nullptr && body->enabled && isMovingKinematic(*body)) {
+		// The integrator moved it so the node follows
+		binding.node->applyPhysicsTransform(body->position, body->rotation);
 	}
 
 	if (const Shape* shape = tryGetShape(binding.shape); shape != nullptr && shape->type == ShapeType::voxel) {
@@ -3524,6 +3527,22 @@ void Simulator::integrateBody(
 	// preserve the previous pose for interpolation
 	body.previous_position = body.position;
 	body.previous_rotation = body.rotation;
+
+	if (body.type == BodyType::kinematic_body) {
+		// Kinematic bodies just follow the velocity they were given with no gravity, drag or damping
+		if (not isMovingKinematic(body)) {
+			return;
+		}
+		const glm::vec3 center = body.worldCenterOfMass() + body.linear_velocity * dt;
+		const glm::quat spin {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
+		const glm::quat next = body.rotation + ((0.5f * dt) * (spin * body.rotation));
+		const float length_squared = glm::dot(next, next);
+		if (std::isfinite(length_squared) && length_squared > 1.0e-10f) {
+			body.rotation = glm::normalize(next);
+		}
+		body.position = center - body.rotation * body.local_center_of_mass;
+		return;
+	}
 
 	if (body.type != BodyType::dynamic_body) {
 		return;

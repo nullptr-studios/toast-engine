@@ -423,6 +423,7 @@ message LuaField {
   double min = 11;
   double max = 12;
   string unit = 13;
+  repeated string enum_options = 14;
 }
 
 message LuaSubgroup {

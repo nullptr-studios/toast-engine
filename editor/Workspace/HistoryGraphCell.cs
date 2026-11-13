@@ -8,7 +8,7 @@ namespace editor.Workspace;
 
 public sealed class HistoryGraphCell : Control {
 	public const double LaneWidth = 14;
-	public const double RowHeight = 34;
+	public const double RowHeight = 26;
 	private const double Pad = 9;
 
 	public static readonly StyledProperty<HistoryRowViewModel?> RowProperty =

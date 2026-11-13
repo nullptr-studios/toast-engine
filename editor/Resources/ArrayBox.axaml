@@ -50,7 +50,7 @@
 						        HorizontalAlignment="Stretch"
 						        HorizontalContentAlignment="Center"
 						        BorderThickness="0"
-						        Padding="6"
+						        Padding="{TemplateBinding Padding}"
 						        CornerRadius="6"
 						        Cursor="Hand">
 							<Button.Resources>

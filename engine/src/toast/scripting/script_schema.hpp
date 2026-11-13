@@ -42,6 +42,7 @@ struct LuaVarDesc {
 	double min = -std::numeric_limits<double>::infinity();
 	double max = std::numeric_limits<double>::infinity();
 	std::string unit;
+	std::vector<std::string> enum_options;
 	std::string ref_type;
 	std::any default_value;
 };

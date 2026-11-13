@@ -37,6 +37,7 @@ find_package(slang CONFIG REQUIRED)
 find_package(protobuf CONFIG REQUIRED)
 find_package(tinysplinecxx CONFIG REQUIRED)
 find_package(lz4 CONFIG REQUIRED)
+find_package(unofficial-sqlite3 CONFIG REQUIRED)
 find_package(tomlplusplus CONFIG REQUIRED)
 find_package(RmlUi CONFIG REQUIRED)
 find_package(Lua REQUIRED)
@@ -109,6 +110,7 @@ target_link_libraries(toast_engine
         unofficial::VulkanMemoryAllocator-Hpp::VulkanMemoryAllocator-Hpp
         slang::gfx slang::slang protobuf::libprotobuf tinysplinecxx::tinysplinecxx
         LZ4::lz4
+        unofficial::sqlite3::sqlite3
         toast_pack
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:imgui::imgui>
         RmlUi::RmlUi

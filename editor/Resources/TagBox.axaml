@@ -17,6 +17,8 @@
 
 	<ControlTheme x:Key="{x:Type elements:LayerTagBox}"
 	              TargetType="elements:LayerTagBox">
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="Padding" Value="8" />
 		<Setter Property="HorizontalAlignment"
 		        Value="Stretch" />
 
@@ -25,7 +27,7 @@
 				<!-- This is the tag box -->
 				<Border Background="{StaticResource Bg1}"
 				        CornerRadius="8"
-				        Padding="8">
+				        Padding="{TemplateBinding Padding}">
 					<StackPanel>
 						<ItemsControl x:Name="PART_Cells"
 						              ItemsSource="{Binding VisibleCells, RelativeSource={RelativeSource TemplatedParent}}">
@@ -48,7 +50,7 @@
 												<Setter Property="CornerRadius"
 												        Value="8" />
 												<Setter Property="Height"
-												        Value="32" />
+												        Value="{Binding $parent[elements:LayerTagBox].MinHeight}" />
 												<Setter Property="Cursor"
 												        Value="Hand" />
 												<Setter Property="Background"
