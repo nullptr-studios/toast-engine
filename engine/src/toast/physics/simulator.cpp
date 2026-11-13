@@ -2472,10 +2472,8 @@ auto Simulator::publishTransform(NodeBinding& binding) -> bool {
 		return false;
 	}
 
-	if (body->enabled && body->type == BodyType::dynamic_body) {
-		binding.node->applyPhysicsTransform(body->position, body->rotation);
-	} else if (body->enabled && body->type == BodyType::kinematic_body && isMovingKinematic(*body)) {
-		// The integrator moved it so the node follows
+	const bool moved = body->type == BodyType::dynamic_body || (body->type == BodyType::kinematic_body && isMovingKinematic(*body));
+	if (body->enabled && moved) {
 		binding.node->applyPhysicsTransform(body->position, body->rotation);
 	}
 	if (auto dynamic_node = binding.node.as<DynamicRigidbody>(); dynamic_node.exists()) {

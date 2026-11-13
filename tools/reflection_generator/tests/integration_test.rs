@@ -132,37 +132,8 @@ fn test_single_fixture(
     // 6. Generate files for manual inspection
     println!("  Generating .hpp files for manual inspection...");
 
-    // Create a temporary template directory in the output dir for the generator to find
-    let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let template_src = format!("{}/templates", manifest_dir);
-    let template_dest = format!("{}/templates", output_dir);
-
-    if Path::new(&template_src).exists() {
-        // Copy templates to output dir so generator can find them
-        let _ = fs::create_dir_all(&template_dest);
-        for entry in
-            fs::read_dir(&template_src).unwrap_or_else(|_| panic!("Cannot read template dir"))
-        {
-            if let Ok(entry) = entry {
-                let path = entry.path();
-                if path.is_file() {
-                    if let Some(filename) = path.file_name() {
-                        let dest_file = format!("{}/{}", template_dest, filename.to_string_lossy());
-                        let _ = fs::copy(&path, &dest_file);
-                    }
-                }
-            }
-        }
-
-        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            generate_files(&nodes, Path::new(output_dir), "testRegisterTypes", false);
-        })) {
-            Ok(_) => println!("  ✓ Generated .hpp files in: {}", output_dir),
-            Err(_) => println!("  ⚠ Skipped .hpp generation"),
-        }
-    } else {
-        println!("  ⚠ Template directory not found");
-    }
+    generate_files(&nodes, Path::new(output_dir), "testRegisterTypes", false);
+    println!("  ✓ Generated .hpp files in: {}", output_dir);
 }
 
 #[test]
