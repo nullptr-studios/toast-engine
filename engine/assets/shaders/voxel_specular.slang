@@ -230,7 +230,7 @@ float3 hitRadiance(SceneHit hit, float3 origin, float3 direction, float coneSlop
 
     const PaletteSample palette = samplePalette(gTraceVolumes[hit.volume].recordIndex, hit.material);
     float3 irradiance;
-    if (!sampleRadianceCascades(position, normal, irradiance))
+    if (!giHitIrradiance(position, normal, irradiance))
     {
         irradiance = gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a;
         if (gCamera.environmentParams.x >= 0.5)

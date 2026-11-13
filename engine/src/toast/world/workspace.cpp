@@ -6,6 +6,7 @@
 #include "node.hpp"
 #include "node_3d.hpp"
 #include "play_workspace.hpp"
+#include "skeletal_node.hpp"
 #include "tree_lock.hpp"
 #include "workspace_events.hpp"
 
@@ -42,7 +43,7 @@ namespace toast {
 
 namespace {
 
-// Handle clicks before the runtime UI (priority 32) and gameplay input (priority 0).
+// Ahead of the runtime UI at 32 and gameplay at 0
 constexpr char k_gizmo_input_priority = 33;
 
 // TODO: i didnt know where to place the ray picking shit since theres no physics class yet, MOVE THIS SOMEWHERE ELSE!
@@ -2524,7 +2525,7 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// Editor interaction only follows the editor camera; game view passes input to the game.
+	// The game view passes input to the game
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
@@ -2667,6 +2668,8 @@ void Workspace::tickAnimationPreviews(const Node& node) {
 	// reflect_cast, not dynamic_cast - this engine deliberately has no RTTI/vtable-based dispatch for Node
 	if (auto* player = reflect_cast<AnimationPlayer>(const_cast<Node*>(&node))) {
 		player->tick();
+	} else if (auto* skeletal = reflect_cast<SkeletalNode>(const_cast<Node*>(&node))) {
+		skeletal->tick();
 	}
 	for (const auto& child : node.children()) {
 		tickAnimationPreviews(*child);
@@ -2784,7 +2787,12 @@ void Workspace::tick() {
 				} catch (const std::bad_any_cast&) { text = ""; }
 			}
 
-			fields.emplace_back(field.name, text);
+			const nlohmann::json* attributes = field.attributeMap();
+			if (attributes != nullptr && attributes->contains("Options")) {
+				fields.emplace_back(field.name, text, node->inspectorOptions(field.name));
+			} else {
+				fields.emplace_back(field.name, text);
+			}
 		}
 	}
 

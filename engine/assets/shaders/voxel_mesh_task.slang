@@ -25,8 +25,7 @@ struct CameraBrickView : IBrickView
     }
 }
 
-/// Brick of a cell for the n th thread so the bricks nearest the eye come first and early depth rejects the rest
-/// The axis the eye is farthest from the cell along orders slowest and an axis flips when the eye sits on its high side
+/// Bricks nearest the eye come first so early depth rejects the rest
 uint nearToFarBrick(uint linear, float3 eyeToCell)
 {
     const float3 distance = abs(eyeToCell);

@@ -189,13 +189,12 @@ void plotGpuTimings(const GpuTimer& timer) {
 void VulkanRenderer::recordDepthUpscale(vk::CommandBuffer cmd, const vk::Rect2D& area) {
 	ZoneScoped;
 	const vk::ImageView scene_depth = **m_depth_resources.view;
-	if (m_depth_upscale_bound[m_current_frame] != scene_depth) {
+	if (m_depth_upscale_bound.update(m_current_frame, scene_depth)) {
 		const vk::DescriptorImageInfo image_info(*m_depth_upscale_sampler, scene_depth, vk::ImageLayout::eDepthReadOnlyOptimal);
 		const vk::WriteDescriptorSet write(
 		    *m_depth_upscale_sets[m_current_frame], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
 		);
 		m_core->getDevice().updateDescriptorSets(write, {});
-		m_depth_upscale_bound[m_current_frame] = scene_depth;
 	}
 	sync::transition(cmd, m_output_depth.state, sync::Usage::depth_attachment);
 
@@ -262,7 +261,10 @@ void VulkanRenderer::updateVoxelTraceScene() {
 	m_trace_volumes.clear();
 	const VoxelGpuStorage* storage = render_frame->voxel_storage.get();
 	if (storage != nullptr && storage->isReady()) {
-		const auto cap = std::min<size_t>(voxelShadowInstances(), VoxelTraceScene::k_max_volumes);
+		// The clipmap fill reads this list so a capped volume would vanish from GI
+		const bool clipmap = m_gi_settings.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_clipmap;
+		const auto cap =
+		    clipmap ? VoxelTraceScene::k_max_volumes : std::min<size_t>(voxelShadowInstances(), VoxelTraceScene::k_max_volumes);
 		// Drawn volumes first so the cap drops off screen ones
 		for (const bool visible : {true, false}) {
 			for (const VoxelVolumeProxy& proxy : render_frame->voxel_instances) {
@@ -426,6 +428,7 @@ void VulkanRenderer::recordMeshScene(
 	}
 	if (m_voxel_pass != nullptr) {
 		m_voxel_pass->setBackdropCaptured(refract);
+		m_voxel_pass->setBackdropDepthValid(m_glass_backdrop_captured);
 	}
 
 	{
@@ -672,6 +675,40 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_scene_motion.state, sync::Usage::fragment_sampled);
 	barriers.flush(cmd);
 
+	if (m_voxel_gi.view.has_value()) {
+		if (m_voxel_pass->giGatherActive()) {
+			barriers.image(m_voxel_gi.state, sync::Usage::color_attachment);
+			barriers.flush(cmd);
+			const vk::Rect2D half {
+			  {                             0,                               0},
+        {(scissor.extent.width + 1) / 2, (scissor.extent.height + 1) / 2}
+			};
+			const std::array gather_attachments {attachment(m_voxel_gi, vk::AttachmentLoadOp::eDontCare, clear_zero)};
+			vk::RenderingInfo gather_info {};
+			gather_info.renderArea = half;
+			gather_info.layerCount = 1;
+			gather_info.colorAttachmentCount = static_cast<uint32_t>(gather_attachments.size());
+			gather_info.pColorAttachments = gather_attachments.data();
+
+			cmd.beginRendering(gather_info);
+			cmd.setViewport(
+			    0,
+			    std::array {
+			      vk::Viewport {0.0f, 0.0f, static_cast<float>(half.extent.width), static_cast<float>(half.extent.height), 0.0f, 1.0f}
+			}
+			);
+			cmd.setScissor(0, std::array {half});
+			{
+				TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelGiGather");
+				const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel GI gather");
+				m_voxel_pass->recordGiGather(cmd, m_current_frame, scissor.extent);
+			}
+			cmd.endRendering();
+		}
+		barriers.image(m_voxel_gi.state, sync::Usage::fragment_sampled);
+		barriers.flush(cmd);
+	}
+
 	// A frame without voxel lighting in between or a probe capture leaves reservoirs another view wrote
 	const auto* lit_frame = renderingFrame();
 	const uint64_t sequence = lit_frame != nullptr ? lit_frame->sequence : 0;
@@ -849,7 +886,7 @@ auto VulkanRenderer::recordVoxelScopes(
 auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noexcept -> void {
 	ZoneScoped;
 	frame.command_buffer.reset();
-	const vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+	constexpr vk::CommandBufferBeginInfo begin_info(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 	frame.command_buffer.begin(begin_info);
 	if (m_gpu_timer != nullptr) {
 		m_gpu_timer->beginGraphics(m_current_frame, *frame.command_buffer);
@@ -1115,6 +1152,44 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	frame.command_buffer.endRendering();
 
+	// Glass mask
+	sync::BarrierBatch to_mask;
+	to_mask.image(m_glass_mask.state, sync::Usage::color_attachment);
+	to_mask.image(m_depth_resources.state, sync::Usage::depth_attachment);
+	to_mask.flush(*frame.command_buffer);
+
+	vk::RenderingAttachmentInfo mask_color {};
+	mask_color.imageView = **m_glass_mask.view;
+	mask_color.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	mask_color.loadOp = vk::AttachmentLoadOp::eClear;
+	mask_color.storeOp = vk::AttachmentStoreOp::eStore;
+	mask_color.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
+
+	vk::RenderingAttachmentInfo mask_depth {};
+	mask_depth.imageView = **m_depth_resources.view;
+	mask_depth.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+	mask_depth.loadOp = vk::AttachmentLoadOp::eLoad;       // keep the glass depth from the scene
+	mask_depth.storeOp = vk::AttachmentStoreOp::eStore;    // must be store
+
+	vk::RenderingInfo mask_info {};
+	mask_info.renderArea = scene_scissor;
+	mask_info.layerCount = 1;
+	mask_info.colorAttachmentCount = 1;
+	mask_info.pColorAttachments = &mask_color;
+	mask_info.pDepthAttachment = &mask_depth;
+
+	frame.command_buffer.beginRendering(mask_info);
+	frame.command_buffer.setViewport(0, std::array {scene_viewport});
+	frame.command_buffer.setScissor(0, std::array {scene_scissor});
+	if (m_voxel_pass != nullptr) {
+		m_voxel_pass->recordGlassMask(*frame.command_buffer, m_current_frame);
+	}
+	frame.command_buffer.endRendering();
+
+	sync::BarrierBatch after_mask;
+	after_mask.image(m_glass_mask.state, sync::Usage::fragment_sampled);
+	after_mask.flush(*frame.command_buffer);
+
 	// PROBE and Iradiance capture
 
 	if (const auto* capture_frame = renderingFrame(); capture_frame != nullptr && capture_frame->probe_capture_index >= 0 &&
@@ -1166,6 +1241,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	const bool capture_frame =
 	    capture_check != nullptr && (capture_check->probe_capture_index >= 0 || capture_check->irradiance_capture_index >= 0);
 
+	// post process passes
 	vk::ImageView post_source = getSceneColorView();
 	if (!capture_frame) {
 		std::lock_guard lock(m_pass_mutex);
@@ -1174,6 +1250,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			if (!pass->isEnabled() || !post_source) {
 				continue;
 			}
+			pass->setGlassSources(getGlassBackdropView(), getGlassMaskView());    // Sets glass mask for eveery post process pass
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			post_source = pass->record(*frame.command_buffer, m_current_frame, post_source);
 		}
@@ -1234,7 +1311,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Present blit");
 
 		if (m_present_pipeline.isReady() && post_source && m_current_frame < m_present_sets.size()) {
-			if (m_present_bound_views[m_current_frame] != post_source) {
+			if (m_present_bound.update(m_current_frame, post_source)) {
 				vk::DescriptorImageInfo image_info {};
 				image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 				image_info.imageView = post_source;
@@ -1244,7 +1321,6 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 				    *m_present_sets[m_current_frame], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
 				);
 				m_core->getDevice().updateDescriptorSets(write, {});
-				m_present_bound_views[m_current_frame] = post_source;
 			}
 
 			frame.command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, m_present_pipeline.getPipeline());
@@ -1411,52 +1487,64 @@ void VulkanRenderer::updateFrameResources(uint32_t frame_index, RenderFrame& fra
 
 auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	ZoneScoped;
+
+	// NO FRAMES LEFT TO DRAW
 	if (m_frames.empty()) {
 		return false;
 	}
 
+	// IF MINIMIZED DO NOT DRAW
 	if (!m_output_target->isPresentable()) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		return false;
 	}
 
 	using clock = std::chrono::steady_clock;
+
+#if defined(TOAST_DEV_TOOLS)
 	auto phase_start = clock::now();
 	auto end_phase = [&phase_start](std::atomic<uint64_t>& counter) {
 		const auto now = clock::now();
-		counter.fetch_add(
-		    static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now - phase_start).count()),
-		    std::memory_order_relaxed
+		detail::addSingleWriter(
+		    counter, static_cast<uint64_t>(std::chrono::duration_cast<std::chrono::nanoseconds>(now - phase_start).count())
 		);
 		phase_start = now;
 	};
+#endif
 
 	toast::PhaseZones phases;
 	TOAST_PHASE(phases, "Draw: uploads");
 	processPendingUploads();
 
 	flushResourceUploads();
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_upload_ns);
+#endif
 
 	auto& frame = m_frames[m_current_frame];
 	TOAST_PHASE(phases, "Draw: wait frame fence");
 	std::ignore = m_core->getDevice().waitForFences(*frame.in_flight, true, std::numeric_limits<uint64_t>::max());
+
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_gpu_wait_ns);
+#endif
+
 	TOAST_PHASE(phases, "Draw: publish frames and timings");
 	frame.retired.clear();
 	publishCompletedFrames();
-	m_core->updateTracyMemory();
 
+#if defined(TOAST_DEV_TOOLS)
+	m_core->updateTracyMemory();
 	if (m_gpu_timer != nullptr && !frame.was_probe_capture) {
 		m_gpu_timer->collect(m_current_frame);
-#if defined(TOAST_DEV_TOOLS)
+
 		reportGpuSpike(*m_gpu_timer);
-#endif
 #ifdef TRACY_ENABLE
 		plotGpuTimings(*m_gpu_timer);
 #endif
 	}
 	end_phase(m_perf_record_ns);
+#endif
 
 	TOAST_PHASE(phases, "Draw: acquire image");
 	auto acquired = m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
@@ -1467,7 +1555,10 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		waitForOutputImage();
 		acquired = m_output_target->acquireNextImage(std::numeric_limits<uint64_t>::max(), *frame.image_available, VK_NULL_HANDLE);
 	}
+
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_acquire_ns);
+#endif
 
 	if (acquired.result == vk::Result::eErrorOutOfDateKHR) {
 		TOAST_WARN("Render", "Swapchain out of date on acquire; recreating");
@@ -1479,7 +1570,7 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		return false;
 	}
 	if (acquired.result != vk::Result::eSuccess && acquired.result != vk::Result::eSuboptimalKHR) {
-		TOAST_CRITICAL("Render", "Toast Engine Error: Failed to acquire the next output image!");
+		TOAST_CRITICAL("Render", "Failed to acquire the next output image!");
 	}
 
 	const uint32_t image_index = acquired.value;
@@ -1489,13 +1580,16 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		std::ignore =
 		    m_core->getDevice().waitForFences(m_images_in_flight.at(image_index), true, std::numeric_limits<uint64_t>::max());
 	}
+
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_gpu_wait_ns);
+#endif
 
 	m_core->getDevice().resetFences(*frame.in_flight);
 	m_images_in_flight[image_index] = *frame.in_flight;
 
 	TOAST_PHASE(phases, "Draw: update frame resources");
-	updateFrameResources(m_current_frame, frame_data);    // FIXME dt
+	updateFrameResources(m_current_frame, frame_data);
 
 	m_rendering_frame = &frame_data;
 	TOAST_PHASE(phases, "Draw: update passes");
@@ -1530,7 +1624,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 
 	TOAST_PHASE(phases, "Draw: record frame");
 	recordFrame(frame, image_index);
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_record_ns);
+#endif
 
 	TOAST_PHASE(phases, "Draw: submit setup");
 	const bool present_sync = m_output_target->usesAcquirePresentSemaphores();
@@ -1587,7 +1683,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 	}
 	// Steps the tick queued run on the compute queue while this frame renders
 	m_core->asyncCompute().flushDeferred();
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_submit_ns);
+#endif
 
 #if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 	if (m_core->getNsightMode() == NsightMode::graphics_capture) {
@@ -1605,7 +1703,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 
 	TOAST_PHASE(phases, "Draw: present");
 	const auto present_result = m_output_target->present(image_index, present_sync ? signal_semaphore : vk::Semaphore {});
+#if defined(TOAST_DEV_TOOLS)
 	end_phase(m_perf_present_ns);
+#endif
 	frame.last_image_index = image_index;
 	frame.has_submitted = true;
 	m_pending_publish.push_back(m_current_frame);
@@ -1617,7 +1717,9 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 		if (previous.has_submitted) {
 			std::ignore = m_core->getDevice().waitForFences(*previous.in_flight, true, std::numeric_limits<uint64_t>::max());
 		}
+#if defined(TOAST_DEV_TOOLS)
 		end_phase(m_perf_gpu_wait_ns);
+#endif
 	}
 
 	m_current_frame = (m_current_frame + 1) % static_cast<uint32_t>(m_frames.size());

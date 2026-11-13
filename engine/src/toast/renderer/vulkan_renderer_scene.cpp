@@ -42,7 +42,6 @@
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/window/window_events.hpp>
-#include <toast/world/animation_player.hpp>
 #include <toast/world/camera.hpp>
 #include <toast/world/directional_light.hpp>
 #include <toast/world/fog_volume.hpp>
@@ -53,6 +52,7 @@
 #include <toast/world/point_light.hpp>
 #include <toast/world/post_process_volume.hpp>
 #include <toast/world/reflection_probe.hpp>
+#include <toast/world/skeletal_node.hpp>
 #include <toast/world/spotlight.hpp>
 #include <toast/world/workspace_events.hpp>
 
@@ -134,69 +134,51 @@ auto lightIcon(toast::LightType type) -> const assets::Handle<assets::Texture>& 
 	return g_light_icons[index];
 }
 
-auto pickSkin(const toast::MeshNode& node) -> const assets::Skin* {
-	const auto& skin_animation = node.getSkinAnimation();
-	if (!skin_animation.hasValue()) {
-		return nullptr;
-	}
-
-	const auto& skins = skin_animation->skins();
-	if (skins.empty()) {
-		return nullptr;
-	}
-
-	const auto& skin_name = node.getSkinName();
-	if (skin_name.empty()) {
-		return &skins.front();
-	}
-
-	for (const auto& skin : skins) {
-		if (skin.name == skin_name) {
-			return &skin;
-		}
-	}
-	return nullptr;
-}
-
-auto findAncestorAnimationPlayer(toast::Node& node) -> toast::AnimationPlayer* {
+auto findAncestorSkeleton(toast::Node& node) -> toast::SkeletalNode* {
 	toast::Box<toast::Node> current = node.parent();
 	while (current.exists()) {
-		if (auto player = current.as<toast::AnimationPlayer>(); player.exists()) {
-			return &*player;
+		if (auto skeletal = current.as<toast::SkeletalNode>(); skeletal.exists()) {
+			return &*skeletal;
 		}
 		current = current->parent();
 	}
 	return nullptr;
 }
 
-using SkinPoseKey = std::pair<const toast::AnimationPlayer*, const assets::Skin*>;
+using SkinPoseKey = std::pair<const toast::SkeletalNode*, const assets::Skin*>;
 
 using SkinPoseCache = std::map<SkinPoseKey, std::pair<uint32_t, uint32_t>>;
 
-void resolveSkinning(
+/// @returns the posing skeleton when this call added its pose to the frame
+auto resolveSkinning(
     toast::MeshNode& node, RenderFrame& frame, uint32_t& joint_offset, uint32_t& joint_count, bool& pool_exhausted_warned,
     SkinPoseCache& pose_cache
-) {
-	const assets::Skin* skin = pickSkin(node);
+) -> toast::SkeletalNode* {
+	toast::SkeletalNode* skeletal = findAncestorSkeleton(node);
+	const assets::Skeleton* skeleton = skeletal != nullptr ? skeletal->skeleton() : nullptr;
+	const assets::Skin* skin = skeleton != nullptr ? skeleton->findSkin(node.getSkinName()) : nullptr;
 	if (skin == nullptr) {
-		return;
+		return nullptr;
 	}
 
-	toast::AnimationPlayer* player = findAncestorAnimationPlayer(node);
-	if (player == nullptr) {
-		return;
-	}
-
-	if (const auto cached = pose_cache.find({player, skin}); cached != pose_cache.end()) {
+	if (const auto cached = pose_cache.find({skeletal, skin}); cached != pose_cache.end()) {
 		joint_offset = cached->second.first;
 		joint_count = cached->second.second;
-		return;
+		return nullptr;
 	}
 
-	const auto joint_world_transforms = player->jointWorldTransforms(*skin);
+	const auto bones = skeletal->skinBones(*skin);
+	skeletal->syncTransform();
+	const glm::mat4& skeletal_world = skeletal->getWorldTransform();
+	std::vector<glm::mat4> joint_world_transforms(skin->joints.size(), skeletal_world);
+	for (size_t i = 0; i < bones.size() && i < joint_world_transforms.size(); ++i) {
+		if (bones[i] >= 0) {
+			joint_world_transforms[i] = skeletal_world * skeletal->boneModelTransform(bones[i]);
+		}
+	}
 	const auto joint_matrices = skin->jointMatrices(joint_world_transforms);
 	if (joint_matrices.empty()) {
-		return;
+		return nullptr;
 	}
 
 	if (frame.joint_matrices.size() + joint_matrices.size() > k_max_joint_matrices) {
@@ -208,13 +190,14 @@ void resolveSkinning(
 			    k_max_joint_matrices
 			);
 		}
-		return;
+		return nullptr;
 	}
 
 	joint_offset = static_cast<uint32_t>(frame.joint_matrices.size());
 	joint_count = static_cast<uint32_t>(joint_matrices.size());
 	frame.joint_matrices.insert(frame.joint_matrices.end(), joint_matrices.begin(), joint_matrices.end());
-	pose_cache.emplace(SkinPoseKey {player, skin}, std::pair {joint_offset, joint_count});
+	pose_cache.emplace(SkinPoseKey {skeletal, skin}, std::pair {joint_offset, joint_count});
+	return skeletal;
 }
 
 /// Float in [1 2) whose mantissa hashes the light so ReSTIR finds it after rebuilds
@@ -366,23 +349,30 @@ void VulkanRenderer::tick(float time) noexcept {
 		acquireFrameSlot();
 	}
 	const bool got_slot = std::exchange(m_frame_slot, FrameSlot::none) == FrameSlot::held;
-	m_perf_ticks.fetch_add(1, std::memory_order_relaxed);
-
+#if defined(TOAST_DEV_TOOLS)
+	detail::addSingleWriter(m_perf_ticks, 1);
 	if (!got_slot) {
-		m_skipped_builds.fetch_add(1, std::memory_order_relaxed);
+		detail::addSingleWriter(m_skipped_builds, 1);
+	}
+#endif
+	if (!got_slot) {
 		return;
 	}
-	m_perf_frames_built.fetch_add(1, std::memory_order_relaxed);
 
+#if defined(TOAST_DEV_TOOLS)
+	detail::addSingleWriter(m_perf_frames_built, 1);
 	const auto build_start = std::chrono::steady_clock::now();
 	const auto count_build = [this, build_start] {
-		m_perf_build_ns.fetch_add(
+		detail::addSingleWriter(
+		    m_perf_build_ns,
 		    static_cast<uint64_t>(
 		        std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now() - build_start).count()
-		    ),
-		    std::memory_order_relaxed
+		    )
 		);
 	};
+#else
+	const auto count_build = [] { };
+#endif
 
 	TOAST_PHASE(phases, "Tick: reset frame");
 	auto& frame = getCurrentFrameBuild();
@@ -670,7 +660,11 @@ void VulkanRenderer::gatherMeshProxies(RenderFrame& frame) {
 		uint32_t joint_offset = 0;
 		uint32_t joint_count = 0;
 		if (gpu_mesh.isSkinned()) {
-			resolveSkinning(*node, frame, joint_offset, joint_count, m_joint_matrix_pool_exhausted_warned, skin_pose_cache);
+			toast::SkeletalNode* posed =
+			    resolveSkinning(*node, frame, joint_offset, joint_count, m_joint_matrix_pool_exhausted_warned, skin_pose_cache);
+			if (posed != nullptr && !posed->alwaysDrawsBones() && (isOutlined(posed->rid()) || isOutlined(node->rid()))) {
+				posed->drawBones();
+			}
 		}
 
 		const glm::vec4 local_sphere = mesh_handle->boundingSphere();

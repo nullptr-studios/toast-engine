@@ -92,7 +92,7 @@ void SsrPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight * 2, {});
+	m_bound_views.resize(VulkanRenderer::k_frames_in_flight * 2);
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight * 2; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -108,7 +108,7 @@ void SsrPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	m_resolve_target.create(core, half, k_reflection_format, "SsrPass Resolve");
 	m_history[0].create(core, half, k_reflection_format, "SsrPass History0");
 	m_history[1].create(core, half, k_reflection_format, "SsrPass History1");
-	std::ranges::fill(m_bound_views, std::array<vk::ImageView, 4> {});
+	m_bound_views.invalidate();
 	m_history_valid = false;
 }
 
@@ -149,7 +149,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 
 	const vk::ImageView previous_view = VulkanRenderer::instance->previousResolvedColour();
 	const std::array<vk::ImageView, 4> wanted {source_view, previous_view ? previous_view : source_view, depth_view, normal_view};
-	if (m_bound_views[set_index] != wanted) {
+	if (m_bound_views.update(set_index, wanted)) {
 		// Point sampled except the colours since interpolated depth or normals invent surfaces
 		const std::array<vk::DescriptorImageInfo, k_binding_count> image_infos {
 		  vk::DescriptorImageInfo(*m_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
@@ -171,7 +171,6 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 			    vk::WriteDescriptorSet(set, binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]);
 		}
 		m_core->getDevice().updateDescriptorSets(writes, {});
-		m_bound_views[set_index] = wanted;
 	}
 
 	const bool history_valid = m_history_valid && sequence == m_last_sequence + 1;

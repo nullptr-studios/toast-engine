@@ -19,8 +19,7 @@
 namespace renderer {
 class VulkanCore;
 
-/// One AABB per occupied brick per record where carving keeps a built BLAS correct and only a newly occupied brick rebuilds
-/// @note Render thread only apart from stats()
+/// Render thread only apart from stats()
 class VoxelBlasCache {
 public:
 	/// Records this small keep the unit box since marching them whole is already short
@@ -56,9 +55,7 @@ public:
 
 	VoxelBlasCache(const VulkanCore& core, uint32_t frames_in_flight);
 
-	/// Before the TLAS build once the fence of @p frame_index was waited on
-	/// @param records the volume records the trace scene instances this frame
-	/// @param budget bricks built per frame though the first build always goes ahead
+	/// Before the TLAS build once the fence of @p frame_index was waited on and the first build ignores @p budget
 	void update(
 	    vk::CommandBuffer cmd, uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const uint32_t> records,
 	    uint32_t budget

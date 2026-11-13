@@ -83,6 +83,10 @@ Sampler2D gNoisySpecular;
 [[vk::binding(10, 2)]]
 Sampler2D gDetailNormal;
 
+/// Half resolution fragmentGiGather with xyz irradiance over pi w open sky share and below 0 for none
+[[vk::binding(11, 2)]]
+Sampler2D gGiGather;
+
 typedef FullscreenVSOutput VSOutput;
 
 struct FSOutput
@@ -410,6 +414,11 @@ static const uint kReuseSpatial = 2u;
 static const uint kSceneGlass = 4u;
 static const uint kAmbientRayQuery = 8u;
 static const uint kTracedSpecular = 16u;
+/// Mirrors VoxelPass k_gi_gather and set when gGiGather holds this frame half resolution gather
+static const uint kGiGather = 32u;
+/// Mirrors VoxelPass k_gi_clipmap
+static const uint kGiClipmap = 64u;
+static const float kGiGatherPlane = 0.15;
 
 /// Scene normal roughness of a pixel whose environment specular voxel_specular.slang replaces and SSR skips
 static const float kTracedMark = 2.0;
@@ -791,6 +800,62 @@ SpatialOutput fragmentSpatialOpaque(VSOutput input)
     return spatialReuse(input, false);
 }
 
+/// Pixel of each 2x2 block the gather shades which never changes so the result holds still
+int2 giGatherPixel(int2 half)
+{
+    return min(half * 2, int2(gPush.viewport.xy) - 1);
+}
+
+[shader("fragment")]
+float4 fragmentGiGather(VSOutput input) : SV_Target0
+{
+    const float4 none = float4(0.0, 0.0, 0.0, -1.0);
+    const int2 pixel = giGatherPixel(int2(input.position.xy));
+    float3 normal;
+    if (!isLitVoxel(gAlbedo.Load(int3(pixel, 0)).a) || !isLitVoxelAt(pixel, normal))
+    {
+        return none;
+    }
+    float3 irradiance;
+    float sky;
+    if (!sampleGiClipmap(positionAt(pixel), normal, 0.0, irradiance, sky))
+    {
+        return none;
+    }
+    return float4(irradiance, sky);
+}
+
+/// w below 0 when none does so the caller gathers on its own
+float4 giGatherAt(int2 pixel, float3 position, float3 normal)
+{
+    const int2 size = (int2(gPush.viewport.xy) + 1) / 2;
+    const float2 at = float2(pixel) * 0.5;
+    const int2 base = int2(floor(at));
+    const float2 blend = at - float2(base);
+    float4 sum = float4(0.0, 0.0, 0.0, 0.0);
+    float total = 0.0;
+    for (int tap = 0; tap < 4; ++tap)
+    {
+        const int2 corner = int2(tap & 1, tap >> 1);
+        const int2 half = clamp(base + corner, int2(0, 0), size - 1);
+        const float4 gathered = gGiGather.Load(int3(half, 0));
+        const int2 source = giGatherPixel(half);
+        float3 sourceNormal;
+        if (gathered.a < 0.0 || !isLitVoxelAt(source, sourceNormal))
+        {
+            continue;
+        }
+        const float2 side = lerp(1.0 - blend, blend, float2(corner));
+        const float facing = saturate(dot(normal, sourceNormal));
+        const float plane = saturate(1.0 - abs(dot(positionAt(source) - position, normal)) / kGiGatherPlane);
+        // A floor so a pixel right on a gather pixel still takes its neighbours when that one is rejected
+        const float weight = (side.x * side.y + 0.01) * facing * facing * facing * facing * plane;
+        sum += gathered * weight;
+        total += weight;
+    }
+    return total > 1e-4 ? sum / total : float4(0.0, 0.0, 0.0, -1.0);
+}
+
 [shader("fragment")]
 FSOutput fragmentMain(VSOutput input)
 {
@@ -843,6 +908,20 @@ FSOutput fragmentMain(VSOutput input)
     surface.occlusion = 1.0;
     surface.viewSpaceZ = mul(gCamera.view, float4(position, 1.0)).z;
     surface.pixel = input.position.xy;
+
+    if ((gPush.reuse.x & kGiClipmap) == 0u)
+    {
+        gGiGathered = giCascades(position, normal);
+    }
+    else
+    {
+        gGiGathered = (gPush.reuse.x & kGiGather) != 0u ? giGatherAt(pixel, position, faceNormal) : float4(0.0, 0.0, 0.0, -1.0);
+        // One cone for pixels with no gather pixel on their surface since a full gather here stalls the neighbourhood
+        if (gGiGathered.w < 0.0)
+        {
+            gGiGathered = giCheap(position, faceNormal);
+        }
+    }
 
     // Glass scenes leave shadow mapped lights to fragmentMarched which tints them
     VoxelRayFreeFilter rayFree;
@@ -970,7 +1049,7 @@ float4 fragmentAmbient(VSOutput input) : SV_Target0
 
     // Under the cascades the rays only add the contact detail their probe spacing blurs
     const float reach = float(gPush.reuse.w) * 0.01;
-    const float contactReach = radianceCascadesCover(position, normal) ? radianceCascadesContactReach(position) : 0.0;
+    const float contactReach = giCover(position, normal) ? giContactReach(position) : 0.0;
     const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
     const float occlusion = ambientOcclusion(normal, input.position.xy, shadowOrigin, contactReach > 0.0 ? min(reach, contactReach) : reach);
     // Premultiplied so the indirect fragmentMain left in noisy diffuse scales by occlusion

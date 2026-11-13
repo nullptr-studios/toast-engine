@@ -11,10 +11,6 @@
 #include <toast/assets/asset_manager.hpp>
 #include <toast/logger.hpp>
 
-#if defined(__linux__)
-#include <dlfcn.h>
-#endif
-
 #if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
 #include <external/inc/nsight/NGFX_GPUTrace_Vulkan.h>
 #include <external/inc/nsight/NGFX_GraphicsCapture_Vulkan.h>
@@ -51,11 +47,6 @@ auto vulkanCoreAttachedGraphicsDebugger() -> std::optional<std::string_view> {
 	    GetModuleHandleW(NGFX_GPU_TRACE_INJECTION_LIB_NAME) != nullptr) {
 		return "Nsight Graphics";
 	}
-#elif defined(__linux__)
-#elif defined(__linux__) && defined(TOAST_DEV_TOOLS)
-	dlclose(mod);
-	return "RenderDoc";
-}
 #endif
 	return std::nullopt;
 }
@@ -141,7 +132,7 @@ auto queueFamilyFlagsToString(vk::QueueFlags flags) -> std::string {
 	return result;
 }
 
-auto debugCallback(
+VKAPI_ATTR auto VKAPI_CALL debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type,
     const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data
 ) -> VkBool32 {
@@ -167,7 +158,7 @@ auto debugCallback(
 		default: return VK_FALSE;
 	}
 
-	// The first line is the problem, the rest is the layer's explanation and the spec link
+	// First line is the problem and the rest is the layer explanation and spec link
 	const auto [summary, body] = logging::splitFirstLine(message);
 	const std::string line = std::format("[Vulkan Validation] [{}]: {}", message_type_string, summary);
 	TOAST_MESSAGE(severity, "ValidationLayers", line, body);
@@ -339,6 +330,45 @@ auto judgeHardwareRayTracing(const vk::PhysicalDeviceProperties& props, bool mes
 	}
 	return {true, "unknown vendor, trusting the driver"};
 }
+
+struct RayQueryProbe {
+	bool extensions_present = false;
+	bool features_present = false;
+	RayTracingVerdict verdict;
+
+	[[nodiscard]]
+	auto used() const noexcept -> bool {
+		return extensions_present && features_present && verdict.hardware;
+	}
+};
+
+/// Logs nothing so it can run before the device is final
+auto probeRayQuery(const vk::raii::PhysicalDevice& physical) -> RayQueryProbe {
+	const auto available = physical.enumerateDeviceExtensionProperties();
+	const auto has_extension = [&available](std::string_view name) {
+		return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == name;
+		});
+	};
+
+	RayQueryProbe probe {};
+	probe.extensions_present = has_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
+	                           has_extension(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
+	                           has_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	if (probe.extensions_present) {
+		vk::PhysicalDeviceFeatures2 features {};
+		vk::PhysicalDeviceAccelerationStructureFeaturesKHR as_features {};
+		vk::PhysicalDeviceRayQueryFeaturesKHR rq_features {};
+		as_features.pNext = &rq_features;
+		features.pNext = &as_features;
+		(*physical).getFeatures2(&features);
+		probe.features_present = as_features.accelerationStructure == VK_TRUE && rq_features.rayQuery == VK_TRUE;
+	}
+	if (probe.extensions_present && probe.features_present) {
+		probe.verdict = judgeHardwareRayTracing(physical.getProperties(), has_extension(VK_EXT_MESH_SHADER_EXTENSION_NAME));
+	}
+	return probe;
+}
 }    // namespace
 
 auto DeviceScore::toString() const noexcept -> std::string {
@@ -378,6 +408,31 @@ VulkanCore::VulkanCore(
 	TOAST_TRACE("Render", "Required instance extensions: {}", joinRequiredExtensions(required_instance_extensions));
 	TOAST_TRACE("Render", "Required device extensions: {}", joinRequiredExtensions(required_device_extensions));
 
+	createInstance(required_instance_extensions, false);
+	pickPhysicalDevice(required_device_extensions);
+	// Layer settings are fixed at instance creation but ray query use is only known once a device is picked
+	if (m_validation_enabled && probeRayQuery(m_physical_device).used()) {
+		m_physical_device = nullptr;
+		m_instance = nullptr;
+		createInstance(required_instance_extensions, true);
+		pickPhysicalDevice(required_device_extensions);
+	}
+	createLogicalDeviceAndAllocator(required_device_extensions);
+	m_pipeline_cache = vk::raii::PipelineCache(m_device, vk::PipelineCacheCreateInfo {});
+
+#if defined(TOAST_DEV_TOOLS) && defined(_WIN32)
+	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
+		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
+		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
+		TOAST_INFO("Render", "RenderDoc API detected");
+	}
+#endif
+
+	// Not activating Nsight GPU trace here since it blocks until the host attaches
+}
+
+void VulkanCore::createInstance(std::span<const char* const> required_instance_extensions, bool validate_ray_query) {
+	ZoneScoped;
 	vk::ApplicationInfo app_info("SUPER DUPER TOASTY GAME", 1, "TOAST ENGINE", 1, VK_API_VERSION_1_4);
 
 	std::vector<const char*> layers;
@@ -411,6 +466,32 @@ VulkanCore::VulkanCore(
 	TOAST_INFO("Render", "Synchronization validation: {}", m_validation_enabled ? "enabled" : "disabled");
 #endif
 
+	// GPU assisted validation with only the ray query checks on since the rest instruments every shader
+	constexpr VkBool32 k_on = VK_TRUE;
+	constexpr VkBool32 k_off = VK_FALSE;
+	const auto setting = [](const char* name, const VkBool32& value) {
+		return vk::LayerSettingEXT("VK_LAYER_KHRONOS_validation", name, vk::LayerSettingTypeEXT::eBool32, 1, &value);
+	};
+	const std::array gpuav_settings {
+	  setting("gpuav_enable", k_on),
+	  setting("gpuav_shader_instrumentation", k_on),
+	  setting("gpuav_validate_ray_query", k_on),
+	  setting("gpuav_descriptor_checks", k_on),
+	  setting("gpuav_post_process_descriptor_indexing", k_off),
+	  setting("gpuav_buffer_address_oob", k_off),
+	  setting("gpuav_mesh_shading", k_on),
+	  setting("gpuav_validate_trace_ray", k_on),
+	  setting("gpuav_vertex_attribute_fetch_oob", k_off),
+	  setting("gpuav_shader_sanitizer", k_off),
+	  setting("gpuav_shared_memory_data_race", k_off),
+	  setting("gpuav_buffers_validation", k_off),
+	};
+	vk::LayerSettingsCreateInfoEXT layer_settings(gpuav_settings);
+	if (m_validation_enabled && validate_ray_query) {
+		layer_settings.pNext = instance_ci.pNext;
+		instance_ci.pNext = &layer_settings;
+	}
+
 	m_instance = vk::raii::Instance(m_context, instance_ci);
 
 	if (m_validation_enabled && m_debug_utils_enabled) {
@@ -424,29 +505,6 @@ VulkanCore::VulkanCore(
 		m_debug_messenger = vk::raii::DebugUtilsMessengerEXT(m_instance, debug_ci);
 #endif
 	}
-
-	pickPhysicalDevice(required_device_extensions);
-	createLogicalDeviceAndAllocator(required_device_extensions);
-	m_pipeline_cache = vk::raii::PipelineCache(m_device, vk::PipelineCacheCreateInfo {});
-
-#if defined(TOAST_DEV_TOOLS) && defined(_WIN32)
-	if (HMODULE mod = GetModuleHandleA("renderdoc.dll")) {
-		pRENDERDOC_GetAPI renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(mod, "RENDERDOC_GetAPI"));
-		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
-		TOAST_INFO("Render", "RenderDoc API detected");
-	}
-#elif defined(__linux__)
-#elif defined(TOAST_DEV_TOOLS) && defined(__linux__)
-	auto* renderdoc_get_api = reinterpret_cast<pRENDERDOC_GetAPI>(dlsym(mod, "RENDERDOC_GetAPI"));
-	if (renderdoc_get_api) {
-		renderdoc_get_api(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&rdoc_api));
-		TOAST_INFO("Render", "RenderDoc API detected");
-	}
-	dlclose(mod);
-}
-#endif
-
-	// Not activating Nsight GPU trace here since it blocks until the host attaches
 }
 
 #if defined(_WIN32) && defined(TOAST_DEV_TOOLS)
@@ -791,32 +849,9 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	}
 
 	{
-		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
-		const auto has_extension = [&available](std::string_view name) {
-			return std::ranges::any_of(available, [name](const vk::ExtensionProperties& ext) {
-				return std::string_view(ext.extensionName.data()) == name;
-			});
-		};
-
-		const bool extensions_present = has_extension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME) &&
-		                                has_extension(VK_KHR_RAY_QUERY_EXTENSION_NAME) &&
-		                                has_extension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-
-		bool features_present = false;
-		if (extensions_present) {
-			vk::PhysicalDeviceFeatures2 probe {};
-			vk::PhysicalDeviceAccelerationStructureFeaturesKHR as_probe {};
-			vk::PhysicalDeviceRayQueryFeaturesKHR rq_probe {};
-			as_probe.pNext = &rq_probe;
-			probe.pNext = &as_probe;
-			(*m_physical_device).getFeatures2(&probe);
-			features_present = as_probe.accelerationStructure == VK_TRUE && rq_probe.rayQuery == VK_TRUE;
-		}
-
+		const auto [extensions_present, features_present, verdict] = probeRayQuery(m_physical_device);
 		const bool driver_exposes_ray_query = extensions_present && features_present;
-		RayTracingVerdict verdict {};
 		if (driver_exposes_ray_query) {
-			verdict = judgeHardwareRayTracing(m_physical_device.getProperties(), has_extension(VK_EXT_MESH_SHADER_EXTENSION_NAME));
 			if (!verdict.hardware) {
 				TOAST_WARN(
 				    "Render",

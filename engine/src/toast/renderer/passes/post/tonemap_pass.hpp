@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -101,7 +102,7 @@ private:
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	std::vector<FrameResources> m_params_buffers;
 
-	std::vector<vk::ImageView> m_bound_views;
+	DescriptorCache<vk::ImageView> m_bound_views;
 
 	ShaderLayout m_exposure_layout;
 	VulkanPipeline m_histogram_pipeline;
@@ -113,7 +114,7 @@ private:
 	std::optional<vma::raii::Buffer> m_exposure;
 
 	std::vector<vk::raii::DescriptorSet> m_exposure_sets;
-	std::vector<vk::ImageView> m_exposure_bound_views;
+	DescriptorCache<vk::ImageView> m_exposure_bound_views;
 
 	bool m_exposure_ready = false;
 	bool m_was_metering = false;

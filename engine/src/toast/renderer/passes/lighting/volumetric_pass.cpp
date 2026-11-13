@@ -173,8 +173,8 @@ VolumetricPass::VolumetricPass(const VulkanCore& core, vk::Format scene_format, 
 		}
 	}
 	writer.flush(device);
-	m_storage_bound.assign(m_storage_sets.size(), nullptr);
-	m_image_bound.assign(m_image_sets.size(), {});
+	m_storage_bound.resize(m_storage_sets.size());
+	m_image_bound.resize(m_image_sets.size());
 
 	createTargets(core, extent, resolveQuality().divisor);
 	m_ready = m_ambient_pipeline.isReady() && m_scatter_pipeline.isReady() && m_temporal_pipeline.isReady() &&
@@ -208,7 +208,7 @@ void VolumetricPass::createTargets(const VulkanCore& core, vk::Extent2D extent, 
 	m_scatter.create(core, reduced, k_scatter_format, "Volumetrics Scatter");
 	m_history[0].create(core, reduced, k_scatter_format, "Volumetrics History0");
 	m_history[1].create(core, reduced, k_scatter_format, "Volumetrics History1");
-	std::ranges::fill(m_image_bound, std::array<vk::ImageView, k_image_bindings> {});
+	m_image_bound.invalidate();
 	m_history_valid = false;
 }
 
@@ -241,9 +241,8 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 	}
 
 	// Safe since the fence of this slot was waited on
-	if (m_storage_bound[frame_index] != frame->voxel_storage) {
+	if (m_storage_bound.update(frame_index, frame->voxel_storage)) {
 		writeVoxelStorageDescriptors(m_core->getDevice(), *m_storage_sets[frame_index], *frame->voxel_storage);
-		m_storage_bound[frame_index] = frame->voxel_storage;
 	}
 
 	const PostProcessTarget& history_write = m_history[m_parity];
@@ -261,7 +260,7 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return source_view;
 	}
-	if (m_image_bound[set_index] != views) {
+	if (m_image_bound.update(set_index, views)) {
 		DescriptorWriter writer;
 		for (uint32_t binding = 0; binding < k_image_bindings; ++binding) {
 			writer.image(
@@ -274,7 +273,6 @@ auto VolumetricPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 			);
 		}
 		writer.flush(m_core->getDevice());
-		m_image_bound[set_index] = views;
 	}
 	m_scene_sets.updateTlas(frame_index);
 

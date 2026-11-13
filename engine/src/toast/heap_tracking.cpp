@@ -4,8 +4,7 @@
  * @date 2026-11-02
  */
 
-// Replaces the global allocation functions of toast_engine so Tracy sees every C++ heap allocation
-// Everything forwards to malloc and free so memory still crosses DLL boundaries safely
+// Forwards to malloc and free so memory still crosses DLL boundaries
 #if defined(TRACY_ENABLE) && defined(TOAST_TRACK_HEAP)
 
 #include <atomic>
@@ -25,9 +24,7 @@
 
 namespace {
 
-/// Addresses Tracy currently believes are live
-/// Other modules free engine blocks with their own delete, and Tracy kills the session when an address is allocated twice or
-/// freed untracked Storage comes from malloc since operator new would recurse
+/// Tracy kills the session on an address allocated twice or freed untracked by another module
 class LiveSet {
 public:
 	/// False when the address was already present

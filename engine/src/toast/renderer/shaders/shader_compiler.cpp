@@ -12,6 +12,7 @@
 #include <slang-com-ptr.h>
 #include <slang.h>
 #include <thread>
+#include <toast/lock_profiling.hpp>
 
 namespace renderer {
 
@@ -84,8 +85,8 @@ public:
 private:
 	SlangGlobalSessionPool() : m_limit(std::clamp<size_t>(std::thread::hardware_concurrency() / 2, 1, 4)) { }
 
-	std::mutex m_mutex;
-	std::condition_variable m_available;
+	TOAST_LOCKABLE(std::mutex, m_mutex, "Slang session pool");
+	toast::ConditionVariable m_available;
 	std::vector<Slang::ComPtr<slang::IGlobalSession>> m_free;
 	size_t m_created = 0;
 	size_t m_limit;
@@ -261,7 +262,6 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 		const char* diag_c = static_cast<const char*>(diag_ptr);
 		const std::string diag_str(diag_c, diag_c + diag_size);
 
-		// Default to warning
 		logging::Severity severity = logging::Severity::warning;
 
 		if (diag_str.contains(": error ")) {

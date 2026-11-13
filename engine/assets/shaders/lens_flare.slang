@@ -1,4 +1,4 @@
-// Lens flare after Froyok's UE4 custom flare, ghosts and halo from a chroma shifted threshold, glare as luminance scaled streak quads
+// After the Froyok UE4 custom lens flare
 import fullscreen;
 
 struct LensFlareParams

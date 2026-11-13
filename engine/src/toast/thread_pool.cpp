@@ -20,7 +20,7 @@ void ThreadPool::enqueue(std::move_only_function<void()>&& job) {
 	auto& o = get();
 
 	{
-		std::unique_lock<std::mutex> lock(o.m.queue_mutex);
+		std::unique_lock lock(o.m.queue_mutex);
 		o.m.jobs.emplace(std::move(job));
 	}
 
@@ -29,7 +29,7 @@ void ThreadPool::enqueue(std::move_only_function<void()>&& job) {
 
 void ThreadPool::destroy() {
 	{
-		std::unique_lock<std::mutex> lock(m.queue_mutex);
+		std::unique_lock lock(m.queue_mutex);
 		m.should_stop = true;
 	}
 
@@ -45,12 +45,12 @@ void ThreadPool::destroy() {
 }
 
 auto ThreadPool::busy() -> bool {
-	std::unique_lock<std::mutex> lock(m.queue_mutex);
+	std::unique_lock lock(m.queue_mutex);
 	return !m.jobs.empty() || m.active_jobs > 0;
 }
 
 void ThreadPool::waitIdle() {
-	std::unique_lock<std::mutex> lock(m.queue_mutex);
+	std::unique_lock lock(m.queue_mutex);
 	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
 }
 
@@ -82,7 +82,7 @@ void ThreadPool::threadLoop() {
 		std::move_only_function<void()> job;
 
 		{
-			std::unique_lock<std::mutex> lock(m.queue_mutex);
+			std::unique_lock lock(m.queue_mutex);
 			// track idle workers
 			m.idle_workers.fetch_add(1, std::memory_order_release);
 			m.job_available.wait(lock, [this] { return !m.jobs.empty() || m.should_stop; });
@@ -103,7 +103,7 @@ void ThreadPool::threadLoop() {
 
 		// Decrement and notify waitIdle() if pool is now fully idle
 		if (--m.active_jobs == 0) {
-			std::unique_lock<std::mutex> lock(m.queue_mutex);
+			std::unique_lock lock(m.queue_mutex);
 			if (m.jobs.empty()) {
 				m.all_done.notify_all();
 			}

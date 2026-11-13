@@ -34,11 +34,10 @@ enum class JointType : uint8_t {
 	fixed
 };
 
-// Joint friction is the torque that holds the ends against turning per newton the joint carries, the friction of the
-// material times the radius of the pin, in metres
+// Material friction times pin radius in metres as torque per newton carried
 constexpr float k_default_joint_friction = 0.01f;
 
-// The ends of a hinge or a pin with collision between them don't touch closer to the pin than this
+// The ends of a hinge or a pin with collision between them never touch closer to the pin than this
 constexpr float k_joint_knuckle_radius = 0.1f;
 
 struct PinParams {
@@ -63,7 +62,7 @@ struct HingeParams {
 	auto operator==(const HingeParams&) const -> bool = default;
 };
 
-// todo: sliderjoint needs to be able to freely rotate
+// TODO slider joint should rotate freely
 struct SliderParams {
 	float bias = 0.3f;
 	float linear_limit_lower = -1.0f;

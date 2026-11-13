@@ -84,7 +84,7 @@ DebrisPass::DebrisPass(
 		m_sets.push_back(std::move(sets[0]));
 		setDebugName(core, *m_sets.back(), std::format("DebrisPass Set[{}]", i));
 	}
-	m_bound.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound.resize(VulkanRenderer::k_frames_in_flight);
 }
 
 auto DebrisPass::prepare(vk::CommandBuffer cmd, uint32_t frame_index) -> bool {
@@ -107,7 +107,7 @@ auto DebrisPass::prepare(vk::CommandBuffer cmd, uint32_t frame_index) -> bool {
 		return false;
 	}
 
-	if (m_bound[frame_index] != std::array {particles, list}) {
+	if (m_bound.update(frame_index, std::array {particles, list})) {
 		const vk::DescriptorBufferInfo particle_info(particles, 0, VK_WHOLE_SIZE);
 		const vk::DescriptorBufferInfo list_info(list, 0, VK_WHOLE_SIZE);
 		const std::array writes {
@@ -119,7 +119,6 @@ auto DebrisPass::prepare(vk::CommandBuffer cmd, uint32_t frame_index) -> bool {
 		  ),
 		};
 		m_core->getDevice().updateDescriptorSets(writes, {});
-		m_bound[frame_index] = {particles, list};
 	}
 
 	m_scene_sets.updateTlas(frame_index);

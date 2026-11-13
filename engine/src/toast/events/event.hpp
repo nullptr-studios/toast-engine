@@ -15,6 +15,7 @@
 #include <mutex>
 #include <shared_mutex>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 #include <toast/log.hpp>
 #include <type_traits>
 #include <typeindex>
@@ -128,7 +129,7 @@ struct TOAST_API EventSystem {
 	static std::unordered_map<std::type_index, EventInfo> event_data;
 
 	/// Guards event_data and unsubscribe_map
-	static std::shared_mutex registration_mutex;
+	static TOAST_SHARED_LOCKABLE_BASE(std::shared_mutex) registration_mutex;
 
 	/// Unsubscribes a callback of the given type
 	static void unsubscribeAny(std::type_index type, const std::any& iterator);
@@ -137,7 +138,7 @@ struct TOAST_API EventSystem {
 	static auto info() noexcept -> EventInfo&;
 
 	/// Protects the event queue memory pool during concurrent sends
-	static std::mutex pool_mutex;
+	static TOAST_LOCKABLE_BASE(std::mutex) pool_mutex;
 
 	/// Type-erased unsubscribe functions keyed by event type; used by Listener to erase iterators without the concrete type
 	static std::unordered_map<std::type_index, std::function<void(std::any)>> unsubscribe_map;
@@ -147,7 +148,7 @@ struct TOAST_API EventSystem {
 	static std::vector<std::unique_ptr<void, void (*)(void*)>> deletion_queue;
 
 	/// Protects the event queue memory pool during concurrent sends
-	static std::mutex deletion_mutex;
+	static TOAST_LOCKABLE_BASE(std::mutex) deletion_mutex;
 
 	template<typename T>
 	static void registerEvent() {

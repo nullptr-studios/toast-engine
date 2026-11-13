@@ -8,10 +8,14 @@ auto runtimeBrickPool() -> BrickPool& {
 	return *pool;
 }
 
-auto runtimePoolMutex() -> std::recursive_mutex& {
+auto runtimePoolMutex() -> TOAST_LOCKABLE_BASE(std::recursive_mutex) & {
+	struct Holder {
+		TOAST_LOCKABLE(std::recursive_mutex, mutex, "Voxel runtime pool");
+	};
+
 	// Leaked like the pool
-	static std::recursive_mutex* mutex = new std::recursive_mutex;
-	return *mutex;
+	static auto* holder = new Holder;
+	return holder->mutex;
 }
 
 }

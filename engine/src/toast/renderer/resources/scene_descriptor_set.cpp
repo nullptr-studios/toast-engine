@@ -3,6 +3,7 @@
 #include "toast/renderer/core/descriptor_writer.hpp"
 #include "toast/renderer/passes/lighting/cluster_lighting_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/passes/lighting/gi_clipmap_pass.hpp"
 #include "toast/renderer/passes/lighting/gi_pass.hpp"
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
@@ -25,9 +26,14 @@ void SceneDescriptorSets::create(
 	m_sets.clear();
 	m_sets.reserve(VulkanRenderer::k_frames_in_flight);
 	m_scene_binding.reset();
-	m_bound_tlas.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound_tlas.resize(VulkanRenderer::k_frames_in_flight);
 	m_detail_binding.reset();
-	m_bound_detail.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_clip_frame_binding.reset();
+	m_clip_radiance_binding.reset();
+	m_clip_material_binding.reset();
+	m_clip_ambient_binding.reset();
+	m_bound_clip.resize(VulkanRenderer::k_frames_in_flight);
+	m_bound_detail.resize(VulkanRenderer::k_frames_in_flight);
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &layout);
@@ -73,6 +79,24 @@ void SceneDescriptorSets::create(
 				continue;
 			}
 
+			// Written by updateTlas since the clipmap pass and its levels may not exist yet
+			if (binding.name == "gGiClipFrame") {
+				m_clip_frame_binding = binding.binding;
+				continue;
+			}
+			if (binding.name == "gGiClipRadiance") {
+				m_clip_radiance_binding = binding.binding;
+				continue;
+			}
+			if (binding.name == "gGiClipOpacity") {
+				m_clip_material_binding = binding.binding;
+				continue;
+			}
+			if (binding.name == "gGiClipAmbient") {
+				m_clip_ambient_binding = binding.binding;
+				continue;
+			}
+
 			if (binding.name == "gVoxelDetail") {
 				const vk::ImageView detail = VulkanRenderer::instance->voxelDetailView();
 				writer.image(
@@ -84,7 +108,6 @@ void SceneDescriptorSets::create(
 				    vk::ImageLayout::eShaderReadOnlyOptimal
 				);
 				m_detail_binding = binding.binding;
-				m_bound_detail[i] = detail;
 				continue;
 			}
 
@@ -229,7 +252,7 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	ZoneScoped;
 	if (m_core != nullptr && m_detail_binding.has_value() && frame_index < m_bound_detail.size()) {
 		const vk::ImageView detail = VulkanRenderer::instance->voxelDetailView();
-		if (detail != m_bound_detail[frame_index]) {
+		if (m_bound_detail.update(frame_index, detail)) {
 			DescriptorWriter writer;
 			writer.image(
 			    *m_sets[frame_index],
@@ -240,7 +263,43 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 			    vk::ImageLayout::eShaderReadOnlyOptimal
 			);
 			writer.flush(m_core->getDevice());
-			m_bound_detail[frame_index] = detail;
+		}
+	}
+	const auto* clipmap = VulkanRenderer::instance->giClipmapPass();
+	const bool wants_clip = m_clip_frame_binding.has_value() || m_clip_radiance_binding.has_value() ||
+	                        m_clip_material_binding.has_value() || m_clip_ambient_binding.has_value();
+	if (m_core != nullptr && clipmap != nullptr && wants_clip && frame_index < m_bound_clip.size()) {
+		const auto radiance = clipmap->radianceViews();
+		const auto material = clipmap->opacityViews();
+		if (m_bound_clip.update(frame_index, std::array {radiance[0], material[0]})) {
+			constexpr auto sampled = vk::DescriptorType::eCombinedImageSampler;
+			constexpr auto read = vk::ImageLayout::eShaderReadOnlyOptimal;
+			DescriptorWriter writer;
+			if (m_clip_frame_binding.has_value()) {
+				writer.buffer(*m_sets[frame_index], *m_clip_frame_binding, vk::DescriptorType::eStorageBuffer, clipmap->publishedFrame());
+			}
+			if (m_clip_radiance_binding.has_value()) {
+				std::vector<vk::DescriptorImageInfo> infos;
+				for (const vk::ImageView view : radiance) {
+					infos.emplace_back(clipmap->radianceSampler(), view, read);
+				}
+				writer.imageArray(*m_sets[frame_index], *m_clip_radiance_binding, sampled, infos);
+			}
+			if (m_clip_material_binding.has_value()) {
+				std::vector<vk::DescriptorImageInfo> infos;
+				for (const vk::ImageView view : material) {
+					infos.emplace_back(clipmap->radianceSampler(), view, read);
+				}
+				writer.imageArray(*m_sets[frame_index], *m_clip_material_binding, sampled, infos);
+			}
+			if (m_clip_ambient_binding.has_value()) {
+				std::vector<vk::DescriptorImageInfo> infos;
+				for (const vk::ImageView view : clipmap->ambientViews()) {
+					infos.emplace_back(clipmap->radianceSampler(), view, read);
+				}
+				writer.imageArray(*m_sets[frame_index], *m_clip_ambient_binding, sampled, infos);
+			}
+			writer.flush(m_core->getDevice());
 		}
 	}
 	if (m_core == nullptr || !m_scene_binding.has_value() || frame_index >= m_bound_tlas.size()) {
@@ -252,15 +311,13 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 	const std::pair bound {tlas, scene != nullptr ? scene->getAccelerationStructureGeneration(frame_index) : 0};
 
 	// A descriptor cannot be written with a null structure
-	if (!tlas || bound == m_bound_tlas[frame_index]) {
+	if (!tlas || !m_bound_tlas.update(frame_index, bound)) {
 		return;
 	}
 
 	DescriptorWriter writer;
 	writer.accelerationStructure(*m_sets[frame_index], *m_scene_binding, tlas);
 	writer.flush(m_core->getDevice());
-
-	m_bound_tlas[frame_index] = bound;
 }
 
 }

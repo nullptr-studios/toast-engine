@@ -65,18 +65,30 @@ struct GiParents
     float total;
 };
 
-GiParents giParents(GiFrame frame, uint cascade, uint deposit, out int4 probeCell)
+GiParents giParents(GiFrame frame, uint cascade, uint deposit, bool top, out int4 probeCell)
 {
     const GiProbe probe = gPool[frame.frame.z * frame.pool.x + frame.cascades[cascade].z + gDepositPool[deposit]];
     probeCell = probe.cell;
+
+    GiParents parents;
+    parents.total = 0.0;
+    // linkMain never fills top cascade neighbours and the top merges with the sky
+    if (top)
+    {
+        [unroll]
+        for (uint corner = 0u; corner < 8u; ++corner)
+        {
+            parents.merged[corner] = 0u;
+            parents.weight[corner] = 0.0;
+        }
+        return parents;
+    }
+
     int3 base = int3(0, 0, 0);
     float3 upper = float3(0.0, 0.0, 0.0);
     giParentNeighbourhood(probe.cell.xyz, base, upper);
     const uint4 low = gNeighbours[deposit * 2u];
     const uint4 high = gNeighbours[deposit * 2u + 1u];
-
-    GiParents parents;
-    parents.total = 0.0;
     // Branch free so the eight slot loads overlap
     [unroll]
     for (uint corner = 0u; corner < 8u; ++corner)
@@ -244,7 +256,7 @@ void mergeMain(uint3 id : SV_DispatchThreadID)
         const uint2 source = gHistorySource[deposit];
         const bool carried = giCarried(frame, cascade, source);
         int4 probeCell = int4(0, 0, 0, 0);
-        const GiParents parents = giParents(frame, cascade, deposit, probeCell);
+        const GiParents parents = giParents(frame, cascade, deposit, top, probeCell);
         // Stores last since the compiler cannot move a load past a store that may alias it
         GiBucket buckets[4];
         [unroll]
@@ -297,6 +309,7 @@ void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, u
     const uint tile = pair + side;
     const uint deposit = frame.deposits[0].x + tile;
     const uint first = tile < count ? gDepositSlots[deposit] : kGiEmpty;
+    const bool top = frame.frame.y == 1u;
     if (direction == 0u)
     {
         const bool willWrite = first != kGiEmpty;
@@ -304,7 +317,7 @@ void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, u
         if (willWrite)
         {
             int4 cell = int4(0, 0, 0, 0);
-            gsParents[side] = giParents(frame, 0u, deposit, cell);
+            gsParents[side] = giParents(frame, 0u, deposit, top, cell);
             gsCell[side] = cell;
         }
     }
@@ -312,7 +325,6 @@ void irradianceMain(uint3 group : SV_GroupID, uint3 thread : SV_GroupThreadID, u
 
     if (gsWrite[side])
     {
-        const bool top = frame.frame.y == 1u;
         const uint2 source = gHistorySource[deposit];
         const bool carried = giCarried(frame, 0u, source);
         const GiBucket bucket = giLoadBucket(frame, first, direction, source, carried);
