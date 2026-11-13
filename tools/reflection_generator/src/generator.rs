@@ -20,16 +20,15 @@ pub fn generate_files(nodes: &[NodeInfo], output: &Path, register_fn: &str, spli
 }
 
 pub fn generate_files_with_events(nodes: &[NodeInfo], events: &[EventInfo], output: &Path, register_fn: &str, split_typeinfo: bool) {
-    // Templates live next to the executable: <exe_dir>/templates/
-    let exe_dir = std::env::current_exe()
-        .expect("cannot locate executable")
-        .parent()
-        .expect("exe has no parent dir")
-        .to_path_buf();
-    let template_dir = exe_dir.join("templates");
-
     let mut env = Environment::new();
-    env.set_loader(minijinja::path_loader(&template_dir));
+    for (name, source) in [
+        ("node.generated.hpp.jinja2", include_str!("../templates/node.generated.hpp.jinja2")),
+        ("node.type_info.cpp.jinja2", include_str!("../templates/node.type_info.cpp.jinja2")),
+        ("reflect.generated.cpp.jinja2", include_str!("../templates/reflect.generated.cpp.jinja2")),
+    ] {
+        env.add_template(name, source)
+            .unwrap_or_else(|e| panic!("cannot parse {name}: {e}"));
+    }
 
     // Per-class .generated.hpp
     let node_tmpl = env
