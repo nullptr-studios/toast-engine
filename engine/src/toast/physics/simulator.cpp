@@ -9,6 +9,7 @@
 #include "nodes/capsule_collider.hpp"
 #include "nodes/collider.hpp"
 #include "nodes/dynamic_rigidbody.hpp"
+#include "nodes/kinematic_rigidbody.hpp"
 #include "nodes/rigidbody.hpp"
 #include "nodes/sphere_collider.hpp"
 #include "nodes/trigger.hpp"
@@ -464,6 +465,12 @@ void Simulator::unregisterRigidbody(Rigidbody& node) {
 namespace {
 
 [[nodiscard]]
+inline auto isMovingKinematic(const Body& body) noexcept -> bool {
+	return glm::dot(body.linear_velocity, body.linear_velocity) > 0.0f ||
+	       glm::dot(body.angular_velocity, body.angular_velocity) > 0.0f;
+}
+
+[[nodiscard]]
 constexpr auto bodyTypeOf(toast::SimulationType type) noexcept -> BodyType {
 	switch (type) {
 		case toast::SimulationType::static_body: return BodyType::static_body;
@@ -511,6 +518,8 @@ void Simulator::registerVoxelNode(toast::VoxelNode& node) {
 		      .allow_sleep = node.allow_sleep,
 		      .position = node.world_position,
 		      .rotation = node.world_rotation,
+		      .linear_velocity = body_type == BodyType::kinematic_body && part == nullptr ? node.linear_velocity : glm::vec3 {0.0f},
+		      .angular_velocity = body_type == BodyType::kinematic_body && part == nullptr ? node.angular_velocity : glm::vec3 {0.0f},
 		      .mass = 1.0f, // calculated later
 		      .gravity_scale = node.gravity_scale,
 		      .linear_damping = node.linear_damping,
@@ -1935,6 +1944,10 @@ void Simulator::syncEnabledState() {
 					continue;
 				}
 			}
+			if (const auto kinematic_node = binding.node.as<KinematicRigidbody>(); kinematic_node.exists()) {
+				body->linear_velocity = kinematic_node->linear_velocity;
+				body->angular_velocity = kinematic_node->angular_velocity;
+			}
 		}
 		for (ColliderBinding& collider_binding : binding.colliders) {
 			Shape* shape = tryGetShape(collider_binding.shape);
@@ -1977,6 +1990,10 @@ void Simulator::syncEnabledState() {
 				if (body == nullptr) {
 					continue;
 				}
+			}
+			if (body->type == BodyType::kinematic_body) {
+				body->linear_velocity = binding.node->linear_velocity;
+				body->angular_velocity = binding.node->angular_velocity;
 			}
 		}
 
@@ -2415,6 +2432,9 @@ auto Simulator::publishTransform(NodeBinding& binding) -> bool {
 
 	if (body->enabled && body->type == BodyType::dynamic_body) {
 		binding.node->applyPhysicsTransform(body->position, body->rotation);
+	} else if (body->enabled && body->type == BodyType::kinematic_body && isMovingKinematic(*body)) {
+		// The integrator moved it so the node follows
+		binding.node->applyPhysicsTransform(body->position, body->rotation);
 	}
 	if (auto dynamic_node = binding.node.as<DynamicRigidbody>(); dynamic_node.exists()) {
 		dynamic_node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
@@ -2453,6 +2473,9 @@ auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
 				binding.node->publishPhysicsState(body->awake, body->linear_velocity, body->angular_velocity);
 			}
 		}
+	} else if (body->type == BodyType::kinematic_body && part == nullptr && body->enabled && isMovingKinematic(*body)) {
+		// The integrator moved it so the node follows
+		binding.node->applyPhysicsTransform(body->position, body->rotation);
 	}
 
 	if (const Shape* shape = tryGetShape(binding.shape); shape != nullptr && shape->type == ShapeType::voxel) {
@@ -3506,6 +3529,22 @@ void Simulator::integrateBody(
 	// preserve the previous pose for interpolation
 	body.previous_position = body.position;
 	body.previous_rotation = body.rotation;
+
+	if (body.type == BodyType::kinematic_body) {
+		// Kinematic bodies just follow the velocity they were given with no gravity, drag or damping
+		if (not isMovingKinematic(body)) {
+			return;
+		}
+		const glm::vec3 center = body.worldCenterOfMass() + body.linear_velocity * dt;
+		const glm::quat spin {0.0f, body.angular_velocity.x, body.angular_velocity.y, body.angular_velocity.z};
+		const glm::quat next = body.rotation + ((0.5f * dt) * (spin * body.rotation));
+		const float length_squared = glm::dot(next, next);
+		if (std::isfinite(length_squared) && length_squared > 1.0e-10f) {
+			body.rotation = glm::normalize(next);
+		}
+		body.position = center - body.rotation * body.local_center_of_mass;
+		return;
+	}
 
 	if (body.type != BodyType::dynamic_body) {
 		return;
