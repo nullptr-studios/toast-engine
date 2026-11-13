@@ -31,7 +31,3 @@ foreach(_name IN LISTS BINARY_NAMES)
     # file(COPY) compares timestamps so unchanged binaries are not rewritten
     file(COPY "${_src_dir}/${_binary}" DESTINATION "${DEST_DIR}")
 endforeach()
-
-if(EXISTS "${_src_dir}/templates")
-    file(COPY "${_src_dir}/templates" DESTINATION "${DEST_DIR}")
-endif()

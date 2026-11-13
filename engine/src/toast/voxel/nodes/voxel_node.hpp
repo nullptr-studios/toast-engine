@@ -604,6 +604,7 @@ protected:
 	[[Reflect, Group("Physics"), Subgroup("Drag")]]
 	float drag_scale = 1.0f;
 
+	// this will only affect the velocity on kinematic
 	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("m/s"), ReadOnly]]
 	glm::vec3 linear_velocity = {};
 	[[Reflect, Group("Physics"), Subgroup("Velocities"), Unit("rad/s"), ReadOnly]]
