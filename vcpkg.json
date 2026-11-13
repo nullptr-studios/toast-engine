@@ -97,6 +97,9 @@
       "version>=": "1.10.0"
     },
     {
+      "name": "sqlite3"
+    },
+    {
       "name": "indicators",
       "version>=": "2.3"
     },

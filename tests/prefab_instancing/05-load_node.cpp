@@ -1,3 +1,4 @@
+#include "asset_db_fixture.hpp"
 #include "prefab_test_helpers.hpp"
 #include "test_registry.hpp"
 #include "toast/world/world.hpp"
@@ -55,11 +56,9 @@ TOAST_TEST_NAMED("prefab_instancing", "prefab_instancing/05-load_node", test_pre
 	);
 
 	// The manifest maps each asset UID to its file.
-	writeFile(
-	    cache_dir / "database.json",
-	    R"({"node":{)"
-	    R"("Scene000000":"assets://scene.node",)"
-	    R"("Child000000":"assets://child_prefab.node"}})"
+	test_support::writeAssetDb(
+	    cache_dir / "assets.db",
+	    {{"Scene000000", "node", "assets", "scene.node"}, {"Child000000", "node", "assets", "child_prefab.node"}}
 	);
 
 	WorldTestAccess::initAssetManager(assets_dir.string(), cache_dir.string());

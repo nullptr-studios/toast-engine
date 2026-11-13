@@ -260,6 +260,15 @@ public static class MetaFile {
 		}
 	}
 
+	internal static void ReuseIdentity(string assetPath, MetaHeader previous) {
+		var metaPath = assetPath + ".meta";
+		var dto = TomlSerializer.Deserialize<MetaFileDto>(File.ReadAllText(metaPath))!;
+		dto.Uid = previous.Uid;
+		dto.CreatedAt = previous.CreatedAt;
+		dto.Tags = previous.Tags?.ToList();
+		File.WriteAllText(metaPath, TomlSerializer.Serialize(dto));
+	}
+
 	/// Rewrites the modified_at of an existing .meta in place;
 	public static bool Touch(string virtualPath) {
 		var metaPath = ProjectContext.Resolve(virtualPath);

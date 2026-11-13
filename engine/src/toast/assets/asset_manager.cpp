@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <nlohmann/json.hpp>
+#include <sqlite3.h>
 #include <sstream>
 #include <toast/project_settings.hpp>
 #include <toast/voxel/brush_composer.hpp>
@@ -290,6 +291,9 @@ auto AssetManager::saveBytes(std::string_view uri, const std::vector<uint8_t>& d
 
 auto AssetManager::loadBytes(std::string_view uri) -> std::optional<std::vector<uint8_t>> {
 	std::lock_guard lock(mutex);
+	if (const auto sep = uri.find("://"); sep != std::string_view::npos && mounts.contains(std::string(uri.substr(0, sep)))) {
+		return readVirtualPath(uri);
+	}
 	auto real_path = resolveVirtualPath(uri);
 	if (!real_path) {
 		TOAST_ERROR("AssetManager", "Cannot load bytes: could not resolve path {}", uri);
@@ -320,69 +324,160 @@ auto AssetManager::tryLoadBytes(std::string_view uri) -> std::optional<std::vect
 	return openFile(*real_path);
 }
 
+namespace {
+
+struct SqliteCloser {
+	void operator()(sqlite3* db) const { sqlite3_close(db); }
+};
+
+using SqliteDb = std::unique_ptr<sqlite3, SqliteCloser>;
+
+struct StmtFinalizer {
+	void operator()(sqlite3_stmt* stmt) const { sqlite3_finalize(stmt); }
+};
+
+using SqliteStmt = std::unique_ptr<sqlite3_stmt, StmtFinalizer>;
+
+auto columnText(sqlite3_stmt* stmt, int col) -> std::string {
+	const auto* text = sqlite3_column_text(stmt, col);
+	return text ? std::string(reinterpret_cast<const char*>(text)) : std::string();
+}
+
+auto openReadOnly(const std::filesystem::path& file) -> SqliteDb {
+	// we open the WAL database so the editor can write at the same time
+	// it will be read only tho but that shouldn't be a problem
+	const auto u8 = file.generic_u8string();
+	const std::string utf8(reinterpret_cast<const char*>(u8.data()), u8.size());
+	sqlite3* raw = nullptr;
+	const int rc = sqlite3_open_v2(utf8.c_str(), &raw, SQLITE_OPEN_READONLY, nullptr);
+	SqliteDb db(raw);
+	if (rc != SQLITE_OK) {
+		TOAST_ERROR(
+		    "AssetManager", "Could not open asset database {}: {}", file.string(), raw ? sqlite3_errmsg(raw) : "out of memory"
+		);
+		return nullptr;
+	}
+	sqlite3_busy_timeout(db.get(), 2000);
+	return db;
+}
+
+auto prepare(sqlite3* db, const char* sql) -> SqliteStmt {
+	sqlite3_stmt* raw = nullptr;
+	if (sqlite3_prepare_v2(db, sql, -1, &raw, nullptr) != SQLITE_OK) {
+		TOAST_ERROR("AssetManager", "SQL error: {}", sqlite3_errmsg(db));
+		return nullptr;
+	}
+	return SqliteStmt(raw);
+}
+
+auto hasTable(sqlite3* db, const char* name) -> bool {
+	auto stmt = prepare(db, "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?1");
+	if (!stmt) {
+		return false;
+	}
+	sqlite3_bind_text(stmt.get(), 1, name, -1, SQLITE_STATIC);
+	return sqlite3_step(stmt.get()) == SQLITE_ROW;
+}
+
+}
+
 void AssetManager::reloadManifest() {
 	ZoneScoped;
 	clearUnusedAssets();
 
 	std::lock_guard lock(mutex);
 	manifest.clear();
+	uri_index.clear();
 
-	// Build the list of per-database manifest paths.
-	// Editor mode: manifests live under cache://
-	// Game mode: manifests are packed inside each db:// pack
-	std::vector<std::string> manifest_uris;
-	if (toast::ProjectSettings* ps = toast::ProjectSettings::get()) {
-		for (const auto& db : toast::ProjectSettings::databases()) {
-			if (load_mode == SaveMode::game) {
-				manifest_uris.push_back(db + "://" + db + ".json");
-			} else {
-				manifest_uris.push_back("cache://" + db + ".json");
-			}
+	const auto file = activeDatabasePath();
+	if (file.empty()) {
+		TOAST_WARN("AssetManager", "No asset database configured, manifest is empty");
+		return;
+	}
+	std::error_code ec;
+	if (!std::filesystem::exists(file, ec)) {
+		TOAST_WARN("AssetManager", "Asset database not found: {}", file.string());
+		return;
+	}
+
+	auto db = openReadOnly(file);
+	if (!db) {
+		return;
+	}
+	auto stmt = prepare(db.get(), "SELECT uid, type, db, path FROM assets");
+	if (!stmt) {
+		return;
+	}
+
+	int rc = SQLITE_OK;
+	while ((rc = sqlite3_step(stmt.get())) == SQLITE_ROW) {
+		const uint64_t uid = toast::UID::fromString(columnText(stmt.get(), 0));
+		std::string uri = columnText(stmt.get(), 2) + "://" + columnText(stmt.get(), 3);
+		uri_index[uri] = uid;
+		manifest[uid] = {std::move(uri), columnText(stmt.get(), 1)};
+	}
+	if (rc != SQLITE_DONE) {
+		TOAST_ERROR("AssetManager", "Reading asset database failed: {}", sqlite3_errmsg(db.get()));
+	}
+
+	TOAST_INFO("AssetManager", "Manifest reloaded from {}: {} assets tracked", file.string(), manifest.size());
+}
+
+auto AssetManager::activeDatabasePath() -> std::filesystem::path {
+	if (!db_path.empty()) {
+		return db_path;
+	}
+	if (load_mode == SaveMode::editor) {
+		if (auto cached = resolveVirtualPath("cache://assets.db")) {
+			return *cached;
 		}
-	} else {
-		manifest_uris.emplace_back("cache://database.json");
 	}
-	if (load_mode == SaveMode::game) {
-		manifest_uris.emplace_back("core://core.json");
-	} else {
-		manifest_uris.emplace_back("cache://core.json");
+	return {};
+}
+
+auto AssetManager::openDatabase(const std::filesystem::path& db_file) -> bool {
+	std::error_code ec;
+	if (!std::filesystem::exists(db_file, ec)) {
+		TOAST_ERROR("AssetManager", "Asset database not found: {}", db_file.string());
+		return false;
 	}
 
-	// Load and merge every manifest file
-	auto load_manifest = [&](const std::string& uri) {
-		auto raw_json = readVirtualPath(uri);
-		if (!raw_json) {
-			TOAST_WARN("AssetManager", "Manifest not found: {}", uri);
-			return;
+	auto db = openReadOnly(db_file);
+	if (!db) {
+		return false;
+	}
+	if (!hasTable(db.get(), "assets")) {
+		TOAST_ERROR("AssetManager", "{} is not an asset database (no 'assets' table)", db_file.string());
+		return false;
+	}
+
+	// A release game.db lists the paks that hold its assets
+	if (!hasTable(db.get(), "paks")) {
+		db_path = db_file;
+		return true;
+	}
+	auto stmt = prepare(db.get(), "SELECT db, file FROM paks");
+	if (!stmt) {
+		return false;
+	}
+	bool ok = true;
+	while (sqlite3_step(stmt.get()) == SQLITE_ROW) {
+		const auto scheme = columnText(stmt.get(), 0);
+		const auto file = columnText(stmt.get(), 1);
+		const auto pak = db_file.parent_path() / std::filesystem::path(std::u8string(file.begin(), file.end()));
+		if (!std::filesystem::exists(pak, ec)) {
+			TOAST_ERROR("AssetManager", "Pak '{}' for '{}://' is missing: {}", file, scheme, pak.string());
+			ok = false;
+			continue;
 		}
-
-		try {
-			auto json = nlohmann::json::parse(raw_json->begin(), raw_json->end());
-
-			// an entry is a "uid": "virtual path" pair
-			// Every top-level object is a type collection keyed by uid -> virtual path; `version` and
-			// `generated_at` are scalars and skip themselves. This used to be a hardcoded list of type names,
-			// which meant a new asset type loaded fine, imported fine, wrote a correct manifest entry - and was
-			// then invisible here, surfacing as "not found in manifest" with nothing pointing at the cause
-			for (const auto& [type, collection] : json.items()) {
-				if (!collection.is_object()) {
-					continue;
-				}
-				for (const auto& [key, value] : collection.items()) {
-					if (!value.is_string()) {
-						continue;
-					}
-					manifest[toast::UID::fromString(key)] = {value.get<std::string>(), type};
-				}
-			}
-		} catch (const std::exception& e) { TOAST_ERROR("AssetManager", "Failed to parse manifest {}: {}", uri, e.what()); }
-	};
-
-	for (const auto& uri : manifest_uris) {
-		load_manifest(uri);
+		mountPack(scheme, pak);
+		ok = ok && mounts.contains(scheme);
 	}
-
-	TOAST_INFO("AssetManager", "Manifest reloaded: {} assets tracked", manifest.size());
+	// Only use the database once we know every pack exists
+	if (ok) {
+		db_path = db_file;
+	}
+	return ok;
 }
 
 void AssetManager::clearUnusedAssets() {
@@ -512,12 +607,11 @@ auto AssetManager::saveFile(const std::filesystem::path& path, const std::vector
 }
 
 auto AssetManager::resolveURI(std::string_view uri) -> std::optional<toast::UID> {
-	for (const auto& [uid_val, info] : instance->manifest) {
-		if (info.path == uri) {
-			return toast::UID(uid_val);
-		}
+	const auto it = instance->uri_index.find(std::string(uri));
+	if (it == instance->uri_index.end()) {
+		return std::nullopt;
 	}
-	return std::nullopt;
+	return toast::UID(it->second);
 }
 
 auto AssetManager::getURI(toast::UID uid) -> std::string {
