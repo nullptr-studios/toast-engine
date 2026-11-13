@@ -301,8 +301,7 @@ public partial class GltfImporter : IAssetImporter {
 			}
 		}
 
-		log("Rebuilding asset database...");
-		AssetDatabase.RebuildAssetDatabase();
+		if (!ctx.IsStaging) AssetDatabase.RebuildAssetDatabase();
 
 		// Scenes
 		log("Updating scene intermediates with UIDs...");
@@ -365,8 +364,7 @@ public partial class GltfImporter : IAssetImporter {
 			ReportProgress();
 		}
 
-		log("Rebuilding asset database...");
-		AssetDatabase.RebuildAssetDatabase();
+		if (!ctx.IsStaging) AssetDatabase.RebuildAssetDatabase();
 
 		log("Removing intermediates...");
 		if (Directory.Exists(tempDir.FullName)) Directory.Delete(tempDir.FullName, true);

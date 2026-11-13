@@ -235,6 +235,8 @@ public:
 	 */
 	static void mountPack(std::string_view scheme, const std::filesystem::path& pak_path);
 
+	static auto openDatabase(const std::filesystem::path& db_file) -> bool;
+
 private:
 	static inline AssetManager* instance = nullptr;
 
@@ -242,9 +244,14 @@ private:
 
 	static inline std::unordered_map<std::string, std::unique_ptr<PackArchive>> mounts;
 
+	static inline std::filesystem::path db_path;
+
+	auto activeDatabasePath() -> std::filesystem::path;
+
 	event::Listener listener;
 	mutable std::mutex mutex;
 	std::unordered_map<uint64_t, AssetInfo> manifest;
+	std::unordered_map<std::string, uint64_t> uri_index;
 	std::unordered_map<uint64_t, std::unique_ptr<Asset>> cache;
 	std::unordered_map<uint64_t, std::filesystem::file_time_type> asset_mtimes;
 	std::unordered_set<uint64_t> pending_reloads;

@@ -39,22 +39,32 @@ public class AssetFolder : INotifyPropertyChanged {
 			SubFolders.Add(new AssetFolder(sub.FullName, this, listRawFiles));
 		}
 
-		foreach (var file in dirInfo.EnumerateFiles()
-			         .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
-			         .ThenBy(f => f.Name, StringComparer.Ordinal)) {
-			var assetName = file.Extension == ".meta" ? Path.GetFileNameWithoutExtension(file.Name) : file.Name;
-			if (AssetBrowserSettings.IsHidden(assetName)) continue;
-
-			if (listRawFiles) {
-				if (file.Extension == ".meta")
-				    continue;
+		if (listRawFiles) {
+			foreach (var file in dirInfo.EnumerateFiles()
+				         .OrderBy(f => f.Name, StringComparer.OrdinalIgnoreCase)
+				         .ThenBy(f => f.Name, StringComparer.Ordinal)) {
+				if (file.Extension == ".meta" || AssetBrowserSettings.IsHidden(file.Name)) continue;
 				Files.Add(AssetFile.Raw(file.FullName));
-				continue;
 			}
 
-			if (file.Extension != ".meta") continue; // assets are tracked by their .meta sidecar
-			Files.Add(new AssetFile(file.FullName));
+			return;
 		}
+
+		// assets come from the asset database
+		if (parent is null) AssetStore.Sync();
+		var virtualDir = VirtualDirectory(dirInfo.FullName);
+		if (virtualDir is null) return;
+		foreach (var record in AssetStore.ListDirectory(virtualDir)) {
+			var real = ProjectContext.Resolve(record.Virtual);
+			if (AssetBrowserSettings.IsHidden(Path.GetFileName(real))) continue;
+			var meta = real + ".meta"; // we still get the .meta tho
+			if (File.Exists(meta)) Files.Add(new AssetFile(meta));
+		}
+	}
+
+	private static string? VirtualDirectory(string realDir) {
+		var probe = ProjectContext.ToVirtual(Path.Combine(realDir, "_"));
+		return probe is null ? null : probe[..^1];
 	}
 
 	public string Name { get; set; } = "";
