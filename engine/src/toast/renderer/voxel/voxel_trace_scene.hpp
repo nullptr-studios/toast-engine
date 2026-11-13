@@ -18,8 +18,7 @@ class VulkanCore;
 class RayTracingScene;
 class VoxelBlasCache;
 
-/// Voxel volumes every marched ray walks in one order shared by scene_trace.slang and the ray query instances
-/// Without ray queries rays walk a camera centred cell grid over the same list
+/// Volume order shared by scene_trace.slang and the ray query instances
 class VoxelTraceScene {
 public:
 	struct Volume {
@@ -48,7 +47,6 @@ public:
 	/// Render thread before the acceleration structure builds and every pass that marches voxels
 	void update(uint32_t frame_index, std::span<const Volume> volumes, glm::vec3 camera_position, float cell_size);
 
-	/// Builds the shared unit box once and adds the brick BLASes of @p bricks or the unit box per volume of the last update
 	/// @return false while the unit box is not usable yet
 	auto addRayQueryInstances(
 	    vk::CommandBuffer cmd, uint32_t frame_index, RayTracingScene& scene, const VoxelBlasCache* bricks,

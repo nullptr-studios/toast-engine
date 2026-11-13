@@ -187,8 +187,7 @@ static const float kGiClipConeBias = 0.0;
 static const float kGiClipConeLift = 1.5;
 static const float kGiClipFaceWeight = 1e-4;
 
-/// Premultiplied radiance of the faces looking back at the ray and opacity along it
-/// @p lod above 0 reads the mips of the last level which stand in for coarser levels over the same box
+/// Premultiplied face radiance toward the ray and opacity along it where @p lod above 0 reads last level mips
 float4 giClipSample(GiClipFrame frame, uint level, float lod, float3 world, float3 direction)
 {
     // The repeat sampler does the toroidal wrap
@@ -227,8 +226,7 @@ float4 giClipSmoothTap(float3 cell, float3 f, float cells, uint tap)
     return float4(at / cells, share.x * share.y * share.z);
 }
 
-/// Trilinear draws cells as creased pyramids so this rounds them at 8 reads per texture
-/// The taps are worked out again for each read since holding all eight costs registers every pixel pays for
+/// Rounds the creases trilinear leaves at 8 reads per texture and recomputes taps per read to save registers
 float4 giClipSampleSmooth(GiClipFrame frame, float3 world, float3 direction)
 {
     const float cells = float(frame.size.x);
@@ -273,9 +271,7 @@ float giClipSolidShare(GiClipFrame frame, uint level, float3 world)
     return gGiClipOpacity[NonUniformResourceIndex(level)].SampleLevel(uvw, 0.0).w;
 }
 
-/// Radiance rgb and coverage a starting @p start meters along the cone and reading no level finer than @p base
-/// Smooth above 0 reads level 0 through giClipSampleSmooth and is a compile time choice so shaders that only
-/// take the plain cone do not carry the smooth filter
+/// rgb radiance a coverage from @p start meters on with no level finer than @p base
 float4 giClipCone<let Smooth : int>(GiClipFrame frame, float3 origin, float3 direction, float start, float base)
 {
     const float cell = frame.levels[0].w;
@@ -366,8 +362,7 @@ float4 giClipGather(GiClipFrame frame, float3 worldPosition, float3 normal, floa
     return gathered;
 }
 
-/// @p turn in 0 to 1 spins the side cones by up to the fifth of a turn between two of them
-/// Nothing here is random and lit pixels pass 0 since any per frame noise flickers around bright lights
+/// @p turn spins the side cones up to a fifth of a turn and lit pixels pass 0 since per frame noise flickers
 bool sampleGiClipmap(float3 worldPosition, float3 normal, float turn, out float3 irradiance, out float sky)
 {
     irradiance = float3(0.0, 0.0, 0.0);

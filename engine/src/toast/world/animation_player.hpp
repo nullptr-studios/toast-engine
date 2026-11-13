@@ -19,8 +19,6 @@ namespace toast {
 /**
  * @brief Drives node transforms from an Animation clip
  *
- * For node trees without bones, skinned rigs use SkeletalNode
- *
  * Targets are resolved by name against this player's descendants, never itself - so the same clip drives
  * several prefab instances independently
  *
@@ -33,8 +31,7 @@ class [[ToastNode, Icon("Animation")]] TOAST_API AnimationPlayer : public Node3D
 public:
 	AnimationPlayer() = default;
 
-	/// @brief Starts the named clip from the beginning
-	/// @returns false when the asset has no clip by that name
+	/// Empty plays the first clip
 	[[Reflect]]
 	auto play(std::string_view clip_name) -> bool;
 
@@ -74,14 +71,12 @@ private:
 	/// @brief Finds a node by name among this player's descendants, memoised for the lifetime of the clip
 	auto resolveNode(const std::string& name) -> Node3D*;
 
-	[[Reflect, Name("Animation")]]
-	assets::Handle<assets::Animation> m_animation;
+	[[Reflect, Name("Clips")]]
+	std::vector<assets::Handle<assets::Animation>> m_clips;
 
-	[[Reflect, Name("Clip"), Options]]
-	std::string m_clip_name;
-
-	[[Reflect, Name("Play On Begin")]]
-	bool m_play_on_begin = true;
+	/// Played on begin, empty plays nothing
+	[[Reflect, Name("Autoplay"), Options]]
+	std::string m_autoplay;
 
 	[[Reflect, Name("Loop")]]
 	bool m_loop = true;

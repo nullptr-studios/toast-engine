@@ -22,7 +22,7 @@ struct GlassPush
     uint refractionVoxels;
     /// Lit glass surfaces per brick and pixel past which layers only absorb
     uint litSurfaces;
-    /// 1 when gBackdropDepth holds this frame's opaque depth and the pipeline keeps only glass in front of it
+    /// 1 when gBackdropDepth holds this frame opaque depth and the pipeline keeps only glass in front of it
     uint depthTest;
 };
 

@@ -20,12 +20,7 @@ auto poseMatrix(const assets::BonePose& pose) -> glm::mat4 {
 }
 
 auto SkeletalNode::play(std::string_view clip_name) -> bool {
-	if (!m_animation.hasValue()) {
-		TOAST_WARN("Animation", "SkeletalNode '{}' has no animation asset assigned", name());
-		return false;
-	}
-
-	const assets::AnimationClip* clip = resolveClip(*m_animation, clip_name, name());
+	const assets::AnimationClip* clip = resolveClip(m_clips, clip_name, name());
 	if (clip == nullptr) {
 		return false;
 	}
@@ -34,7 +29,6 @@ auto SkeletalNode::play(std::string_view clip_name) -> bool {
 		m_node_cache.clear();
 	}
 	m_playback.start(clip);
-	m_clip_name = clip->name;
 	return true;
 }
 
@@ -76,8 +70,8 @@ void SkeletalNode::drawBones() {
 }
 
 void SkeletalNode::begin() {
-	if (m_play_on_begin && m_animation.hasValue()) {
-		play(m_clip_name);
+	if (!m_autoplay.empty()) {
+		play(m_autoplay);
 	}
 }
 
@@ -85,7 +79,7 @@ void SkeletalNode::updateInspectorMessages() {
 	static const NodeMessage no_skeleton {
 	  .severity = NodeMessage::warning,
 	  .id = 1,
-	  .text = "SkeletalNode needs a Skeleton or Animation asset that contains a skeleton",
+	  .text = "SkeletalNode needs a Skeleton asset",
 	};
 
 	if (skeleton() != nullptr) {
@@ -96,20 +90,7 @@ void SkeletalNode::updateInspectorMessages() {
 }
 
 auto SkeletalNode::inspectorOptions(std::string_view field_name) -> std::vector<std::string> {
-	std::vector<std::string> options;
-	if (field_name == "m_clip_name" && m_animation.hasValue()) {
-		for (const auto& clip : m_animation->clips()) {
-			options.push_back(clip.name);
-		}
-	} else if (field_name == "m_skeleton_name") {
-		const auto& source = m_skeleton_asset.hasValue() ? m_skeleton_asset : m_animation;
-		if (source.hasValue()) {
-			for (const auto& skeleton : source->skeletons()) {
-				options.push_back(skeleton.name);
-			}
-		}
-	}
-	return options;
+	return field_name == "m_autoplay" ? clipNames(m_clips) : std::vector<std::string> {};
 }
 
 auto SkeletalNode::skeleton() -> const assets::Skeleton* {
@@ -117,8 +98,7 @@ auto SkeletalNode::skeleton() -> const assets::Skeleton* {
 }
 
 auto SkeletalNode::bindSkeleton() -> const assets::Skeleton* {
-	const auto& source = m_skeleton_asset.hasValue() ? m_skeleton_asset : m_animation;
-	const assets::Skeleton* found = source.hasValue() ? source->findSkeleton(m_skeleton_name) : nullptr;
+	const assets::Skeleton* found = m_skeleton.hasValue() ? &*m_skeleton : nullptr;
 	if (found == m_bound) {
 		return found;
 	}
@@ -128,13 +108,13 @@ auto SkeletalNode::bindSkeleton() -> const assets::Skeleton* {
 	m_track_clip = nullptr;
 	m_track_to_bone.clear();
 
-	const size_t count = found != nullptr ? found->bones.size() : 0;
+	const size_t count = found != nullptr ? found->bones().size() : 0;
 	m_local.resize(count);
 	m_model.assign(count, glm::mat4(1.0f));
 	m_parents.resize(count);
 	for (size_t i = 0; i < count; ++i) {
-		m_local[i] = found->bones[i].rest;
-		m_parents[i] = found->bones[i].parent;
+		m_local[i] = found->bones()[i].rest;
+		m_parents[i] = found->bones()[i].parent;
 	}
 	if (found != nullptr) {
 		computeModel(*found);
@@ -161,7 +141,7 @@ void SkeletalNode::bindTracks(const assets::Skeleton& skeleton) {
 void SkeletalNode::computeModel(const assets::Skeleton& skeleton) {
 	for (size_t i = 0; i < m_local.size(); ++i) {
 		const glm::mat4 local = poseMatrix(m_local[i]);
-		const int32_t parent = skeleton.bones[i].parent;
+		const int32_t parent = skeleton.bones()[i].parent;
 		m_model[i] = parent >= 0 ? m_model[parent] * local : local;
 	}
 }
@@ -262,7 +242,7 @@ void SkeletalNode::tick() {
 	if (m_playback.advance(static_cast<float>(Time::delta()), m_speed, m_loop)) {
 		bindTracks(*skeleton);
 		for (size_t i = 0; i < m_local.size(); ++i) {
-			m_local[i] = skeleton->bones[i].rest;
+			m_local[i] = skeleton->bones()[i].rest;
 		}
 		m_playback.clip->sampleInto(m_playback.time, m_track_to_bone, m_local);
 		computeModel(*skeleton);
@@ -278,10 +258,10 @@ auto SkeletalNode::boneIndex(std::string_view bone_name) -> int32_t {
 }
 
 auto SkeletalNode::boneName(int32_t bone) const -> std::string_view {
-	if (m_bound == nullptr || bone < 0 || std::cmp_greater_equal(bone, m_bound->bones.size())) {
+	if (m_bound == nullptr || bone < 0 || std::cmp_greater_equal(bone, m_bound->bones().size())) {
 		return {};
 	}
-	return m_bound->bones[bone].name;
+	return m_bound->bones()[bone].name;
 }
 
 auto SkeletalNode::boneModelTransform(int32_t bone) const -> const glm::mat4& {

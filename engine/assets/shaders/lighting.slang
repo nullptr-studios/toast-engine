@@ -567,8 +567,7 @@ float emitterExtent(float4 shapeParams)
 static const float kOctagonRadiusScale = 1.0540925;
 static const uint kMaxEmitterVertices = 8u;
 
-/// Vector irradiance of a uniform Lambert polygon seen from the origin and clipped to the horizon of N
-/// Vertices are relative to the receiver, its dot with N is the cosine weighted solid angle
+/// Vector irradiance of a Lambert polygon relative to the receiver whose dot with N is the cosine weighted solid angle
 float3 clippedPolygonVectorIrradiance(float3 vertices[kMaxEmitterVertices], uint count, float3 N)
 {
     float3 clipped[kMaxEmitterVertices + 2];
@@ -827,8 +826,7 @@ static const float kWidePenumbraTexels = 6.0;
 static const uint kWidePenumbraTaps = 16u;
 
 
-/// Indirect diffuse a shader worked out before shading as xyz irradiance over pi and w the open sky share
-/// Below 0 means none and lighting never gathers on its own so each shader compiles only the gather it calls
+/// xyz irradiance over pi w open sky share and below 0 for none since lighting never gathers on its own
 static float4 gGiGathered = float4(0.0, 0.0, 0.0, -1.0);
 
 bool giSurfaceIrradiance(out float3 irradiance, out float sky)

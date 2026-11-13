@@ -205,8 +205,7 @@ uint giMortonSpread(uint value)
     return value;
 }
 
-/// Two Morton ordered N by N halves so the four children of a direction are contiguous one cascade up
-/// @p uv from giEncodeDirection so a ray split over every cascade encodes once
+/// Morton ordered halves so the four children of a direction are contiguous one cascade up
 uint giDirectionIndex(float2 uv, uint cascade)
 {
     const uint side = giSide(cascade);
@@ -297,8 +296,7 @@ struct GiHistory
     float rays;
 };
 
-/// GLSL.std.450 packing since f32tof16 needs shaderFloat16 and shaderInt16 which the device does not enable
-/// Clamped first since PackHalf2x16 turns overflow into infinity
+/// PackHalf2x16 since f32tof16 needs shaderFloat16 which is off and clamped since overflow packs as infinity
 uint giFloatToHalf(float value)
 {
     const float2 clamped = float2(clamp(value, -65504.0, 65504.0), 0.0);

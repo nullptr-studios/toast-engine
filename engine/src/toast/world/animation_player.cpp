@@ -2,30 +2,34 @@
 
 namespace toast {
 
-auto resolveClip(const assets::Animation& animation, std::string_view clip_name, std::string_view owner)
+auto resolveClip(std::span<const assets::Handle<assets::Animation>> clips, std::string_view clip_name, std::string_view owner)
     -> const assets::AnimationClip* {
-	// The importer writes one clip per .tanim so the Clip field is normally blank
-	if (clip_name.empty()) {
-		if (animation.clips().empty()) {
-			TOAST_WARN("Animation", "'{}': assigned animation asset has no clips", owner);
-			return nullptr;
+	for (const auto& clip : clips) {
+		if (clip.hasValue() && (clip_name.empty() || clip->clip().name == clip_name)) {
+			return &clip->clip();
 		}
-		return &animation.clips().front();
 	}
-	const assets::AnimationClip* clip = animation.findClip(clip_name);
-	if (clip == nullptr) {
-		TOAST_WARN("Animation", "'{}': animation asset has no clip named '{}'", owner, clip_name);
+	if (clip_name.empty()) {
+		TOAST_WARN("Animation", "'{}' has no clips assigned", owner);
+	} else {
+		TOAST_WARN("Animation", "'{}' has no clip named '{}'", owner, clip_name);
 	}
-	return clip;
+	return nullptr;
+}
+
+auto clipNames(std::span<const assets::Handle<assets::Animation>> clips) -> std::vector<std::string> {
+	std::vector<std::string> names;
+	names.reserve(clips.size());
+	for (const auto& clip : clips) {
+		if (clip.hasValue()) {
+			names.push_back(clip->clip().name);
+		}
+	}
+	return names;
 }
 
 auto AnimationPlayer::play(std::string_view clip_name) -> bool {
-	if (!m_animation.hasValue()) {
-		TOAST_WARN("Animation", "AnimationPlayer '{}' has no animation asset assigned", name());
-		return false;
-	}
-
-	const assets::AnimationClip* clip = resolveClip(*m_animation, clip_name, name());
+	const assets::AnimationClip* clip = resolveClip(m_clips, clip_name, name());
 	if (clip == nullptr) {
 		return false;
 	}
@@ -34,20 +38,12 @@ auto AnimationPlayer::play(std::string_view clip_name) -> bool {
 	if (clip != m_playback.clip) {
 		m_node_cache.clear();
 	}
-
 	m_playback.start(clip);
-	m_clip_name = clip->name;
 	return true;
 }
 
 auto AnimationPlayer::inspectorOptions(std::string_view field_name) -> std::vector<std::string> {
-	std::vector<std::string> options;
-	if (field_name == "m_clip_name" && m_animation.hasValue()) {
-		for (const auto& clip : m_animation->clips()) {
-			options.push_back(clip.name);
-		}
-	}
-	return options;
+	return field_name == "m_autoplay" ? clipNames(m_clips) : std::vector<std::string> {};
 }
 
 void AnimationPlayer::stop() {
@@ -55,10 +51,8 @@ void AnimationPlayer::stop() {
 }
 
 void AnimationPlayer::begin() {
-	// No clip-name check: with one clip per asset the field is normally blank, and play() resolves that to
-	// the asset's only clip
-	if (m_play_on_begin && m_animation.hasValue()) {
-		play(m_clip_name);
+	if (!m_autoplay.empty()) {
+		play(m_autoplay);
 	}
 }
 

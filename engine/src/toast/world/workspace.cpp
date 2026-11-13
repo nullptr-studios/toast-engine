@@ -43,7 +43,7 @@ namespace toast {
 
 namespace {
 
-// Handle clicks before the runtime UI (priority 32) and gameplay input (priority 0).
+// Ahead of the runtime UI at 32 and gameplay at 0
 constexpr char k_gizmo_input_priority = 33;
 
 // TODO: i didnt know where to place the ray picking shit since theres no physics class yet, MOVE THIS SOMEWHERE ELSE!
@@ -2525,7 +2525,7 @@ void Workspace::eventSubscriptions() {
 		return true;
 	});
 
-	// Editor interaction only follows the editor camera; game view passes input to the game.
+	// The game view passes input to the game
 	m_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;

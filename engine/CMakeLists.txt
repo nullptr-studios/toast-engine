@@ -176,7 +176,7 @@ target_compile_definitions(toast_engine PRIVATE
         TOAST_HEAP_CALLSTACK_DEPTH=${TOAST_HEAP_CALLSTACK_DEPTH}
 )
 
-# Keep Slang's Debug profile for Linux builds that retain C++ debug information.
+# Linux builds with C++ debug info keep the Slang Debug profile
 target_compile_definitions(toast_engine PRIVATE
         $<$<AND:$<PLATFORM_ID:Linux>,$<CONFIG:RelWithDebInfo>>:TOAST_SLANG_DEBUG_DEFAULT>
 )

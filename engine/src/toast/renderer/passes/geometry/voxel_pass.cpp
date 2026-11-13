@@ -1190,7 +1190,7 @@ void VoxelPass::recordNearQuads(vk::CommandBuffer cmd, uint32_t frame_index, boo
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_mesh_quad_pipeline.getPipeline());
 		// voxel_mesh.slang reads the bucket as which near list to draw
 		PushConstants push {.bucket = late ? 1u : 0u, .mode = k_draw_cells};
-		// Only the late pyramid is final, see voxel_mesh_task.slang
+		// Only the late pyramid is final
 		if (late && m_occlusion_active && m_hiz.isReady()) {
 			push.hiz_levels = m_hiz.builtLevels();
 			push.hiz_width = m_hiz.builtExtent().width;

@@ -11,8 +11,8 @@ auto BoneAttachment::inspectorOptions(std::string_view field_name) -> std::vecto
 		return options;
 	}
 	if (const assets::Skeleton* skeleton = skeletal->skeleton(); skeleton != nullptr) {
-		options.reserve(skeleton->bones.size());
-		for (const auto& bone : skeleton->bones) {
+		options.reserve(skeleton->bones().size());
+		for (const auto& bone : skeleton->bones()) {
 			options.push_back(bone.name);
 		}
 	}

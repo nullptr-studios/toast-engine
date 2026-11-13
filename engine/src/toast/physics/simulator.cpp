@@ -3983,11 +3983,7 @@ void Simulator::removeExclusion(BodyID a, BodyID b) {
 	}
 }
 
-// The ends of a joint that collide with each other
-// - A hinge or a pin turns in a knuckle around its pin, so the two ends it holds never press on each other right there. A
-//   contact between them that close to the pin fights the joint, the joint pulls the ends back in and the contact pushes
-//   them out, and each push lifts the bodies a little for free, which keeps them swinging forever
-// - The other end is a stop like the limits, a hinge or a slider bounces off it at least as much as off its limits
+// Contacts near a pin fight the joint and pump energy into the swing so they drop
 void Simulator::adjustJointContacts(std::vector<Manifold>& manifolds) {
 	if (m_joint_count == 0 || manifolds.empty()) {
 		return;

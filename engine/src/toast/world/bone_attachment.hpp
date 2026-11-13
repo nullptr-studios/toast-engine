@@ -39,8 +39,7 @@ private:
 	[[Reflect, Name("Bone"), Options]]
 	std::string m_bone;
 
-	/// Off keeps world scale 1 since rigs often carry an armature scale the skin cancels out and physics
-	/// rejects voxel nodes with non unit world scale
+	/// Off keeps world scale 1 since physics rejects voxel nodes with non unit world scale
 	[[Reflect, Name("Inherit Scale")]]
 	bool m_inherit_scale = false;
 

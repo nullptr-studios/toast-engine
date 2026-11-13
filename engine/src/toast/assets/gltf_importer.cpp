@@ -1061,29 +1061,24 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		);
 	}
 
-	// One .tanim per clip, not per glTF: six clips in one file is one asset-browser entry, with nothing to
-	// drag per animation. Each carries the skins too - small next to keyframe data, and it keeps every clip
-	// able to pose the skeleton alone
-	//
-	// Named here rather than at save time because the scene JSON references them by bare filename
+	// The scene JSON references each .tanim and .tskel by bare filename
 	const std::string animation_base = path.stem().string();
+	// glTF names are free text that would break the path or the stem GltfImporter.cs keys its UID maps by
+	const auto sanitize_file_name = [](std::string_view name, std::string fallback) {
+		std::string sanitized;
+		sanitized.reserve(name.size());
+		for (const char c : name) {
+			const bool keep = std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_' || c == '-';
+			sanitized.push_back(keep ? c : '_');
+		}
+		return sanitized.empty() ? fallback : sanitized;
+	};
 	std::vector<std::string> animation_file_names;
 	animation_file_names.reserve(clips.size());
 	{
 		std::unordered_map<std::string, uint32_t> animation_name_counts;
 		for (size_t i = 0; i < clips.size(); ++i) {
-			// glTF clip names are free text ("Armature|Run Cycle.001"); anything outside this set would either
-			// break the path or split the stem GltfImporter.cs keys its UID map by
-			std::string sanitized;
-			sanitized.reserve(clips[i].name.size());
-			for (const char c : clips[i].name) {
-				const bool keep = std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_' || c == '-';
-				sanitized.push_back(keep ? c : '_');
-			}
-			if (sanitized.empty()) {
-				sanitized = "clip_" + std::to_string(i);
-			}
-
+			const std::string sanitized = sanitize_file_name(clips[i].name, "clip_" + std::to_string(i));
 			std::string file_name = animation_base + "_" + sanitized;
 			if (auto it = animation_name_counts.find(file_name); it != animation_name_counts.end()) {
 				file_name = file_name + "_" + std::to_string(it->second);
@@ -1097,10 +1092,6 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			animation_file_names.push_back(std::move(file_name));
 		}
 	}
-
-	// A glTF can define a skeleton with no animation at all, and MeshNode::skin_animation still needs a file
-	// to point at - that case keeps the old single "<gltf>.tanim" holding skins and no clips
-	const std::string skin_file_name = animation_file_names.empty() ? animation_base : animation_file_names.front();
 
 	// Scenes
 	std::vector<nlohmann::json> scenes;
@@ -1236,7 +1227,13 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		std::vector<int32_t> skinned_nodes;
 	};
 
-	std::vector<Skeleton> skeletons;
+	struct SkeletonData {
+		std::string name;
+		std::vector<Bone> bones;
+		std::vector<Skin> skins;
+	};
+
+	std::vector<SkeletonData> skeletons;
 	std::vector<SkeletonPlan> skeleton_plans;
 	std::vector<int32_t> skin_skeleton(skins.size(), -1);
 	std::vector<int32_t> node_skeleton(node_count, -1);
@@ -1306,7 +1303,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		}
 
 		const auto skeleton_index = static_cast<int32_t>(skeletons.size());
-		Skeleton skeleton;
+		SkeletonData skeleton;
 		skeleton.name = plan.host >= 0 ? node_name_at(plan.host) : node_name_at(roots.front());
 
 		// Depth first so a parent always precedes its children
@@ -1333,11 +1330,31 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		for (size_t other = 0; other < skins.size(); ++other) {
 			if (group_of(other) == group) {
 				skin_skeleton[other] = skeleton_index;
+				skeleton.skins.push_back(skins[other]);
 			}
 		}
 		skeletons.push_back(std::move(skeleton));
 		skeleton_plans.push_back(std::move(plan));
 	}
+
+	std::vector<std::string> skeleton_file_names;
+	skeleton_file_names.reserve(skeletons.size());
+	for (size_t sk = 0; sk < skeletons.size(); ++sk) {
+		std::string file_name = animation_base + "_" + sanitize_file_name(skeletons[sk].name, "skeleton");
+		if (std::ranges::find(skeleton_file_names, file_name) != skeleton_file_names.end()) {
+			file_name += "_" + std::to_string(sk);
+		}
+		skeleton_file_names.push_back(std::move(file_name));
+	}
+
+	// Every clip of the glTF goes into each Clips list, names are bare file names patched to UIDs later
+	const auto clip_file_list = [&] {
+		nlohmann::json list = nlohmann::json::array();
+		for (const auto& file_name : animation_file_names) {
+			list.push_back(file_name);
+		}
+		return list;
+	};
 
 	// Skinned meshes move directly under their SkeletalNode, glTF ignores their transform anyway
 	std::vector<int32_t> pulled_skeleton(node_count, -1);
@@ -1392,13 +1409,9 @@ auto generateIntermediates(const std::filesystem::path& path) {
 			// skin - node.skin indexes model.skins, which parses 1:1 into `skins` earlier in this function
 			const bool has_skin = node.skin != -1 && std::cmp_less(node.skin, skins.size());
 			const auto apply_skin_params = [&](nlohmann::json& target) {
-				if (!has_skin) {
-					return;
+				if (has_skin) {
+					target["params"]["skin_name"] = skins[node.skin].name;
 				}
-				// Bare filename, no extension, matching how "mesh"/"material" reference their targets and what
-				// GltfImporter.cs keys animationUids by. Patched to a UID there
-				target["params"]["skin_animation"] = skin_file_name;
-				target["params"]["skin_name"] = skins[node.skin].name;
 			};
 
 			if (gltf_mesh.primitives_count == 1) {
@@ -1518,11 +1531,10 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		n["name"] = skeletons[sk].name + " Skeleton";
 		n["type"] = "toast::SkeletalNode";
 		n["transform"] = pose_json(BonePose {});
-		// Bare filename patched to a UID by GltfImporter.cs, every .tanim carries the skeletons
-		n["params"]["animation"] = skin_file_name;
-		n["params"]["skeleton_name"] = skeletons[sk].name;
+		n["params"]["skeleton"] = skeleton_file_names[sk];
+		n["params"]["clips"] = clip_file_list();
 		if (!clips.empty()) {
-			n["params"]["clip"] = clips.front().name;
+			n["params"]["autoplay"] = clips.front().name;
 		}
 		n["children"] = nlohmann::json::array();
 
@@ -1597,12 +1609,8 @@ auto generateIntermediates(const std::filesystem::path& path) {
 		});
 		if (needs_player) {
 			scene_json["type"] = "toast::AnimationPlayer";
-			// The first clip's asset, since a player holds one animation at a time; the rest import alongside
-			// it as their own assets for the user to swap in. Bare filename, see skin_animation above
-			scene_json["params"]["animation"] = skin_file_name;
-			if (!clips.empty()) {
-				scene_json["params"]["clip"] = clips.front().name;
-			}
+			scene_json["params"]["clips"] = clip_file_list();
+			scene_json["params"]["autoplay"] = clips.front().name;
 		}
 
 		scenes.push_back(std::move(scene_json));
@@ -1658,23 +1666,18 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	}
 	TOAST_TRACE("AssetManager", "Saved {} materials", materials.size());
 
-	// Save animations - one .tanim per clip, each with this glTF's skins alongside it (see
-	// animation_file_names above for why)
 	for (size_t i = 0; i < clips.size(); ++i) {
-		const auto binary = Animation::toBinary({clips[i]}, skins, skeletons);
-		const std::filesystem::path out = cache_dir / (animation_file_names[i] + ".tanim");
-		std::ofstream f(out, std::ios::binary);
+		const auto binary = Animation::toBinary(clips[i]);
+		std::ofstream f(cache_dir / (animation_file_names[i] + ".tanim"), std::ios::binary);
 		f.write(reinterpret_cast<const char*>(binary.data()), static_cast<std::streamsize>(binary.size()));
 	}
-	if (clips.empty() && !skins.empty()) {
-		// Skeleton with no animation: still needs a file for MeshNode::skin_animation to resolve against
-		const auto binary = Animation::toBinary({}, skins, skeletons);
-		const std::filesystem::path out = cache_dir / (skin_file_name + ".tanim");
-		std::ofstream f(out, std::ios::binary);
+	for (size_t sk = 0; sk < skeletons.size(); ++sk) {
+		const auto binary = Skeleton::toBinary(skeletons[sk].name, skeletons[sk].bones, skeletons[sk].skins);
+		std::ofstream f(cache_dir / (skeleton_file_names[sk] + ".tskel"), std::ios::binary);
 		f.write(reinterpret_cast<const char*>(binary.data()), static_cast<std::streamsize>(binary.size()));
 	}
-	if (!clips.empty() || !skins.empty()) {
-		TOAST_TRACE("AssetManager", "Saved {} animation asset(s), {} skin(s) each", std::max<size_t>(clips.size(), 1), skins.size());
+	if (!clips.empty() || !skeletons.empty()) {
+		TOAST_TRACE("AssetManager", "Saved {} animation asset(s), {} skeleton asset(s)", clips.size(), skeletons.size());
 	}
 
 	// Save scenes
@@ -1776,50 +1779,37 @@ static void jsonToTnode(const nlohmann::json& scene_json, const std::filesystem:
 					);
 				}
 			}
-			if (params.contains("skin_animation")) {
-				const auto skin_uid = params["skin_animation"].get<std::string>();
-				if (skin_uid.size() == 11) {
-					basic.fields.push_back(
-					    {"m_skin_animation", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(skin_uid))}
-					);
-				} else {
-					TOAST_WARN(
-					    "AssetManager",
-					    "GLTF scene contains non-UID skin_animation reference '{}'; skipping m_skin_animation assignment",
-					    skin_uid
-					);
-				}
-			}
 			if (params.contains("skin_name")) {
 				basic.fields.push_back({"m_skin_name", toast::FieldType::string_t, false, params["skin_name"].get<std::string>()});
 			}
 		}
 
-		// AnimationPlayer: "animation" is the .tanim UID (patched by GltfImporter.cs like mesh/material
-		// above), "clip" is a plain string naming which clip to autoplay
+		// "skeleton" and "clips" are UIDs patched by GltfImporter.cs like mesh and material above
 		else if ((basic.type == "toast::AnimationPlayer" || basic.type == "toast::SkeletalNode") && n.contains("params")) {
 			const auto& params = n["params"];
-			if (params.contains("animation")) {
-				const auto animation_uid = params["animation"].get<std::string>();
-				if (animation_uid.size() == 11) {
-					basic.fields.push_back(
-					    {"m_animation", toast::FieldType::uid_t, false, toast::UID(toast::UID::fromString(animation_uid))}
-					);
-				} else {
-					TOAST_WARN(
-					    "AssetManager",
-					    "GLTF scene contains non-UID animation reference '{}'; skipping m_animation assignment",
-					    animation_uid
-					);
+			const auto to_uid = [](const std::string& text) -> std::optional<toast::UID> {
+				if (text.size() != 11) {
+					TOAST_WARN("AssetManager", "GLTF scene contains non-UID animation reference '{}'; skipping it", text);
+					return std::nullopt;
+				}
+				return toast::UID(toast::UID::fromString(text));
+			};
+			if (params.contains("skeleton")) {
+				if (const auto uid = to_uid(params["skeleton"].get<std::string>())) {
+					basic.fields.push_back({"m_skeleton", toast::FieldType::uid_t, false, *uid});
 				}
 			}
-			if (params.contains("clip")) {
-				basic.fields.push_back({"m_clip_name", toast::FieldType::string_t, false, params["clip"].get<std::string>()});
+			if (params.contains("clips")) {
+				std::vector<toast::UID> clip_uids;
+				for (const auto& clip : params["clips"]) {
+					if (const auto uid = to_uid(clip.get<std::string>())) {
+						clip_uids.push_back(*uid);
+					}
+				}
+				basic.fields.push_back({"m_clips", toast::FieldType::uid_t, true, std::move(clip_uids)});
 			}
-			if (params.contains("skeleton_name")) {
-				basic.fields.push_back(
-				    {"m_skeleton_name", toast::FieldType::string_t, false, params["skeleton_name"].get<std::string>()}
-				);
+			if (params.contains("autoplay")) {
+				basic.fields.push_back({"m_autoplay", toast::FieldType::string_t, false, params["autoplay"].get<std::string>()});
 			}
 		}
 

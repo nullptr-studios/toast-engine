@@ -2,7 +2,8 @@
 
 #include <cassert>
 #include <cmath>
-#include <toast/assets/animation.hpp>
+#include <toast/assets/skeleton.hpp>
+#include <vector>
 
 namespace {
 
@@ -12,9 +13,7 @@ auto nearly(float a, float b) -> bool {
 
 }
 
-// The glTF importer writes one .tanim per clip, and a glTF that defines a skeleton but no animation still
-// needs a file for MeshNode::skin_animation to resolve against - a clip-less .tanim. Nothing else in the
-// engine produces one, so the reader's zero-clip path only exists for this case
+// A skinned mesh draws in bind pose from a .tskel alone
 TOAST_TEST_NAMED("Assets", "assets/04-animation-skin-only", test_assets_04_animation_skin_only) {
 	assets::Skin skin;
 	skin.name = "Body";
@@ -22,18 +21,24 @@ TOAST_TEST_NAMED("Assets", "assets/04-animation-skin-only", test_assets_04_anima
 	skin.joints = {"Hips", "Spine", "Head"};
 	skin.inverse_bind_matrices = {glm::mat4(1.0f), glm::mat4(2.0f), glm::mat4(3.0f)};
 
-	const auto bytes = assets::Animation::toBinary({}, {skin}, {});
+	const std::vector<assets::Bone> bones {
+	  {.name = "Hips", .parent = -1},
+	  {.name = "Spine", .parent = 0},
+	  {.name = "Head", .parent = 1},
+	};
+	const auto bytes = assets::Skeleton::toBinary("Armature", bones, std::span(&skin, 1));
 	assert(!bytes.empty());
 
-	const assets::Animation loaded(bytes);
-	assert(loaded.type() == "animation");
-	assert(loaded.clips().empty());
+	const assets::Skeleton loaded(bytes);
+	assert(loaded.type() == "skeleton");
+	assert(loaded.name() == "Armature");
+	assert(loaded.bones().size() == 3);
+	assert(loaded.bones()[2].parent == 1);
+	assert(loaded.find("Spine") == 1);
+	assert(loaded.find("Tail") == -1);
 	assert(loaded.skins().size() == 1);
-
-	// Asking for any clip has to come back empty-handed rather than reaching into an empty vector -
-	// AnimationPlayer::play() calls this before it has any way of knowing the asset is clip-less
-	assert(loaded.findClip("Walk") == nullptr);
-	assert(loaded.findClip("") == nullptr);
+	assert(loaded.findSkin("") == &loaded.skins()[0]);
+	assert(loaded.findSkin("Missing") == nullptr);
 
 	const auto& loaded_skin = loaded.skins()[0];
 	assert(loaded_skin.name == "Body");
@@ -43,8 +48,6 @@ TOAST_TEST_NAMED("Assets", "assets/04-animation-skin-only", test_assets_04_anima
 	assert(loaded_skin.inverse_bind_matrices.size() == 3);
 	assert(nearly(loaded_skin.inverse_bind_matrices[1][0][0], 2.0f));
 
-	// The skin still poses without any clip driving it: joint matrices are joint_world * inverse_bind, so a
-	// skeleton-only asset is enough to draw a skinned mesh in bind pose
 	const std::vector<glm::mat4> world_transforms(3, glm::mat4(1.0f));
 	const auto matrices = loaded_skin.jointMatrices(world_transforms);
 	assert(matrices.size() == 3);

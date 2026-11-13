@@ -126,8 +126,8 @@ auto addScenePasses(
 	const auto scene_format = renderer.getSceneColorFormat();
 
 	// Before the passes whose scene sets bind its cascades
-	// auto gi_pass = std::make_unique<renderer::GiPass>(core, scene_format, extent);
-	// renderer.setGiPass(gi_pass.get());
+	auto gi_pass = std::make_unique<renderer::GiPass>(core, scene_format, extent);
+	renderer.setGiPass(gi_pass.get());
 	auto gi_clipmap_pass = std::make_unique<renderer::GiClipmapPass>(core, scene_format, extent);
 	renderer.setGiClipmapPass(gi_clipmap_pass.get());
 
@@ -141,7 +141,7 @@ auto addScenePasses(
 	renderer.addRenderPass(std::make_unique<ui::WorldUIPass>(core, scene_format, depth_format, extent));
 
 	// First in the chain so the probes read depth before any post pass
-	// renderer.addPostProcessPass(std::move(gi_pass));
+	renderer.addPostProcessPass(std::move(gi_pass));
 	renderer.addPostProcessPass(std::move(gi_clipmap_pass));
 
 	if (core.isRayTracingSupported()) {

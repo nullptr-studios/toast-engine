@@ -707,8 +707,7 @@ public:
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
 	}
 
-	/// Depth before glass wrote its own so GI and reflections see the surface behind a pane, the final depth when no backdrop was
-	/// copied
+	/// Depth before glass so GI and reflections see behind a pane and the final depth when no backdrop was copied
 	[[nodiscard]]
 	auto getOpaqueDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_captured && m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : getDepthView();

@@ -131,7 +131,7 @@ private:
 	SceneDescriptorSets m_inject_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_inject_sets;
 
-	/// gi_clip_bounce with the engine scene in set 0 for last frame's clipmap and the ambient faces in set 1
+	/// gi_clip_bounce with the engine scene in set 0 for the last frame clipmap and the ambient faces in set 1
 	ShaderLayout m_bounce_layout;
 	VulkanPipeline m_bounce_pipeline;
 	SceneDescriptorSets m_bounce_scene_sets;

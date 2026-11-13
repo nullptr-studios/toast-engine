@@ -18,7 +18,7 @@ namespace {
 
 constexpr std::size_t k_kept_frames = 16;
 
-// Tracy symbolizes heap callstacks through dbghelp, which is not thread safe, so the logger stays out of it then
+// dbghelp is not thread safe and Tracy symbolizes heap callstacks through it
 #if defined(_WIN32) && defined(TRACY_ENABLE) && defined(TOAST_TRACK_HEAP) && TOAST_HEAP_CALLSTACK_DEPTH > 0
 #define TOAST_BACKTRACE_AVOID_DBGHELP
 #endif
@@ -29,8 +29,7 @@ std::uint64_t g_cache_generation = 0;
 #ifdef _WIN32
 std::unordered_set<std::uintptr_t> g_symbol_loaded_modules;
 
-// we need to unload pdbs since the backtrace of the logs loads them for logging
-// this is only a problem on windows btw
+// log backtraces load pdbs that need unloading
 void unloadDbghelpSymbols() noexcept {
 	using EnumCallback = BOOL(CALLBACK*)(PCSTR, DWORD64, PVOID);
 	using EnumModules = BOOL(WINAPI*)(HANDLE, EnumCallback, PVOID);
@@ -197,7 +196,7 @@ auto captureBacktrace(std::size_t skip) noexcept -> RawBacktrace {
 		std::array<void*, k_max_skip + 1 + RawBacktrace::k_capture_depth> addresses {};
 		const int captured = backtrace(addresses.data(), static_cast<int>(skipped + RawBacktrace::k_capture_depth));
 		for (int i = static_cast<int>(skipped); i < captured; ++i) {
-			// Return addresses point past the call, one back lands inside it as cpptrace's own capture does
+			// Return addresses point past the call so one back lands inside it like cpptrace does
 			trace.frames[trace.count++] = reinterpret_cast<std::uintptr_t>(addresses[static_cast<std::size_t>(i)]) - 1;
 		}
 	}

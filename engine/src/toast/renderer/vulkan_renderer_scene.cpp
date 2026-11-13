@@ -134,30 +134,6 @@ auto lightIcon(toast::LightType type) -> const assets::Handle<assets::Texture>& 
 	return g_light_icons[index];
 }
 
-auto pickSkin(const toast::MeshNode& node) -> const assets::Skin* {
-	const auto& skin_animation = node.getSkinAnimation();
-	if (!skin_animation.hasValue()) {
-		return nullptr;
-	}
-
-	const auto& skins = skin_animation->skins();
-	if (skins.empty()) {
-		return nullptr;
-	}
-
-	const auto& skin_name = node.getSkinName();
-	if (skin_name.empty()) {
-		return &skins.front();
-	}
-
-	for (const auto& skin : skins) {
-		if (skin.name == skin_name) {
-			return &skin;
-		}
-	}
-	return nullptr;
-}
-
 auto findAncestorSkeleton(toast::Node& node) -> toast::SkeletalNode* {
 	toast::Box<toast::Node> current = node.parent();
 	while (current.exists()) {
@@ -178,13 +154,10 @@ auto resolveSkinning(
     toast::MeshNode& node, RenderFrame& frame, uint32_t& joint_offset, uint32_t& joint_count, bool& pool_exhausted_warned,
     SkinPoseCache& pose_cache
 ) -> toast::SkeletalNode* {
-	const assets::Skin* skin = pickSkin(node);
-	if (skin == nullptr) {
-		return nullptr;
-	}
-
 	toast::SkeletalNode* skeletal = findAncestorSkeleton(node);
-	if (skeletal == nullptr) {
+	const assets::Skeleton* skeleton = skeletal != nullptr ? skeletal->skeleton() : nullptr;
+	const assets::Skin* skin = skeleton != nullptr ? skeleton->findSkin(node.getSkinName()) : nullptr;
+	if (skin == nullptr) {
 		return nullptr;
 	}
 

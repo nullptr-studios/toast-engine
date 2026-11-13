@@ -262,7 +262,6 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 		const char* diag_c = static_cast<const char*>(diag_ptr);
 		const std::string diag_str(diag_c, diag_c + diag_size);
 
-		// Default to warning
 		logging::Severity severity = logging::Severity::warning;
 
 		if (diag_str.contains(": error ")) {

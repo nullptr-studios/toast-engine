@@ -158,7 +158,7 @@ VKAPI_ATTR auto VKAPI_CALL debugCallback(
 		default: return VK_FALSE;
 	}
 
-	// The first line is the problem, the rest is the layer's explanation and the spec link
+	// First line is the problem and the rest is the layer explanation and spec link
 	const auto [summary, body] = logging::splitFirstLine(message);
 	const std::string line = std::format("[Vulkan Validation] [{}]: {}", message_type_string, summary);
 	TOAST_MESSAGE(severity, "ValidationLayers", line, body);

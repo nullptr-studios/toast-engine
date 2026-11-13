@@ -83,8 +83,7 @@ Sampler2D gNoisySpecular;
 [[vk::binding(10, 2)]]
 Sampler2D gDetailNormal;
 
-/// Half resolution clipmap gather of fragmentGiGather with xyz irradiance over pi and w the open sky share
-/// or below 0 where it gathered nothing
+/// Half resolution fragmentGiGather with xyz irradiance over pi w open sky share and below 0 for none
 [[vk::binding(11, 2)]]
 Sampler2D gGiGather;
 
@@ -415,7 +414,7 @@ static const uint kReuseSpatial = 2u;
 static const uint kSceneGlass = 4u;
 static const uint kAmbientRayQuery = 8u;
 static const uint kTracedSpecular = 16u;
-/// Mirrors VoxelPass k_gi_gather and set when gGiGather holds this frame's half resolution gather
+/// Mirrors VoxelPass k_gi_gather and set when gGiGather holds this frame half resolution gather
 static const uint kGiGather = 32u;
 /// Mirrors VoxelPass k_gi_clipmap
 static const uint kGiClipmap = 64u;

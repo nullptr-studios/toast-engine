@@ -40,8 +40,7 @@ StructuredBuffer<uint2> gVoxelCells;
 [[vk::binding(16, 1)]]
 Sampler2D gHiz;
 
-/// Whether the pyramid proves a screen rect at nearest depth hidden, rects off screen or crossing the near plane are never hidden
-/// Level k texels are 2 << k pixels wide so the widened rect touches at most 2x2 of them
+/// Rects off screen or crossing the near plane never count as hidden
 bool hizRectHidden(float2 low, float2 high, float nearest)
 {
     const float2 size = float2(float(gPush.hizWidth), float(gPush.hizHeight));
@@ -72,7 +71,7 @@ bool hizRectHidden(float2 low, float2 high, float nearest)
     return isCloserDepth(farthest, nearest);
 }
 
-/// Folds clip space points into the screen rect and nearest depth of hizRectHidden, false when one is on or behind the near plane
+/// False when a point is on or behind the near plane
 bool hizAccumulate(float4 clip, inout float2 low, inout float2 high, inout float nearest)
 {
     if (clip.w <= 0.0 || clipNearDistance(clip) <= 0.0)
@@ -298,8 +297,7 @@ void detailAxes(uint axis, out uint u, out uint v)
     v = axis == 2u ? 1u : 2u;
 }
 
-/// Albedo and roughness of the palette entry modulated by its detail layer read in voxel space
-/// Fragments keep the pattern of the volume they broke from through the record texture origin
+/// Read in voxel space so fragments keep the pattern of their source volume through the record texture origin
 void applyDetail(PaletteSample palette, VolumeRecord record, RayHit hit, float3 cellPosition, float3 voxelsPerPixel,
                  inout float3 albedo, inout float roughness, out float2 slope)
 {

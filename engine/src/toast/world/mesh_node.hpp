@@ -53,12 +53,7 @@ public:
 		return m_material;
 	}
 
-	[[nodiscard]]
-	auto getSkinAnimation() const -> const assets::Handle<assets::Animation>& {
-		return m_skin_animation;
-	}
-
-	/// @returns which Skin inside skinAnimation() to use; empty means "the first one"
+	/// Skin inside the nearest SkeletalNode ancestor skeleton, empty is the first
 	[[nodiscard]]
 	auto getSkinName() const -> const std::string& {
 		return m_skin_name;
@@ -76,9 +71,6 @@ private:
 
 	[[Reflect]]
 	assets::Handle<assets::Material> m_material;
-
-	[[Reflect, Name("Skin Animation")]]
-	assets::Handle<assets::Animation> m_skin_animation;
 
 	[[Reflect, Name("Skin Name"), Options]]
 	std::string m_skin_name;

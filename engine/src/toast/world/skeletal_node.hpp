@@ -17,20 +17,12 @@
 
 namespace toast {
 
-/**
- * @brief Owns a skeleton pose and plays clips onto it
- *
- * Bones are arrays here, never scene nodes. Skinned MeshNode descendants read the pose through
- * skinBones and boneModelTransform, BoneAttachment children get their transform written every tick.
- * Clip tracks that name no bone fall back to descendant nodes by name
- *
- * @note Also ticked outside Play, by Workspace::tickAnimationPreviews()
- */
+/// Also ticked outside Play by Workspace::tickAnimationPreviews()
 class [[ToastNode, Icon("Bone")]] TOAST_API SkeletalNode : public Node3D {
 public:
 	SkeletalNode() = default;
 
-	/// @returns false when the asset has no clip by that name
+	/// Empty plays the first clip
 	[[Reflect]]
 	auto play(std::string_view clip_name) -> bool;
 
@@ -107,22 +99,16 @@ private:
 	void applyAttachments(const assets::Skeleton& skeleton);
 	auto resolveNode(const std::string& name) -> Node3D*;
 
-	/// Empty uses the Animation asset since every .tanim carries its skeletons
 	[[Reflect, Name("Skeleton")]]
-	assets::Handle<assets::Animation> m_skeleton_asset;
+	assets::Handle<assets::Skeleton> m_skeleton;
 
-	/// Empty means the first skeleton in the asset
-	[[Reflect, Name("Skeleton Name"), Options]]
-	std::string m_skeleton_name;
+	/// Bone name keyed, any clip plays on any skeleton with matching names
+	[[Reflect, Name("Clips")]]
+	std::vector<assets::Handle<assets::Animation>> m_clips;
 
-	[[Reflect, Name("Animation")]]
-	assets::Handle<assets::Animation> m_animation;
-
-	[[Reflect, Name("Clip"), Options]]
-	std::string m_clip_name;
-
-	[[Reflect, Name("Play On Begin")]]
-	bool m_play_on_begin = true;
+	/// Played on begin, empty plays nothing
+	[[Reflect, Name("Autoplay"), Options]]
+	std::string m_autoplay;
 
 	[[Reflect, Name("Loop")]]
 	bool m_loop = true;

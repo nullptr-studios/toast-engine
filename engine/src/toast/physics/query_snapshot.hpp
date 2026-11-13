@@ -22,7 +22,7 @@ struct QueryVoxel {
 	uint32_t surface_revision = 0;
 };
 
-/// All data used by gameplay collision queries from one completed physics tick.
+/// All data used by gameplay collision queries from one completed physics tick
 struct QuerySnapshot {
 	AABBTree tree;
 	std::vector<BodySlot> bodies;

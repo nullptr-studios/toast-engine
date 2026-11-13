@@ -170,8 +170,7 @@ float3 rec2020ToRec709(float3 c)
         dot(float3(-0.0181508, -0.1005789, 1.1187297), c));
 }
 
-/// Scene linear Rec.709 where 1.0 is paper white to the same space relative to paper white, at most peak over paper white
-/// Both whites are framebuffer values with 1.0 at 100 nits and the peak never goes under the SDR paper white
+/// Paper white relative Rec.709 in and out capped at peak over paper white with framebuffer 1.0 at 100 nits
 public float3 gt7ToneMap(float3 scene, float paperWhite, float peak, float toeStrength)
 {
     peak = max(peak, kGt7SdrPaperWhite);

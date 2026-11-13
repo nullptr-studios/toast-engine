@@ -5,8 +5,11 @@
  */
 
 #pragma once
+#include <span>
+#include <string>
 #include <string_view>
 #include <toast/assets/animation.hpp>
+#include <vector>
 
 namespace toast {
 
@@ -47,8 +50,12 @@ struct ClipPlayback {
 	}
 };
 
-/// Empty name means the first clip, logs under @p owner when nothing matches
-TOAST_API auto resolveClip(const assets::Animation& animation, std::string_view clip_name, std::string_view owner)
-    -> const assets::AnimationClip*;
+/// Empty name means the first loaded clip, logs under @p owner when nothing matches
+TOAST_API auto
+    resolveClip(std::span<const assets::Handle<assets::Animation>> clips, std::string_view clip_name, std::string_view owner)
+        -> const assets::AnimationClip*;
+
+/// Names of the loaded clips, for an Autoplay dropdown
+TOAST_API auto clipNames(std::span<const assets::Handle<assets::Animation>> clips) -> std::vector<std::string>;
 
 }
