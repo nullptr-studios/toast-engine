@@ -67,6 +67,7 @@ public:
 private:
 	void begin();
 	auto inspectorOptions(std::string_view field_name) -> std::vector<std::string> override;
+	void onReflectedFieldChanged(std::string_view field_name) override;
 
 	/// @brief Finds a node by name among this player's descendants, memoised for the lifetime of the clip
 	auto resolveNode(const std::string& name) -> Node3D*;

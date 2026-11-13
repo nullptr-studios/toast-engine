@@ -3,10 +3,10 @@
 namespace toast {
 
 auto resolveClip(std::span<const assets::Handle<assets::Animation>> clips, std::string_view clip_name, std::string_view owner)
-    -> const assets::AnimationClip* {
+    -> const assets::Handle<assets::Animation>* {
 	for (const auto& clip : clips) {
 		if (clip.hasValue() && (clip_name.empty() || clip->clip().name == clip_name)) {
-			return &clip->clip();
+			return &clip;
 		}
 	}
 	if (clip_name.empty()) {
@@ -29,17 +29,24 @@ auto clipNames(std::span<const assets::Handle<assets::Animation>> clips) -> std:
 }
 
 auto AnimationPlayer::play(std::string_view clip_name) -> bool {
-	const assets::AnimationClip* clip = resolveClip(m_clips, clip_name, name());
+	const auto* clip = resolveClip(m_clips, clip_name, name());
 	if (clip == nullptr) {
 		return false;
 	}
 
 	// A new clip targets a potentially different set of nodes, so the resolved-node memo is invalid
-	if (clip != m_playback.clip) {
+	if (&(*clip)->clip() != m_playback.clip) {
 		m_node_cache.clear();
 	}
-	m_playback.start(clip);
+	m_playback.start(*clip);
 	return true;
+}
+
+void AnimationPlayer::onReflectedFieldChanged(std::string_view field_name) {
+	Node3D::onReflectedFieldChanged(field_name);
+	if (field_name == "m_clips") {
+		m_playback.dropIfRemoved(m_clips);
+	}
 }
 
 auto AnimationPlayer::inspectorOptions(std::string_view field_name) -> std::vector<std::string> {

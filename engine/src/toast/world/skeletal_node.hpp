@@ -91,6 +91,7 @@ private:
 	void begin();
 	void updateInspectorMessages() override;
 	auto inspectorOptions(std::string_view field_name) -> std::vector<std::string> override;
+	void onReflectedFieldChanged(std::string_view field_name) override;
 
 	auto bindSkeleton() -> const assets::Skeleton*;
 	void bindTracks(const assets::Skeleton& skeleton);

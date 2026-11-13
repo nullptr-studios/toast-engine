@@ -20,16 +20,26 @@ auto poseMatrix(const assets::BonePose& pose) -> glm::mat4 {
 }
 
 auto SkeletalNode::play(std::string_view clip_name) -> bool {
-	const assets::AnimationClip* clip = resolveClip(m_clips, clip_name, name());
+	const auto* clip = resolveClip(m_clips, clip_name, name());
 	if (clip == nullptr) {
 		return false;
 	}
 
-	if (clip != m_playback.clip) {
+	if (&(*clip)->clip() != m_playback.clip) {
 		m_node_cache.clear();
 	}
-	m_playback.start(clip);
+	m_playback.start(*clip);
+	// The previous clip may be freed and a new one allocated at its address
+	m_track_clip = nullptr;
 	return true;
+}
+
+void SkeletalNode::onReflectedFieldChanged(std::string_view field_name) {
+	Node3D::onReflectedFieldChanged(field_name);
+	if (field_name == "m_clips") {
+		m_playback.dropIfRemoved(m_clips);
+		m_track_clip = nullptr;
+	}
 }
 
 void SkeletalNode::stop() {
@@ -62,7 +72,7 @@ void SkeletalNode::drawBones() {
 	for (size_t bone = 0; bone < m_model.size(); ++bone) {
 		const glm::vec3 position {world * m_model[bone][3]};
 		if (m_parents[bone] >= 0) {
-			debug::drawArrow(glm::vec3(world * m_model[m_parents[bone]][3]), position, k_bone_color);
+			debug::drawArrow(glm::vec3(world * m_model[m_parents[bone]][3]), position, k_bone_color, .05f);
 		} else {
 			debug::drawSphere(position, 0.03f, k_bone_color, 8);
 		}
