@@ -606,81 +606,82 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__node_8h
 <div class="line"><a id="l00604" name="l00604"></a><span class="lineno">  604</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Drag&quot;</span>)]]</div>
 <div class="line"><a id="l00605" name="l00605"></a><span class="lineno">  605</span>  <span class="keywordtype">float</span> drag_scale = 1.0f;</div>
 <div class="line"><a id="l00606" name="l00606"></a><span class="lineno">  606</span> </div>
-<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;m/s&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>  glm::vec3 linear_velocity = {};</div>
-<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;rad/s&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  glm::vec3 angular_velocity = {};</div>
-<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span> </div>
-<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>  glm::vec3 constant_force = {};</div>
-<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N•m&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>  glm::vec3 constant_torque = {};</div>
-<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span> </div>
-<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock X&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Position Locks&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  <span class="keywordtype">bool</span> lock_pos_x = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Y&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Position Locks&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>  <span class="keywordtype">bool</span> lock_pos_y = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Z&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Position Locks&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  <span class="keywordtype">bool</span> lock_pos_z = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock X&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Rotation Locks&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  <span class="keywordtype">bool</span> lock_rot_x = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Y&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Rotation Locks&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>  <span class="keywordtype">bool</span> lock_rot_y = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Z&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Rotation Locks&quot;</span>), ReadOnly]]</div>
-<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>  <span class="keywordtype">bool</span> lock_rot_z = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span> </div>
-<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span>  [[Reflect, Name(<span class="stringliteral">&quot;Show AABB&quot;</span>), Group(<span class="stringliteral">&quot;AABB&quot;</span>)]]</div>
-<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>  <span class="keywordtype">bool</span> show_aabb = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span> </div>
-<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span>  [[Reflect, Color, Name(<span class="stringliteral">&quot;AABB Color&quot;</span>), Group(<span class="stringliteral">&quot;AABB&quot;</span>)]]</div>
-<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  glm::vec4 aabb_color = glm::vec4(1.0f, 0.75f, 0.15f, 0.6f);</div>
-<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span></div>
-<div class="line"><a id="l00637" name="l00637"></a><span class="lineno">  637</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fill Shape&quot;</span>), Group(<span class="stringliteral">&quot;AABB&quot;</span>)]]</div>
-<div class="line"><a id="l00638" name="l00638"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0">  638</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0">aabb_fill</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00639" name="l00639"></a><span class="lineno">  639</span> </div>
-<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span>  std::unique_ptr&lt;voxel::Volume&gt; m_volume;</div>
-<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>  std::vector&lt;std::unique_ptr&lt;voxel::Volume&gt;&gt; m_retired_volumes;</div>
-<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  std::vector&lt;VoxelPart&gt; m_parts;</div>
-<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  uint32_t m_parts_revision = 0;</div>
-<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  <span class="keywordtype">bool</span> m_warned_part_edit = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  glm::ivec3 m_voxel_origin {0};</div>
-<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>  uint32_t m_revision = 0;</div>
-<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  <span class="keyword">const</span> <a class="code hl_class" href="classassets_1_1VoxelModel.html">assets::VoxelModel</a>* m_instanced_from = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::VoxelPalette&gt;</a> m_model_palette;</div>
-<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  std::vector&lt;std::optional&lt;voxel::Region&gt;&gt; m_regions;</div>
-<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span> </div>
-<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span>  <span class="keywordtype">bool</span> m_volume_stale = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>  <span class="keywordtype">bool</span> m_rebuild_requested = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  <span class="keywordtype">bool</span> m_edit_shape_pending = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  <span class="keywordtype">bool</span> m_split_pending = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  <span class="keywordtype">bool</span> m_building_shape = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span> </div>
-<div class="foldopen" id="foldopen00657" data-start="{" data-end="};">
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno"><a class="line" href="structtoast_1_1VoxelNode_1_1PendingEvents.html">  657</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structtoast_1_1VoxelNode_1_1PendingEvents.html">PendingEvents</a> {</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>    uint32_t damaged_voxels = 0;</div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>    glm::vec3 damaged_sum {0.0f};</div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>    std::vector&lt;int&gt; broken_pieces;</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>    <span class="keywordtype">bool</span> emptied = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  };</div>
+<div class="line"><a id="l00607" name="l00607"></a><span class="lineno">  607</span>  <span class="comment">// this will only affect the velocity on kinematic</span></div>
+<div class="line"><a id="l00608" name="l00608"></a><span class="lineno">  608</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;m/s&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00609" name="l00609"></a><span class="lineno">  609</span>  glm::vec3 linear_velocity = {};</div>
+<div class="line"><a id="l00610" name="l00610"></a><span class="lineno">  610</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Velocities&quot;</span>), Unit(<span class="stringliteral">&quot;rad/s&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00611" name="l00611"></a><span class="lineno">  611</span>  glm::vec3 angular_velocity = {};</div>
+<div class="line"><a id="l00612" name="l00612"></a><span class="lineno">  612</span> </div>
+<div class="line"><a id="l00613" name="l00613"></a><span class="lineno">  613</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00614" name="l00614"></a><span class="lineno">  614</span>  glm::vec3 constant_force = {};</div>
+<div class="line"><a id="l00615" name="l00615"></a><span class="lineno">  615</span>  [[Reflect, Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Constant Forces&quot;</span>), Unit(<span class="stringliteral">&quot;N•m&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00616" name="l00616"></a><span class="lineno">  616</span>  glm::vec3 constant_torque = {};</div>
+<div class="line"><a id="l00617" name="l00617"></a><span class="lineno">  617</span> </div>
+<div class="line"><a id="l00618" name="l00618"></a><span class="lineno">  618</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock X&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Position Locks&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00619" name="l00619"></a><span class="lineno">  619</span>  <span class="keywordtype">bool</span> lock_pos_x = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00620" name="l00620"></a><span class="lineno">  620</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Y&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Position Locks&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00621" name="l00621"></a><span class="lineno">  621</span>  <span class="keywordtype">bool</span> lock_pos_y = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00622" name="l00622"></a><span class="lineno">  622</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Z&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Position Locks&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00623" name="l00623"></a><span class="lineno">  623</span>  <span class="keywordtype">bool</span> lock_pos_z = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00624" name="l00624"></a><span class="lineno">  624</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock X&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Rotation Locks&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00625" name="l00625"></a><span class="lineno">  625</span>  <span class="keywordtype">bool</span> lock_rot_x = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00626" name="l00626"></a><span class="lineno">  626</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Y&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Rotation Locks&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00627" name="l00627"></a><span class="lineno">  627</span>  <span class="keywordtype">bool</span> lock_rot_y = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00628" name="l00628"></a><span class="lineno">  628</span>  [[Reflect, Name(<span class="stringliteral">&quot;Lock Z&quot;</span>), Group(<span class="stringliteral">&quot;Physics&quot;</span>), Subgroup(<span class="stringliteral">&quot;Rotation Locks&quot;</span>), ReadOnly]]</div>
+<div class="line"><a id="l00629" name="l00629"></a><span class="lineno">  629</span>  <span class="keywordtype">bool</span> lock_rot_z = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00630" name="l00630"></a><span class="lineno">  630</span> </div>
+<div class="line"><a id="l00631" name="l00631"></a><span class="lineno">  631</span>  [[Reflect, Name(<span class="stringliteral">&quot;Show AABB&quot;</span>), Group(<span class="stringliteral">&quot;AABB&quot;</span>)]]</div>
+<div class="line"><a id="l00632" name="l00632"></a><span class="lineno">  632</span>  <span class="keywordtype">bool</span> show_aabb = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00633" name="l00633"></a><span class="lineno">  633</span> </div>
+<div class="line"><a id="l00634" name="l00634"></a><span class="lineno">  634</span>  [[Reflect, Color, Name(<span class="stringliteral">&quot;AABB Color&quot;</span>), Group(<span class="stringliteral">&quot;AABB&quot;</span>)]]</div>
+<div class="line"><a id="l00635" name="l00635"></a><span class="lineno">  635</span>  glm::vec4 aabb_color = glm::vec4(1.0f, 0.75f, 0.15f, 0.6f);</div>
+<div class="line"><a id="l00636" name="l00636"></a><span class="lineno">  636</span></div>
+<div class="line"><a id="l00638" name="l00638"></a><span class="lineno">  638</span>  [[Reflect, Name(<span class="stringliteral">&quot;Fill Shape&quot;</span>), Group(<span class="stringliteral">&quot;AABB&quot;</span>)]]</div>
+<div class="line"><a id="l00639" name="l00639"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0">  639</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0">aabb_fill</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00640" name="l00640"></a><span class="lineno">  640</span> </div>
+<div class="line"><a id="l00641" name="l00641"></a><span class="lineno">  641</span>  std::unique_ptr&lt;voxel::Volume&gt; m_volume;</div>
+<div class="line"><a id="l00642" name="l00642"></a><span class="lineno">  642</span>  std::vector&lt;std::unique_ptr&lt;voxel::Volume&gt;&gt; m_retired_volumes;</div>
+<div class="line"><a id="l00643" name="l00643"></a><span class="lineno">  643</span>  std::vector&lt;VoxelPart&gt; m_parts;</div>
+<div class="line"><a id="l00644" name="l00644"></a><span class="lineno">  644</span>  uint32_t m_parts_revision = 0;</div>
+<div class="line"><a id="l00645" name="l00645"></a><span class="lineno">  645</span>  <span class="keywordtype">bool</span> m_warned_part_edit = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00646" name="l00646"></a><span class="lineno">  646</span>  glm::ivec3 m_voxel_origin {0};</div>
+<div class="line"><a id="l00647" name="l00647"></a><span class="lineno">  647</span>  uint32_t m_revision = 0;</div>
+<div class="line"><a id="l00648" name="l00648"></a><span class="lineno">  648</span>  <span class="keyword">const</span> <a class="code hl_class" href="classassets_1_1VoxelModel.html">assets::VoxelModel</a>* m_instanced_from = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00649" name="l00649"></a><span class="lineno">  649</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::VoxelPalette&gt;</a> m_model_palette;</div>
+<div class="line"><a id="l00650" name="l00650"></a><span class="lineno">  650</span>  std::vector&lt;std::optional&lt;voxel::Region&gt;&gt; m_regions;</div>
+<div class="line"><a id="l00651" name="l00651"></a><span class="lineno">  651</span> </div>
+<div class="line"><a id="l00652" name="l00652"></a><span class="lineno">  652</span>  <span class="keywordtype">bool</span> m_volume_stale = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  <span class="keywordtype">bool</span> m_rebuild_requested = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  <span class="keywordtype">bool</span> m_edit_shape_pending = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  <span class="keywordtype">bool</span> m_split_pending = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span>  <span class="keywordtype">bool</span> m_building_shape = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span> </div>
+<div class="foldopen" id="foldopen00658" data-start="{" data-end="};">
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno"><a class="line" href="structtoast_1_1VoxelNode_1_1PendingEvents.html">  658</a></span>  <span class="keyword">struct </span><a class="code hl_struct" href="structtoast_1_1VoxelNode_1_1PendingEvents.html">PendingEvents</a> {</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>    uint32_t damaged_voxels = 0;</div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>    glm::vec3 damaged_sum {0.0f};</div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>    std::vector&lt;int&gt; broken_pieces;</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>    <span class="keywordtype">bool</span> emptied = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>  };</div>
 </div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span> </div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>  <a class="code hl_struct" href="structtoast_1_1VoxelNode_1_1PendingEvents.html">PendingEvents</a> m_pending_events;</div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span> </div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>  <a class="code hl_struct" href="structphysics_1_1BodyID.html">physics::BodyID</a> m_body;</div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  <a class="code hl_struct" href="structphysics_1_1ShapeID.html">physics::ShapeID</a> m_shape;</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>  std::vector&lt;ActiveContact&gt; m_active_contacts;</div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>  <span class="keywordtype">bool</span> m_registration_requested = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span> </div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>  <span class="keywordtype">bool</span> m_registered_proxy = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>  <span class="keywordtype">bool</span> m_debug_visible = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>  uint64_t m_shape_key = 0;</div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span> </div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>  uint64_t m_reported_wrong_model = 0;</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  uint64_t m_reported_wrong_palette = 0;</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>};</div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span> </div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>  <a class="code hl_struct" href="structtoast_1_1VoxelNode_1_1PendingEvents.html">PendingEvents</a> m_pending_events;</div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span> </div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  <a class="code hl_struct" href="structphysics_1_1BodyID.html">physics::BodyID</a> m_body;</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>  <a class="code hl_struct" href="structphysics_1_1ShapeID.html">physics::ShapeID</a> m_shape;</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>  std::vector&lt;ActiveContact&gt; m_active_contacts;</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>  <span class="keywordtype">bool</span> m_registration_requested = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span> </div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>  <span class="keywordtype">bool</span> m_registered_proxy = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>  <span class="keywordtype">bool</span> m_debug_visible = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>  uint64_t m_shape_key = 0;</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span> </div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  uint64_t m_reported_wrong_model = 0;</div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>  uint64_t m_reported_wrong_palette = 0;</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>};</div>
 </div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span> </div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>}</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span> </div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>}</div>
 <div class="ttc" id="abody_8hpp_html"><div class="ttname"><a href="body_8hpp.html">body.hpp</a></div><div class="ttdoc">Body identifiers, creation data, and copied runtime state.</div></div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
 <div class="ttc" id="aclassassets_1_1PhysicsMaterial_html"><div class="ttname"><a href="classassets_1_1PhysicsMaterial.html">assets::PhysicsMaterial</a></div><div class="ttdef"><b>Definition</b> physics_material.hpp:14</div></div>
@@ -709,7 +710,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__node_8h
 <div class="ttc" id="aclasstoast_1_1VoxelNode_html_a9c6dcfcd84104f2bfa98b707154c51a4"><div class="ttname"><a href="classtoast_1_1VoxelNode.html#a9c6dcfcd84104f2bfa98b707154c51a4">toast::VoxelNode::VoxelNode</a></div><div class="ttdeci">VoxelNode(assets::Handle&lt; assets::VoxelModel &gt; model)</div><div class="ttdef"><b>Definition</b> voxel_node.hpp:105</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelNode_html_aaeeb4aa7c4bf722b8de9a21c0b3f5124"><div class="ttname"><a href="classtoast_1_1VoxelNode.html#aaeeb4aa7c4bf722b8de9a21c0b3f5124">toast::VoxelNode::went_to_sleep</a></div><div class="ttdeci">signals::Signal went_to_sleep</div><div class="ttdoc">Sent when the body falls asleep.</div><div class="ttdef"><b>Definition</b> voxel_node.hpp:330</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelNode_html_acdaf573974faf85d4db966810c1a2dcc"><div class="ttname"><a href="classtoast_1_1VoxelNode.html#acdaf573974faf85d4db966810c1a2dcc">toast::VoxelNode::buildsAsync</a></div><div class="ttdeci">virtual auto buildsAsync() -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_node.hpp:434</div></div>
-<div class="ttc" id="aclasstoast_1_1VoxelNode_html_aef41f914876028b24813776184273fe0"><div class="ttname"><a href="classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0">toast::VoxelNode::aabb_fill</a></div><div class="ttdeci">bool aabb_fill</div><div class="ttdef"><b>Definition</b> voxel_node.hpp:638</div></div>
+<div class="ttc" id="aclasstoast_1_1VoxelNode_html_aef41f914876028b24813776184273fe0"><div class="ttname"><a href="classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0">toast::VoxelNode::aabb_fill</a></div><div class="ttdeci">bool aabb_fill</div><div class="ttdef"><b>Definition</b> voxel_node.hpp:639</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelNode_html_af48a4da383a9e05192be6b47602cc0db"><div class="ttname"><a href="classtoast_1_1VoxelNode.html#af48a4da383a9e05192be6b47602cc0db">toast::VoxelNode::wake</a></div><div class="ttdeci">void wake()</div><div class="ttdef"><b>Definition</b> voxel_node.cpp:776</div></div>
 <div class="ttc" id="aclasstoast_1_1Voxel_html"><div class="ttname"><a href="classtoast_1_1Voxel.html">toast::Voxel</a></div><div class="ttdef"><b>Definition</b> voxel.hpp:14</div></div>
 <div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
@@ -721,7 +722,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__node_8h
 <div class="ttc" id="astructphysics_1_1BodyID_html"><div class="ttname"><a href="structphysics_1_1BodyID.html">physics::BodyID</a></div><div class="ttdef"><b>Definition</b> body.hpp:20</div></div>
 <div class="ttc" id="astructphysics_1_1ShapeID_html"><div class="ttname"><a href="structphysics_1_1ShapeID.html">physics::ShapeID</a></div><div class="ttdef"><b>Definition</b> shape.hpp:29</div></div>
 <div class="ttc" id="astructtoast_1_1VoxelNode_1_1ActiveContact_html"><div class="ttname"><a href="structtoast_1_1VoxelNode_1_1ActiveContact.html">toast::VoxelNode::ActiveContact</a></div><div class="ttdef"><b>Definition</b> voxel_node.hpp:498</div></div>
-<div class="ttc" id="astructtoast_1_1VoxelNode_1_1PendingEvents_html"><div class="ttname"><a href="structtoast_1_1VoxelNode_1_1PendingEvents.html">toast::VoxelNode::PendingEvents</a></div><div class="ttdef"><b>Definition</b> voxel_node.hpp:657</div></div>
+<div class="ttc" id="astructtoast_1_1VoxelNode_1_1PendingEvents_html"><div class="ttname"><a href="structtoast_1_1VoxelNode_1_1PendingEvents.html">toast::VoxelNode::PendingEvents</a></div><div class="ttdef"><b>Definition</b> voxel_node.hpp:658</div></div>
 <div class="ttc" id="astructtoast_1_1VoxelPart_html"><div class="ttname"><a href="structtoast_1_1VoxelPart.html">toast::VoxelPart</a></div><div class="ttdef"><b>Definition</b> voxel_node.hpp:63</div></div>
 <div class="ttc" id="astructvoxel_1_1EditBounds_html"><div class="ttname"><a href="structvoxel_1_1EditBounds.html">voxel::EditBounds</a></div><div class="ttdef"><b>Definition</b> voxel_edit.hpp:49</div></div>
 <div class="ttc" id="astructvoxel_1_1EditResult_html"><div class="ttname"><a href="structvoxel_1_1EditResult.html">voxel::EditResult</a></div><div class="ttdef"><b>Definition</b> voxel_edit.hpp:59</div></div>
