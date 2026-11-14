@@ -1064,7 +1064,7 @@ auto generateIntermediates(const std::filesystem::path& path) {
 	// The scene JSON references each .tanim and .tskel by bare filename
 	const std::string animation_base = path.stem().string();
 	// glTF names are free text that would break the path or the stem GltfImporter.cs keys its UID maps by
-	const auto sanitize_file_name = [](std::string_view name, std::string fallback) {
+	const auto sanitize_file_name = [](std::string_view name, const std::string& fallback) {
 		std::string sanitized;
 		sanitized.reserve(name.size());
 		for (const char c : name) {

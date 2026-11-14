@@ -280,6 +280,7 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 			}
 			if (m_clip_radiance_binding.has_value()) {
 				std::vector<vk::DescriptorImageInfo> infos;
+				infos.reserve(radiance.size());
 				for (const vk::ImageView view : radiance) {
 					infos.emplace_back(clipmap->radianceSampler(), view, read);
 				}
@@ -287,6 +288,7 @@ void SceneDescriptorSets::updateTlas(uint32_t frame_index) {
 			}
 			if (m_clip_material_binding.has_value()) {
 				std::vector<vk::DescriptorImageInfo> infos;
+				infos.reserve(material.size());
 				for (const vk::ImageView view : material) {
 					infos.emplace_back(clipmap->radianceSampler(), view, read);
 				}
