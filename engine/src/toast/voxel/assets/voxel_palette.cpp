@@ -228,7 +228,7 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 			out.alpha = unit_or("alpha", 255);
 
 			if (const toml::node* ior = entry->get("ior")) {
-				const std::optional<double> value = ior->is_number() ? ior->value<double>() : std::nullopt;
+				const std::optional<float> value = ior->is_number() ? ior->value<float>() : std::nullopt;
 				if (!value || !(*value >= 1.0 && *value <= voxel::k_max_ior)) {
 					throw fail(std::format("ior must be a number from 1 to {:.2f}", voxel::k_max_ior));
 				}

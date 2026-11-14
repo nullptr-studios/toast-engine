@@ -1,3 +1,8 @@
+//
+// BuildInfo.cs
+// Where this editor is installed and which release it came from
+//
+
 using System;
 using System.IO;
 

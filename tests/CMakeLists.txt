@@ -10,6 +10,7 @@ if (BUILD_TESTING)
 	add_executable(toast_tests ${TEST_SOURCES} "${CMAKE_CURRENT_SOURCE_DIR}/test_runner.cpp")
 	target_include_directories(toast_tests BEFORE PRIVATE ${CMAKE_SOURCE_DIR}/engine/src)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+	toast_copy_runtime_dlls(toast_tests)
 	# HACK DARIO SHOULD FUCKING HAVE SOME INCLUDES ON THE SOURCE FILES RATHER THAN THE HEADERS
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine)
 	target_include_directories(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/external/inc)
@@ -46,7 +47,7 @@ if (BUILD_TESTING)
 	endif()
 
 	if (NOT WIN32)
-		# Slang's gfx library depends on X11; make it available when linking the test executable.
+		# Slang gfx needs X11 at link time
 		find_package(X11 REQUIRED)
 		target_link_libraries(toast_tests PRIVATE X11::X11)
 		target_link_libraries(toast_tests PRIVATE stdc++exp)

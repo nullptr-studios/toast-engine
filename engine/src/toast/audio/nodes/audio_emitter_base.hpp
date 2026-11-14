@@ -22,29 +22,42 @@ namespace toast {
  */
 class TOAST_API [[ToastNode, Hidden, Color("Beige"), Icon("AudioStreamPlayer")]] AudioEmitterBase : public Node3D {
 public:
-	[[Button]]
+	[[Reflect, Button]]
 	void play();
 
-	[[Button]]
+	[[Reflect, Button]]
 	void stop();
 
+	[[Reflect]]
 	void pause(bool value);
+	[[Reflect]]
 	void setParameter(std::string_view name, float value) const;
+	[[Reflect]]
 	void setParameter(std::string_view name, bool value) const;
-	[[nodiscard]]
+	[[nodiscard, Reflect]]
 	auto isPlaying() const -> bool;
 
 	void event(std::string_view path);
+	[[Reflect]]
 	void event(toast::UID uid);
+	[[Reflect]]
 	void playOnEnable(bool value);
+	[[Reflect]]
 	void volume(float value);
+	[[Reflect]]
 	void pitch(float value);
+	[[Reflect]]
 	void allowFadeout(bool value);
 
+	[[Reflect]]
 	void dopplerScale(float value);
+	[[Reflect]]
 	void calculateVelocity(bool value);
+	[[Reflect]]
 	void overrideAttenuation(bool value);
+	[[Reflect]]
 	void minDistance(float value);
+	[[Reflect]]
 	void maxDistance(float value);
 
 	signals::Signal<std::string_view> audio_started;

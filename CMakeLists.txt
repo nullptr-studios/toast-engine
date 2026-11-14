@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.28)
+set(VCPKG_APPLOCAL_DEPS OFF)
 project(engine)
+
+include(cmake/runtime_dlls.cmake)
 
 include(CTest)
 

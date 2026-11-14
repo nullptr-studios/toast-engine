@@ -450,6 +450,12 @@ protected:
 
 	virtual void updateInspectorMessages() { }
 
+	/// Dropdown choices for a field marked [[Options]], refreshed with every inspector update
+	[[nodiscard]]
+	virtual auto inspectorOptions(std::string_view field_name) -> std::vector<std::string> {
+		return {};
+	}
+
 	void addInspectorMessage(const NodeMessage& message) {
 		for (auto& existing : m_messages) {
 			if (existing == message) {

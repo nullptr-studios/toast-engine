@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -78,10 +79,10 @@ private:
 
 	/// Per frame in flight
 	std::vector<vk::raii::DescriptorSet> m_storage_sets;
-	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_storage_bound;
+	DescriptorCache<std::shared_ptr<const VoxelGpuStorage>> m_storage_bound;
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_image_sets;
-	std::vector<std::array<vk::ImageView, k_image_bindings>> m_image_bound;
+	DescriptorCache<std::array<vk::ImageView, k_image_bindings>> m_image_bound;
 
 	PostProcessTarget m_surface;
 	PostProcessTarget m_trace;

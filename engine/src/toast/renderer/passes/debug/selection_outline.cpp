@@ -137,7 +137,7 @@ void SelectionOutline::createTargets(vk::Extent2D extent) {
 	m_extent = extent;
 	m_drawn = false;
 	m_history_valid = false;
-	std::ranges::fill(m_bound_outline, std::array<vk::ImageView, 3> {});
+	m_bound_outline.invalidate();
 	if (extent.width == 0 || extent.height == 0) {
 		return;
 	}
@@ -231,8 +231,8 @@ void SelectionOutline::createMaskPipelines(vk::Extent2D extent) {
 	m_mask_sets.clear();
 	m_voxel_sets.clear();
 	m_volume_buffers.clear();
-	m_bound_depth.assign(VulkanRenderer::k_frames_in_flight, vk::ImageView {});
-	m_bound_storage.assign(VulkanRenderer::k_frames_in_flight, nullptr);
+	m_bound_depth.resize(VulkanRenderer::k_frames_in_flight);
+	m_bound_storage.resize(VulkanRenderer::k_frames_in_flight);
 
 	DescriptorWriter writer;
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
@@ -325,7 +325,7 @@ void SelectionOutline::createOutlinePipelines(vk::Format output_format, vk::Form
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 	const vk::DescriptorSetLayout set_layout = *layouts[0];
 	m_outline_sets.clear();
-	m_bound_outline.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound_outline.resize(VulkanRenderer::k_frames_in_flight);
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		auto allocated = device.allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &set_layout));
 		m_outline_sets.push_back(std::move(allocated[0]));
@@ -364,10 +364,9 @@ auto SelectionOutline::prepareVolumes(uint32_t frame_index) -> uint32_t {
 	}
 	m_volume_buffers[frame_index].getAllocation().flush(0, sizeof(VoxelInstanceGpu) * count);
 
-	if (m_bound_storage[frame_index] != storage) {
+	if (m_bound_storage.update(frame_index, storage)) {
 		// Safe since the fence of this slot was waited on
 		writeVoxelStorageDescriptors(m_core->getDevice(), *m_voxel_sets[frame_index], *storage);
-		m_bound_storage[frame_index] = storage;
 	}
 	return count;
 }
@@ -422,7 +421,7 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 	m_history_view_projection = frame->frame_data.view_projection;
 	m_history_models = std::move(models);
 
-	if (m_bound_depth[frame_index] != scene_depth) {
+	if (m_bound_depth.update(frame_index, scene_depth)) {
 		DescriptorWriter writer;
 		writer.image(
 		    *m_mask_sets[frame_index],
@@ -433,7 +432,6 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 		    vk::ImageLayout::eDepthReadOnlyOptimal
 		);
 		writer.flush(m_core->getDevice());
-		m_bound_depth[frame_index] = scene_depth;
 	}
 
 	sync::transition(cmd, m_mask_state, sync::Usage::stencil_attachment);
@@ -521,7 +519,7 @@ void SelectionOutline::recordResolve(vk::CommandBuffer cmd, uint32_t frame_index
 	}
 
 	const std::array<vk::ImageView, 3> wanted {**m_mask_sampled, history.view(), target.view()};
-	if (m_bound_outline[frame_index] != wanted) {
+	if (m_bound_outline.update(frame_index, wanted)) {
 		DescriptorWriter writer;
 		const vk::DescriptorSet set = *m_outline_sets[frame_index];
 		const auto type = vk::DescriptorType::eCombinedImageSampler;
@@ -529,7 +527,6 @@ void SelectionOutline::recordResolve(vk::CommandBuffer cmd, uint32_t frame_index
 		writer.image(set, 1, type, *m_sampler, wanted[1], vk::ImageLayout::eShaderReadOnlyOptimal);
 		writer.image(set, 2, type, *m_sampler, wanted[2], vk::ImageLayout::eShaderReadOnlyOptimal);
 		writer.flush(m_core->getDevice());
-		m_bound_outline[frame_index] = wanted;
 	}
 
 	const OutlinePush push {

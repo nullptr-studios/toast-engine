@@ -1,6 +1,7 @@
 import toast;
 
 import lighting;
+import gi_sample;
 import scene_normal;
 
 struct MaterialUBO
@@ -271,6 +272,7 @@ float4 shadeSurface(VSOutput input, inout float4 outNormalRoughness, inout float
     surface.viewSpaceZ = input.viewSpaceZ;
     surface.pixel = input.position.xy;
 
+    gGiGathered = giFull(surface.worldPosition, normalize(surface.normal));
     ShadingResult lit = shadeSurfaceLighting(surface);
     outIndirectDiffuse = lit.indirectDiffuse;
 

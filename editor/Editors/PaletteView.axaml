@@ -468,7 +468,7 @@
 							           Grid.Column="0"
 							          Classes="lbl compact-text"
 							           Text="IOR" />
-							<elements:DragFloatBox Grid.Row="7"
+							<elements:DragFloatBox Grid.Row="5"
 							                       Grid.Column="1"
 							                       Value="{Binding Ior, Mode=TwoWay}"
 							                       Minimum="1"
@@ -476,9 +476,9 @@
 							
 							<TextBlock Grid.Row="7"
 							           Grid.Column="0"
-							          Classes="lbl compact-text"
+							          Classes="lbl-text"
 							           Text="Max emissive" />
-							<elements:DragFloatBox Grid.Row="5"
+							<elements:DragFloatBox Grid.Row="7"
 							                       Grid.Column="1"
 							                       Value="{Binding MaxEmissive, Mode=TwoWay}"
 							                       Minimum="0" Classes="compact-field" />

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "toast/renderer/core/depth_convention.hpp"
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/gpu_timer.hpp"
 #include "toast/renderer/core/vulkan_core.hpp"
@@ -51,6 +52,7 @@
 #include <toast/assets/texture.hpp>
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
+#include <toast/lock_profiling.hpp>
 #include <toast/settings/settings.hpp>
 #include <toast/world/gizmo_layout.hpp>
 #include <tracy/TracyVulkan.hpp>
@@ -91,6 +93,7 @@ class SkinningPass;
 class VoxelPass;
 class DebrisPass;
 class GiPass;
+class GiClipmapPass;
 class TracedSpecularPass;
 class TaaPass;
 class RayTracingScene;
@@ -341,6 +344,11 @@ public:
 	[[nodiscard]]
 	auto getVoxelFaceNormalView() const noexcept -> vk::ImageView {
 		return m_voxel_face_normal.view.has_value() ? **m_voxel_face_normal.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelGiView() const noexcept -> vk::ImageView {
+		return m_voxel_gi.view.has_value() ? **m_voxel_gi.view : vk::ImageView {};
 	}
 
 	/// Marched and sampled diffuse over albedo before denoising
@@ -690,12 +698,16 @@ public:
 	}
 
 	[[nodiscard]]
+	auto getGlassMaskView() const noexcept -> vk::ImageView {
+		return m_glass_mask.view ? **m_glass_mask.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
 	auto getGlassBackdropDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
 	}
 
-	/// Depth before glass wrote its own so GI and reflections see the surface behind a pane, the final depth when no backdrop was
-	/// copied
+	/// Depth before glass so GI and reflections see behind a pane and the final depth when no backdrop was copied
 	[[nodiscard]]
 	auto getOpaqueDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_captured && m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : getDepthView();
@@ -882,6 +894,13 @@ public:
 
 	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
 
+	void setGiClipmapPass(GiClipmapPass* pass) noexcept { m_gi_clipmap_pass = pass; }
+
+	[[nodiscard]]
+	auto giClipmapPass() const noexcept -> GiClipmapPass* {
+		return m_gi_clipmap_pass;
+	}
+
 	/// Still registered with addPostProcessPass so it runs in the post chain
 	void setTracedSpecularPass(TracedSpecularPass* pass) noexcept { m_traced_specular_pass = pass; }
 
@@ -936,15 +955,10 @@ public:
 		return m_irradiance_stale_count.load(std::memory_order_relaxed);
 	}
 
+#if defined(TOAST_DEV_TOOLS)
 	[[nodiscard]]
 	auto getOutOfOrderFrameCount() const noexcept -> uint32_t {
 		return m_out_of_order_frames.load(std::memory_order_relaxed);
-	}
-
-	void getFrameTimeStats(float& avg_ms, float& min_ms, float& max_ms) const noexcept {
-		avg_ms = m_frame_time_avg_ms.load(std::memory_order_relaxed);
-		min_ms = m_frame_time_min_ms.load(std::memory_order_relaxed);
-		max_ms = m_frame_time_max_ms.load(std::memory_order_relaxed);
 	}
 
 	[[nodiscard]]
@@ -956,6 +970,7 @@ public:
 	auto getDroppedFrameCount() const noexcept -> uint32_t {
 		return m_dropped_frames.load(std::memory_order_relaxed);
 	}
+#endif
 
 	[[nodiscard]]
 	auto getVisibleInstanceCount() const noexcept -> uint32_t {
@@ -1029,7 +1044,6 @@ public:
 		return m_reflection_probe_pass;
 	}
 
-	[[nodiscard]]
 	void setActiveCamera(toast::Camera* camera);
 
 	void forgetCamera(const toast::Camera* camera);
@@ -1059,6 +1073,7 @@ public:
 		return m_debug_draw_enabled.load(std::memory_order_relaxed);
 	}
 
+#if defined(TOAST_DEV_TOOLS)
 	struct PerfCounters {
 		uint64_t ticks = 0;
 		uint64_t frames_built = 0;
@@ -1098,6 +1113,7 @@ public:
 		  .build_ns = m_perf_build_ns.load(std::memory_order_relaxed),
 		};
 	}
+#endif
 
 	struct UploadStats {
 		uint32_t slots_in_flight = 0;
@@ -1249,11 +1265,12 @@ private:
 	std::thread m_render_thread;
 
 	std::array<RenderFrame, k_render_frames> m_render_frames;
-	std::atomic<uint32_t> m_write_index = 0;
+	/// Main thread only
+	uint32_t m_write_index = 0;
 
-	std::mutex m_queue_mutex;
+	TOAST_LOCKABLE(std::mutex, m_queue_mutex, "Render frame queue");
 
-	std::condition_variable m_frame_cv;
+	toast::ConditionVariable m_frame_cv;
 
 	std::queue<uint32_t> m_ready_frames;
 	const RenderFrame* m_rendering_frame = nullptr;
@@ -1407,7 +1424,7 @@ private:
 
 	/// Main thread only
 	void buildVoxelProxies(RenderFrame& frame);
-	std::mutex m_upload_mutex;
+	TOAST_LOCKABLE(std::mutex, m_upload_mutex, "Render uploads");
 
 	std::atomic<int> m_pending_upload_builds {0};
 
@@ -1420,7 +1437,7 @@ private:
 
 	std::unordered_map<assets::Material*, std::unique_ptr<MaterialPass>> m_material_passes;
 	/// Guards m_material_passes and m_render_passes
-	mutable std::mutex m_pass_mutex;
+	mutable TOAST_LOCKABLE(std::mutex, m_pass_mutex, "Render passes");
 	std::atomic_bool m_pending_material_pass_clear {false};
 	event::Listener m_asset_listener;
 
@@ -1455,6 +1472,7 @@ private:
 
 	DebrisPass* m_debris_pass = nullptr;
 	GiPass* m_gi_pass = nullptr;
+	GiClipmapPass* m_gi_clipmap_pass = nullptr;
 	bool m_glass_backdrop_captured = false;
 
 	mutable std::mutex m_detail_mutex;
@@ -1481,6 +1499,7 @@ private:
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
 	SceneColorResources m_glass_backdrop;
+	SceneColorResources m_glass_mask;
 	SceneColorResources m_glass_backdrop_normal;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
@@ -1497,10 +1516,12 @@ private:
 	SceneColorResources m_voxel_face_normal;
 	SceneColorResources m_voxel_detail_normal;
 	SceneColorResources m_voxel_noisy_diffuse;
+	/// Half the render extent
+	SceneColorResources m_voxel_gi;
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
 	std::array<SceneColorResources, 2> m_voxel_reservoirs;
-	/// The lighting scope's reservoirs when the spatial pass then writes m_voxel_reservoirs
+	/// The lighting scope reservoirs when the spatial pass then writes m_voxel_reservoirs
 	SceneColorResources m_voxel_candidate_reservoirs;
 	uint32_t m_voxel_reservoir_parity = 0;
 	bool m_voxel_reservoir_written = false;
@@ -1555,11 +1576,11 @@ private:
 	VulkanPipeline m_present_pipeline;
 	vk::raii::Sampler m_present_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_present_sets;
-	std::vector<vk::ImageView> m_present_bound_views;
+	DescriptorCache<vk::ImageView> m_present_bound;
 	VulkanPipeline m_depth_upscale_pipeline;
 	vk::raii::Sampler m_depth_upscale_sampler = nullptr;
 	std::vector<vk::raii::DescriptorSet> m_depth_upscale_sets;
-	std::vector<vk::ImageView> m_depth_upscale_bound;
+	DescriptorCache<vk::ImageView> m_depth_upscale_bound;
 
 	TracyVkCtx m_tracy_vk_ctx = nullptr;
 	std::unique_ptr<GpuTimer> m_gpu_timer;
@@ -1668,7 +1689,7 @@ private:
 
 	UIFrameBuilder m_ui_frame_builder;
 
-	std::mutex m_mesh_proxy_mutex;
+	TOAST_LOCKABLE(std::mutex, m_mesh_proxy_mutex, "Render mesh proxies");
 	std::vector<toast::MeshNode*> m_mesh_proxy_nodes;
 	std::vector<std::pair<toast::Node3D*, void (*)(toast::Node3D&)>> m_debug_nodes;
 
@@ -1803,19 +1824,24 @@ private:
 
 	std::unique_ptr<SkinnedBlasPool> m_skinned_blas_pool;
 
-	std::atomic<uint64_t> m_last_drawn_sequence {0};
-	std::atomic<uint32_t> m_out_of_order_frames {0};
-	std::atomic<uint32_t> m_dropped_frames {0};
+	/// Render thread only
+	uint64_t m_last_drawn_sequence = 0;
 
-	std::atomic<uint32_t> m_skipped_builds {0};
-
-	std::atomic<float> m_frame_time_avg_ms {0.0f};
-	std::atomic<float> m_frame_time_min_ms {0.0f};
-	std::atomic<float> m_frame_time_max_ms {0.0f};
-
+#if defined(TOAST_DEV_TOOLS)
+	/// Stats grouped by writer thread on separate cache lines to avoid false sharing
+	/// Main thread writes
+	alignas(64) std::atomic<uint32_t> m_skipped_builds {0};
 	std::atomic<uint64_t> m_perf_ticks {0};
 	std::atomic<uint64_t> m_perf_frames_built {0};
 	std::atomic<uint64_t> m_perf_slot_wait_ns {0};
+	std::atomic<uint64_t> m_perf_build_ns {0};
+
+	/// Render thread writes
+	alignas(64) std::atomic<uint32_t> m_out_of_order_frames {0};
+	std::atomic<uint32_t> m_dropped_frames {0};
+	std::atomic<float> m_frame_time_avg_ms {0.0f};
+	std::atomic<float> m_frame_time_min_ms {0.0f};
+	std::atomic<float> m_frame_time_max_ms {0.0f};
 	std::atomic<uint64_t> m_perf_draws {0};
 	std::atomic<uint64_t> m_perf_repeated_draws {0};
 	std::atomic<uint64_t> m_perf_draw_work_ns {0};
@@ -1827,9 +1853,9 @@ private:
 	std::atomic<uint64_t> m_perf_present_ns {0};
 	std::atomic<uint64_t> m_perf_frame_wait_ns {0};
 	std::atomic<uint64_t> m_perf_pacing_ns {0};
-	std::atomic<uint64_t> m_perf_build_ns {0};
+#endif
 
-	std::atomic_bool m_cull_debug_draw {false};
+	alignas(64) std::atomic_bool m_cull_debug_draw {false};
 
 	std::atomic_bool m_cull_freeze {false};
 	glm::mat4 m_frozen_cull_view_projection {1.0f};

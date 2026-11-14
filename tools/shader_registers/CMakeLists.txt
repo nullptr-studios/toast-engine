@@ -15,6 +15,7 @@ add_executable(shader_registers EXCLUDE_FROM_ALL shader_registers.cpp "${SPIRV_R
 target_include_directories(shader_registers PRIVATE "${SPIRV_REFLECT_DIR}")
 target_link_libraries(shader_registers PRIVATE Vulkan::Vulkan)
 target_compile_features(shader_registers PRIVATE cxx_std_20)
+toast_copy_runtime_dlls(shader_registers)
 
 foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
     string(TOUPPER "${config}" config_upper)

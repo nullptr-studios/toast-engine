@@ -697,7 +697,8 @@ auto isUiType(std::string_view type) -> bool {
 
 /// Types that cannot be rebuilt in place
 auto isReplacedOnReload(std::string_view type) -> bool {
-	return type == "mesh" || type == "texture" || type == "animation" || type == "schema" || type == "font" || type == "ui_image";
+	return type == "mesh" || type == "texture" || type == "animation" || type == "skeleton" || type == "schema" || type == "font" ||
+	       type == "ui_image";
 }
 
 auto isWatchedType(std::string_view type) -> bool {

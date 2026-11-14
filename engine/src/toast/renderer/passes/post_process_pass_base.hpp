@@ -20,6 +20,9 @@ public:
 
 	virtual void onResize(vk::Extent2D extent) { }
 
+	/// Glass views read where glass covers a pixel
+	virtual void setGlassSources(vk::ImageView backdrop, vk::ImageView mask) { }
+
 	[[nodiscard]]
 	virtual auto atOutputResolution() const -> bool {
 		return false;

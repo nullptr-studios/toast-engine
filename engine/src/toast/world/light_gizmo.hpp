@@ -2,7 +2,6 @@
  * @file light_gizmo.hpp
  * @author dario
  * @date 29/10/2026
- * @brief Selected light shapes and the viewport handles that edit them, laid out like the collider size handles
  */
 
 #pragma once

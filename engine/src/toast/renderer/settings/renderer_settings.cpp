@@ -1454,6 +1454,91 @@ void registerGi(VulkanRenderer& renderer) {
 	    .onChange([&gi](int64_t v) {
 		    gi.debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 5)), std::memory_order_relaxed);
 	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.backend",
+	    0,
+	    {
+	      .label = "Backend",
+	      .category = "Global illumination",
+	      .description = "Radiance clipmap is in development and only fills its voxel clipmap so far, lighting gets no GI "
+	                     "from it yet",
+	      .options = {"Radiance cascades", "Radiance clipmap"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.backend.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 1)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.clip_cell",
+	    0.2,
+	    {.label = "Clipmap cell",
+			 .category = "Global illumination",
+			 .description = "Meters per cell of clipmap level 0. Every level doubles it",
+			 .min = 0.1,
+			 .max = 1.0,
+			 .step = 0.1}
+	)
+	    .onChange([&gi](double v) {
+		    gi.clip_cell.store(std::clamp(static_cast<float>(v), 0.1f, 1.0f), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.clip_resolution",
+	    1,
+	    {
+	      .label = "Clipmap resolution",
+	      .category = "Global illumination",
+	      .description = "Cells per side of every clipmap level. Custom quality only",
+	      .options = {"64", "128", "192"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    constexpr std::array<uint32_t, 3> k_resolutions {64, 128, 192};
+		    gi.clip_resolution.store(k_resolutions[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))], std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.clip_levels",
+	    4,
+	    {.label = "Clipmap levels",
+			 .category = "Global illumination",
+			 .description = "Clipmap levels around the camera. Custom quality only",
+			 .min = 1.0,
+			 .max = 6.0}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.clip_levels.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 6)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.clip_debug_view",
+	    0,
+	    {
+	      .label = "Clipmap view",
+	      .category = "Global illumination",
+	      .description = "Draws the cells of one clipmap level in place of the scene",
+	      .options = {"Off", "Level 0", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.clip_debug_view.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 6)), std::memory_order_relaxed);
+	    });
+
+	toast::settings::declareInt(
+	    "renderer.gi.clip_debug_mode",
+	    0,
+	    {
+	      .label = "Clipmap view shows",
+	      .category = "Global illumination",
+	      .description = "What the clipmap view draws per cell",
+	      .options = {"Albedo", "Emission", "Opacity", "Radiance"}
+	}
+	)
+	    .onChange([&gi](int64_t v) {
+		    gi.clip_debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 3)), std::memory_order_relaxed);
+	    });
 }
 
 auto presetDrivenValue(std::string_view key) -> std::optional<toast::settings::Value> {

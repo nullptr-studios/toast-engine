@@ -21,15 +21,7 @@ public record ImportContext {
 	}
 	public required string SourceVirtualPath { get; init; }
 
-	// On a reimport we want the regenerated assets to keep the UIDs they had before
-	public IReadOnlyList<string>? ReuseUids { get; init; }
-
-	// nth output keeps its old UID if we have one, otherwise a new UID is generated
-	public string UidFor(int outputIndex) {
-		return ReuseUids is { } uids && outputIndex < uids.Count
-			? uids[outputIndex]
-			: UidGenerator.Generate();
-	}
+	public bool IsStaging { get; init; }
 }
 
 /// <summary>Interface for file format importers</summary>

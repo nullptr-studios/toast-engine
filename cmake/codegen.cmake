@@ -56,8 +56,8 @@ macro(run_codegen)
 
     find_program(DOTNET dotnet REQUIRED)
     execute_process(
-        COMMAND ${DOTNET} build "${CMAKE_SOURCE_DIR}/tools/reflection_generator/reflection_generator.csproj"
-            --configuration ${_dotnet_config} --output "${_refgen_dir}" --nologo
+        COMMAND ${DOTNET} msbuild -restore "${CMAKE_SOURCE_DIR}/tools/reflection_generator/reflection_generator.csproj"
+            -property:Configuration=${_dotnet_config} "-property:OutputPath=${_refgen_dir}/" -property:_CommandLineDefinedOutputPath=true -nologo -verbosity:quiet -consoleloggerparameters:NoSummary
         RESULT_VARIABLE _dotnet_result
         OUTPUT_VARIABLE _dotnet_output
         ERROR_VARIABLE  _dotnet_error

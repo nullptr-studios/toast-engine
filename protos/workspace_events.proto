@@ -1,4 +1,5 @@
 syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
 package proto.events;
 
 message HierarchyElement {
@@ -394,6 +395,7 @@ message EditorCameraGesture {
 message InspectorField {
   string name = 1;
   string value = 2;
+  repeated string options = 3;
 }
 
 message InspectorMessage {
