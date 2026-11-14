@@ -56,8 +56,6 @@ jobs:
         env:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: nix develop --command bash -c "
-          rustup toolchain install stable --no-self-update &&
-          rustup default stable &&
           cmake -B build -G Ninja
             -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx_compiler }}
@@ -89,8 +87,6 @@ jobs:
 
       - name: Configure and run clang-tidy
         run: nix develop --command bash -c "
-          rustup toolchain install stable --no-self-update &&
-          rustup default stable &&
           cmake -B build -G Ninja
             -DCMAKE_C_COMPILER=gcc
             -DCMAKE_CXX_COMPILER=g++
@@ -102,12 +98,12 @@ jobs:
           bash ./tools/ci/clang_tidy.sh build
           "
 
-  cargo-reflection-generator:
-    name: Cargo reflection_generator (${{ matrix.build_type }})
+  dotnet-reflection-generator:
+    name: Dotnet reflection_generator (${{ matrix.build_type }})
     runs-on: [self-hosted, Linux, X64]
     strategy:
       matrix:
-        build_type: [debug, release]
+        build_type: [Debug, Release]
       fail-fast: false
     steps:
       - name: Checkout PR branch
@@ -121,10 +117,8 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31.10.6
 
-      - name: Cargo build
-        env:
-          RELEASE_FLAG: ${{ matrix.build_type == 'release' && '--release' || '' }}
-        run: nix develop --command bash -c "rustup toolchain install stable --no-self-update && rustup default stable && cargo build --manifest-path tools/reflection_generator/Cargo.toml $RELEASE_FLAG"
+      - name: Dotnet build and test
+        run: nix develop --command bash -c 'dotnet build tools/reflection_generator/reflection_generator.csproj --configuration ${{ matrix.build_type }} && dotnet test tools/reflection_generator/tests/ReflectionGenerator.Tests --configuration ${{ matrix.build_type }}'
 
   dotnet-editor:
     name: Dotnet editor (${{ matrix.build_type }})

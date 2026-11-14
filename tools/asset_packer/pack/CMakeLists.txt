@@ -8,7 +8,7 @@ target_include_directories(toast_pack PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/includ
 target_link_libraries(toast_pack PUBLIC LZ4::lz4)
 
 if (MSVC)
-    target_compile_options(toast_pack PRIVATE /W4 /utf-8)
+    target_compile_options(toast_pack PRIVATE /W4 /utf-8 /EHsc)
 else ()
     target_compile_options(toast_pack PRIVATE -Wall -Wextra)
 endif ()
