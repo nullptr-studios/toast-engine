@@ -9,11 +9,14 @@ find_program(DOTNET_EXECUTABLE dotnet REQUIRED)
 
 # The crash handler looks for it next to out/<Config>/toast_engine
 add_custom_target(crash_reporter ALL
-        COMMAND ${DOTNET_EXECUTABLE} build
+        COMMAND ${DOTNET_EXECUTABLE} msbuild -restore
         "${CSHARP_PROJECT}"
-        --configuration ${DOTNET_CONFIG}
-        --output "${OUTPUT_ROOT}/$<CONFIG>/crash_reporter"
-        --nologo
+        -property:Configuration=${DOTNET_CONFIG}
+        "-property:OutputPath=${OUTPUT_ROOT}/$<CONFIG>/crash_reporter/"
+        -property:_CommandLineDefinedOutputPath=true
+        -nologo
+        -verbosity:quiet
+        -consoleloggerparameters:NoSummary
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
         VERBATIM

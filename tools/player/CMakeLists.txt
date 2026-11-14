@@ -11,11 +11,14 @@ message(STATUS "Build configuration: ${DOTNET_CONFIG}")
 message(STATUS "Output directory: ${OUTPUT_ROOT}/$<CONFIG>")
 
 add_custom_target(player ALL
-        COMMAND ${DOTNET_EXECUTABLE} build
+        COMMAND ${DOTNET_EXECUTABLE} msbuild -restore
         "${CSHARP_PROJECT}"
-        --configuration ${DOTNET_CONFIG}
-        --output "${OUTPUT_ROOT}/$<CONFIG>/player"
-        --nologo
+        -property:Configuration=${DOTNET_CONFIG}
+        "-property:OutputPath=${OUTPUT_ROOT}/$<CONFIG>/player/"
+        -property:_CommandLineDefinedOutputPath=true
+        -nologo
+        -verbosity:quiet
+        -consoleloggerparameters:NoSummary
         COMMAND ${CMAKE_COMMAND}
         -DSRC_DIR=$<TARGET_FILE_DIR:toast_engine>
         -DDST_DIR=${OUTPUT_ROOT}/$<CONFIG>/player

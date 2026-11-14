@@ -13,6 +13,7 @@ namespace editor.Components.Modals;
 
 public partial class LoaderViewModel : ViewModelBase {
 	private readonly List<LoaderTask> m_tasks;
+	private bool m_hasLiveLine;
 	[ObservableProperty] private bool m_isRunning;
 	[ObservableProperty] private double m_progress;
 
@@ -92,8 +93,6 @@ public partial class LoaderViewModel : ViewModelBase {
 				FileName = exe,
 				Arguments = args,
 				WorkingDirectory = ProjectContext.IsInitialized ? ProjectContext.ProjectPath : "",
-				RedirectStandardOutput = true,
-				RedirectStandardError = true,
 				UseShellExecute = false,
 				CreateNoWindow = true
 			};
@@ -101,23 +100,12 @@ public partial class LoaderViewModel : ViewModelBase {
 			var stderr = new StringBuilder();
 			var lastOut = "";
 
-			proc.OutputDataReceived += (_, e) => {
-				if (e.Data is null) return;
-				if (!string.IsNullOrWhiteSpace(e.Data)) lastOut = e.Data;
-				AppendLine(e.Data);
-			};
-			proc.ErrorDataReceived += (_, e) => {
-				if (e.Data is null) return;
-				stderr.AppendLine(e.Data);
-				AppendLine(e.Data);
-			};
+			var exitCode = TerminalReader.Run(proc, line => {
+				if (line.Length > 0 && line[0] != TerminalReader.LivePrefix && !string.IsNullOrWhiteSpace(line)) lastOut = line;
+				AppendLine(line);
+			}, line => stderr.AppendLine(line));
 
-			proc.Start();
-			proc.BeginOutputReadLine();
-			proc.BeginErrorReadLine();
-			proc.WaitForExit();
-
-			if (proc.ExitCode is 0) {
+			if (exitCode is 0) {
 				AppendLine("exit code: 0 (success)");
 				return;
 			}
@@ -127,7 +115,7 @@ public partial class LoaderViewModel : ViewModelBase {
 			if (!string.IsNullOrWhiteSpace(lastOut)) detail.AppendLine(lastOut);
 			var err = stderr.ToString().TrimEnd();
 			if (err.Length > 0) detail.AppendLine(err);
-			detail.Append($"(exited with code {proc.ExitCode})");
+			detail.Append($"(exited with code {exitCode})");
 
 			throw new Exception(detail.ToString());
 		});
@@ -135,8 +123,17 @@ public partial class LoaderViewModel : ViewModelBase {
 
 	// posts to the UI thread because this is called from background tasks and process callbacks
 	private void AppendLine(string text) {
-		Log.Trace(text);
-		if (Dispatcher.UIThread.CheckAccess()) ConsoleLines.Add(text);
-		else Dispatcher.UIThread.Post(() => ConsoleLines.Add(text));
+		var live = text.Length > 0 && text[0] == TerminalReader.LivePrefix;
+		if (live) text = text[1..];
+		else Log.Trace(text);
+
+		void Add() {
+			if (m_hasLiveLine) ConsoleLines[^1] = text;
+			else ConsoleLines.Add(text);
+			m_hasLiveLine = live;
+		}
+
+		if (Dispatcher.UIThread.CheckAccess()) Add();
+		else Dispatcher.UIThread.Post(Add);
 	}
 }

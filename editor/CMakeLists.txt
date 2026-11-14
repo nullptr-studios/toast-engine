@@ -28,24 +28,30 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio")
         endforeach()
 
         add_custom_command(TARGET editor PRE_BUILD
-                COMMAND ${DOTNET_EXECUTABLE} build
+                COMMAND ${DOTNET_EXECUTABLE} msbuild -restore
                 "${CSHARP_PROJECT}"
-                --configuration ${DOTNET_CONFIG}
-                --property:Platform=AnyCPU
-                --output "${OUTPUT_ROOT}/$<CONFIG>/editor"
-                --nologo
+                -property:Configuration=${DOTNET_CONFIG}
+                -property:Platform=AnyCPU
+                "-property:OutputPath=${OUTPUT_ROOT}/$<CONFIG>/editor/"
+                -property:_CommandLineDefinedOutputPath=true
+                -nologo
+                -verbosity:quiet
+                -consoleloggerparameters:NoSummary
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
                 VERBATIM
         )
 else()
         add_custom_target(editor ALL
-                COMMAND ${DOTNET_EXECUTABLE} build
+                COMMAND ${DOTNET_EXECUTABLE} msbuild -restore
                 "${CSHARP_PROJECT}"
-                --configuration ${DOTNET_CONFIG}
-                --property:Platform=AnyCPU
-                --output "${OUTPUT_ROOT}/$<CONFIG>/editor"
-                --nologo
+                -property:Configuration=${DOTNET_CONFIG}
+                -property:Platform=AnyCPU
+                "-property:OutputPath=${OUTPUT_ROOT}/$<CONFIG>/editor/"
+                -property:_CommandLineDefinedOutputPath=true
+                -nologo
+                -verbosity:quiet
+                -consoleloggerparameters:NoSummary
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
                 COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
                 VERBATIM

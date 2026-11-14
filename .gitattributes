@@ -13,9 +13,6 @@
 *.cs    linguist-detectable=true linguist-language=C#
 *.axaml linguist-detectable=true linguist-language=C#
 
-# Rust
-*.rs linguist-detectable=true linguist-language=Rust
-
 # Lua
 *.lua linguist-detectable=true linguist-language=Lua
 *.d.lua linguist-detectable=true linguist-language=Lua

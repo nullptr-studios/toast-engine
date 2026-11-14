@@ -15,20 +15,19 @@ Credits:
 ### Prerequisites
 - CMake >=3.24
 - A C++23 compiler (VS18 and GCC15 tested)
-- Rustc and Cargo
-- C# .NET10 toolchain
+- C# .NET8 toolchain
 - VCPKG with `VCPKG_ROOT` set up in PATH
 
 ### Generation
 
 Powershell
 ```pwsh
-cmake -B build/Debug -G "Visual Studio 18 2026" -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --template win-relwithdebinfo
 ```
 
 Linux
 ```bash
-cmake -B build/Debug -G "Visual Studio 18 2026" -DCMAKE_TOOLCHAIN_FILE="$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake"
+cmake --template linux-relwithdebinfo
 ```
 
 Or using the Nix flake
@@ -40,11 +39,7 @@ cmake-gen
 ### Build
 
 ```bash
-cmake --build ./build/Debug
-```
-
-```bash
-dotnet run --project editor
+cmake --build --template win-relwithdebinfo --target editor
 ```
 
 Or using the Nix flake
@@ -57,14 +52,3 @@ cmake-build
 ```bash
 ctest --test-dir build/Debug -C Debug
 ```
-
-## Other tooling
-
-To properly install `kenzo` on release and be properly accessible through your entire
-computer run the following command:
-
-```bash
-cargo install --git https://github.com/nullptr-studios/toast-engine.git --branch main kenzo
-```
-
-It's even faster than running the Release version you make through Cargo!
