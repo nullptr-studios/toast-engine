@@ -36,8 +36,6 @@ jobs:
         env:
           TRACY_NO_INVARIANT_CHECK: "1"
         run: nix develop --command bash -c "
-          rustup toolchain install stable --no-self-update &&
-          rustup default stable &&
           cmake -B build -G Ninja
             -DCMAKE_C_COMPILER=gcc
             -DCMAKE_CXX_COMPILER=g++
@@ -68,8 +66,6 @@ jobs:
 
       - name: Configure and run clang-tidy
         run: nix develop --command bash -c "
-          rustup toolchain install stable --no-self-update &&
-          rustup default stable &&
           cmake -B build -G Ninja
             -DCMAKE_C_COMPILER=gcc
             -DCMAKE_CXX_COMPILER=g++

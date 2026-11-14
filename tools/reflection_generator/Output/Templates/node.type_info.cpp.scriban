@@ -1,0 +1,21 @@
+// ============================================================
+// AUTO-GENERATED FILE - DO NOT MODIFY DIRECTLY
+// Changes will not persist
+// ============================================================
+
+// clang-format off
+#include "{{ node.slug }}.generated.hpp"
+// clang-format on
+
+namespace toast {
+
+TOAST_API const toast::NodeInfo Reflect<{{ node.qualified_name }}>::type_info = {
+{{ include 'node_info_fields.scriban' ~}}
+};
+
+template<>
+TOAST_API auto NodeTypeInfo<{{ node.qualified_name }}>::get() noexcept -> const NodeInfo* {
+	return &Reflect<{{ node.qualified_name }}>::type_info;
+}
+
+} // namespace toast

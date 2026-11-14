@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>reflection_generator</AssemblyName>
+        <RootNamespace>ReflectionGenerator</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <InvariantGlobalization>true</InvariantGlobalization>
+        <!-- the nix shell has the 8 runtime and windows dev machines may only have 10 -->
+        <RollForward>Major</RollForward>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+        <Company>nullptr Studios</Company>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="tests/**;bin/**;obj/**" />
+        <InternalsVisibleTo Include="ReflectionGenerator.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Scriban" Version="7.6.1" />
+        <PackageReference Include="Spectre.Console" Version="0.49.1" />
+        <!-- the package ships natives for every grammar and platform (600MB) so we take only what we use -->
+        <PackageReference Include="TreeSitter.DotNet" Version="1.3.0" ExcludeAssets="native" GeneratePathProperty="true" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Output/Templates/*.scriban" LogicalName="%(Filename)%(Extension)" />
+    </ItemGroup>
+
+    <Target Name="CollectTreeSitterNatives" BeforeTargets="AssignTargetPaths">
+        <PropertyGroup>
+            <TreeSitterNativeDir>$(PkgTreeSitter_DotNet)/runtimes/$(NETCoreSdkRuntimeIdentifier)/native</TreeSitterNativeDir>
+        </PropertyGroup>
+        <ItemGroup>
+            <TreeSitterNative Include="$(TreeSitterNativeDir)/*tree-sitter.*;$(TreeSitterNativeDir)/*tree-sitter-cpp.*" />
+            <None Include="@(TreeSitterNative)" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+        </ItemGroup>
+        <Error Condition="'@(TreeSitterNative)' == ''" Text="TreeSitter.DotNet ships no natives for '$(NETCoreSdkRuntimeIdentifier)' (looked in $(TreeSitterNativeDir))" />
+    </Target>
+
+</Project>

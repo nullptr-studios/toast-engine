@@ -99,15 +99,12 @@
 				ccache
 				ninja
 				valgrind
-				rustc
-				cargo
 				protobuf
 				grpc
 				pkg-config
 				vcpkg
 				dotnet-sdk
 				clang-tools
-				rust-analyzer
 				buf
 				roslyn-ls
 				gdb

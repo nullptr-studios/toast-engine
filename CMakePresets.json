@@ -17,6 +17,10 @@
       "name": "windows",
       "hidden": true,
       "inherits": "vcpkg",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      },
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -36,74 +40,34 @@
     {
       "name": "win-debug",
       "displayName": "Debug",
-      "description": "Visual Studio, MSVC, Debug",
+      "description": "Ninja, MSVC, Debug",
       "inherits": "windows",
-      "generator": "Visual Studio 18 2026",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/Debug",
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "win-release",
       "displayName": "Release",
-      "description": "Visual Studio, MSVC, Release",
+      "description": "Ninja, MSVC, Release",
       "inherits": "windows",
-      "generator": "Visual Studio 18 2026",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/Release",
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "Release"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "win-relwithdebinfo",
       "displayName": "RelWithDebInfo",
-      "description": "Visual Studio, MSVC, Release with debug information",
+      "description": "Ninja, MSVC, Release with debug information",
       "inherits": "windows",
-      "generator": "Visual Studio 18 2026",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/RelWithDebInfo",
       "cacheVariables": {
-        "CMAKE_CONFIGURATION_TYPES": "RelWithDebInfo"
-      }
-    },
-    {
-      "name": "win-ninja",
-      "displayName": "Ninja",
-      "description": "Ninja, MSVC, Debug",
-      "inherits": "windows",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/Debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
-      }
-    },
-    {
-      "name": "winja-rwd",
-      "displayName": "Ninja",
-      "description": "Ninja, MSVC, Debug",
-      "inherits": "windows",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/ReleaseWithDebInfo",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
-      }
-    },
-    {
-      "name": "win-ninja-gcc",
-      "displayName": "Ninja (gcc)",
-      "description": "Ninja, GCC, Debug",
-      "inherits": "windows",
-      "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/Mingw",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_C_COMPILER": "gcc",
-        "CMAKE_CXX_COMPILER": "g++",
-        "VCPKG_TARGET_TRIPLET": "x64-mingw-dynamic"
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo"
       }
     },
     {
@@ -198,18 +162,6 @@
       "inherits": "windows-build",
       "configurePreset": "win-relwithdebinfo",
       "configuration": "RelWithDebInfo"
-    },
-    {
-      "name": "win-ninja",
-      "displayName": "Ninja",
-      "inherits": "windows-build",
-      "configurePreset": "win-ninja"
-    },
-    {
-      "name": "win-ninja-gcc",
-      "displayName": "Ninja (gcc)",
-      "inherits": "windows-build",
-      "configurePreset": "win-ninja-gcc"
     },
     {
       "name": "linux-debug",
