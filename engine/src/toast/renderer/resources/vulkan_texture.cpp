@@ -282,7 +282,7 @@ void DetailArrayUpload::build(const VulkanCore& core) {
 	VulkanTexture::Params params {};
 	params.format = vk::Format::eR8G8B8A8Unorm;
 	params.extent = vk::Extent3D(m_data.size, m_data.size, 1);
-	params.mip_levels = m_data.mip_levels
+	params.mip_levels = m_data.mip_levels;
 	params.layer_count = std::max(2u, m_data.layer_count);
 	params.is_cubemap = false;
 

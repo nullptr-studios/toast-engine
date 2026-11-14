@@ -776,7 +776,7 @@ void VulkanRenderer::updateVoxelDetailArray() {
 		const std::lock_guard lock(m_detail_mutex);
 		active = m_voxel_detail_preview.hasValue() ? m_voxel_detail_preview : m_voxel_detail_project;
 
-		//the new array replaces the current one once it can be sampled
+		// the new array replaces the current one once it can be sampled
 		if (m_detail_array_pending && m_detail_array_pending->isReady() && m_detail_array_pending->getView()) {
 			if (m_detail_array) {
 				m_detail_array_retired.push_back(std::move(m_detail_array));
