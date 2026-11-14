@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <toast/physics/fracture_profile.hpp>
 #include <toast/physics/hardness.hpp>
@@ -22,7 +23,7 @@ inline constexpr uint32_t k_max_physical_materials = 256;
 
 inline constexpr uint8_t k_default_material = 0;
 
-/// @brief 16 bytes and the offsets are a shader contract
+/// @brief 32 bytes and the offsets are a shader contract
 struct PaletteEntry {
 	uint8_t albedo_r = 0;
 	uint8_t albedo_g = 0;
@@ -49,7 +50,7 @@ struct PaletteEntry {
 	uint8_t ior = 0;
 
 	/// Layer of the detail library, 0 for none
-	uint8_t detail_layer = 0;
+	uint8_t detail_id = 0;
 
 	/// Texels per voxel edge, 0 for k_default_detail_scale
 	uint8_t detail_scale = 0;
@@ -58,12 +59,17 @@ struct PaletteEntry {
 	uint8_t detail_albedo = 0;
 	uint8_t detail_roughness = 0;
 	uint8_t detail_bump = 0;
-
+	uint8_t detail_tint_r = 255;
+	uint8_t detail_tint_g = 255;
+	uint8_t detail_tint_b = 255;
+	uint8_t reserved[13] {};
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
 };
 
-static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be sixteen bytes - the shader indexes it that way");
+static_assert(sizeof(PaletteEntry) == 32, "a palette entry must be thirty two bytes - the shader indexes it that way");
+static_assert(offsetof(PaletteEntry, detail_id) == 11, "detail_id sits in the top byte of word 2");
+static_assert(offsetof(PaletteEntry, detail_tint_r) == 16, "the tint starts at word 4");
 
 inline constexpr uint32_t k_default_detail_scale = 4;
 

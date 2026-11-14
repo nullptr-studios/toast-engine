@@ -527,7 +527,7 @@ auto sampleCoarse(const PackedScene& scene, uint32_t volume, glm::ivec3 cell) ->
 
 auto samplePaletteEntry(const PackedScene& scene, uint32_t volume, uint8_t index) -> PaletteEntry {
 	PaletteEntry out;
-	const size_t base = (static_cast<size_t>(scene.records[volume].palette_offset) + index) * 4u;
+	const size_t base = (static_cast<size_t>(scene.records[volume].palette_offset) + index) * k_palette_entry_words;
 	std::memcpy(&out, scene.palettes.data() + base, sizeof(PaletteEntry));
 	return out;
 }

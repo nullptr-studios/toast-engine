@@ -39,6 +39,9 @@ public partial class ViewportControl : UserControl {
 	public static readonly StyledProperty<bool> DetachedProperty =
 		AvaloniaProperty.Register<ViewportControl, bool>(nameof(Detached));
 
+	public static readonly StyledProperty<bool> ViewOnlyProperty =
+		AvaloniaProperty.Register<ViewportControl, bool>(nameof(ViewOnly));
+
 	private static readonly PropertyInfo? s_cursorImpl =
 		typeof(Cursor).GetProperty("PlatformImpl", BindingFlags.NonPublic | BindingFlags.Instance);
 
@@ -116,6 +119,11 @@ public partial class ViewportControl : UserControl {
 	public bool Detached {
 		get => GetValue(DetachedProperty);
 		set => SetValue(DetachedProperty, value);
+	}
+
+	public bool ViewOnly {
+		get => GetValue(ViewOnlyProperty);
+		set => SetValue(ViewOnlyProperty, value);
 	}
 
 	private bool OwnsEngineFrame {
@@ -692,6 +700,9 @@ public partial class ViewportControl : UserControl {
 			return;
 		}
 
+		// No picking, no gizmos
+		if (ViewOnly) return;
+
 		if (GameOwnsInput) m_gameInput = true;
 		if (!MouseLocked) m_lastPointerPoint = e.GetPosition(this);
 		Focus();
@@ -721,6 +732,8 @@ public partial class ViewportControl : UserControl {
 			EndEditorFly();
 			return;
 		}
+
+		if (ViewOnly) return;
 
 		var wasHeld = button != 0 && m_heldButtons.Remove(button);
 		RegrabPointerSoon();

@@ -52,6 +52,7 @@
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
 #include <toast/settings/settings.hpp>
+#include <toast/voxel/assets/detail_texture.hpp>
 #include <toast/world/gizmo_layout.hpp>
 #include <tracy/TracyVulkan.hpp>
 #include <type_traits>
@@ -288,8 +289,9 @@ public:
 
 	/// xyz world normal w roughness
 
-	/// Tileable layers read by voxel palette detail, R albedo G roughness B height with 0.5 neutral
-	void setVoxelDetailLibrary(assets::Handle<assets::Texture> texture);
+	void setVoxelDetailTexture(assets::Handle<assets::DetailTexture> detail);
+	void setVoxelDetailPreview(assets::Handle<assets::DetailTexture> detail);
+	void updateVoxelDetailArray();
 
 	/// The library once uploaded and else a neutral two layer array
 	[[nodiscard]]
@@ -1308,7 +1310,6 @@ private:
 	void createDefaultShadowMap();
 	void createDefaultCubemap();
 	void createDefaultDetailArray();
-
 	void ensureMaterialPasses(RenderFrame& frame_data);
 	/// After the pass updates so the prepass never writes depth the color pass leaves empty
 	void hideInstancesWithoutPipeline(RenderFrame& frame_data);
@@ -1458,7 +1459,13 @@ private:
 	bool m_glass_backdrop_captured = false;
 
 	mutable std::mutex m_detail_mutex;
-	assets::Handle<assets::Texture> m_voxel_detail_library;
+	assets::Handle<assets::DetailTexture> m_voxel_detail_project;
+	assets::Handle<assets::DetailTexture> m_voxel_detail_preview;
+	std::unique_ptr<VulkanTexture> m_detail_array;
+	std::unique_ptr<VulkanTexture> m_detail_array_pending;
+	std::vector<std::unique_ptr<VulkanTexture>> m_detail_array_retired;
+	uint64_t m_detail_built_uid = 0;
+	uint32_t m_detail_built_revision = 0;
 	std::optional<vma::raii::Image> m_default_detail_image;
 	vk::raii::ImageView m_default_detail_view = nullptr;
 	vk::raii::Sampler m_detail_sampler = nullptr;

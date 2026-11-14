@@ -356,6 +356,15 @@ message EditorCameraFlyMode {
 // Requests a single RenderDoc frame capture around the next rendered frame; no-op if RenderDoc isn't attached
 message CaptureFrame {}
 
+message PreviewAssetToml {
+  string uid = 1;
+  string toml = 2;
+}
+
+message SetDetailTexturePreview {
+  string uid = 1;
+}
+
 message EditorCameraMoveState {
   bool forward = 1;
   bool back = 2;

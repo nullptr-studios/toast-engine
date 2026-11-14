@@ -31,5 +31,6 @@
 #include <toast/input/assets.hpp>
 #include <toast/physics/assets.hpp>
 #include <toast/ui/assets.hpp>
+#include <toast/voxel/assets/detail_texture.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>

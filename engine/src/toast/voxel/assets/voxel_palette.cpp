@@ -246,8 +246,25 @@ auto VoxelPalette::parseToml(const toml::table& table) -> Parsed {
 				out.transforms_to = static_cast<uint8_t>(*becomes);
 			}
 
-			if (const std::optional<int64_t> layer = whole("detail_layer", 0, 255)) {
-				out.detail_layer = static_cast<uint8_t>(*layer);
+			if (const std::optional<int64_t> id = whole("detail_id", 0, 255)) {
+				out.detail_id = static_cast<uint8_t>(*id);
+			}
+			if (const toml::node* tint = entry->get("detail_tint")) {
+				const toml::array* rgb = tint->as_array();
+				if (rgb == nullptr || rgb->size() != 3) {
+					throw fail("detail_tint must be three whole numbers 0-255");
+				}
+				std::array<uint8_t, 3> channels {};
+				for (size_t c = 0; c < 3; ++c) {
+					const std::optional<int64_t> channel = (*rgb)[c].is_integer() ? (*rgb)[c].value<int64_t>() : std::nullopt;
+					if (!channel || *channel < 0 || *channel > 255) {
+						throw fail("detail_tint must be three whole numbers 0-255");
+					}
+					channels[c] = static_cast<uint8_t>(*channel);
+				}
+				out.detail_tint_r = channels[0];
+				out.detail_tint_g = channels[1];
+				out.detail_tint_b = channels[2];
 			}
 			if (const std::optional<int64_t> scale = whole("detail_scale", 0, 255)) {
 				out.detail_scale = static_cast<uint8_t>(*scale);
@@ -345,8 +362,14 @@ auto VoxelPalette::serialize(SaveMode /*mode*/) const -> std::vector<uint8_t> {
 			entry.insert("material", static_cast<int64_t>(e.material));
 		}
 		entry.insert("transforms_to", static_cast<int64_t>(e.transforms_to));
-		if (e.detail_layer != 0) {
-			entry.insert("detail_layer", static_cast<int64_t>(e.detail_layer));
+		if (e.detail_id != 0) {
+			entry.insert("detail_id", static_cast<int64_t>(e.detail_id));
+			entry.insert(
+			    "detail_tint",
+			    toml::array {
+			      static_cast<int64_t>(e.detail_tint_r), static_cast<int64_t>(e.detail_tint_g), static_cast<int64_t>(e.detail_tint_b)
+			    }
+			);
 			entry.insert("detail_scale", static_cast<int64_t>(e.detail_scale));
 			entry.insert("detail_albedo", as_unit(e.detail_albedo));
 			entry.insert("detail_roughness", as_unit(e.detail_roughness));

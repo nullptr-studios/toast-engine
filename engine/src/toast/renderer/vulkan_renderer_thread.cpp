@@ -242,6 +242,8 @@ void VulkanRenderer::mainRenderThread() try {
 		}
 #endif
 
+		updateVoxelDetailArray();
+
 		const auto draw_start = clock::now();
 		// A pass with no free output image rendered nothing
 		if (drawFrame(frame_to_draw)) {

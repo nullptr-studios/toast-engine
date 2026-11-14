@@ -153,6 +153,11 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private float m_maxEmissive = 1f;
 	[ObservableProperty] private float m_metallic;
 
+	private const string DetailTextureSetting = "renderer.voxels.detail_texture";
+
+	private DetailTextureFile? m_detailTexture;
+	private List<int> m_detailChoiceIds = [0];
+
 	private VoxelPaletteFile? m_palette;
 	[ObservableProperty] private float m_reflectivity;
 	[ObservableProperty] private float m_roughness;
@@ -161,7 +166,14 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 	[ObservableProperty] private float m_ior = VoxelPaletteEntry.DefaultIor;
 	[ObservableProperty] private PaletteSlotVM? m_selectedSlot;
 	[ObservableProperty] private int m_transformsTo;
-	[ObservableProperty] private int m_detailLayer;
+	[ObservableProperty] private string m_detailChoice = "0: None";
+	[ObservableProperty] private float m_detailTintR = 1f;
+	[ObservableProperty] private float m_detailTintG = 1f;
+	[ObservableProperty] private float m_detailTintB = 1f;
+	[ObservableProperty] private bool m_isDetailExpanded = true;
+	[ObservableProperty] private IReadOnlyList<string> m_detailChoices = ["0: None"];
+	[ObservableProperty] private string m_detailTextureName = "";
+	[ObservableProperty] private bool m_hasDetailTexture;
 	[ObservableProperty] private int m_detailScale;
 	[ObservableProperty] private float m_detailAlbedo;
 	[ObservableProperty] private float m_detailRoughness;
@@ -576,7 +588,10 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Alpha = entry.Alpha;
 		Ior = entry.Ior;
 		TransformsTo = entry.TransformsTo;
-		DetailLayer = entry.DetailLayer;
+		LoadDetailChoices(entry);
+		DetailTintR = entry.DetailTintR / 255f;
+		DetailTintG = entry.DetailTintG / 255f;
+		DetailTintB = entry.DetailTintB / 255f;
 		DetailScale = entry.DetailScale;
 		DetailAlbedo = entry.DetailAlbedo;
 		DetailRoughness = entry.DetailRoughness;
@@ -754,9 +769,76 @@ public partial class PaletteViewModel : Tool, IToastZoneEditor, IAutosavable {
 		Edit(entry => entry.Ior = Math.Clamp(value, 1f, VoxelPaletteEntry.MaxIor));
 	}
 
-	partial void OnDetailLayerChanged(int value) {
+	partial void OnDetailChoiceChanged(string value) {
+		if (Ignore || IdAt(DetailChoices.ToList().IndexOf(value)) is not { } id) return;
+		Edit(entry => entry.DetailId = id);
+	}
+
+	partial void OnDetailTintRChanged(float value) {
 		if (Ignore) return;
-		Edit(entry => entry.DetailLayer = Math.Clamp(value, 0, 255));
+		Edit(entry => entry.DetailTintR = ToByte(Math.Clamp(value, 0f, 1f)));
+	}
+
+	partial void OnDetailTintGChanged(float value) {
+		if (Ignore) return;
+		Edit(entry => entry.DetailTintG = ToByte(Math.Clamp(value, 0f, 1f)));
+	}
+
+	partial void OnDetailTintBChanged(float value) {
+		if (Ignore) return;
+		Edit(entry => entry.DetailTintB = ToByte(Math.Clamp(value, 0f, 1f)));
+	}
+
+	private int? IdAt(int index) => index >= 0 && index < m_detailChoiceIds.Count ? m_detailChoiceIds[index] : null;
+
+	private int IndexOfId(int id) {
+		var index = m_detailChoiceIds.IndexOf(id);
+		return index < 0 ? 0 : index;
+	}
+
+	private void RefreshDetailTexture() {
+		DetailTextureFile? file = null;
+		var name = "";
+		try {
+			var setting = ToastSettings.GetString(DetailTextureSetting);
+			if (!string.IsNullOrEmpty(setting)) {
+				string? virtualPath = null;
+				if (setting.Contains("://")) virtualPath = setting;
+				else if (AssetDatabase.TryResolve(setting, out var resolved, out _)) virtualPath = resolved;
+
+				if (virtualPath is not null) {
+					file = DetailTextureFile.FromFile(ProjectContext.Resolve(virtualPath));
+					name = Path.GetFileNameWithoutExtension(virtualPath);
+				}
+			}
+		} catch (Exception e) {
+			Log.Error($"Palette Editor: failed to read the project detail texture: {e.Message}");
+			file = null;
+		}
+
+		m_detailTexture = file;
+		HasDetailTexture = file is not null;
+		DetailTextureName = file is null ? "None set in the renderer settings" : name;
+	}
+
+	private void LoadDetailChoices(VoxelPaletteEntry entry) {
+		RefreshDetailTexture();
+
+		var ids = new List<int> { 0 };
+		var labels = new List<string> { "0: None" };
+		foreach (var texture in m_detailTexture?.Entries ?? []) {
+			ids.Add(texture.Id);
+			labels.Add(string.IsNullOrWhiteSpace(texture.Name) ? $"{texture.Id}:" : $"{texture.Id}: {texture.Name}");
+		}
+
+		if (!ids.Contains(entry.DetailId)) {
+			ids.Add(entry.DetailId);
+			labels.Add($"{entry.DetailId}: missing");
+		}
+
+		m_detailChoiceIds = ids;
+		DetailChoices = labels;
+		DetailChoice = labels[IndexOfId(entry.DetailId)];
 	}
 
 	partial void OnDetailScaleChanged(int value) {

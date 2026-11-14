@@ -758,18 +758,76 @@ void VulkanRenderer::createDefaultDetailArray() {
 	setDebugName(*m_core, *m_detail_sampler, "VulkanRenderer DetailSampler");
 }
 
-void VulkanRenderer::setVoxelDetailLibrary(assets::Handle<assets::Texture> texture) {
+void VulkanRenderer::setVoxelDetailTexture(assets::Handle<assets::DetailTexture> detail) {
 	const std::lock_guard lock(m_detail_mutex);
-	m_voxel_detail_library = std::move(texture);
+	m_voxel_detail_project = std::move(detail);
+}
+
+void VulkanRenderer::setVoxelDetailPreview(assets::Handle<assets::DetailTexture> detail) {
+	const std::lock_guard lock(m_detail_mutex);
+	m_voxel_detail_preview = std::move(detail);
+}
+
+void VulkanRenderer::updateVoxelDetailArray() {
+	ZoneScoped;
+
+	assets::Handle<assets::DetailTexture> active;
+	{
+		const std::lock_guard lock(m_detail_mutex);
+		active = m_voxel_detail_preview.hasValue() ? m_voxel_detail_preview : m_voxel_detail_project;
+
+		//the new array replaces the current one once it can be sampled
+		if (m_detail_array_pending && m_detail_array_pending->isReady() && m_detail_array_pending->getView()) {
+			if (m_detail_array) {
+				m_detail_array_retired.push_back(std::move(m_detail_array));
+			}
+			m_detail_array = std::move(m_detail_array_pending);
+			// wait until the frames in flight no longer use it before retiring
+			while (m_detail_array_retired.size() > 3) {
+				m_detail_array_retired.erase(m_detail_array_retired.begin());
+			}
+		} else if (m_detail_array_pending && m_detail_array_pending->hasFailed()) {
+			m_detail_array_pending.reset();
+		}
+	}
+
+	const uint64_t uid = active.hasValue() ? active.uid().data() : 0;
+	const uint32_t revision = active.hasValue() ? active->revision() : 0;
+	if (uid == m_detail_built_uid && revision == m_detail_built_revision) {
+		return;
+	}
+	// Wait for the upload of the previous build rather than stacking them
+	if (m_detail_array_pending) {
+		return;
+	}
+	m_detail_built_uid = uid;
+	m_detail_built_revision = revision;
+
+	std::optional<DetailArrayData> data;
+	if (active.hasValue()) {
+		data = buildDetailArray(*active);
+	}
+
+	VulkanTexture* target = nullptr;
+	{
+		const std::lock_guard lock(m_detail_mutex);
+		if (!data) {
+			// ddrop back to the neutral default
+			if (m_detail_array) {
+				m_detail_array_retired.push_back(std::move(m_detail_array));
+			}
+			return;
+		}
+		m_detail_array_pending = std::make_unique<VulkanTexture>();
+		target = m_detail_array_pending.get();
+	}
+	queueResourceUpload(std::make_unique<DetailArrayUpload>(*target, std::move(*data), "VoxelDetailArray"));
 }
 
 auto VulkanRenderer::voxelDetailView() const -> vk::ImageView {
 	const std::lock_guard lock(m_detail_mutex);
-	if (m_voxel_detail_library.hasValue()) {
-		const VulkanTexture& gpu = m_voxel_detail_library->gpuTexture();
-		if (gpu.isReady() && gpu.getView()) {
-			return gpu.getView();
-		}
+	if (m_detail_array && m_detail_array->isReady() && m_detail_array->getView()) {
+		return m_detail_array->getView();
 	}
 	return *m_default_detail_view;
 }
