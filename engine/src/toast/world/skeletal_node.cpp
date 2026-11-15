@@ -114,6 +114,7 @@ auto SkeletalNode::bindSkeleton() -> const assets::Skeleton* {
 	}
 
 	m_bound = found;
+	m_bound_asset = found != nullptr ? m_skeleton : assets::Handle<assets::Skeleton> {};
 	m_skin_bones.clear();
 	m_track_clip = nullptr;
 	m_track_to_bone.clear();
