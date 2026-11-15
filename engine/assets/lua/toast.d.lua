@@ -116,73 +116,10 @@ function tracy.Message(text) end
 
 ---Placeholder declaring a typed Node/Asset reference in an exported variable,
 ---e.g. `target = Node` or `mesh = Mesh`. The inspector shows a matching picker.
----@class TypeMarker
+---@class TypeMarker<T>
 
--- (The generic Node marker and one marker per node type are emitted into types.d.lua
--- by the reflection generator.)
+-- concrete markers come from the engine so their names stay in sync
 
 ---Marker for a reference to any asset type.
----@type TypeMarker
+---@type TypeMarker<Asset>
 Asset = nil
-
--- Asset type markers, one per registered asset type
----@type TypeMarker
-Mesh = nil
----@type TypeMarker
-Texture = nil
----@type TypeMarker
-Data = nil
----@type TypeMarker
-Material = nil
----@type TypeMarker
-Schema = nil
----@type TypeMarker
-Prefab = nil
----@type TypeMarker
-Script = nil
----@type TypeMarker
-Curve = nil
----@type TypeMarker
-AudioStrings = nil
----@type TypeMarker
-AudioBank = nil
----@type TypeMarker
-Haptic = nil
----@type TypeMarker
-Action = nil
----@type TypeMarker
-InputLayout = nil
----@type TypeMarker
-InputSettings = nil
----@type TypeMarker
-AudioEvent = nil
----@type TypeMarker
-AudioBus = nil
----@type TypeMarker
-AudioPort = nil
----@type TypeMarker
-AudioSnapshot = nil
----@type TypeMarker
-AudioVca = nil
----@type TypeMarker
-VoxelModel = nil
----@type TypeMarker
-VoxelPalette = nil
----@type TypeMarker
-MaterialInstance = nil
----@type TypeMarker
-Shader = nil
----@type TypeMarker
-UIElement = nil
----@type TypeMarker
-UIStyle = nil
----@type TypeMarker
-Font = nil
----@type TypeMarker
-UIImage = nil
----@type TypeMarker
-ColorScheme = nil
----@type TypeMarker
-Localization = nil
----@type TypeMarker
-ImageLocalization = nil

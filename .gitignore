@@ -15,6 +15,7 @@ logs/
 **[Tt]arget**
 !**/CrashTarget.cs
 !**/BuildInfo.cs
+!editor/LuaEditor/Graph/GraphBuilder.cs
 [Oo]ut
 engine/include/
 vcpkg_installed/

@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -21,20 +20,13 @@ using Proto.Events;
 namespace editor.Workspace;
 
 public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
-	private const double DragThreshold = 4;
-
 	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
 
 	private HierarchyElement? m_dropTarget;
-	private PointerPressedEventArgs? m_pressArgs;
-
-	private HierarchyElement? m_pressItem;
-	private Point m_pressPoint;
-	private bool m_pressWasSelected;
+	private readonly HierarchyRowPress<HierarchyElement> m_rowPress = new();
 	private HierarchyViewModel? m_vm;
 	private HierarchyElement? m_hoveredItem;
-	private DispatcherTimer? m_expansionTimer;
-	private Action? m_finishExpansion;
+	private readonly HierarchyExpansion m_expansion = new();
 
 	public HierarchyView() {
 		InitializeComponent();
@@ -47,7 +39,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private HierarchyViewModel? Vm => DataContext as HierarchyViewModel;
 
 	protected override void OnDataContextChanged(EventArgs e) {
-		CompleteExpansion();
+		m_expansion.Complete();
 		base.OnDataContextChanged(e);
 		if (m_vm is not null) {
 			m_vm.HierarchyChanged -= RefreshConnector;
@@ -97,38 +89,14 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		}
 	}
 
-	private void CompleteExpansion() {
-		m_expansionTimer?.Stop(); m_expansionTimer = null;
-		var finish = m_finishExpansion; m_finishExpansion = null; finish?.Invoke();
-	}
 	private void AnimateToggle(HierarchyElement node) {
-		CompleteExpansion();
+		m_expansion.Complete();
 		if (Vm is not { } vm) return;
-		if (!string.IsNullOrEmpty(vm.FilterText)) { vm.ToggleExpand(node); return; }
-		var collapsing = node.IsExpanded;
-		if (!collapsing) vm.ToggleExpand(node);
-		var descendants = vm.Rows.Skip(node.Index + 1).TakeWhile(n => n.Depth > node.Depth).ToArray();
-		if (descendants.Length == 0) { if (collapsing) vm.ToggleExpand(node); return; }
-		foreach (var child in descendants) child.VisualHeight = collapsing ? HierarchyConnectorLayer.RowHeight : 0;
-		m_finishExpansion = () => {
-			foreach (var child in descendants) child.VisualHeight = HierarchyConnectorLayer.RowHeight;
-			if (collapsing) vm.ToggleExpand(node);
-			Connector.RefreshGeometry();
-		};
-		var clock = Stopwatch.StartNew();
-		var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(8) };
-		m_expansionTimer = timer;
-		timer.Tick += (_, _) => {
-			var t = Math.Min(clock.Elapsed.TotalMilliseconds / 180, 1);
-			var progress = 1 - Math.Pow(1 - t, 3);
-			foreach (var child in descendants) child.VisualHeight = HierarchyConnectorLayer.RowHeight * (collapsing ? 1 - progress : progress);
-			Connector.RefreshGeometry();
-			if (t >= 1) CompleteExpansion();
-		};
-		Connector.RefreshGeometry(); timer.Start();
+		if (!string.IsNullOrEmpty(vm.FilterText)) vm.ToggleExpand(node);
+		else m_expansion.Toggle(node, vm.Rows, node.IsExpanded, () => vm.ToggleExpand(node), Connector);
 	}
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
-		CompleteExpansion(); base.OnDetachedFromVisualTree(e);
+		m_expansion.Complete(); base.OnDetachedFromVisualTree(e);
 	}
 
 	private void OnEmptySpaceMenuOpening(object? sender, CancelEventArgs e) {
@@ -136,7 +104,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	}
 
 	private void OnItemPointerPressed(object? sender, PointerPressedEventArgs e) {
-		if (m_expansionTimer is not null) CompleteExpansion();
+		m_expansion.Complete();
 		if (sender is not Control { DataContext: HierarchyElement el } || Vm is not { } vm) return;
 		if (!vm.Rows.Contains(el)) return;
 		if (el.IsInsidePrefab) return; // prefab interior nodes are read-only
@@ -154,43 +122,24 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 
 		// remember the press so a small move can promote to a drag, and a click
 		// can fall through to fold/unfold on release
-		m_pressItem = el;
-		m_pressArgs = e;
-		m_pressPoint = e.GetPosition(this);
-		m_pressWasSelected = ReferenceEquals(el, vm.SelectedNode);
-		if (!m_pressWasSelected) vm.SelectedNode = el;
+		var wasSelected = ReferenceEquals(el, vm.SelectedNode);
+		m_rowPress.Begin(el, e, this, wasSelected);
+		if (!wasSelected) vm.SelectedNode = el;
 		Focus();
 	}
 
 	private async void OnItemPointerMoved(object? sender, PointerEventArgs e) {
-		if (m_pressItem is null || m_pressArgs is null) return;
-		if (!e.GetCurrentPoint(this).Properties.IsLeftButtonPressed) return;
-
-		var delta = e.GetPosition(this) - m_pressPoint;
-		if (delta.X * delta.X + delta.Y * delta.Y < DragThreshold * DragThreshold) return;
-
-		var item = m_pressItem;
-		var args = m_pressArgs;
-		ClearPress();
-		if (item.IsRoot) return; // the root cannot be reparented
+		if (m_rowPress.TakeDrag(e, this) is not { } drag || drag.Row.IsRoot) return; // the root cannot be reparented
 
 		var data = new DataTransfer();
-		data.Add(DataTransferItem.Create(NodeDragData.Format, item));
-		await DragDrop.DoDragDropAsync(args, data, DragDropEffects.Copy | DragDropEffects.Move);
+		data.Add(DataTransferItem.Create(NodeDragData.Format, drag.Row));
+		await DragDrop.DoDragDropAsync(drag.Args, data, DragDropEffects.Copy | DragDropEffects.Move);
 		SetDropTarget(null);
 		Connector.SetDropLine(-1, 0);
 	}
 
 	private void OnItemPointerReleased(object? sender, PointerReleasedEventArgs e) {
-		// a click on the already-selected node toggles fold
-		if (m_pressItem is { } item && m_pressWasSelected) AnimateToggle(item);
-		ClearPress();
-	}
-
-	private void ClearPress() {
-		m_pressItem = null;
-		m_pressArgs = null;
-		m_pressWasSelected = false;
+		if (m_rowPress.TakeClick(e) is { WasSelected: true } click) AnimateToggle(click.Row);
 	}
 
 	private void OnRenameStarted(HierarchyElement element) {

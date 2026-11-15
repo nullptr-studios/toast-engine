@@ -212,7 +212,7 @@ public class DockFactory : Factory {
 	/**
 	 * Re-applies the side-panel share after a dock completes
 	 */
-	public override void OnDockableDocked(IDockable dockable, DockOperation operation) {
+	public override void OnDockableDocked(IDockable? dockable, DockOperation operation) {
 		base.OnDockableDocked(dockable, operation);
 		if (operation is not (DockOperation.Left or DockOperation.Right)) return;
 		if (dockable is IDocument or IDocumentDock) return;

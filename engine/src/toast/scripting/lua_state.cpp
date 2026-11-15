@@ -967,7 +967,11 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	        overload<const TypeMarker&, lua_State*>(&NodeProxy::getChildren),
 	        overload<const std::string&, lua_State*>(&NodeProxy::getChildren)
 	    )
-	    .addFunction("create", &NodeProxy::create)
+	    .addFunction(
+	        "create",
+	        overload<const TypeMarker&, lua_State*>(&NodeProxy::create),
+	        overload<const std::string&, lua_State*>(&NodeProxy::create)
+	    )
 	    .addFunction("addDependsOn", &NodeProxy::addDependsOn)
 	    .addFunction("interactsWith", &NodeProxy::interactsWith)
 	    .addFunction("call", &NodeProxy::call)

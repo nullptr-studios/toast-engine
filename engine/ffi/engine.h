@@ -90,6 +90,8 @@ TOAST_C_API int toast_bake_asset(const char* uid, const char* out_path) NOEXCEPT
  */
 TOAST_C_API int toast_generate_data_schema_stubs(const char* out_path) NOEXCEPT;
 
+TOAST_C_API int toast_generate_asset_type_stubs(const char* out_path) NOEXCEPT;
+
 // clang-format off
 /// sets all five URI roots; must be called before toast_init()
 /// @param assets  content addressed by UID (assets://)
