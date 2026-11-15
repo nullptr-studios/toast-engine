@@ -31,6 +31,19 @@ auto SkeletalNode::play(std::string_view clip_name) -> bool {
 	m_playback.start(*clip);
 	// The previous clip may be freed and a new one allocated at its address
 	m_track_clip = nullptr;
+	m_fade_duration = 0.0f;
+	return true;
+}
+
+auto SkeletalNode::crossfade(std::string_view clip_name, float seconds) -> bool {
+	if (!play(clip_name)) {
+		return false;
+	}
+	if (seconds > 0.0f && !m_local.empty()) {
+		m_fade_from = m_local;
+		m_fade_time = 0.0f;
+		m_fade_duration = seconds;
+	}
 	return true;
 }
 
@@ -256,8 +269,23 @@ void SkeletalNode::tick() {
 			m_local[i] = skeleton->bones()[i].rest;
 		}
 		m_playback.clip->sampleInto(m_playback.time, m_track_to_bone, m_local);
+		if (m_fade_duration > 0.0f && m_fade_from.size() == m_local.size()) {
+			m_fade_time += static_cast<float>(Time::delta());
+			const float t = std::min(m_fade_time / m_fade_duration, 1.0f);
+			for (size_t i = 0; i < m_local.size(); ++i) {
+				m_local[i].translation = glm::mix(m_fade_from[i].translation, m_local[i].translation, t);
+				m_local[i].rotation = glm::slerp(m_fade_from[i].rotation, m_local[i].rotation, t);
+				m_local[i].scale = glm::mix(m_fade_from[i].scale, m_local[i].scale, t);
+			}
+			if (t >= 1.0f) {
+				m_fade_duration = 0.0f;
+			}
+		}
 		computeModel(*skeleton);
 		applyNodeTracks();
+		if (!m_playback.playing) {
+			clip_finished.fire(m_playback.clip->name);
+		}
 	}
 
 	applyAttachments(*skeleton);
