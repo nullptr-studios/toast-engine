@@ -26,6 +26,7 @@ var namespaceeditor_1_1Components_1_1Modals =
     [ "PickerRow", "classeditor_1_1Components_1_1Modals_1_1PickerRow.html", null ],
     [ "PickerViewModel", "classeditor_1_1Components_1_1Modals_1_1PickerViewModel.html", null ],
     [ "PickerWindow", "classeditor_1_1Components_1_1Modals_1_1PickerWindow.html", null ],
+    [ "ReimportReviewWindow", "classeditor_1_1Components_1_1Modals_1_1ReimportReviewWindow.html", null ],
     [ "RenameModal", "classeditor_1_1Components_1_1Modals_1_1RenameModal.html", null ],
     [ "SaveFileModal", "classeditor_1_1Components_1_1Modals_1_1SaveFileModal.html", null ],
     [ "SaveFileViewModel", "classeditor_1_1Components_1_1Modals_1_1SaveFileViewModel.html", null ],

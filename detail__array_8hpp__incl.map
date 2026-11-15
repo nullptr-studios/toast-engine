@@ -1,0 +1,9 @@
+<map id="engine/src/toast/renderer/resources/detail_array.hpp" name="engine/src/toast/renderer/resources/detail_array.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="33,5,230,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="109,49,66,90,63,85,104,51"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,98,168,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="133,48,134,84,129,81,130,52"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="192,98,254,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="156,48,200,87,195,88,155,53"/>
+</map>

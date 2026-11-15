@@ -1,7 +1,7 @@
 var searchData=
 [
   ['label_0',['label',['../structtoast_1_1settings_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98',1,'toast::settings::Meta::label'],['../structphysics_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98',1,'physics::Meta::label'],['../structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98',1,'renderer::Meta::label']]],
-  ['largest_5fmotion_1',['largest_motion',['../structrenderer_1_1GiPass_1_1Stats.html#a662935332bd2289a1d5b149172514864',1,'renderer::GiPass::Stats']]],
+  ['largest_5fmotion_1',['largest_motion',['../structrenderer_1_1GiDirtyBoxes_1_1Counts.html#aec530378f2b94f08617072decfe2cf13',1,'renderer::GiDirtyBoxes::Counts::largest_motion'],['../structrenderer_1_1GiPass_1_1Stats.html#a662935332bd2289a1d5b149172514864',1,'renderer::GiPass::Stats::largest_motion']]],
   ['limit_5flower_2',['limit_lower',['../classphysics_1_1HingeJoint.html#a29017b60767390df5cea2777a888179e',1,'physics::HingeJoint']]],
   ['listener_3',['listener',['../structtoast_1_1VolumeTarget.html#af0874dc418c3b3c2a3e9b802e6d05234',1,'toast::VolumeTarget']]],
   ['local_4',['local',['../structtoast_1_1light__gizmo_1_1Handle.html#a0334e4f0bcb600d84d4fa99d4ffd1b5c',1,'toast::light_gizmo::Handle']]],

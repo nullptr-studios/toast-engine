@@ -25,6 +25,7 @@ var namespaceeditor_1_1Workspace =
     [ "HistoryView", "classeditor_1_1Workspace_1_1HistoryView.html", null ],
     [ "HistoryViewModel", "classeditor_1_1Workspace_1_1HistoryViewModel.html", null ],
     [ "IAutosavable", "interfaceeditor_1_1Workspace_1_1IAutosavable.html", null ],
+    [ "IHierarchyRow", "interfaceeditor_1_1Workspace_1_1IHierarchyRow.html", null ],
     [ "InspectorState", "classeditor_1_1Workspace_1_1InspectorState.html", null ],
     [ "InspectorView", "classeditor_1_1Workspace_1_1InspectorView.html", null ],
     [ "InspectorViewModel", "classeditor_1_1Workspace_1_1InspectorViewModel.html", null ],

@@ -190,7 +190,7 @@ init, begin and onEnable</h2>
 <p>Phase dispatch is free for scripts that don't implement the phase: presence is cached in a bitmask at load, so a node whose script only defines <span class="tt">init</span> costs nothing per frame.</p>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md75"></a>
 Unit tests</h1>
-<p><span class="tt">tests/scripting</span> covers schema extraction (types, groups, ordering, collisions), scheduling of Lua-only tick functions, hot-reload value preservation, and error reporting. The reflection generator's stub emission is covered by its own cargo tests.</p>
+<p><span class="tt">tests/scripting</span> covers schema extraction (types, groups, ordering, collisions), scheduling of Lua-only tick functions, hot-reload value preservation, and error reporting. The reflection generator's stub emission is covered by its own dotnet tests.</p>
 <h1 class="doxsection"><a class="anchor" id="autotoc_md76"></a>
 Expansion</h1>
 <p>Sending engine events from scripts (<span class="tt">toast.send</span>) is the next step once event reflection matures; the conversion layer it needs already exists. Calls into a busy interpreter that suspend the calling script and resume it with the result, instead of being queued or skipped, are the next step for the scheduler. </p>

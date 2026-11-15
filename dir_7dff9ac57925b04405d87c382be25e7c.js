@@ -3,6 +3,7 @@ var dir_7dff9ac57925b04405d87c382be25e7c =
     [ "blue_noise.hpp", "blue__noise_8hpp.html", "blue__noise_8hpp" ],
     [ "cubemap_target.cpp", "cubemap__target_8cpp.html", null ],
     [ "cubemap_target.hpp", "cubemap__target_8hpp.html", "cubemap__target_8hpp" ],
+    [ "detail_array.hpp", "detail__array_8hpp.html", "detail__array_8hpp" ],
     [ "hiz_pyramid.hpp", "hiz__pyramid_8hpp.html", "hiz__pyramid_8hpp" ],
     [ "material_runtime.hpp", "material__runtime_8hpp.html", "material__runtime_8hpp" ],
     [ "post_process_target.cpp", "post__process__target_8cpp.html", null ],

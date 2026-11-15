@@ -132,7 +132,6 @@ Collaboration diagram for renderer::VulkanRenderer:</div>
 Classes</h2></td></tr>
 <tr class="memitem:FrameContext" id="r_FrameContext"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1FrameContext.html">FrameContext</a></td></tr>
 <tr class="memitem:PassInfo" id="r_PassInfo"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1PassInfo.html">PassInfo</a></td></tr>
-<tr class="memitem:PerfCounters" id="r_PerfCounters"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1PerfCounters.html">PerfCounters</a></td></tr>
 <tr class="memitem:UploadStats" id="r_UploadStats"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1VulkanRenderer_1_1UploadStats.html">UploadStats</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
@@ -260,8 +259,13 @@ auto&#160;</td><td class="memItemRight"><b>isPostProcessPassEnabled</b> (std::st
 auto&#160;</td><td class="memItemRight"><b>getSceneColorFormat</b> () const noexcept -&gt; vk::Format</td></tr>
 <tr class="memitem:aab5c6ded1804aba6be1598bf57f47739" id="r_aab5c6ded1804aba6be1598bf57f47739"><td class="memItemLeft"><a id="aab5c6ded1804aba6be1598bf57f47739" name="aab5c6ded1804aba6be1598bf57f47739"></a>
 auto&#160;</td><td class="memItemRight"><b>getSceneColorView</b> () const noexcept -&gt; vk::ImageView</td></tr>
-<tr class="memitem:a1e95f928658e7463bbbf60dc88f22adc" id="r_a1e95f928658e7463bbbf60dc88f22adc"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a1e95f928658e7463bbbf60dc88f22adc">setVoxelDetailLibrary</a> (<a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Texture.html">assets::Texture</a> &gt; texture)</td></tr>
-<tr class="memdesc:a1e95f928658e7463bbbf60dc88f22adc"><td class="mdescLeft">&#160;</td><td class="mdescRight">xyz world normal w roughness  <br /></td></tr>
+<tr class="memitem:ae6b492fbca27743d89b130cda9d7ed6b" id="r_ae6b492fbca27743d89b130cda9d7ed6b"><td class="memItemLeft"><a id="ae6b492fbca27743d89b130cda9d7ed6b" name="ae6b492fbca27743d89b130cda9d7ed6b"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelDetailTexture</b> (<a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1DetailTexture.html">assets::DetailTexture</a> &gt; detail)</td></tr>
+<tr class="memdesc:ae6b492fbca27743d89b130cda9d7ed6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">xyz world normal w roughness <br /></td></tr>
+<tr class="memitem:ae3411837223a554f3f39856328dce705" id="r_ae3411837223a554f3f39856328dce705"><td class="memItemLeft"><a id="ae3411837223a554f3f39856328dce705" name="ae3411837223a554f3f39856328dce705"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelDetailPreview</b> (<a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1DetailTexture.html">assets::DetailTexture</a> &gt; detail)</td></tr>
+<tr class="memitem:a862d6534327b211b4ad6dd401d40d217" id="r_a862d6534327b211b4ad6dd401d40d217"><td class="memItemLeft"><a id="a862d6534327b211b4ad6dd401d40d217" name="a862d6534327b211b4ad6dd401d40d217"></a>
+void&#160;</td><td class="memItemRight"><b>updateVoxelDetailArray</b> ()</td></tr>
 <tr class="memitem:a120cf6370a11c4437602c00f05b5679b" id="r_a120cf6370a11c4437602c00f05b5679b"><td class="memItemLeft"><a id="a120cf6370a11c4437602c00f05b5679b" name="a120cf6370a11c4437602c00f05b5679b"></a>
 auto&#160;</td><td class="memItemRight"><b>voxelDetailView</b> () const -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:a120cf6370a11c4437602c00f05b5679b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The library once uploaded and else a neutral two layer array. <br /></td></tr>
@@ -286,6 +290,8 @@ auto&#160;</td><td class="memItemRight"><b>getVoxelDetailNormalView</b> () const
 <tr class="memitem:ad77342b9a4c0d30b1633f814ec950493" id="r_ad77342b9a4c0d30b1633f814ec950493"><td class="memItemLeft"><a id="ad77342b9a4c0d30b1633f814ec950493" name="ad77342b9a4c0d30b1633f814ec950493"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelFaceNormalView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:ad77342b9a4c0d30b1633f814ec950493"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds flat face normals not the rounded scene normal ones. <br /></td></tr>
+<tr class="memitem:a61d5f8ec5f9b5a096de4736a40ca101d" id="r_a61d5f8ec5f9b5a096de4736a40ca101d"><td class="memItemLeft"><a id="a61d5f8ec5f9b5a096de4736a40ca101d" name="a61d5f8ec5f9b5a096de4736a40ca101d"></a>
+auto&#160;</td><td class="memItemRight"><b>getVoxelGiView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:aabd24286646ac34b96155ec903c0c6fc" id="r_aabd24286646ac34b96155ec903c0c6fc"><td class="memItemLeft"><a id="aabd24286646ac34b96155ec903c0c6fc" name="aabd24286646ac34b96155ec903c0c6fc"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelNoisyDiffuseView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:aabd24286646ac34b96155ec903c0c6fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Marched and sampled diffuse over albedo before denoising. <br /></td></tr>
@@ -458,9 +464,13 @@ auto&#160;</td><td class="memItemRight"><b>voxelGlassShadowReach</b> () const no
 <tr class="memitem:a88b09dfccee5ce475af778fcfd33495a" id="r_a88b09dfccee5ce475af778fcfd33495a"><td class="memItemLeft"><a id="a88b09dfccee5ce475af778fcfd33495a" name="a88b09dfccee5ce475af778fcfd33495a"></a>
 auto&#160;</td><td class="memItemRight"><b>getGlassBackdropView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:a88b09dfccee5ce475af778fcfd33495a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scene colour and depth copied after the sky for glass to refract. <br /></td></tr>
+<tr class="memitem:a8781262bbaf5e69cb2a62a84eb6190f7" id="r_a8781262bbaf5e69cb2a62a84eb6190f7"><td class="memItemLeft"><a id="a8781262bbaf5e69cb2a62a84eb6190f7" name="a8781262bbaf5e69cb2a62a84eb6190f7"></a>
+auto&#160;</td><td class="memItemRight"><b>getGlassMaskView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:a613c2c2984d9a9edb1c579d5bc4c378b" id="r_a613c2c2984d9a9edb1c579d5bc4c378b"><td class="memItemLeft"><a id="a613c2c2984d9a9edb1c579d5bc4c378b" name="a613c2c2984d9a9edb1c579d5bc4c378b"></a>
 auto&#160;</td><td class="memItemRight"><b>getGlassBackdropDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
-<tr class="memitem:ac4e830174fd44438eb6cc4e24f431075" id="r_ac4e830174fd44438eb6cc4e24f431075"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ac4e830174fd44438eb6cc4e24f431075">getOpaqueDepthView</a> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memitem:ac4e830174fd44438eb6cc4e24f431075" id="r_ac4e830174fd44438eb6cc4e24f431075"><td class="memItemLeft"><a id="ac4e830174fd44438eb6cc4e24f431075" name="ac4e830174fd44438eb6cc4e24f431075"></a>
+auto&#160;</td><td class="memItemRight"><b>getOpaqueDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memdesc:ac4e830174fd44438eb6cc4e24f431075"><td class="mdescLeft">&#160;</td><td class="mdescRight">Depth before glass so GI and reflections see behind a pane and the final depth when no backdrop was copied. <br /></td></tr>
 <tr class="memitem:a2fa280f8e33d55fe34c645abf82bede6" id="r_a2fa280f8e33d55fe34c645abf82bede6"><td class="memItemLeft"><a id="a2fa280f8e33d55fe34c645abf82bede6" name="a2fa280f8e33d55fe34c645abf82bede6"></a>
 void&#160;</td><td class="memItemRight"><b>setVoxelSunReach</b> (uint32_t meters) noexcept</td></tr>
 <tr class="memdesc:a2fa280f8e33d55fe34c645abf82bede6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Meters a marched sun ray travels before it counts as lit. <br /></td></tr>
@@ -551,6 +561,10 @@ void&#160;</td><td class="memItemRight"><b>setVoxelPass</b> (<a class="el" href=
 void&#160;</td><td class="memItemRight"><b>setDebrisPass</b> (<a class="el" href="classrenderer_1_1DebrisPass.html">DebrisPass</a> *pass) noexcept</td></tr>
 <tr class="memitem:a989c7d3cae8d609b03f1b122a8053913" id="r_a989c7d3cae8d609b03f1b122a8053913"><td class="memItemLeft"><a id="a989c7d3cae8d609b03f1b122a8053913" name="a989c7d3cae8d609b03f1b122a8053913"></a>
 void&#160;</td><td class="memItemRight"><b>setGiPass</b> (<a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> *pass) noexcept</td></tr>
+<tr class="memitem:a7f8133754e2d8d3583babfc92c4cded4" id="r_a7f8133754e2d8d3583babfc92c4cded4"><td class="memItemLeft"><a id="a7f8133754e2d8d3583babfc92c4cded4" name="a7f8133754e2d8d3583babfc92c4cded4"></a>
+void&#160;</td><td class="memItemRight"><b>setGiClipmapPass</b> (<a class="el" href="classrenderer_1_1GiClipmapPass.html">GiClipmapPass</a> *pass) noexcept</td></tr>
+<tr class="memitem:af97b42b78246865683a8e365f5cf6a0c" id="r_af97b42b78246865683a8e365f5cf6a0c"><td class="memItemLeft"><a id="af97b42b78246865683a8e365f5cf6a0c" name="af97b42b78246865683a8e365f5cf6a0c"></a>
+auto&#160;</td><td class="memItemRight"><b>giClipmapPass</b> () const noexcept -&gt; <a class="el" href="classrenderer_1_1GiClipmapPass.html">GiClipmapPass</a> *</td></tr>
 <tr class="memitem:adf845632dabde8cc9d22f0b450f42b3e" id="r_adf845632dabde8cc9d22f0b450f42b3e"><td class="memItemLeft"><a id="adf845632dabde8cc9d22f0b450f42b3e" name="adf845632dabde8cc9d22f0b450f42b3e"></a>
 void&#160;</td><td class="memItemRight"><b>setTracedSpecularPass</b> (<a class="el" href="classrenderer_1_1TracedSpecularPass.html">TracedSpecularPass</a> *pass) noexcept</td></tr>
 <tr class="memdesc:adf845632dabde8cc9d22f0b450f42b3e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Still registered with addPostProcessPass so it runs in the post chain. <br /></td></tr>
@@ -582,14 +596,6 @@ void&#160;</td><td class="memItemRight"><b>requestIrradianceBake</b> () noexcept
 auto&#160;</td><td class="memItemRight"><b>getIrradianceProbeCount</b> () const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:aaaa80ba236b0dbfe0348e18be1479049" id="r_aaaa80ba236b0dbfe0348e18be1479049"><td class="memItemLeft"><a id="aaaa80ba236b0dbfe0348e18be1479049" name="aaaa80ba236b0dbfe0348e18be1479049"></a>
 auto&#160;</td><td class="memItemRight"><b>getStaleIrradianceVolumeCount</b> () const noexcept -&gt; uint32_t</td></tr>
-<tr class="memitem:a23a5b267ddf41e1c80785c6cc57dde52" id="r_a23a5b267ddf41e1c80785c6cc57dde52"><td class="memItemLeft"><a id="a23a5b267ddf41e1c80785c6cc57dde52" name="a23a5b267ddf41e1c80785c6cc57dde52"></a>
-auto&#160;</td><td class="memItemRight"><b>getOutOfOrderFrameCount</b> () const noexcept -&gt; uint32_t</td></tr>
-<tr class="memitem:a78849032dc051e50cbf008e57947e0dd" id="r_a78849032dc051e50cbf008e57947e0dd"><td class="memItemLeft"><a id="a78849032dc051e50cbf008e57947e0dd" name="a78849032dc051e50cbf008e57947e0dd"></a>
-void&#160;</td><td class="memItemRight"><b>getFrameTimeStats</b> (float &amp;avg_ms, float &amp;min_ms, float &amp;max_ms) const noexcept</td></tr>
-<tr class="memitem:ad9ec1ef23643122ba112d923bdd5fa56" id="r_ad9ec1ef23643122ba112d923bdd5fa56"><td class="memItemLeft"><a id="ad9ec1ef23643122ba112d923bdd5fa56" name="ad9ec1ef23643122ba112d923bdd5fa56"></a>
-auto&#160;</td><td class="memItemRight"><b>getSkippedBuildCount</b> () const noexcept -&gt; uint32_t</td></tr>
-<tr class="memitem:ad2b9f0ed07d63aab65763ae388df268b" id="r_ad2b9f0ed07d63aab65763ae388df268b"><td class="memItemLeft"><a id="ad2b9f0ed07d63aab65763ae388df268b" name="ad2b9f0ed07d63aab65763ae388df268b"></a>
-auto&#160;</td><td class="memItemRight"><b>getDroppedFrameCount</b> () const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:aebca401544ffbfaa9a6f568d55fb45e3" id="r_aebca401544ffbfaa9a6f568d55fb45e3"><td class="memItemLeft"><a id="aebca401544ffbfaa9a6f568d55fb45e3" name="aebca401544ffbfaa9a6f568d55fb45e3"></a>
 auto&#160;</td><td class="memItemRight"><b>getVisibleInstanceCount</b> () const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:a89d46ea0c06d6a96d478090565cd20a3" id="r_a89d46ea0c06d6a96d478090565cd20a3"><td class="memItemLeft"><a id="a89d46ea0c06d6a96d478090565cd20a3" name="a89d46ea0c06d6a96d478090565cd20a3"></a>
@@ -641,8 +647,6 @@ void&#160;</td><td class="memItemRight"><b>setOutlinedNodes</b> (std::vector&lt;
 void&#160;</td><td class="memItemRight"><b>setDebugDrawEnabled</b> (bool enabled) noexcept</td></tr>
 <tr class="memitem:a2092fc1560fed853d62e90b3ed1ee66c" id="r_a2092fc1560fed853d62e90b3ed1ee66c"><td class="memItemLeft"><a id="a2092fc1560fed853d62e90b3ed1ee66c" name="a2092fc1560fed853d62e90b3ed1ee66c"></a>
 auto&#160;</td><td class="memItemRight"><b>debugDrawEnabled</b> () const noexcept -&gt; bool</td></tr>
-<tr class="memitem:a502881d42669e309a1d32b626f3d014a" id="r_a502881d42669e309a1d32b626f3d014a"><td class="memItemLeft"><a id="a502881d42669e309a1d32b626f3d014a" name="a502881d42669e309a1d32b626f3d014a"></a>
-auto&#160;</td><td class="memItemRight"><b>perfCounters</b> () const noexcept -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1PerfCounters.html">PerfCounters</a></td></tr>
 <tr class="memitem:a598581b9421635962e600c6dd77cf9fd" id="r_a598581b9421635962e600c6dd77cf9fd"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a598581b9421635962e600c6dd77cf9fd">uploadStats</a> () -&gt; <a class="el" href="structrenderer_1_1VulkanRenderer_1_1UploadStats.html">UploadStats</a></td></tr>
 <tr class="memitem:a1d74e649188a1b8615e656b2222bef3b" id="r_a1d74e649188a1b8615e656b2222bef3b"><td class="memItemLeft"><a id="a1d74e649188a1b8615e656b2222bef3b" name="a1d74e649188a1b8615e656b2222bef3b"></a>
 auto&#160;</td><td class="memItemRight"><b>uploadTimeline</b> () const noexcept -&gt; vk::Semaphore</td></tr>
@@ -748,32 +752,6 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 
 </div>
 </div>
-<a id="ac4e830174fd44438eb6cc4e24f431075" name="ac4e830174fd44438eb6cc4e24f431075"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac4e830174fd44438eb6cc4e24f431075">&#9670;&#160;</a></span>getOpaqueDepthView()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">auto renderer::VulkanRenderer::getOpaqueDepthView </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td> const -&gt; vk::ImageView</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel noexcept">noexcept</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Depth before glass wrote its own so GI and reflections see the surface behind a pane, the final depth when no backdrop was copied </p>
-
-</div>
-</div>
 <a id="ac31919952a1835944a10c95c6fefffa7" name="ac31919952a1835944a10c95c6fefffa7"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac31919952a1835944a10c95c6fefffa7">&#9670;&#160;</a></span>gpuTimer() <span class="overload">[1/2]</span></h2>
 
@@ -823,26 +801,6 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 </table>
 </div><div class="memdoc">
 <dl class="section note"><dt>Note</dt><dd>Render thread only </dd></dl>
-
-</div>
-</div>
-<a id="a1e95f928658e7463bbbf60dc88f22adc" name="a1e95f928658e7463bbbf60dc88f22adc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a1e95f928658e7463bbbf60dc88f22adc">&#9670;&#160;</a></span>setVoxelDetailLibrary()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void renderer::VulkanRenderer::setVoxelDetailLibrary </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1Texture.html">assets::Texture</a> &gt;</td>          <td class="paramname"><span class="paramname"><em>texture</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>xyz world normal w roughness </p>
-<p>Tileable layers read by voxel palette detail, R albedo G roughness B height with 0.5 neutral </p>
 
 </div>
 </div>

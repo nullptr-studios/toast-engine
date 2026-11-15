@@ -173,11 +173,30 @@ std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>debug_view</
 <tr class="memitem:a8f7d5f38f747cd26b81228c38e79d77b" id="r_a8f7d5f38f747cd26b81228c38e79d77b"><td class="memItemLeft"><a id="a8f7d5f38f747cd26b81228c38e79d77b" name="a8f7d5f38f747cd26b81228c38e79d77b"></a>
 std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>debug_mode</b> {0}</td></tr>
 <tr class="memdesc:a8f7d5f38f747cd26b81228c38e79d77b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors gi_debug.slang kGiDebug with 0 cells 1 interval radiance 2 coverage 3 irradiance 4 history depth 5 change. <br /></td></tr>
+<tr class="memitem:afa264616e03377919ee5afafea80771b" id="r_afa264616e03377919ee5afafea80771b"><td class="memItemLeft"><a id="afa264616e03377919ee5afafea80771b" name="afa264616e03377919ee5afafea80771b"></a>
+std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>backend</b> {k_backend_cascades}</td></tr>
+<tr class="memitem:a91a432d3649bcf4174255a3e01372307" id="r_a91a432d3649bcf4174255a3e01372307"><td class="memItemLeft"><a id="a91a432d3649bcf4174255a3e01372307" name="a91a432d3649bcf4174255a3e01372307"></a>
+std::atomic&lt; float &gt;&#160;</td><td class="memItemRight"><b>clip_cell</b> {0.2f}</td></tr>
+<tr class="memdesc:a91a432d3649bcf4174255a3e01372307"><td class="mdescLeft">&#160;</td><td class="mdescRight">Meters per level 0 cell. <br /></td></tr>
+<tr class="memitem:a8cb5dc639cdc14ad2a7bb32d22152285" id="r_a8cb5dc639cdc14ad2a7bb32d22152285"><td class="memItemLeft"><a id="a8cb5dc639cdc14ad2a7bb32d22152285" name="a8cb5dc639cdc14ad2a7bb32d22152285"></a>
+std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>clip_resolution</b> {128}</td></tr>
+<tr class="memitem:aa5d7ebf8e654f5ab901b9b447d1af691" id="r_aa5d7ebf8e654f5ab901b9b447d1af691"><td class="memItemLeft"><a id="aa5d7ebf8e654f5ab901b9b447d1af691" name="aa5d7ebf8e654f5ab901b9b447d1af691"></a>
+std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>clip_levels</b> {4}</td></tr>
+<tr class="memitem:acc177d4df099bdd1018d0cf372903fb0" id="r_acc177d4df099bdd1018d0cf372903fb0"><td class="memItemLeft"><a id="acc177d4df099bdd1018d0cf372903fb0" name="acc177d4df099bdd1018d0cf372903fb0"></a>
+std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>clip_debug_view</b> {0}</td></tr>
+<tr class="memdesc:acc177d4df099bdd1018d0cf372903fb0"><td class="mdescLeft">&#160;</td><td class="mdescRight">0 off and otherwise 1 + the level drawn <br /></td></tr>
+<tr class="memitem:a8b9dd81f8787ff99087c1aa658579bda" id="r_a8b9dd81f8787ff99087c1aa658579bda"><td class="memItemLeft"><a id="a8b9dd81f8787ff99087c1aa658579bda" name="a8b9dd81f8787ff99087c1aa658579bda"></a>
+std::atomic&lt; uint32_t &gt;&#160;</td><td class="memItemRight"><b>clip_debug_mode</b> {0}</td></tr>
+<tr class="memdesc:a8b9dd81f8787ff99087c1aa658579bda"><td class="mdescLeft">&#160;</td><td class="mdescRight">0 albedo 1 emission 2 opacity 3 radiance <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-static-attribs" class="groupheader"><a id="pub-static-attribs" name="pub-static-attribs"></a>
 Static Public Attributes</h2></td></tr>
 <tr class="memitem:ad5c27b67a76c47dd1913ae9d8ce2b551" id="r_ad5c27b67a76c47dd1913ae9d8ce2b551"><td class="memItemLeft"><a id="ad5c27b67a76c47dd1913ae9d8ce2b551" name="ad5c27b67a76c47dd1913ae9d8ce2b551"></a>
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_quality_custom</b> = 4</td></tr>
+<tr class="memitem:a5e8b529c555779154fac3185cde5b6eb" id="r_a5e8b529c555779154fac3185cde5b6eb"><td class="memItemLeft"><a id="a5e8b529c555779154fac3185cde5b6eb" name="a5e8b529c555779154fac3185cde5b6eb"></a>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_backend_cascades</b> = 0</td></tr>
+<tr class="memitem:a9b1711cc67008bbdfad84578858f4608" id="r_a9b1711cc67008bbdfad84578858f4608"><td class="memItemLeft"><a id="a9b1711cc67008bbdfad84578858f4608" name="a9b1711cc67008bbdfad84578858f4608"></a>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_backend_clipmap</b> = 1</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>renderer.gi settings written by the settings thread and read by <a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> on the render thread </p>

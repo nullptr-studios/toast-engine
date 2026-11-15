@@ -1,0 +1,5 @@
+<map id="assets::Skeleton" name="assets::Skeleton">
+<area shape="rect" id="Node000001" title="Bone hierarchy (.tskel) posed by toast::SkeletalNode, plus the skins bound to it." alt="" coords="5,81,133,109"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="15,5,123,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="71,47,72,81,66,80,67,51"/>
+</map>

@@ -177,6 +177,11 @@ void&#160;</td><td class="memItemRight"><b>recordQuadDepth</b> (vk::CommandBuffe
 <tr class="memitem:aea5a161a0a8f33026be60c85428e3b53" id="r_aea5a161a0a8f33026be60c85428e3b53"><td class="memItemLeft"><a id="aea5a161a0a8f33026be60c85428e3b53" name="aea5a161a0a8f33026be60c85428e3b53"></a>
 void&#160;</td><td class="memItemRight"><b>recordLighting</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</td></tr>
 <tr class="memdesc:aea5a161a0a8f33026be60c85428e3b53"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes scene colour indirect rounded normal and noisy diffuse while reading the G-buffer and depth. <br /></td></tr>
+<tr class="memitem:ab8fcce50b161b70df6fff835f71433f5" id="r_ab8fcce50b161b70df6fff835f71433f5"><td class="memItemLeft"><a id="ab8fcce50b161b70df6fff835f71433f5" name="ab8fcce50b161b70df6fff835f71433f5"></a>
+auto&#160;</td><td class="memItemRight"><b>giGatherActive</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a4f5cfcc4c5e715da28d909032889e299" id="r_a4f5cfcc4c5e715da28d909032889e299"><td class="memItemLeft"><a id="a4f5cfcc4c5e715da28d909032889e299" name="a4f5cfcc4c5e715da28d909032889e299"></a>
+void&#160;</td><td class="memItemRight"><b>recordGiGather</b> (vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport)</td></tr>
+<tr class="memdesc:a4f5cfcc4c5e715da28d909032889e299"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over the half resolution GI target and before <a class="el" href="#aea5a161a0a8f33026be60c85428e3b53" title="Writes scene colour indirect rounded normal and noisy diffuse while reading the G-buffer and depth.">recordLighting()</a> which upsamples it. <br /></td></tr>
 <tr class="memitem:a236cbd3049cf0bbc93e8e107adde3b86" id="r_a236cbd3049cf0bbc93e8e107adde3b86"><td class="memItemLeft"><a id="a236cbd3049cf0bbc93e8e107adde3b86" name="a236cbd3049cf0bbc93e8e107adde3b86"></a>
 auto&#160;</td><td class="memItemRight"><b>ambientRaysActive</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a236cbd3049cf0bbc93e8e107adde3b86"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether <a class="el" href="#a24b6924f3852da24b6bc15238975afd9" title="Inside a scope over noisy diffuse alone with the scene normal sampleable and before recordMarched().">recordAmbient()</a> has rays to trace. <br /></td></tr>
@@ -195,11 +200,15 @@ void&#160;</td><td class="memItemRight"><b>recordGlass</b> (vk::CommandBuffer cm
 <tr class="memitem:a24f2c9ba12ba266c1c25bcb5d6fd948a" id="r_a24f2c9ba12ba266c1c25bcb5d6fd948a"><td class="memItemLeft"><a id="a24f2c9ba12ba266c1c25bcb5d6fd948a" name="a24f2c9ba12ba266c1c25bcb5d6fd948a"></a>
 void&#160;</td><td class="memItemRight"><b>recordGlassSurfaces</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
 <tr class="memdesc:a24f2c9ba12ba266c1c25bcb5d6fd948a"><td class="mdescLeft">&#160;</td><td class="mdescRight">After every blended draw. <br /></td></tr>
+<tr class="memitem:adf65fabf4ba99f38b69ec433976a7a6f" id="r_adf65fabf4ba99f38b69ec433976a7a6f"><td class="memItemLeft"><a id="adf65fabf4ba99f38b69ec433976a7a6f" name="adf65fabf4ba99f38b69ec433976a7a6f"></a>
+void&#160;</td><td class="memItemRight"><b>recordGlassMask</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
 <tr class="memitem:a56b5af37ed73efff85d04b6ce443494b" id="r_a56b5af37ed73efff85d04b6ce443494b"><td class="memItemLeft"><a id="a56b5af37ed73efff85d04b6ce443494b" name="a56b5af37ed73efff85d04b6ce443494b"></a>
 auto&#160;</td><td class="memItemRight"><b>refractsGlass</b> () const -&gt; bool</td></tr>
 <tr class="memdesc:a56b5af37ed73efff85d04b6ce443494b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether the backdrop must be copied before glass draws. <br /></td></tr>
 <tr class="memitem:ac19483abe57a215d145984096cbe9c5f" id="r_ac19483abe57a215d145984096cbe9c5f"><td class="memItemLeft"><a id="ac19483abe57a215d145984096cbe9c5f" name="ac19483abe57a215d145984096cbe9c5f"></a>
 void&#160;</td><td class="memItemRight"><b>setBackdropCaptured</b> (bool captured) noexcept</td></tr>
+<tr class="memitem:a187cca1a921a9f9c010cf00e4f9cba6a" id="r_a187cca1a921a9f9c010cf00e4f9cba6a"><td class="memItemLeft"><a id="a187cca1a921a9f9c010cf00e4f9cba6a" name="a187cca1a921a9f9c010cf00e4f9cba6a"></a>
+void&#160;</td><td class="memItemRight"><b>setBackdropDepthValid</b> (bool valid) noexcept</td></tr>
 <tr class="memitem:aabf852a97c975abca57d33b1ce497f79" id="r_aabf852a97c975abca57d33b1ce497f79"><td class="memItemLeft"><a id="aabf852a97c975abca57d33b1ce497f79" name="aabf852a97c975abca57d33b1ce497f79"></a>
 auto&#160;</td><td class="memItemRight"><b>denoiseActive</b> () const -&gt; bool</td></tr>
 <tr class="memdesc:aabf852a97c975abca57d33b1ce497f79"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether the lighting scope writes denoised terms. <br /></td></tr>

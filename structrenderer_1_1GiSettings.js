@@ -1,5 +1,8 @@
 var structrenderer_1_1GiSettings =
 [
+    [ "clip_cell", "structrenderer_1_1GiSettings.html#a91a432d3649bcf4174255a3e01372307", null ],
+    [ "clip_debug_mode", "structrenderer_1_1GiSettings.html#a8b9dd81f8787ff99087c1aa658579bda", null ],
+    [ "clip_debug_view", "structrenderer_1_1GiSettings.html#acc177d4df099bdd1018d0cf372903fb0", null ],
     [ "debug_mode", "structrenderer_1_1GiSettings.html#a8f7d5f38f747cd26b81228c38e79d77b", null ],
     [ "debug_view", "structrenderer_1_1GiSettings.html#a920e248abdb0ee9740dddb37f4743397", null ],
     [ "history_blend", "structrenderer_1_1GiSettings.html#a3839ff5faaccbc3761f2588fea90dcee", null ],

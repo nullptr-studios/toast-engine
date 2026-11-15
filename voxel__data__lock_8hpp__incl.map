@@ -1,7 +1,16 @@
 <map id="engine/src/toast/physics/voxel_data_lock.hpp" name="engine/src/toast/physics/voxel_data_lock.hpp">
-<area shape="rect" id="Node000001" title="TODO:" alt="" coords="8,5,186,50"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,69,126"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="83,49,58,87,53,84,79,52"/>
-<area shape="rect" id="Node000003" href="$export_8hpp.html" title=" " alt="" coords="93,98,221,126"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="114,48,141,85,136,85,112,53"/>
+<area shape="rect" id="Node000001" title="TODO:" alt="" coords="49,5,228,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,174,69,201"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,53,85,74,65,99,51,129,43,159,38,158,46,127,60,97,81,70,109,48"/>
+<area shape="rect" id="Node000003" href="$export_8hpp.html" title=" " alt="" coords="74,98,202,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="140,48,141,83,136,82,137,53"/>
+<area shape="rect" id="Node000004" href="$lock__profiling_8hpp.html" title=" " alt="" coords="226,98,400,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="185,48,274,90,269,92,184,53"/>
+<area shape="poly" id="edge5_Node000004_Node000002" title=" " alt="" coords="262,129,85,176,83,170,261,124"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="93,174,234,201"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="289,126,205,169,203,164,284,127"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="258,174,373,201"/>
+<area shape="poly" id="edge6_Node000004_Node000006" title=" " alt="" coords="315,124,317,159,312,156,312,128"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="398,174,562,201"/>
+<area shape="poly" id="edge7_Node000004_Node000007" title=" " alt="" coords="343,124,439,167,433,167,342,129"/>
 </map>

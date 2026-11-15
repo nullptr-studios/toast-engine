@@ -349,64 +349,66 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__piece_8
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span></div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>  <span class="keywordtype">void</span> setMisaligned(<span class="keywordtype">bool</span> misaligned);</div>
 <div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span> </div>
-<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span><span class="keyword">protected</span>:</div>
-<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> pieceSize() -&gt; glm::ivec3;</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span></div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#a8b0a1b260a5a50b48565974419355be3">  281</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1VoxelPiece.html#a8b0a1b260a5a50b48565974419355be3">prepareGrid</a>() -&gt; std::unique_ptr&lt;voxel::Volume&gt; = 0;</div>
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span></div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#a37640480a67b3f81f950f61496b9075f">  284</a></span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1VoxelPiece.html#a37640480a67b3f81f950f61496b9075f">finishGrid</a>(<a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; <span class="comment">/*grid*/</span>) { }</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span></div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>  <span class="keywordtype">void</span> markGridDirty() noexcept;</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span></div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#acef868fe44e0ead0a5f85c345d80f80d">  290</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1VoxelPiece.html#acef868fe44e0ead0a5f85c345d80f80d">markLandingDirty</a>() noexcept { ++m_input_revision; }</div>
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span> </div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>  <span class="keywordtype">void</span> onReflectedFieldChanged(std::string_view field_name) <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>  <span class="keywordtype">void</span> onScriptsReloading() <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  <span class="keywordtype">void</span> onScriptsReloaded() <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  <span class="keywordtype">void</span> onScriptVarChanged(std::string_view path) <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  <span class="keywordtype">void</span> updateInspectorMessages() <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span> </div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Kernel&gt;</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span>  <span class="keywordtype">void</span> draw(std::string_view operation, Kernel&amp;&amp; kernel);</div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span></div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>  <span class="keyword">auto</span> drawing() const noexcept -&gt; voxel::<a class="code hl_class" href="classtoast_1_1Volume.html">Volume</a>*;</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  <span class="keywordtype">void</span> init();</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>  <span class="keywordtype">void</span> destroy();</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span></div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Script&quot;</span>)]]</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#add2703492a31e3c2a487ed1c104271ad">  310</a></span>  assets::Handle&lt;assets::Script&gt; <a class="code hl_variable" href="classtoast_1_1VoxelPiece.html#add2703492a31e3c2a487ed1c104271ad">m_shape_script</a>;</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span></div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Clip Planes&quot;</span>), Group(<span class="stringliteral">&quot;Clip&quot;</span>)]]</div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#a66915af5b3f848d56c73d597e6b91313">  314</a></span>  std::vector&lt;glm::vec4&gt; <a class="code hl_variable" href="classtoast_1_1VoxelPiece.html#a66915af5b3f848d56c73d597e6b91313">m_clip_planes</a>;</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>private:</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>  auto drawGrid() -&gt; GridRef;</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span></div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>  <span class="keywordtype">void</span> landGrid(GridRef fresh);</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span></div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>  <span class="keywordtype">void</span> applyClip();</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span></div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>  auto latestGrid() -&gt; const voxel::<a class="code hl_class" href="classtoast_1_1Volume.html">Volume</a>*;</div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  GridRef m_drawn;</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>  GridRef m_grid;</div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  std::future&lt;GridRef&gt; m_job;</div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>  <span class="keywordtype">bool</span> m_grid_dirty = true;</div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>  <span class="keywordtype">bool</span> m_clip_dirty = true;</div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  <span class="keywordtype">bool</span> m_misaligned = false;</div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  <span class="keywordtype">bool</span> m_warned_outside_edit = false;</div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  uint32_t m_input_revision = 1;</div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  uint32_t m_build_count = 0;</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>};</div>
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> landedAt(<span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1LatticePlacement.html">voxel::LatticePlacement</a>&amp;) { }</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span> </div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span><span class="keyword">protected</span>:</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno">  279</span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> pieceSize() -&gt; glm::ivec3;</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span></div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#a8b0a1b260a5a50b48565974419355be3">  283</a></span>  <span class="keyword">virtual</span> <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1VoxelPiece.html#a8b0a1b260a5a50b48565974419355be3">prepareGrid</a>() -&gt; std::unique_ptr&lt;voxel::Volume&gt; = 0;</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span></div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#a37640480a67b3f81f950f61496b9075f">  286</a></span>  <span class="keyword">virtual</span> <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1VoxelPiece.html#a37640480a67b3f81f950f61496b9075f">finishGrid</a>(<a class="code hl_class" href="classvoxel_1_1Volume.html">voxel::Volume</a>&amp; <span class="comment">/*grid*/</span>) { }</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span></div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>  <span class="keywordtype">void</span> markGridDirty() noexcept;</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span></div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#acef868fe44e0ead0a5f85c345d80f80d">  292</a></span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classtoast_1_1VoxelPiece.html#acef868fe44e0ead0a5f85c345d80f80d">markLandingDirty</a>() noexcept { ++m_input_revision; }</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span> </div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>  <span class="keywordtype">void</span> onReflectedFieldChanged(std::string_view field_name) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>  <span class="keywordtype">void</span> onScriptsReloading() <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>  <span class="keywordtype">void</span> onScriptsReloaded() <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>  <span class="keywordtype">void</span> onScriptVarChanged(std::string_view path) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>  <span class="keywordtype">void</span> updateInspectorMessages() <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span> </div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>  <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Kernel&gt;</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>  <span class="keywordtype">void</span> draw(std::string_view operation, Kernel&amp;&amp; kernel);</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span></div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>  <span class="keyword">auto</span> drawing() const noexcept -&gt; voxel::<a class="code hl_class" href="classtoast_1_1Volume.html">Volume</a>*;</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span> </div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>  <span class="keywordtype">void</span> init();</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>  <span class="keywordtype">void</span> destroy();</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span></div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Script&quot;</span>)]]</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#add2703492a31e3c2a487ed1c104271ad">  312</a></span>  assets::Handle&lt;assets::Script&gt; <a class="code hl_variable" href="classtoast_1_1VoxelPiece.html#add2703492a31e3c2a487ed1c104271ad">m_shape_script</a>;</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span></div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Clip Planes&quot;</span>), Group(<span class="stringliteral">&quot;Clip&quot;</span>)]]</div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno"><a class="line" href="classtoast_1_1VoxelPiece.html#a66915af5b3f848d56c73d597e6b91313">  316</a></span>  std::vector&lt;glm::vec4&gt; <a class="code hl_variable" href="classtoast_1_1VoxelPiece.html#a66915af5b3f848d56c73d597e6b91313">m_clip_planes</a>;</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>private:</div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>  auto drawGrid() -&gt; GridRef;</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span></div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>  <span class="keywordtype">void</span> landGrid(GridRef fresh);</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span></div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>  <span class="keywordtype">void</span> applyClip();</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span></div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>  auto latestGrid() -&gt; const voxel::<a class="code hl_class" href="classtoast_1_1Volume.html">Volume</a>*;</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span> </div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>  GridRef m_drawn;</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>  GridRef m_grid;</div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>  std::future&lt;GridRef&gt; m_job;</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>  <span class="keywordtype">bool</span> m_grid_dirty = true;</div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>  <span class="keywordtype">bool</span> m_clip_dirty = true;</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>  <span class="keywordtype">bool</span> m_misaligned = false;</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>  <span class="keywordtype">bool</span> m_warned_outside_edit = false;</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>  uint32_t m_input_revision = 1;</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>  uint32_t m_build_count = 0;</div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>};</div>
 </div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>}</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span> </div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>}</div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
 <div class="ttc" id="aclassassets_1_1VoxelModel_html"><div class="ttname"><a href="classassets_1_1VoxelModel.html">assets::VoxelModel</a></div><div class="ttdef"><b>Definition</b> voxel_model.hpp:43</div></div>
 <div class="ttc" id="aclasstoast_1_1Box_html"><div class="ttname"><a href="classtoast_1_1Box.html">toast::Box</a></div><div class="ttdoc">Intrusive reference-counted handle to a Node.</div><div class="ttdef"><b>Definition</b> box.hpp:35</div></div>
@@ -416,14 +418,14 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__piece_8
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a059ce673693b6726d21fc5427baed01e"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a059ce673693b6726d21fc5427baed01e">toast::VoxelPiece::requestGrid</a></div><div class="ttdeci">void requestGrid()</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:251</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a07d521b47dad6d8abc74c73a56018973"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a07d521b47dad6d8abc74c73a56018973">toast::VoxelPiece::addClipPlane</a></div><div class="ttdeci">void addClipPlane(glm::vec4 plane)</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:317</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a29821c9eb06f17dda55bc1720ef88577"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a29821c9eb06f17dda55bc1720ef88577">toast::VoxelPiece::collectGrid</a></div><div class="ttdeci">auto collectGrid() -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:268</div></div>
-<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a37640480a67b3f81f950f61496b9075f"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a37640480a67b3f81f950f61496b9075f">toast::VoxelPiece::finishGrid</a></div><div class="ttdeci">virtual void finishGrid(voxel::Volume &amp;)</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:284</div></div>
+<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a37640480a67b3f81f950f61496b9075f"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a37640480a67b3f81f950f61496b9075f">toast::VoxelPiece::finishGrid</a></div><div class="ttdeci">virtual void finishGrid(voxel::Volume &amp;)</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:286</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a3b05cbdb521d4346b0eaf5fc36a0136b"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a3b05cbdb521d4346b0eaf5fc36a0136b">toast::VoxelPiece::pieceSize</a></div><div class="ttdeci">virtual auto pieceSize() -&gt; glm::ivec3</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:61</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a3ddeecc7f46b8ef530b0fd25efcfa909"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a3ddeecc7f46b8ef530b0fd25efcfa909">toast::VoxelPiece::fillRoundBox</a></div><div class="ttdeci">void fillRoundBox(glm::vec3 min, glm::vec3 max, float radius, int id, voxel::WriteMode mode=voxel::WriteMode::replace, int match_id=0)</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:92</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a4d1881e98eeeef47f08df453e828d484"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a4d1881e98eeeef47f08df453e828d484">toast::VoxelPiece::getSize</a></div><div class="ttdeci">auto getSize() -&gt; glm::vec3</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:57</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a4e8f6ff1de7792daa675515959213872"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a4e8f6ff1de7792daa675515959213872">toast::VoxelPiece::gridRef</a></div><div class="ttdeci">auto gridRef() -&gt; GridRef</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:236</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a52838ba051112268889a0f7f502d404b"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a52838ba051112268889a0f7f502d404b">toast::VoxelPiece::tile</a></div><div class="ttdeci">void tile(const assets::Handle&lt; assets::VoxelModel &gt; &amp;asset, int fit=0, glm::vec3 anchor=glm::vec3(0.0f), glm::vec3 offset=glm::vec3(0.0f), glm::vec3 mirror=glm::vec3(0.0f), voxel::WriteMode mode=voxel::WriteMode::replace, int match_id=0)</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:152</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a5a7d22cb7c3efe20becad91f90e18a44"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a5a7d22cb7c3efe20becad91f90e18a44">toast::VoxelPiece::getClipPlanes</a></div><div class="ttdeci">auto getClipPlanes() const -&gt; std::vector&lt; glm::vec4 &gt;</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:307</div></div>
-<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a66915af5b3f848d56c73d597e6b91313"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a66915af5b3f848d56c73d597e6b91313">toast::VoxelPiece::m_clip_planes</a></div><div class="ttdeci">std::vector&lt; glm::vec4 &gt; m_clip_planes</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:314</div></div>
+<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a66915af5b3f848d56c73d597e6b91313"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a66915af5b3f848d56c73d597e6b91313">toast::VoxelPiece::m_clip_planes</a></div><div class="ttdeci">std::vector&lt; glm::vec4 &gt; m_clip_planes</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:316</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a734cbfa656abb741a3e1c100c15efb61"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a734cbfa656abb741a3e1c100c15efb61">toast::VoxelPiece::sourcePaletteUid</a></div><div class="ttdeci">virtual auto sourcePaletteUid() const -&gt; uint64_t</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:187</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a750c0bd77cf15aca1a43d77808b22981"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a750c0bd77cf15aca1a43d77808b22981">toast::VoxelPiece::getShapeScript</a></div><div class="ttdeci">auto getShapeScript() const -&gt; const assets::Handle&lt; assets::Script &gt; &amp;</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:303</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_a775e11481562b88228e1dc743fdda7f0"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#a775e11481562b88228e1dc743fdda7f0">toast::VoxelPiece::drawn</a></div><div class="ttdeci">signals::Signal drawn</div><div class="ttdoc">Sent after editShape drew the grid again.</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:166</div></div>
@@ -437,10 +439,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__piece_8
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_abe4cd35b66ae0bd4fb42ea7e567b863c"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#abe4cd35b66ae0bd4fb42ea7e567b863c">toast::VoxelPiece::fillEllipsoid</a></div><div class="ttdeci">void fillEllipsoid(glm::vec3 min, glm::vec3 max, int id, voxel::WriteMode mode=voxel::WriteMode::replace, int match_id=0)</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:102</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_ac0a1f514751d5b0d8601e7fb65319aa9"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#ac0a1f514751d5b0d8601e7fb65319aa9">toast::VoxelPiece::setShapeScript</a></div><div class="ttdeci">void setShapeScript(assets::Handle&lt; assets::Script &gt; script)</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:361</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_ac5f07ad8a322ead25b8bce9b0b8f104a"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#ac5f07ad8a322ead25b8bce9b0b8f104a">toast::VoxelPiece::inputRevision</a></div><div class="ttdeci">auto inputRevision() const noexcept -&gt; uint32_t</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:241</div></div>
-<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_acef868fe44e0ead0a5f85c345d80f80d"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#acef868fe44e0ead0a5f85c345d80f80d">toast::VoxelPiece::markLandingDirty</a></div><div class="ttdeci">void markLandingDirty() noexcept</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:290</div></div>
+<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_acef868fe44e0ead0a5f85c345d80f80d"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#acef868fe44e0ead0a5f85c345d80f80d">toast::VoxelPiece::markLandingDirty</a></div><div class="ttdeci">void markLandingDirty() noexcept</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:292</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_acfbded4f3da4754364f7b1d6d240235b"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#acfbded4f3da4754364f7b1d6d240235b">toast::VoxelPiece::gridStale</a></div><div class="ttdeci">auto gridStale() const noexcept -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:232</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_ad41eb49dae6338fd371b19ea1841da06"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#ad41eb49dae6338fd371b19ea1841da06">toast::VoxelPiece::getShape</a></div><div class="ttdeci">auto getShape() -&gt; Box&lt; Node &gt;</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:337</div></div>
-<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_add2703492a31e3c2a487ed1c104271ad"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#add2703492a31e3c2a487ed1c104271ad">toast::VoxelPiece::m_shape_script</a></div><div class="ttdeci">assets::Handle&lt; assets::Script &gt; m_shape_script</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:310</div></div>
+<div class="ttc" id="aclasstoast_1_1VoxelPiece_html_add2703492a31e3c2a487ed1c104271ad"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#add2703492a31e3c2a487ed1c104271ad">toast::VoxelPiece::m_shape_script</a></div><div class="ttdeci">assets::Handle&lt; assets::Script &gt; m_shape_script</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:312</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_ae855b0561f32fd2a65538acc5e239069"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#ae855b0561f32fd2a65538acc5e239069">toast::VoxelPiece::grid</a></div><div class="ttdeci">auto grid() -&gt; const voxel::Volume *</div><div class="ttdef"><b>Definition</b> voxel_piece.cpp:246</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_aebaae6396232c146a8d71838cdb50b23"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#aebaae6396232c146a8d71838cdb50b23">toast::VoxelPiece::isMisaligned</a></div><div class="ttdeci">auto isMisaligned() const noexcept -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:162</div></div>
 <div class="ttc" id="aclasstoast_1_1VoxelPiece_html_afc5c29b4e19460444cde44819bbbda91"><div class="ttname"><a href="classtoast_1_1VoxelPiece.html#afc5c29b4e19460444cde44819bbbda91">toast::VoxelPiece::buildCount</a></div><div class="ttdeci">auto buildCount() const noexcept -&gt; uint32_t</div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:247</div></div>
@@ -449,6 +451,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__piece_8
 <div class="ttc" id="aclasstoast_1_1Voxel_html"><div class="ttname"><a href="classtoast_1_1Voxel.html">toast::Voxel</a></div><div class="ttdef"><b>Definition</b> voxel.hpp:14</div></div>
 <div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
 <div class="ttc" id="astructtoast_1_1VoxelPiece_1_1Grid_html"><div class="ttname"><a href="structtoast_1_1VoxelPiece_1_1Grid.html">toast::VoxelPiece::Grid</a></div><div class="ttdef"><b>Definition</b> voxel_piece.hpp:191</div></div>
+<div class="ttc" id="astructvoxel_1_1LatticePlacement_html"><div class="ttname"><a href="structvoxel_1_1LatticePlacement.html">voxel::LatticePlacement</a></div><div class="ttdef"><b>Definition</b> stamp.hpp:72</div></div>
 <div class="ttc" id="atypes_8hpp_html"><div class="ttname"><a href="types_8hpp.html">types.hpp</a></div><div class="ttdoc">Concrete asset types for the Toast engine.</div></div>
 <div class="ttc" id="avoxel_8hpp_html"><div class="ttname"><a href="voxel_8hpp.html">voxel.hpp</a></div><div class="ttdoc">Common base of every voxel node.</div></div>
 <div class="ttc" id="avoxel__edit_8hpp_html"><div class="ttname"><a href="voxel__edit_8hpp.html">voxel_edit.hpp</a></div><div class="ttdoc">Functions that allow the editing of Voxel Volumes.</div></div>

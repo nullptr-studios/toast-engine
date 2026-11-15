@@ -1,3 +1,41 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structassets_1_1MaterialSettings.html" title="Fixed&#45;function pipeline state carried by the material&#39;s [settings] block." alt="" coords="5,5,184,33"/>
+<area shape="rect" id="Node000000" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="5,638,155,666"/>
+<area shape="rect" id="Node000001" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,5,377,50"/>
+<area shape="poly" id="edge44_Node000000_Node000001" title=" " alt="" coords="81,623,93,502,117,335,133,250,152,171,175,106,201,61,217,48,214,53,205,64,179,108,157,173,138,251,122,336,99,503,86,623"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,75,377,119"/>
+<area shape="poly" id="edge45_Node000000_Node000002" title=" " alt="" coords="82,622,96,515,121,368,137,294,156,226,177,169,201,130,217,117,215,122,205,133,182,172,161,227,142,295,126,369,101,515,87,623"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,144,377,189"/>
+<area shape="poly" id="edge46_Node000000_Node000003" title=" " alt="" coords="78,622,81,541,97,429,113,368,134,308,163,251,201,199,217,187,215,192,205,203,168,253,139,310,118,370,103,430,87,542,83,623"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,213,377,258"/>
+<area shape="poly" id="edge47_Node000000_Node000004" title=" " alt="" coords="80,622,87,552,106,458,121,408,142,358,168,311,201,268,218,256,215,261,205,272,172,314,146,360,126,410,111,460,92,553,85,623"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,283,377,327"/>
+<area shape="poly" id="edge48_Node000000_Node000005" title=" " alt="" coords="82,622,93,564,114,488,130,448,149,408,173,371,201,338,219,326,216,330,205,342,177,374,154,411,135,450,119,490,98,565,88,623"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,352,377,397"/>
+<area shape="poly" id="edge49_Node000000_Node000006" title=" " alt="" coords="86,622,101,576,124,518,157,459,178,432,201,407,220,395,217,399,204,411,182,435,161,462,129,521,106,578,91,623"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,421,377,466"/>
+<area shape="poly" id="edge50_Node000000_Node000007" title=" " alt="" coords="92,623,134,550,165,511,201,476,222,464,219,469,204,480,169,515,139,553,97,625"/>
+<area shape="rect" id="Node000008" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,491,377,535"/>
+<area shape="poly" id="edge51_Node000000_Node000008" title=" " alt="" coords="103,626,147,585,201,545,227,534,223,538,204,550,150,589,108,628"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,560,377,605"/>
+<area shape="poly" id="edge52_Node000000_Node000009" title=" " alt="" coords="137,631,222,603,218,607,140,634"/>
+<area shape="rect" id="Node000010" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,629,377,674"/>
+<area shape="poly" id="edge53_Node000000_Node000010" title=" " alt="" coords="169,649,204,650,200,653,172,654"/>
+<area shape="rect" id="Node000011" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,699,377,743"/>
+<area shape="poly" id="edge54_Node000000_Node000011" title=" " alt="" coords="138,668,222,697,218,700,139,673"/>
+<area shape="rect" id="Node000012" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,768,377,813"/>
+<area shape="poly" id="edge55_Node000000_Node000012" title=" " alt="" coords="105,674,150,714,204,753,227,766,223,768,201,758,147,718,106,679"/>
+<area shape="rect" id="Node000013" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,837,377,882"/>
+<area shape="poly" id="edge56_Node000000_Node000013" title=" " alt="" coords="94,677,139,750,169,789,204,823,223,836,218,838,201,827,165,792,134,753,95,682"/>
+<area shape="rect" id="Node000014" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,907,377,951"/>
+<area shape="poly" id="edge57_Node000000_Node000014" title=" " alt="" coords="88,678,106,726,129,783,161,841,182,868,204,892,221,906,216,907,201,896,178,872,157,844,124,785,101,728,89,683"/>
+<area shape="rect" id="Node000015" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,976,377,1021"/>
+<area shape="poly" id="edge58_Node000000_Node000015" title=" " alt="" coords="85,678,98,738,119,814,135,853,154,892,177,929,205,962,220,975,215,976,201,966,173,932,149,895,130,855,114,815,93,740,85,683"/>
+<area shape="rect" id="Node000016" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,1045,377,1090"/>
+<area shape="poly" id="edge59_Node000000_Node000016" title=" " alt="" coords="83,678,92,750,111,844,126,894,146,943,172,990,205,1031,219,1044,214,1045,201,1035,168,993,142,945,121,896,106,845,87,751,82,684"/>
+<area shape="rect" id="Node000017" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,1115,377,1159"/>
+<area shape="poly" id="edge60_Node000000_Node000017" title=" " alt="" coords="81,678,87,762,103,873,118,934,139,993,168,1050,205,1101,219,1114,214,1114,201,1104,163,1053,134,995,113,935,97,874,81,762,81,683"/>
+<area shape="rect" id="Node000018" href="$classassets_1_1Handle.html" title=" " alt="" coords="203,1184,377,1229"/>
+<area shape="poly" id="edge61_Node000000_Node000018" title=" " alt="" coords="85,678,101,788,126,934,142,1008,161,1076,182,1132,205,1170,219,1184,213,1183,201,1173,177,1134,156,1078,137,1010,121,935,96,789,84,684"/>
+<area shape="rect" id="Node000019" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="212,1252,368,1280"/>
+<area shape="poly" id="edge62_Node000000_Node000019" title=" " alt="" coords="84,678,97,801,120,969,136,1054,155,1132,178,1196,191,1221,205,1239,219,1252,214,1251,201,1243,186,1223,173,1198,150,1134,131,1056,115,970,92,802,83,683"/>
 </map>

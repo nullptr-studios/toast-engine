@@ -295,7 +295,9 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:aac76869a0a31bca93887c6fa17c062c1" id="r_aac76869a0a31bca93887c6fa17c062c1"><td class="memItemLeft"><a id="aac76869a0a31bca93887c6fa17c062c1" name="aac76869a0a31bca93887c6fa17c062c1"></a>
 float&#160;</td><td class="memItemRight"><b>bias</b> = 0.3f</td></tr>
 <tr class="memdesc:aac76869a0a31bca93887c6fa17c062c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Share of the error that is closed every step. <br /></td></tr>
-<tr class="memitem:a56b56fb0306803a4fe9bb31e1be5be05" id="r_a56b56fb0306803a4fe9bb31e1be5be05"><td class="memItemLeft">float&#160;</td><td class="memItemRight"><a class="el" href="#a56b56fb0306803a4fe9bb31e1be5be05">friction</a> = k_default_joint_friction</td></tr>
+<tr class="memitem:a56b56fb0306803a4fe9bb31e1be5be05" id="r_a56b56fb0306803a4fe9bb31e1be5be05"><td class="memItemLeft"><a id="a56b56fb0306803a4fe9bb31e1be5be05" name="a56b56fb0306803a4fe9bb31e1be5be05"></a>
+float&#160;</td><td class="memItemRight"><b>friction</b> = k_default_joint_friction</td></tr>
+<tr class="memdesc:a56b56fb0306803a4fe9bb31e1be5be05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Material friction times pin radius as torque per newton carried and zero swings forever. <br /></td></tr>
 <tr class="memitem:ab515a4eb591e2eca4ac319bd4f3d4cd4" id="r_ab515a4eb591e2eca4ac319bd4f3d4cd4"><td class="memItemLeft"><a id="ab515a4eb591e2eca4ac319bd4f3d4cd4" name="ab515a4eb591e2eca4ac319bd4f3d4cd4"></a>
 bool&#160;</td><td class="memItemRight"><b>limit_enabled</b> = false</td></tr>
 <tr class="memitem:a29017b60767390df5cea2777a888179e" id="r_a29017b60767390df5cea2777a888179e"><td class="memItemLeft"><a id="a29017b60767390df5cea2777a888179e" name="a29017b60767390df5cea2777a888179e"></a>
@@ -405,6 +407,9 @@ virtual void&#160;</td><td class="memItemRight"><b>onScriptsReloaded</b> ()</td>
 <tr class="memitem:a04e96b6dfe562c1a432322121410255a pro_methods_classtoast_1_1Node" id="r_a04e96b6dfe562c1a432322121410255a"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a04e96b6dfe562c1a432322121410255a">onScriptsReloading</a> ()</td></tr>
 <tr class="memitem:adfc97ff989a985fcec703d6f88a40fa8 pro_methods_classtoast_1_1Node" id="r_adfc97ff989a985fcec703d6f88a40fa8"><td class="memItemLeft">virtual auto&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#adfc97ff989a985fcec703d6f88a40fa8">luaAffinity</a> () const noexcept -&gt; std::optional&lt; size_t &gt;</td></tr>
 <tr class="memitem:ade869bb26a1120658cfe901bd324245b pro_methods_classtoast_1_1Node" id="r_ade869bb26a1120658cfe901bd324245b"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#ade869bb26a1120658cfe901bd324245b">onScriptVarChanged</a> (std::string_view path)</td></tr>
+<tr class="memitem:aa39ab418683c1112dd09a6041c62a197 pro_methods_classtoast_1_1Node" id="r_aa39ab418683c1112dd09a6041c62a197"><td class="memItemLeft">
+virtual auto&#160;</td><td class="memItemRight"><b>inspectorOptions</b> (std::string_view field_name) -&gt; std::vector&lt; std::string &gt;</td></tr>
+<tr class="memdesc:aa39ab418683c1112dd09a6041c62a197 pro_methods_classtoast_1_1Node"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dropdown choices for a field marked [[Options]], refreshed with every inspector update. <br /></td></tr>
 <tr class="memitem:a3f5418e3ee4c9ab0524ce7b707952c64 pro_methods_classtoast_1_1Node" id="r_a3f5418e3ee4c9ab0524ce7b707952c64"><td class="memItemLeft">
 void&#160;</td><td class="memItemRight"><b>addInspectorMessage</b> (const <a class="el" href="structtoast_1_1NodeMessage.html">NodeMessage</a> &amp;message)</td></tr>
 <tr class="memitem:afe05752a3572bacbdf0284462d3c2373 pro_methods_classtoast_1_1Node" id="r_afe05752a3572bacbdf0284462d3c2373"><td class="memItemLeft">
@@ -670,22 +675,6 @@ INodeOwner *&#160;</td><td class="memItemRight"><b>m_owner</b> = nullptr</td></t
 </div><div class="memdoc">
 
 <p>Reimplemented from <a class="el" href="classtoast_1_1Node.html">toast::Node</a>.</p>
-
-</div>
-</div>
-<a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
-<a id="a56b56fb0306803a4fe9bb31e1be5be05" name="a56b56fb0306803a4fe9bb31e1be5be05"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a56b56fb0306803a4fe9bb31e1be5be05">&#9670;&#160;</a></span>friction</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">float physics::HingeJoint::friction = k_default_joint_friction</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Torque that holds the hinge against turning per newton it carries, the friction of the material times the radius of the pin. Zero swings forever </p>
 
 </div>
 </div>

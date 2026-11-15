@@ -24,10 +24,10 @@
 <area shape="poly" id="edge61_Node000001_Node000040" title=" " alt="" coords="1447,42,1589,65,1746,95,2047,167,2341,246,2773,375,2768,375,2340,251,2046,172,1745,101,1588,70,1447,47"/>
 <area shape="rect" id="Node000044" href="$raycast_8hpp.html" title="Raycast Implmentation mostly from https://iquilezles.org/articles/intersectors/ and https://www...." alt="" coords="1747,191,1925,235"/>
 <area shape="poly" id="edge67_Node000001_Node000044" title=" " alt="" coords="1447,34,1568,54,1633,72,1694,96,1731,116,1765,141,1818,191,1813,190,1762,145,1728,121,1692,100,1631,77,1567,59,1447,39"/>
-<area shape="rect" id="Node000088" href="$shape__query_8hpp.html" title=" " alt="" coords="417,98,596,143"/>
-<area shape="poly" id="edge78_Node000001_Node000088" title=" " alt="" coords="1235,36,953,60,781,78,608,101,597,102,595,98,607,95,780,73,953,55,1240,34"/>
-<area shape="rect" id="Node000089" href="$voxel__render_8hpp.html" title="Read&#45;only voxel render records." alt="" coords="620,98,798,143"/>
-<area shape="poly" id="edge81_Node000001_Node000089" title=" " alt="" coords="1235,42,1043,68,818,101,800,104,798,99,817,95,1042,63,1240,40"/>
+<area shape="rect" id="Node000091" href="$shape__query_8hpp.html" title=" " alt="" coords="417,98,596,143"/>
+<area shape="poly" id="edge78_Node000001_Node000091" title=" " alt="" coords="1235,36,953,60,781,78,608,101,597,102,595,98,607,95,780,73,953,55,1240,34"/>
+<area shape="rect" id="Node000092" href="$voxel__render_8hpp.html" title="Read&#45;only voxel render records." alt="" coords="620,98,798,143"/>
+<area shape="poly" id="edge81_Node000001_Node000092" title=" " alt="" coords="1235,42,1043,68,818,101,800,104,798,99,817,95,1042,63,1240,40"/>
 <area shape="rect" id="Node000003" href="$broad__phase_8hpp.html" title="Generates potentially colliding shape pairs." alt="" coords="1051,376,1229,421"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1079,242,1057,263,1041,285,1034,306,1041,327,1062,353,1092,376,1087,375,1059,357,1036,329,1029,306,1036,282,1053,260,1074,245"/>
 <area shape="poly" id="edge11_Node000002_Node000012" title=" " alt="" coords="1141,249,1142,285,1138,282,1138,253"/>
@@ -130,6 +130,6 @@
 <area shape="poly" id="edge76_Node000045_Node000053" title=" " alt="" coords="2392,336,2437,376,2431,375,2391,341"/>
 <area shape="rect" id="Node000054" href="$panel__3d_8hpp.html" title="World&#45;space UI panel." alt="" coords="2572,376,2727,421"/>
 <area shape="poly" id="edge77_Node000045_Node000054" title=" " alt="" coords="2441,330,2582,376,2576,375,2440,336"/>
-<area shape="poly" id="edge79_Node000088_Node000004" title=" " alt="" coords="555,149,591,178,625,214,651,256,658,280,661,304,661,400,663,435,670,463,684,487,709,511,735,522,783,535,906,565,901,565,782,541,733,527,706,516,680,490,665,465,658,436,656,400,656,304,653,281,646,258,621,217,588,182,555,154"/>
-<area shape="poly" id="edge82_Node000089_Node000004" title=" " alt="" coords="711,156,712,304,712,400,712,434,714,462,723,486,743,511,769,527,808,542,907,567,901,567,807,547,766,532,739,515,718,489,709,463,706,434,707,400,706,304,708,161"/>
+<area shape="poly" id="edge79_Node000091_Node000004" title=" " alt="" coords="555,149,591,178,625,214,651,256,658,280,661,304,661,400,663,435,670,463,684,487,709,511,735,522,783,535,906,565,901,565,782,541,733,527,706,516,680,490,665,465,658,436,656,400,656,304,653,281,646,258,621,217,588,182,555,154"/>
+<area shape="poly" id="edge82_Node000092_Node000004" title=" " alt="" coords="711,156,712,304,712,400,712,434,714,462,723,486,743,511,769,527,808,542,907,567,901,567,807,547,766,532,739,515,718,489,709,463,706,434,707,400,706,304,708,161"/>
 </map>

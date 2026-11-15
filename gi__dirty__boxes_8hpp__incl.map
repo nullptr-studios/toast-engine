@@ -1,0 +1,13 @@
+<map id="engine/src/toast/renderer/lighting/gi_dirty_boxes.hpp" name="engine/src/toast/renderer/lighting/gi_dirty_boxes.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="147,5,348,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,98,71,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="193,53,86,95,84,90,191,48"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,98,198,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,50,176,90,173,86,218,51"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="221,98,274,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="249,48,250,84,245,81,245,52"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="298,98,421,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="278,48,332,89,327,88,276,53"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="446,98,508,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="309,48,434,94,428,95,308,53"/>
+</map>

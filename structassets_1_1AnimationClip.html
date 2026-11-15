@@ -128,6 +128,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structassets_1
 Public Member Functions</h2></td></tr>
 <tr class="memitem:afaa98081e96a585d4c2ad1bf1e06d67d" id="r_afaa98081e96a585d4c2ad1bf1e06d67d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#afaa98081e96a585d4c2ad1bf1e06d67d">sample</a> (float time) const -&gt; std::unordered_map&lt; std::string, <a class="el" href="structassets_1_1NodePose.html">NodePose</a> &gt;</td></tr>
 <tr class="memdesc:afaa98081e96a585d4c2ad1bf1e06d67d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Samples every track at <code class="param">time</code>, grouped per target node.  <br /></td></tr>
+<tr class="memitem:a503599763cd5aee195d5e3b9d1494070" id="r_a503599763cd5aee195d5e3b9d1494070"><td class="memItemLeft"><a id="a503599763cd5aee195d5e3b9d1494070" name="a503599763cd5aee195d5e3b9d1494070"></a>
+void&#160;</td><td class="memItemRight"><b>sampleInto</b> (float time, std::span&lt; const int32_t &gt; track_to_bone, std::span&lt; <a class="el" href="structassets_1_1BonePose.html">BonePose</a> &gt; pose) const</td></tr>
+<tr class="memdesc:a503599763cd5aee195d5e3b9d1494070"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes tracks whose <code class="param">track_to_bone</code> entry is a valid bone into <code class="param">pose</code>, no allocation. <br /></td></tr>
 <tr class="memitem:aba7ed77926f96cd29d5c12fad2055d68" id="r_aba7ed77926f96cd29d5c12fad2055d68"><td class="memItemLeft"><a id="aba7ed77926f96cd29d5c12fad2055d68" name="aba7ed77926f96cd29d5c12fad2055d68"></a>
 auto&#160;</td><td class="memItemRight"><b>wrap</b> (float time) const -&gt; float</td></tr>
 <tr class="memdesc:aba7ed77926f96cd29d5c12fad2055d68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wraps <code class="param">time</code> into [0, duration], for looping playback. <br /></td></tr>

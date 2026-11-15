@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 </div><!--header-->
 <div class="contents">
 
+<p>Render thread only apart from stats().  
+ <a href="#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="voxel__blas__cache_8hpp_source.html">voxel_blas_cache.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
@@ -130,7 +133,9 @@ Classes</h2></td></tr>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a52c67652a186518c2567b12927979de0" id="r_a52c67652a186518c2567b12927979de0"><td class="memItemLeft"><a id="a52c67652a186518c2567b12927979de0" name="a52c67652a186518c2567b12927979de0"></a>
 &#160;</td><td class="memItemRight"><b>VoxelBlasCache</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, uint32_t frames_in_flight)</td></tr>
-<tr class="memitem:a107532aa3d559000398a0f1acab2912e" id="r_a107532aa3d559000398a0f1acab2912e"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a107532aa3d559000398a0f1acab2912e">update</a> (vk::CommandBuffer cmd, uint32_t frame_index, const <a class="el" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a> &amp;storage, std::span&lt; const uint32_t &gt; records, uint32_t budget)</td></tr>
+<tr class="memitem:a107532aa3d559000398a0f1acab2912e" id="r_a107532aa3d559000398a0f1acab2912e"><td class="memItemLeft"><a id="a107532aa3d559000398a0f1acab2912e" name="a107532aa3d559000398a0f1acab2912e"></a>
+void&#160;</td><td class="memItemRight"><b>update</b> (vk::CommandBuffer cmd, uint32_t frame_index, const <a class="el" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a> &amp;storage, std::span&lt; const uint32_t &gt; records, uint32_t budget)</td></tr>
+<tr class="memdesc:a107532aa3d559000398a0f1acab2912e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Before the TLAS build once the fence of <code class="param">frame_index</code> was waited on and the first build ignores <code class="param">budget</code>. <br /></td></tr>
 <tr class="memitem:acae28dcd0d272a42abcaf846b1e2b292" id="r_acae28dcd0d272a42abcaf846b1e2b292"><td class="memItemLeft"><a id="acae28dcd0d272a42abcaf846b1e2b292" name="acae28dcd0d272a42abcaf846b1e2b292"></a>
 auto&#160;</td><td class="memItemRight"><b>lookup</b> (uint64_t node_rid) const -&gt; const <a class="el" href="structrenderer_1_1VoxelBlasCache_1_1Lookup.html">Lookup</a> *</td></tr>
 <tr class="memdesc:acae28dcd0d272a42abcaf846b1e2b292"><td class="mdescLeft">&#160;</td><td class="mdescRight">Null keeps the volume on the unit box. <br /></td></tr>
@@ -157,61 +162,8 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_instance_brick
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_instance_glass</b> = 1u &lt;&lt; 22</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>One AABB per occupied brick per record where carving keeps a built BLAS correct and only a newly occupied brick rebuilds </p><dl class="section note"><dt>Note</dt><dd>Render thread only apart from stats() </dd></dl>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a107532aa3d559000398a0f1acab2912e" name="a107532aa3d559000398a0f1acab2912e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a107532aa3d559000398a0f1acab2912e">&#9670;&#160;</a></span>update()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void renderer::VoxelBlasCache::update </td>
-          <td>(</td>
-          <td class="paramtype">vk::CommandBuffer</td>          <td class="paramname"><span class="paramname"><em>cmd</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>frame_index</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>storage</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">std::span&lt; const uint32_t &gt;</td>          <td class="paramname"><span class="paramname"><em>records</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint32_t</td>          <td class="paramname"><span class="paramname"><em>budget</em></span>&#160;)</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Before the TLAS build once the fence of <code class="param">frame_index</code> was waited on </p><dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">records</td><td>the volume records the trace scene instances this frame </td></tr>
-    <tr><td class="paramname">budget</td><td>bricks built per frame though the first build always goes ahead </td></tr>
-  </table>
-  </dd>
-</dl>
-<div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="classrenderer_1_1VoxelBlasCache_a107532aa3d559000398a0f1acab2912e_icgraph.png" border="0" usemap="#aclassrenderer_1_1VoxelBlasCache_a107532aa3d559000398a0f1acab2912e_icgraph" loading="lazy" alt=""/></div>
-<map name="aclassrenderer_1_1VoxelBlasCache_a107532aa3d559000398a0f1acab2912e_icgraph" id="aclassrenderer_1_1VoxelBlasCache_a107532aa3d559000398a0f1acab2912e_icgraph">
-<area shape="rect" title=" " alt="" coords="5,29,193,74"/>
-<area shape="poly" title=" " alt="" coords="127,14,118,10,99,8,82,10,71,15,67,21,68,30,63,28,62,19,68,10,80,5,99,3,119,5,133,14"/>
-</map>
-</div>
-
-</div>
-</div>
-<hr/>The documentation for this class was generated from the following files:<ul>
+<div class="textblock"><p>Render thread only apart from stats(). </p>
+</div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/renderer/voxel/<a class="el" href="voxel__blas__cache_8hpp_source.html">voxel_blas_cache.hpp</a></li>
 <li>engine/src/toast/renderer/voxel/<a class="el" href="voxel__blas__cache_8cpp.html">voxel_blas_cache.cpp</a></li>
 </ul>

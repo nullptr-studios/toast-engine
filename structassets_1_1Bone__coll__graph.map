@@ -1,0 +1,5 @@
+<map id="assets::Bone" name="assets::Bone">
+<area shape="rect" id="Node000001" title=" " alt="" coords="21,106,125,134"/>
+<area shape="rect" id="Node000002" href="$structassets_1_1BonePose.html" title="Local bone transform, trivially copyable since .tskel writes it raw." alt="" coords="5,5,141,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="75,47,76,106,70,105,71,50"/>
+</map>

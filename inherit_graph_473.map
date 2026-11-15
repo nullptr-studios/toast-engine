@@ -1,3 +1,29 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structrenderer_1_1SharedTextureOutputTarget_1_1Interop_1_1Slot.html" title=" " alt="" coords="5,5,227,50"/>
+<area shape="rect" id="Node000000" href="$classrenderer_1_1IPostProcessPass.html" title=" " alt="" coords="5,317,201,345"/>
+<area shape="rect" id="Node000001" href="$classrenderer_1_1BloomPass.html" title=" " alt="" coords="277,5,432,33"/>
+<area shape="poly" id="edge673_Node000000_Node000001" title=" " alt="" coords="108,302,124,247,151,177,191,105,217,72,247,44,278,29,275,33,250,48,221,76,196,108,155,179,129,248,113,303"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1FxaaPass.html" title=" " alt="" coords="282,57,427,85"/>
+<area shape="poly" id="edge674_Node000000_Node000002" title=" " alt="" coords="111,302,130,256,158,200,197,144,221,118,247,96,283,80,279,84,250,100,225,122,202,147,163,203,135,259,116,304"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1GiClipmapPass.html" title=" " alt="" coords="264,109,445,137"/>
+<area shape="poly" id="edge675_Node000000_Node000003" title=" " alt="" coords="116,303,137,267,167,225,204,183,247,148,276,136,272,139,250,152,208,187,171,228,142,270,121,305"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1GiPass.html" title=" " alt="" coords="291,161,418,189"/>
+<area shape="poly" id="edge676_Node000000_Node000004" title=" " alt="" coords="124,304,176,251,210,223,247,199,292,184,289,188,250,204,214,227,180,255,128,307"/>
+<area shape="rect" id="Node000005" href="$classrenderer_1_1LensFlarePass.html" title=" " alt="" coords="266,213,442,241"/>
+<area shape="poly" id="edge677_Node000000_Node000005" title=" " alt="" coords="138,307,189,278,248,251,289,240,285,243,250,256,192,283,142,311"/>
+<area shape="rect" id="Node000006" href="$classrenderer_1_1MotionBlurPass.html" title=" " alt="" coords="262,265,446,293"/>
+<area shape="poly" id="edge678_Node000000_Node000006" title=" " alt="" coords="187,311,286,292,282,295,190,316"/>
+<area shape="rect" id="Node000007" href="$classrenderer_1_1SsaoPass.html" title=" " alt="" coords="282,317,426,345"/>
+<area shape="poly" id="edge679_Node000000_Node000007" title=" " alt="" coords="215,329,284,330,280,333,217,334"/>
+<area shape="rect" id="Node000008" href="$classrenderer_1_1SsrPass.html" title="Half resolution stochastic SSR." alt="" coords="288,369,421,397"/>
+<area shape="poly" id="edge680_Node000000_Node000008" title=" " alt="" coords="188,346,289,368,285,371,189,351"/>
+<area shape="rect" id="Node000009" href="$classrenderer_1_1TaaPass.html" title=" " alt="" coords="287,421,422,449"/>
+<area shape="poly" id="edge681_Node000000_Node000009" title=" " alt="" coords="140,351,192,379,250,406,289,420,284,422,248,411,189,384,140,356"/>
+<area shape="rect" id="Node000010" href="$classrenderer_1_1TonemapPass.html" title=" " alt="" coords="268,473,440,501"/>
+<area shape="poly" id="edge682_Node000000_Node000010" title=" " alt="" coords="126,354,180,408,214,435,250,458,281,472,276,473,247,463,210,439,176,412,126,359"/>
+<area shape="rect" id="Node000011" href="$classrenderer_1_1TracedShadowPass.html" title=" " alt="" coords="251,525,458,553"/>
+<area shape="poly" id="edge683_Node000000_Node000011" title=" " alt="" coords="119,356,142,393,171,434,208,476,250,510,276,525,271,525,247,515,204,479,167,437,137,396,118,361"/>
+<area shape="rect" id="Node000012" href="$classrenderer_1_1TracedSpecularPass.html" title="GGX rays for reflective voxels at half resolution in place of their environment specular." alt="" coords="249,577,460,605"/>
+<area shape="poly" id="edge684_Node000000_Node000012" title=" " alt="" coords="114,357,135,404,163,459,202,515,225,540,250,562,274,577,268,577,247,567,221,544,197,519,158,462,130,406,113,362"/>
+<area shape="rect" id="Node000013" href="$classrenderer_1_1VolumetricPass.html" title="Height fog and fog volumes marched at half or quarter resolution." alt="" coords="263,629,446,657"/>
+<area shape="poly" id="edge685_Node000000_Node000013" title=" " alt="" coords="111,357,129,414,155,483,196,554,221,587,250,614,272,629,266,628,247,619,217,590,191,557,151,486,124,416,110,363"/>
 </map>

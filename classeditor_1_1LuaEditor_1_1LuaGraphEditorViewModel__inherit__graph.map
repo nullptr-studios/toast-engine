@@ -1,0 +1,9 @@
+<map id="editor.LuaEditor.LuaGraphEditorViewModel" name="editor.LuaEditor.LuaGraphEditorViewModel">
+<area shape="rect" id="Node000001" title=" " alt="" coords="48,81,236,126"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,53,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="60,40,115,79,110,82,59,45"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="77,5,208,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="144,47,145,82,140,79,141,51"/>
+<area shape="rect" id="Node000004" href="$interfaceeditor_1_1Workspace_1_1IAutosavable.html" title=" " alt="" coords="231,5,454,33"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="299,39,196,83,195,78,294,40"/>
+</map>

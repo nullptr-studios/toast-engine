@@ -5,6 +5,7 @@ var dir_86f88daaaf08922b03db05b762deb37a =
     [ "asset_manager.hpp", "asset__manager_8hpp.html", "asset__manager_8hpp" ],
     [ "asset_registry.hpp", "asset__registry_8hpp_source.html", null ],
     [ "assets.hpp", "assets_2assets_8hpp.html", "assets_2assets_8hpp" ],
+    [ "binary_io.hpp", "binary__io_8hpp.html", "binary__io_8hpp" ],
     [ "core_types.hpp", "core__types_8hpp.html", "core__types_8hpp" ],
     [ "curve.hpp", "curve_8hpp.html", "curve_8hpp" ],
     [ "data.hpp", "data_8hpp.html", "data_8hpp" ],
@@ -21,6 +22,7 @@ var dir_86f88daaaf08922b03db05b762deb37a =
     [ "schema.hpp", "schema_8hpp.html", "schema_8hpp" ],
     [ "script.hpp", "script_8hpp.html", "script_8hpp" ],
     [ "shader.hpp", "shader_8hpp.html", "shader_8hpp" ],
+    [ "skeleton.hpp", "skeleton_8hpp.html", "skeleton_8hpp" ],
     [ "texture.hpp", "texture_8hpp.html", "texture_8hpp" ],
     [ "types.hpp", "types_8hpp.html", null ]
 ];

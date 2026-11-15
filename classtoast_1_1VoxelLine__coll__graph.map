@@ -1,0 +1,36 @@
+<map id="toast::VoxelLine" name="toast::VoxelLine">
+<area shape="rect" id="Node000001" title=" " alt="" coords="1933,168,2058,196"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelVolume.html" title=" " alt="" coords="1738,110,1884,138"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="1871,140,1952,168,1947,168,1871,145"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1VoxelPiece.html" title=" " alt="" coords="1483,88,1616,116"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="1631,106,1740,118,1735,118,1631,112"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1Voxel.html" title=" " alt="" coords="1190,23,1287,51"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="1302,41,1378,52,1460,69,1514,88,1508,88,1459,74,1377,58,1302,47"/>
+<area shape="rect" id="Node000005" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="800,16,914,44"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="930,29,1192,36,1187,37,930,34"/>
+<area shape="rect" id="Node000006" href="$classtoast_1_1Node.html" title=" " alt="" coords="608,16,704,44"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="719,28,802,30,797,31,720,33"/>
+<area shape="rect" id="Node000007" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="323,16,465,44"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="480,28,610,29,605,31,481,33"/>
+<area shape="rect" id="Node000008" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="5,16,166,44"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="180,28,324,29,320,32,182,33"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1Handle.html" title=" " alt="" coords="1151,80,1325,125"/>
+<area shape="poly" id="edge8_Node000003_Node000009" title=" " alt="" coords="1341,100,1486,102,1480,103,1341,105"/>
+<area shape="rect" id="Node000010" href="$classassets_1_1HandleBase.html" title="Base class for type&#45;erased asset handles." alt="" coords="581,240,730,268"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="687,229,737,196,802,158,878,122,958,97,1008,89,1058,86,1153,92,1148,92,1058,92,1008,95,960,102,880,127,805,162,739,200,690,234"/>
+<area shape="rect" id="Node000013" href="$classassets_1_1Handle.html" title="Type&#45;safe smart pointer for assets." alt="" coords="780,192,935,220"/>
+<area shape="poly" id="edge13_Node000013_Node000010" title=" " alt="" coords="731,234,793,221,799,220,732,239"/>
+<area shape="rect" id="Node000014" href="$classassets_1_1Handle.html" title=" " alt="" coords="1151,229,1325,274"/>
+<area shape="poly" id="edge15_Node000014_Node000010" title=" " alt="" coords="693,274,723,288,755,298,858,319,940,325,1023,318,1126,298,1163,287,1194,275,1200,274,1164,292,1128,304,1024,323,941,330,858,324,754,304,721,293,692,279"/>
+<area shape="rect" id="Node000015" href="$classassets_1_1Handle.html" title=" " alt="" coords="1151,160,1325,205"/>
+<area shape="poly" id="edge18_Node000015_Node000010" title=" " alt="" coords="724,270,809,285,913,293,968,291,1022,284,1076,270,1126,249,1134,243,1137,234,1141,225,1149,215,1167,206,1172,204,1153,219,1146,227,1142,236,1138,246,1128,254,1077,276,1023,289,968,297,913,298,808,290,723,275"/>
+<area shape="rect" id="Node000011" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="340,268,448,296"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="463,283,509,282,557,278,608,269,613,268,557,283,510,287,463,288"/>
+<area shape="rect" id="Node000012" href="$structtoast_1_1UID.html" title=" " alt="" coords="351,212,437,240"/>
+<area shape="poly" id="edge11_Node000010_Node000012" title=" " alt="" coords="452,230,583,246,578,247,452,235"/>
+<area shape="poly" id="edge12_Node000009_Node000013" title=" " alt="" coords="898,183,958,157,1148,120,1153,119,960,162,900,188"/>
+<area shape="poly" id="edge16_Node000014_Node000013" title=" " alt="" coords="928,221,959,227,1058,239,1153,248,1148,248,1058,244,959,233,928,227"/>
+<area shape="poly" id="edge19_Node000015_Node000013" title=" " alt="" coords="950,198,1153,188,1148,188,951,203"/>
+<area shape="poly" id="edge14_Node000001_Node000014" title=" " alt="" coords="1340,241,1713,210,1930,190,1936,189,1714,215,1341,247"/>
+<area shape="poly" id="edge17_Node000001_Node000015" title=" " alt="" coords="1341,180,1936,182,1930,183,1341,185"/>
+</map>

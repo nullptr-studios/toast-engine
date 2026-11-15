@@ -25,13 +25,12 @@
 var NAVTREE =
 [
   [ "Toast Engine", "index.html", [
-    [ "Building", "index.html#autotoc_md100", [
-      [ "Prerequisites", "index.html#autotoc_md101", null ],
-      [ "Generation", "index.html#autotoc_md102", null ],
-      [ "Build", "index.html#autotoc_md103", null ],
-      [ "Tests", "index.html#autotoc_md104", null ]
+    [ "Building", "index.html#autotoc_md101", [
+      [ "Prerequisites", "index.html#autotoc_md102", null ],
+      [ "Generation", "index.html#autotoc_md103", null ],
+      [ "Build", "index.html#autotoc_md104", null ],
+      [ "Tests", "index.html#autotoc_md105", null ]
     ] ],
-    [ "Other tooling", "index.html#autotoc_md105", null ],
     [ "Asset types specs", "md_docs_2asset__specs.html", null ],
     [ "Event System", "md_docs_2event__system.html", [
       [ "Core Concepts", "md_docs_2event__system.html#autotoc_md2", [
@@ -189,23 +188,25 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 "aabb_8hpp.html",
-"classeditor_1_1App.html",
-"classeditor_1_1Components_1_1CurveCanvas_1_1CurveCanvas.html",
-"classeditor_1_1Logger_1_1LogClient.html",
-"classinput_1_1ITrigger.html",
-"classrenderer_1_1VoxelPass.html#a14be3f339a0f0f4733d5e9b476e72a75",
-"classtoast_1_1AudioEmitterBase.html",
-"classtoast_1_1Node3D.html#a4adfecbb6f02cfd6f54b443e60c73f15",
-"classtoast_1_1VoxelNode.html#a324ea33cfb95b35a3fe7ea2e4e42bd78",
-"classtoast_1_1WorkspaceHistory.html",
-"functions_func_k.html",
-"lua__value__codec_8hpp.html",
-"profiler__phases_8hpp.html",
-"structevent_1_1HistoryConflictResolution.html",
-"structevent_1_1__detail_1_1ProtoAutoRegister.html",
-"structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93",
-"structtoast_1_1NodeInfo.html#ab794736be23ff3c39878e4ab48c32c3a",
-"structvoxel_1_1TileOptions.html#a1283717e08a1af034b34eb218096d16e"
+"classassets_1_1Volume.html#ae8fb61d3ee89c914f68fbf7e21f636da",
+"classeditor_1_1Assets_1_1Types_1_1VoxelModelAsset.html",
+"classeditor_1_1Git_1_1CommitView.html",
+"classeditor_1_1Workspace_1_1HierarchyElement.html",
+"classphysics_1_1Simulator.html#a722e5c202b888caef369974d5a2ee12b",
+"classrenderer_1_1VulkanRenderer.html#a475b98fb320ebb76f5b96ee1e67df8d5",
+"classtoast_1_1CarveVolume.html",
+"classtoast_1_1ProceduralVoxel.html#a73af3d521ae43079ea28c8aad3a77baf",
+"classtoast_1_1VoxelNode.html#a89686336a85691eac3e80e3460c9b9c4",
+"classui_1_1UISystem.html#aa7975241ddc1d8be3fe47b573b6dfeb2",
+"functions_u.html",
+"md_docs_2event__system.html",
+"proto__event_8hpp.html#a2bbcfed34845458456f06d4b69ed9cc2",
+"structevent_1_1EditorCameraFlyMode.html",
+"structevent_1_1WorkspaceHistoryTransaction.html",
+"structrenderer_1_1GiSettings.html#ae18a944eb28bda2a9d35951a877c19f9",
+"structtoast_1_1LuaVarDesc.html",
+"structvoxel_1_1MassMoments.html#a4c0ed4a22957a11116b56d3e1296bf51",
+"vulkan__renderer__voxel_8cpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

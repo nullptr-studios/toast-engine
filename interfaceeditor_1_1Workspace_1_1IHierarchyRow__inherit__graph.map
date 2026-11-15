@@ -1,0 +1,7 @@
+<map id="editor.Workspace.IHierarchyRow" name="editor.Workspace.IHierarchyRow">
+<area shape="rect" id="Node000001" title=" " alt="" coords="106,5,338,33"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1LuaEditor_1_1VariableRow.html" title=" " alt="" coords="5,90,213,117"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="195,42,129,91,126,87,190,43"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Workspace_1_1HierarchyElement.html" title=" " alt="" coords="237,81,437,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="254,40,309,80,304,80,252,45"/>
+</map>

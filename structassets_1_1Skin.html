@@ -119,15 +119,16 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('structassets_1
 </div><!--header-->
 <div class="contents">
 
-<p>A skeleton: the joint nodes a skinned mesh binds to.  
+<p>Joint names and inverse bind matrices a skinned mesh binds with.  
  <a href="#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="animation_8hpp_source.html">animation.hpp</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="skeleton_8hpp_source.html">skeleton.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:af9771a668a408e7cd02d5e7abca42446" id="r_af9771a668a408e7cd02d5e7abca42446"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af9771a668a408e7cd02d5e7abca42446">jointMatrices</a> (std::span&lt; const glm::mat4 &gt; joint_world_transforms) const -&gt; std::vector&lt; glm::mat4 &gt;</td></tr>
-<tr class="memdesc:af9771a668a408e7cd02d5e7abca42446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds the per-joint matrices a skinning shader multiplies vertices by.  <br /></td></tr>
+<tr class="memitem:af9771a668a408e7cd02d5e7abca42446" id="r_af9771a668a408e7cd02d5e7abca42446"><td class="memItemLeft"><a id="af9771a668a408e7cd02d5e7abca42446" name="af9771a668a408e7cd02d5e7abca42446"></a>
+auto&#160;</td><td class="memItemRight"><b>jointMatrices</b> (std::span&lt; const glm::mat4 &gt; joint_world_transforms) const -&gt; std::vector&lt; glm::mat4 &gt;</td></tr>
+<tr class="memdesc:af9771a668a408e7cd02d5e7abca42446"><td class="mdescLeft">&#160;</td><td class="mdescRight"><span class="tt">joint_world * inverse_bind</span> per joint, a missing world entry counts as identity so the size always matches <br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-attribs" class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
@@ -135,56 +136,19 @@ Public Attributes</h2></td></tr>
 std::string&#160;</td><td class="memItemRight"><b>name</b></td></tr>
 <tr class="memitem:a60097c3e68e77fdf05ca2cbd0b018dee" id="r_a60097c3e68e77fdf05ca2cbd0b018dee"><td class="memItemLeft"><a id="a60097c3e68e77fdf05ca2cbd0b018dee" name="a60097c3e68e77fdf05ca2cbd0b018dee"></a>
 std::string&#160;</td><td class="memItemRight"><b>skeleton_root</b></td></tr>
-<tr class="memdesc:a60097c3e68e77fdf05ca2cbd0b018dee"><td class="mdescLeft">&#160;</td><td class="mdescRight">node name, empty when glTF didn't specify one <br /></td></tr>
+<tr class="memdesc:a60097c3e68e77fdf05ca2cbd0b018dee"><td class="mdescLeft">&#160;</td><td class="mdescRight">node name, empty when glTF gives none <br /></td></tr>
 <tr class="memitem:a2547dfa4b57b50ced515e79dac292236" id="r_a2547dfa4b57b50ced515e79dac292236"><td class="memItemLeft"><a id="a2547dfa4b57b50ced515e79dac292236" name="a2547dfa4b57b50ced515e79dac292236"></a>
 std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight"><b>joints</b></td></tr>
-<tr class="memdesc:a2547dfa4b57b50ced515e79dac292236"><td class="mdescLeft">&#160;</td><td class="mdescRight">node names, in the order joint indices refer to <br /></td></tr>
+<tr class="memdesc:a2547dfa4b57b50ced515e79dac292236"><td class="mdescLeft">&#160;</td><td class="mdescRight">bone names in the order vertex joint indices use <br /></td></tr>
 <tr class="memitem:ade59b80e8a0c98aa8eb70bd14bc68256" id="r_ade59b80e8a0c98aa8eb70bd14bc68256"><td class="memItemLeft"><a id="ade59b80e8a0c98aa8eb70bd14bc68256" name="ade59b80e8a0c98aa8eb70bd14bc68256"></a>
 std::vector&lt; glm::mat4 &gt;&#160;</td><td class="memItemRight"><b>inverse_bind_matrices</b></td></tr>
-<tr class="memdesc:ade59b80e8a0c98aa8eb70bd14bc68256"><td class="mdescLeft">&#160;</td><td class="mdescRight">parallel to joints; empty means identity for all <br /></td></tr>
+<tr class="memdesc:ade59b80e8a0c98aa8eb70bd14bc68256"><td class="mdescLeft">&#160;</td><td class="mdescRight">parallel to joints, empty means identity for all <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>A skeleton: the joint nodes a skinned mesh binds to. </p>
-<p><a class="el" href="#af9771a668a408e7cd02d5e7abca42446" title="Builds the per-joint matrices a skinning shader multiplies vertices by.">jointMatrices()</a> turns a posed node tree into the matrices a shader blends between. A mesh whose joints cannot be resolved gets no posed slice and falls back to bind pose rather than dropping </p>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="af9771a668a408e7cd02d5e7abca42446" name="af9771a668a408e7cd02d5e7abca42446"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af9771a668a408e7cd02d5e7abca42446">&#9670;&#160;</a></span>jointMatrices()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">auto assets::Skin::jointMatrices </td>
-          <td>(</td>
-          <td class="paramtype">std::span&lt; const glm::mat4 &gt;</td>          <td class="paramname"><span class="paramname"><em>joint_world_transforms</em></span></td><td>)</td>
-          <td> const -&gt; std::vector&lt; glm::mat4 &gt;</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Builds the per-joint matrices a skinning shader multiplies vertices by. </p>
-<p><span class="tt">joint_world_transform * inverse_bind_matrix</span>, so the product expresses only deformation away from bind - which is what the vertex weights blend between</p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">joint_world_transforms</td><td>World transforms of <a class="el" href="#a2547dfa4b57b50ced515e79dac292236" title="joints">joints</a>, same order. A missing entry falls back to identity rather than being skipped, so the result always matches joints.size() and a shader can index it without bounds checks</td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section note"><dt>Note</dt><dd>Supplied by the caller rather than walked here, so several instances can pose one skeleton asset </dd></dl>
-
-</div>
-</div>
-<hr/>The documentation for this struct was generated from the following files:<ul>
-<li>engine/src/toast/assets/<a class="el" href="animation_8hpp_source.html">animation.hpp</a></li>
-<li>engine/src/toast/assets/<b>animation.cpp</b></li>
+<div class="textblock"><p>Joint names and inverse bind matrices a skinned mesh binds with. </p>
+</div><hr/>The documentation for this struct was generated from the following files:<ul>
+<li>engine/src/toast/assets/<a class="el" href="skeleton_8hpp_source.html">skeleton.hpp</a></li>
+<li>engine/src/toast/assets/<b>skeleton.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

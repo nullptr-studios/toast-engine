@@ -1,3 +1,82 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classassets_1_1AssetManager.html" title="Maps URI schemes to filesystem roots and manages asset lifetime." alt="" coords="5,5,170,33"/>
+<area shape="rect" id="Node000000" href="$classassets_1_1Asset.html" title="Base class for all engine assets." alt="" coords="19,759,127,786"/>
+<area shape="rect" id="Node000001" href="$classassets_1_1Animation.html" title="One clip asset (.tanim)." alt="" coords="210,785,348,813"/>
+<area shape="poly" id="edge2_Node000000_Node000001" title=" " alt="" coords="141,779,212,789,207,792,143,784"/>
+<area shape="rect" id="Node000002" href="$classassets_1_1AudioBank.html" title=" " alt="" coords="209,837,350,865"/>
+<area shape="poly" id="edge3_Node000000_Node000002" title=" " alt="" coords="116,791,190,822,228,835,223,838,188,827,118,796"/>
+<area shape="rect" id="Node000003" href="$classassets_1_1AudioStrings.html" title=" " alt="" coords="203,889,356,917"/>
+<area shape="poly" id="edge4_Node000000_Node000003" title=" " alt="" coords="96,795,138,836,190,874,219,888,214,890,187,879,135,840,97,801"/>
+<area shape="rect" id="Node000004" href="$classassets_1_1Curve.html" title=" " alt="" coords="225,265,334,293"/>
+<area shape="poly" id="edge5_Node000000_Node000004" title=" " alt="" coords="77,743,127,500,159,374,173,329,187,304,204,291,226,284,223,288,206,296,191,308,178,331,164,375,132,501,82,744"/>
+<area shape="rect" id="Node000006" href="$classassets_1_1Data.html" title=" " alt="" coords="228,317,330,345"/>
+<area shape="poly" id="edge6_Node000000_Node000006" title=" " alt="" coords="76,743,91,655,115,540,148,429,166,386,187,356,206,342,230,335,226,339,208,347,191,360,171,388,153,431,120,541,96,656,81,744"/>
+<area shape="rect" id="Node000021" href="$classassets_1_1DetailTexture.html" title=" " alt="" coords="200,369,358,397"/>
+<area shape="poly" id="edge21_Node000000_Node000021" title=" " alt="" coords="72,743,78,675,95,585,109,538,129,491,154,447,187,408,208,395,205,400,190,412,159,450,134,493,114,539,100,587,83,676,77,744"/>
+<area shape="rect" id="Node000025" href="$classassets_1_1Font.html" title=" " alt="" coords="230,941,329,969"/>
+<area shape="poly" id="edge22_Node000000_Node000025" title=" " alt="" coords="87,798,129,863,157,897,190,926,209,937,232,946,227,948,207,942,187,931,153,901,125,867,88,803"/>
+<area shape="rect" id="Node000026" href="$classassets_1_1LocalizationBase.html" title=" " alt="" coords="189,993,370,1021"/>
+<area shape="poly" id="edge23_Node000000_Node000026" title=" " alt="" coords="82,798,99,840,121,888,151,937,190,978,212,992,207,994,187,983,147,940,116,891,94,842,82,804"/>
+<area shape="rect" id="Node000029" href="$classassets_1_1Mesh.html" title=" " alt="" coords="226,1045,332,1073"/>
+<area shape="poly" id="edge26_Node000000_Node000029" title=" " alt="" coords="79,799,93,851,113,913,145,976,166,1005,190,1030,207,1042,229,1051,223,1052,205,1046,187,1035,162,1009,141,979,109,915,88,852,79,804"/>
+<area shape="rect" id="Node000022" href="$classassets_1_1Prefab.html" title=" " alt="" coords="223,421,336,449"/>
+<area shape="poly" id="edge27_Node000000_Node000022" title=" " alt="" coords="74,743,83,683,102,608,116,568,135,529,158,492,187,460,203,448,224,441,221,445,206,453,190,464,163,495,140,531,121,570,107,609,88,685,79,743"/>
+<area shape="rect" id="Node000030" href="$classassets_1_1Schema.html" title="Asset wrapping a parsed .schema.json." alt="" coords="218,1097,341,1125"/>
+<area shape="poly" id="edge28_Node000000_Node000030" title=" " alt="" coords="77,799,88,860,106,936,121,976,139,1015,162,1051,190,1082,220,1101,215,1102,187,1087,158,1054,135,1017,116,978,101,938,82,861,76,804"/>
+<area shape="rect" id="Node000031" href="$classassets_1_1Script.html" title=" " alt="" coords="225,1149,334,1177"/>
+<area shape="poly" id="edge29_Node000000_Node000031" title=" " alt="" coords="75,799,83,870,100,959,114,1007,133,1053,159,1096,190,1135,207,1146,227,1156,222,1157,204,1151,187,1138,154,1100,129,1055,109,1008,94,960,78,870,75,804"/>
+<area shape="rect" id="Node000032" href="$classassets_1_1Shader.html" title=" " alt="" coords="221,1201,338,1229"/>
+<area shape="poly" id="edge30_Node000000_Node000032" title=" " alt="" coords="74,799,79,878,93,982,107,1037,128,1091,155,1142,191,1187,205,1197,224,1207,218,1207,202,1202,187,1190,151,1145,123,1093,102,1038,88,983,73,879,73,804"/>
+<area shape="rect" id="Node000033" href="$classassets_1_1Skeleton.html" title="Bone hierarchy (.tskel) posed by toast::SkeletalNode, plus the skins bound to it." alt="" coords="216,1253,343,1281"/>
+<area shape="poly" id="edge31_Node000000_Node000033" title=" " alt="" coords="78,799,94,900,117,1031,132,1097,149,1157,169,1206,191,1239,218,1258,212,1257,187,1242,164,1208,144,1159,127,1098,112,1032,88,901,77,805"/>
+<area shape="rect" id="Node000034" href="$classassets_1_1Texture.html" title="Asset representing a texture, currently holding raw KTX2 bytes." alt="" coords="220,577,339,605"/>
+<area shape="poly" id="edge32_Node000000_Node000034" title=" " alt="" coords="85,743,125,679,154,645,187,616,221,601,218,605,190,620,157,649,130,682,90,745"/>
+<area shape="rect" id="Node000035" href="$classassets_1_1UIElement.html" title=" " alt="" coords="210,629,349,657"/>
+<area shape="poly" id="edge33_Node000000_Node000035" title=" " alt="" coords="94,746,135,705,187,668,218,656,215,660,190,672,139,709,99,748"/>
+<area shape="rect" id="Node000036" href="$classassets_1_1UIImage.html" title=" " alt="" coords="216,681,342,709"/>
+<area shape="poly" id="edge34_Node000000_Node000036" title=" " alt="" coords="116,750,188,719,227,708,224,712,190,724,120,754"/>
+<area shape="rect" id="Node000037" href="$classassets_1_1UIStyle.html" title=" " alt="" coords="220,733,338,761"/>
+<area shape="poly" id="edge35_Node000000_Node000037" title=" " alt="" coords="141,762,221,753,218,756,144,766"/>
+<area shape="rect" id="Node000023" href="$classassets_1_1VoxelModel.html" title=" " alt="" coords="206,473,352,501"/>
+<area shape="poly" id="edge36_Node000000_Node000023" title=" " alt="" coords="76,743,88,693,109,631,141,567,162,538,187,512,209,499,206,504,190,516,166,541,145,570,114,633,93,695,82,744"/>
+<area shape="rect" id="Node000024" href="$classassets_1_1VoxelPalette.html" title=" " alt="" coords="204,525,355,553"/>
+<area shape="poly" id="edge37_Node000000_Node000024" title=" " alt="" coords="80,743,94,703,116,655,147,606,187,564,211,551,208,556,190,568,151,609,121,657,99,705,85,745"/>
+<area shape="rect" id="Node000007" href="$classassets_1_1Action.html" title="Asset representing one input action loaded from a .taction file." alt="" coords="462,317,574,345"/>
+<area shape="poly" id="edge7_Node000006_Node000007" title=" " alt="" coords="344,329,464,330,459,333,347,333"/>
+<area shape="rect" id="Node000008" href="$classassets_1_1AudioBus.html" title=" " alt="" coords="452,369,584,397"/>
+<area shape="poly" id="edge8_Node000006_Node000008" title=" " alt="" coords="344,343,454,367,449,370,346,348"/>
+<area shape="rect" id="Node000009" href="$classassets_1_1AudioEvent.html" title=" " alt="" coords="446,421,591,449"/>
+<area shape="poly" id="edge9_Node000006_Node000009" title=" " alt="" coords="344,344,371,356,387,369,396,382,405,394,419,406,448,420,443,422,417,411,401,398,392,385,383,372,369,360,346,349"/>
+<area shape="rect" id="Node000010" href="$classassets_1_1AudioPort.html" title=" " alt="" coords="451,473,585,501"/>
+<area shape="poly" id="edge10_Node000006_Node000010" title=" " alt="" coords="344,341,372,356,384,369,391,382,396,409,402,434,409,447,420,458,453,477,448,479,416,463,404,450,397,436,391,410,386,384,379,372,368,360,346,346"/>
+<area shape="rect" id="Node000011" href="$classassets_1_1AudioSnapshot.html" title=" " alt="" coords="434,525,602,553"/>
+<area shape="poly" id="edge11_Node000006_Node000011" title=" " alt="" coords="345,340,372,356,387,376,394,396,396,435,398,474,405,492,420,511,438,524,433,525,416,514,401,495,393,475,391,436,389,397,382,378,368,360,346,345"/>
+<area shape="rect" id="Node000012" href="$classassets_1_1AudioVca.html" title=" " alt="" coords="452,577,584,605"/>
+<area shape="poly" id="edge12_Node000006_Node000012" title=" " alt="" coords="344,339,372,356,390,383,398,409,399,436,396,462,394,487,395,513,402,538,420,563,435,574,454,583,449,585,432,579,416,566,397,540,389,514,388,487,391,461,394,435,393,410,386,385,368,360,346,344"/>
+<area shape="rect" id="Node000013" href="$classassets_1_1ColorScheme.html" title=" " alt="" coords="440,629,597,657"/>
+<area shape="poly" id="edge13_Node000006_Node000013" title=" " alt="" coords="344,338,372,356,394,389,402,423,401,455,396,488,391,520,391,552,399,583,420,615,442,631,436,632,416,618,394,585,385,552,386,520,391,487,396,455,397,423,389,391,368,360,346,344"/>
+<area shape="rect" id="Node000014" href="$classassets_1_1DestructionMaterial.html" title=" " alt="" coords="418,5,618,33"/>
+<area shape="poly" id="edge14_Node000006_Node000014" title=" " alt="" coords="343,320,368,303,389,271,397,239,396,207,391,175,386,143,385,110,394,77,416,44,435,31,432,36,420,48,399,79,391,111,391,142,396,174,401,207,402,240,394,273,372,306,347,323"/>
+<area shape="rect" id="Node000015" href="$classassets_1_1Haptic.html" title="Asset representing a single haptic effect loaded from a .thaptic file." alt="" coords="462,57,575,85"/>
+<area shape="poly" id="edge15_Node000006_Node000015" title=" " alt="" coords="343,319,368,303,386,278,393,252,394,227,391,201,388,175,389,149,397,122,416,96,437,81,463,74,459,77,439,86,420,100,402,125,395,150,394,175,396,201,399,227,398,253,390,280,372,306,347,323"/>
+<area shape="rect" id="Node000016" href="$classassets_1_1InputLayout.html" title="Asset representing an input layout loaded from a .tlayout file." alt="" coords="444,109,592,137"/>
+<area shape="poly" id="edge16_Node000006_Node000016" title=" " alt="" coords="344,318,368,303,382,284,389,265,391,227,393,187,401,167,416,148,445,132,442,136,420,152,405,170,398,189,396,227,394,267,387,287,372,306,348,322"/>
+<area shape="rect" id="Node000017" href="$classassets_1_1InputSettings.html" title=" " alt="" coords="440,161,597,189"/>
+<area shape="poly" id="edge17_Node000006_Node000017" title=" " alt="" coords="343,317,368,302,379,290,386,278,391,252,397,226,404,213,416,200,441,187,437,191,420,204,409,216,402,228,396,254,391,280,384,294,372,307,347,321"/>
+<area shape="rect" id="Node000018" href="$classassets_1_1Material.html" title="Shader&#45;driven material asset." alt="" coords="456,213,581,241"/>
+<area shape="poly" id="edge18_Node000006_Node000018" title=" " alt="" coords="343,314,369,302,383,290,392,278,401,264,417,252,457,236,453,240,419,256,405,268,396,281,387,294,371,307,347,318"/>
+<area shape="rect" id="Node000020" href="$classassets_1_1PhysicsMaterial.html" title=" " alt="" coords="431,265,605,293"/>
+<area shape="poly" id="edge20_Node000006_Node000020" title=" " alt="" coords="344,315,453,292,449,295,347,319"/>
+<area shape="rect" id="Node000019" href="$classassets_1_1MaterialInstance.html" title="Mirrors a parent Material&#39;s parameters, overriding only the values it sets." alt="" coords="666,213,847,241"/>
+<area shape="poly" id="edge19_Node000018_Node000019" title=" " alt="" coords="595,225,668,226,663,229,598,230"/>
+<area shape="rect" id="Node000027" href="$classassets_1_1ImageLocalization.html" title=" " alt="" coords="423,1020,613,1048"/>
+<area shape="poly" id="edge24_Node000026_Node000027" title=" " alt="" coords="385,1016,425,1022,420,1024,386,1022"/>
+<area shape="rect" id="Node000028" href="$classassets_1_1Localization.html" title=" " alt="" coords="444,968,593,996"/>
+<area shape="poly" id="edge25_Node000026_Node000028" title=" " alt="" coords="384,993,445,989,440,991,386,998"/>
+<area shape="rect" id="Node000005" href="$classassets_1_1ISaveable.html" title="Inherit from this class to allow an asset to be saved." alt="" coords="5,396,141,424"/>
+<area shape="poly" id="edge38_Node000005_Node000004" title=" " alt="" coords="94,383,135,342,187,304,226,289,223,293,190,308,138,346,98,386"/>
+<area shape="poly" id="edge39_Node000005_Node000006" title=" " alt="" coords="115,387,188,355,229,343,226,347,190,360,119,391"/>
+<area shape="poly" id="edge40_Node000005_Node000021" title=" " alt="" coords="154,397,202,392,198,395,158,401"/>
+<area shape="poly" id="edge41_Node000005_Node000022" title=" " alt="" coords="155,418,224,427,220,430,158,422"/>
+<area shape="poly" id="edge42_Node000005_Node000023" title=" " alt="" coords="117,428,190,458,228,471,223,474,188,463,119,433"/>
+<area shape="poly" id="edge43_Node000005_Node000024" title=" " alt="" coords="96,433,139,473,190,510,219,523,214,526,187,515,135,477,97,438"/>
 </map>

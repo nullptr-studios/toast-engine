@@ -16,7 +16,7 @@ var dir_b34aee48f901bd6f5bafc675781e59d3 =
     [ "render_frame.hpp", "render__frame_8hpp.html", "render__frame_8hpp" ],
     [ "vulkan_renderer.cpp", "vulkan__renderer_8cpp.html", null ],
     [ "vulkan_renderer.hpp", "vulkan__renderer_8hpp_source.html", null ],
-    [ "vulkan_renderer_detail.hpp", "vulkan__renderer__detail_8hpp.html", null ],
+    [ "vulkan_renderer_detail.hpp", "vulkan__renderer__detail_8hpp.html", "vulkan__renderer__detail_8hpp" ],
     [ "vulkan_renderer_lights.cpp", "vulkan__renderer__lights_8cpp.html", null ],
     [ "vulkan_renderer_record.cpp", "vulkan__renderer__record_8cpp.html", null ],
     [ "vulkan_renderer_resources.cpp", "vulkan__renderer__resources_8cpp.html", null ],

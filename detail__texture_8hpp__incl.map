@@ -1,0 +1,32 @@
+<map id="engine/src/toast/voxel/assets/detail_texture.hpp" name="engine/src/toast/voxel/assets/detail_texture.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="193,5,383,50"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="98,174,164,201"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="191,43,85,65,41,81,14,100,9,110,9,120,14,130,24,139,51,156,85,171,81,173,49,161,20,144,10,133,4,122,4,109,10,96,39,76,84,60,194,38"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="25,98,90,126"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="226,53,106,96,103,91,228,48"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="114,98,190,126"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="250,52,188,92,185,88,254,49"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="214,98,277,126"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="279,48,262,86,257,82,275,52"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="302,98,360,126"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="300,48,320,84,314,83,299,53"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="384,98,480,126"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="327,48,399,90,393,90,326,53"/>
+<area shape="rect" id="Node000008" href="$core__types_8hpp.html" title="Base types for the asset system." alt="" coords="504,98,707,126"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="373,48,543,93,538,95,372,53"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="809,174,871,201"/>
+<area shape="poly" id="edge16_Node000001_Node000014" title=" " alt="" coords="383,29,459,35,544,47,634,67,720,96,774,127,819,164,814,163,771,131,718,100,632,72,543,52,458,40,384,34"/>
+<area shape="poly" id="edge8_Node000008_Node000002" title=" " alt="" coords="520,129,180,181,179,176,520,124"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="298,174,444,201"/>
+<area shape="poly" id="edge9_Node000008_Node000009" title=" " alt="" coords="566,126,428,171,426,166,561,127"/>
+<area shape="rect" id="Node000010" href="$export_8hpp.html" title=" " alt="" coords="417,249,546,277"/>
+<area shape="poly" id="edge10_Node000008_Node000010" title=" " alt="" coords="574,125,539,148,509,175,494,204,486,236,482,232,489,202,505,172,536,143,569,127"/>
+<area shape="rect" id="Node000011" href="$uid_8hpp.html" title="Unique identifier for everything that exists in our engine." alt="" coords="519,174,625,201"/>
+<area shape="poly" id="edge11_Node000008_Node000011" title=" " alt="" coords="602,125,586,162,583,158,597,128"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="650,174,785,201"/>
+<area shape="poly" id="edge14_Node000008_Node000013" title=" " alt="" coords="626,124,688,165,683,165,625,129"/>
+<area shape="poly" id="edge15_Node000008_Node000014" title=" " alt="" coords="648,124,797,172,792,172,647,129"/>
+<area shape="poly" id="edge13_Node000011_Node000010" title=" " alt="" coords="559,201,511,242,508,237,554,203"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="570,249,636,277"/>
+<area shape="poly" id="edge12_Node000011_Node000012" title=" " alt="" coords="579,200,594,236,589,234,576,204"/>
+</map>

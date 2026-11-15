@@ -13,6 +13,7 @@ var classtoast_1_1Node =
     [ "hasCallable", "classtoast_1_1Node.html#a25d28b613360ff4d7356599316440ec0", null ],
     [ "hasTickFunction", "classtoast_1_1Node.html#a8a7a227e71c9efcae3df2ed20ff6a177", null ],
     [ "info", "classtoast_1_1Node.html#ae3dadca9033e3c323a1d33e8b564ea9d", null ],
+    [ "inspectorOptions", "classtoast_1_1Node.html#aa39ab418683c1112dd09a6041c62a197", null ],
     [ "interactsWith", "classtoast_1_1Node.html#ae37c89e7fd2eaeed46bea58784bb8ad5", null ],
     [ "isInstanceRoot", "classtoast_1_1Node.html#a4aaf31de720d90ac1f4e3e9c16d955af", null ],
     [ "listener", "classtoast_1_1Node.html#aeada3f40f2b00d63c299b1dec9b5e6d5", null ],

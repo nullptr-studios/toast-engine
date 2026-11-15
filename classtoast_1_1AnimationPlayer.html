@@ -154,8 +154,9 @@ Collaboration diagram for toast::AnimationPlayer:</div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a886d6620bf3f0c845f646e6ce9c29d73" id="r_a886d6620bf3f0c845f646e6ce9c29d73"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a886d6620bf3f0c845f646e6ce9c29d73">play</a> (std::string_view clip_name) -&gt; bool</td></tr>
-<tr class="memdesc:a886d6620bf3f0c845f646e6ce9c29d73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Starts the named clip from the beginning.  <br /></td></tr>
+<tr class="memitem:a886d6620bf3f0c845f646e6ce9c29d73" id="r_a886d6620bf3f0c845f646e6ce9c29d73"><td class="memItemLeft"><a id="a886d6620bf3f0c845f646e6ce9c29d73" name="a886d6620bf3f0c845f646e6ce9c29d73"></a>
+auto&#160;</td><td class="memItemRight"><b>play</b> (std::string_view clip_name) -&gt; bool</td></tr>
+<tr class="memdesc:a886d6620bf3f0c845f646e6ce9c29d73"><td class="mdescLeft">&#160;</td><td class="mdescRight">Empty plays the first clip. <br /></td></tr>
 <tr class="memitem:a1bb32a268fed6454eda84dbe4c6fddc8" id="r_a1bb32a268fed6454eda84dbe4c6fddc8"><td class="memItemLeft"><a id="a1bb32a268fed6454eda84dbe4c6fddc8" name="a1bb32a268fed6454eda84dbe4c6fddc8"></a>
 void&#160;</td><td class="memItemRight"><b>stop</b> ()</td></tr>
 <tr class="memitem:a40babdfde73be087e0fa505fb1320119" id="r_a40babdfde73be087e0fa505fb1320119"><td class="memItemLeft"><a id="a40babdfde73be087e0fa505fb1320119" name="a40babdfde73be087e0fa505fb1320119"></a>
@@ -165,8 +166,6 @@ auto&#160;</td><td class="memItemRight"><b>isPlaying</b> () const noexcept -&gt;
 <tr class="memitem:ac03c558f9728450095ce9075ff2cc675" id="r_ac03c558f9728450095ce9075ff2cc675"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ac03c558f9728450095ce9075ff2cc675">time</a> () const noexcept -&gt; float</td></tr>
 <tr class="memitem:a2f060a8e13878becfb98fcaee2ea3275" id="r_a2f060a8e13878becfb98fcaee2ea3275"><td class="memItemLeft"><a id="a2f060a8e13878becfb98fcaee2ea3275" name="a2f060a8e13878becfb98fcaee2ea3275"></a>
 void&#160;</td><td class="memItemRight"><b>time</b> (float seconds) noexcept</td></tr>
-<tr class="memitem:a68555e0d425fe6683caabf5d4101d82a" id="r_a68555e0d425fe6683caabf5d4101d82a"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a68555e0d425fe6683caabf5d4101d82a">jointWorldTransforms</a> (const <a class="el" href="structassets_1_1Skin.html">assets::Skin</a> &amp;skin) -&gt; std::vector&lt; glm::mat4 &gt;</td></tr>
-<tr class="memdesc:a68555e0d425fe6683caabf5d4101d82a"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classtoast_1_1World.html">World</a> transforms of a skin's joints, in joint-index order.  <br /></td></tr>
 <tr class="memitem:aeafe193a19e0f45137932a4b728d636b" id="r_aeafe193a19e0f45137932a4b728d636b"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#aeafe193a19e0f45137932a4b728d636b">tick</a> ()</td></tr>
 <tr class="memdesc:aeafe193a19e0f45137932a4b728d636b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Advances playback by one frame and writes the sampled pose onto its target nodes.  <br /></td></tr>
 <tr class="inherit_header pub_methods_classtoast_1_1Node3D"><td colspan="2">Public Member Functions inherited from <a class="el" href="classtoast_1_1Node3D.html">toast::Node3D</a></td></tr>
@@ -324,8 +323,6 @@ static const glm::vec3&#160;</td><td class="memItemRight"><b>world_right</b> = {
 void&#160;</td><td class="memItemRight"><b>init</b> ()</td></tr>
 <tr class="memdesc:a497a95970b5ecf040765b59637507141 pro_methods_classtoast_1_1Node3D"><td class="mdescLeft">&#160;</td><td class="mdescRight">X axis. <br /></td></tr>
 <tr class="inherit_header pro_methods_classtoast_1_1Node"><td colspan="2">Protected Member Functions inherited from <a class="el" href="classtoast_1_1Node.html">toast::Node</a></td></tr>
-<tr class="memitem:a39b7866ed40d98d3880974739b5af413 pro_methods_classtoast_1_1Node" id="r_a39b7866ed40d98d3880974739b5af413"><td class="memItemLeft">
-virtual void&#160;</td><td class="memItemRight"><b>onReflectedFieldChanged</b> (std::string_view)</td></tr>
 <tr class="memitem:a57739ac795a4c1c53d4057ac0ecf02a4 pro_methods_classtoast_1_1Node" id="r_a57739ac795a4c1c53d4057ac0ecf02a4"><td class="memItemLeft">
 virtual void&#160;</td><td class="memItemRight"><b>onScriptsReloaded</b> ()</td></tr>
 <tr class="memitem:a04e96b6dfe562c1a432322121410255a pro_methods_classtoast_1_1Node" id="r_a04e96b6dfe562c1a432322121410255a"><td class="memItemLeft">virtual void&#160;</td><td class="memItemRight"><a class="el" href="classtoast_1_1Node.html#a04e96b6dfe562c1a432322121410255a">onScriptsReloading</a> ()</td></tr>
@@ -347,54 +344,6 @@ INodeOwner *&#160;</td><td class="memItemRight"><b>m_owner</b> = nullptr</td></t
 <p>Only the components a clip actually animates are written: a node keyed for rotation but not position keeps its authored position rather than snapping to the origin</p>
 <dl class="section note"><dt>Note</dt><dd>Also ticked outside Play, by Workspace::tickAnimationPreviews() </dd></dl>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a68555e0d425fe6683caabf5d4101d82a" name="a68555e0d425fe6683caabf5d4101d82a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a68555e0d425fe6683caabf5d4101d82a">&#9670;&#160;</a></span>jointWorldTransforms()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">auto toast::AnimationPlayer::jointWorldTransforms </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="structassets_1_1Skin.html">assets::Skin</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>skin</em></span></td><td>)</td>
-          <td> -&gt; std::vector&lt; glm::mat4 &gt;</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p><a class="el" href="classtoast_1_1World.html">World</a> transforms of a skin's joints, in joint-index order. </p>
-<p>A joint the tree does not contain contributes an identity rather than shifting every later index </p>
-
-</div>
-</div>
-<a id="a886d6620bf3f0c845f646e6ce9c29d73" name="a886d6620bf3f0c845f646e6ce9c29d73"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a886d6620bf3f0c845f646e6ce9c29d73">&#9670;&#160;</a></span>play()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">auto toast::AnimationPlayer::play </td>
-          <td>(</td>
-          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>clip_name</em></span></td><td>)</td>
-          <td> -&gt; bool</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Starts the named clip from the beginning. </p>
-<dl class="section return"><dt>Returns</dt><dd>false when the asset has no clip by that name </dd></dl>
-
-</div>
-</div>
 <a id="aeafe193a19e0f45137932a4b728d636b" name="aeafe193a19e0f45137932a4b728d636b"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aeafe193a19e0f45137932a4b728d636b">&#9670;&#160;</a></span>tick()</h2>
 

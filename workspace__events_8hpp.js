@@ -57,6 +57,7 @@ var workspace__events_8hpp =
     [ "event::SetCameraMode", "structevent_1_1SetCameraMode.html", null ],
     [ "event::EditorCameraFlyMode", "structevent_1_1EditorCameraFlyMode.html", null ],
     [ "event::CaptureFrame", "structevent_1_1CaptureFrame.html", null ],
+    [ "event::SetDetailTexturePreview", "structevent_1_1SetDetailTexturePreview.html", null ],
     [ "event::EditorCameraMoveState", "structevent_1_1EditorCameraMoveState.html", null ],
     [ "event::EditorCameraLook", "structevent_1_1EditorCameraLook.html", null ],
     [ "event::SetEditorCameraSettings", "structevent_1_1SetEditorCameraSettings.html", null ],

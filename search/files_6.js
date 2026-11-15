@@ -1,15 +1,20 @@
 var searchData=
 [
-  ['gi_5fpass_2ecpp_0',['gi_pass.cpp',['../gi__pass_8cpp.html',1,'']]],
-  ['gi_5fpass_2ehpp_1',['gi_pass.hpp',['../gi__pass_8hpp.html',1,'']]],
-  ['gi_5fsettings_2ehpp_2',['gi_settings.hpp',['../gi__settings_8hpp.html',1,'']]],
-  ['gizmo_5flayout_2ehpp_3',['gizmo_layout.hpp',['../gizmo__layout_8hpp.html',1,'']]],
-  ['gltf_5fimporter_2ehpp_4',['gltf_importer.hpp',['../gltf__importer_8hpp.html',1,'']]],
-  ['gpu_5flayout_2ehpp_5',['gpu_layout.hpp',['../gpu__layout_8hpp.html',1,'']]],
-  ['gpu_5fsync_2ecpp_6',['gpu_sync.cpp',['../gpu__sync_8cpp.html',1,'']]],
-  ['gpu_5fsync_2ehpp_7',['gpu_sync.hpp',['../gpu__sync_8hpp.html',1,'']]],
-  ['gpu_5ftimer_2ecpp_8',['gpu_timer.cpp',['../gpu__timer_8cpp.html',1,'']]],
-  ['gpu_5ftimer_2ehpp_9',['gpu_timer.hpp',['../gpu__timer_8hpp.html',1,'']]],
-  ['gpu_5ftypes_2ehpp_10',['gpu_types.hpp',['../gpu__types_8hpp.html',1,'']]],
-  ['grid_5fpass_2ehpp_11',['grid_pass.hpp',['../grid__pass_8hpp.html',1,'']]]
+  ['gi_5fclip_5fmath_2ehpp_0',['gi_clip_math.hpp',['../gi__clip__math_8hpp.html',1,'']]],
+  ['gi_5fclipmap_5fpass_2ecpp_1',['gi_clipmap_pass.cpp',['../gi__clipmap__pass_8cpp.html',1,'']]],
+  ['gi_5fclipmap_5fpass_2ehpp_2',['gi_clipmap_pass.hpp',['../gi__clipmap__pass_8hpp.html',1,'']]],
+  ['gi_5fdirty_5fboxes_2ecpp_3',['gi_dirty_boxes.cpp',['../gi__dirty__boxes_8cpp.html',1,'']]],
+  ['gi_5fdirty_5fboxes_2ehpp_4',['gi_dirty_boxes.hpp',['../gi__dirty__boxes_8hpp.html',1,'']]],
+  ['gi_5fpass_2ecpp_5',['gi_pass.cpp',['../gi__pass_8cpp.html',1,'']]],
+  ['gi_5fpass_2ehpp_6',['gi_pass.hpp',['../gi__pass_8hpp.html',1,'']]],
+  ['gi_5fsettings_2ehpp_7',['gi_settings.hpp',['../gi__settings_8hpp.html',1,'']]],
+  ['gizmo_5flayout_2ehpp_8',['gizmo_layout.hpp',['../gizmo__layout_8hpp.html',1,'']]],
+  ['gltf_5fimporter_2ehpp_9',['gltf_importer.hpp',['../gltf__importer_8hpp.html',1,'']]],
+  ['gpu_5flayout_2ehpp_10',['gpu_layout.hpp',['../gpu__layout_8hpp.html',1,'']]],
+  ['gpu_5fsync_2ecpp_11',['gpu_sync.cpp',['../gpu__sync_8cpp.html',1,'']]],
+  ['gpu_5fsync_2ehpp_12',['gpu_sync.hpp',['../gpu__sync_8hpp.html',1,'']]],
+  ['gpu_5ftimer_2ecpp_13',['gpu_timer.cpp',['../gpu__timer_8cpp.html',1,'']]],
+  ['gpu_5ftimer_2ehpp_14',['gpu_timer.hpp',['../gpu__timer_8hpp.html',1,'']]],
+  ['gpu_5ftypes_2ehpp_15',['gpu_types.hpp',['../gpu__types_8hpp.html',1,'']]],
+  ['grid_5fpass_2ehpp_16',['grid_pass.hpp',['../grid__pass_8hpp.html',1,'']]]
 ];

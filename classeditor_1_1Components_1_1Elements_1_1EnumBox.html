@@ -144,6 +144,9 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:ab3e5d56b924b92e7eccad197dbce2490" id="r_ab3e5d56b924b92e7eccad197dbce2490"><td class="memItemLeft">static readonly StyledProperty&lt; string?&gt;&#160;</td><td class="memItemRight"><a class="el" href="#ab3e5d56b924b92e7eccad197dbce2490">ValueProperty</a></td></tr>
 <tr class="memitem:a6411419c4428df1852d6785f37220d87" id="r_a6411419c4428df1852d6785f37220d87"><td class="memItemLeft">static readonly StyledProperty&lt; IEnumerable&lt; string &gt;?&gt;&#160;</td><td class="memItemRight"><a class="el" href="#a6411419c4428df1852d6785f37220d87">OptionsProperty</a></td></tr>
 <tr class="memitem:a119b7b61b8d3ede69de1e01e5cedd869" id="r_a119b7b61b8d3ede69de1e01e5cedd869"><td class="memItemLeft">static readonly DirectProperty&lt; <a class="el" href="classeditor_1_1Components_1_1Elements_1_1EnumBox.html">EnumBox</a>, bool &gt;&#160;</td><td class="memItemRight"><a class="el" href="#a119b7b61b8d3ede69de1e01e5cedd869">IsOpenProperty</a></td></tr>
+<tr class="memitem:a360933358bfac951760b12178216f94e" id="r_a360933358bfac951760b12178216f94e"><td class="memItemLeft">static readonly StyledProperty&lt; IReadOnlyDictionary&lt; string, string &gt;?&gt;&#160;</td><td class="memItemRight"><a class="el" href="#a360933358bfac951760b12178216f94e">GroupsProperty</a></td></tr>
+<tr class="memitem:a37ee948f3b976442627bdc8f3c17f2cf" id="r_a37ee948f3b976442627bdc8f3c17f2cf"><td class="memItemLeft"><a id="a37ee948f3b976442627bdc8f3c17f2cf" name="a37ee948f3b976442627bdc8f3c17f2cf"></a>
+const int&#160;</td><td class="memItemRight"><b>SearchThreshold</b> = 12</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pro-methods" class="groupheader"><a id="pro-methods" name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -158,12 +161,39 @@ Properties</h2></td></tr>
 string?&#160;</td><td class="memItemRight"><b>Value</b><code> [get, set]</code></td></tr>
 <tr class="memitem:a3ab4a9776bbbe4d59728ae9b4213cf09" id="r_a3ab4a9776bbbe4d59728ae9b4213cf09"><td class="memItemLeft"><a id="a3ab4a9776bbbe4d59728ae9b4213cf09" name="a3ab4a9776bbbe4d59728ae9b4213cf09"></a>
 IEnumerable&lt; string &gt;?&#160;</td><td class="memItemRight"><b>Options</b><code> [get, set]</code></td></tr>
+<tr class="memitem:a3a10ff4e6e3dfd226da2df6195be2e01" id="r_a3a10ff4e6e3dfd226da2df6195be2e01"><td class="memItemLeft"><a id="a3a10ff4e6e3dfd226da2df6195be2e01" name="a3a10ff4e6e3dfd226da2df6195be2e01"></a>
+IReadOnlyDictionary&lt; string, string &gt;?&#160;</td><td class="memItemRight"><b>Groups</b><code> [get, set]</code></td></tr>
 <tr class="memitem:aab32cd5157a212c4491334259ead1d45" id="r_aab32cd5157a212c4491334259ead1d45"><td class="memItemLeft"><a id="aab32cd5157a212c4491334259ead1d45" name="aab32cd5157a212c4491334259ead1d45"></a>
 bool&#160;</td><td class="memItemRight"><b>IsOpen</b><code> [get]</code></td></tr>
 <tr class="memitem:a1ea3d913fa0591b2155ffd5b4d37ac66" id="r_a1ea3d913fa0591b2155ffd5b4d37ac66"><td class="memItemLeft"><a id="a1ea3d913fa0591b2155ffd5b4d37ac66" name="a1ea3d913fa0591b2155ffd5b4d37ac66"></a>
 override Type&#160;</td><td class="memItemRight"><b>StyleKeyOverride</b><code> [get]</code></td></tr>
 </table>
 <a name="doc-variable-members" id="doc-variable-members"></a><h2 id="header-doc-variable-members" class="groupheader">Member Data Documentation</h2>
+<a id="a360933358bfac951760b12178216f94e" name="a360933358bfac951760b12178216f94e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a360933358bfac951760b12178216f94e">&#9670;&#160;</a></span>GroupsProperty</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">readonly StyledProperty&lt;IReadOnlyDictionary&lt;string, string&gt;?&gt; editor.Components.Elements.EnumBox.GroupsProperty</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel static">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<b>Initial value:</b><div class="fragment"><div class="line">                                                 =</div>
+<div class="line">AvaloniaProperty.Register&lt;<a class="code hl_class" href="classeditor_1_1Components_1_1Elements_1_1EnumBox.html">EnumBox</a>, IReadOnlyDictionary&lt;string, string&gt;?&gt;(nameof(Groups))</div>
+<div class="ttc" id="aclasseditor_1_1Components_1_1Elements_1_1EnumBox_html"><div class="ttname"><a href="classeditor_1_1Components_1_1Elements_1_1EnumBox.html">editor.Components.Elements.EnumBox</a></div><div class="ttdef"><b>Definition</b> EnumBox.cs:22</div></div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="a119b7b61b8d3ede69de1e01e5cedd869" name="a119b7b61b8d3ede69de1e01e5cedd869"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a119b7b61b8d3ede69de1e01e5cedd869">&#9670;&#160;</a></span>IsOpenProperty</h2>
 
@@ -185,7 +215,6 @@ override Type&#160;</td><td class="memItemRight"><b>StyleKeyOverride</b><code> [
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">                                                 =</div>
 <div class="line">AvaloniaProperty.RegisterDirect&lt;<a class="code hl_class" href="classeditor_1_1Components_1_1Elements_1_1EnumBox.html">EnumBox</a>, <span class="keywordtype">bool</span>&gt;(nameof(IsOpen), o =&gt; o.m_isOpen)</div>
-<div class="ttc" id="aclasseditor_1_1Components_1_1Elements_1_1EnumBox_html"><div class="ttname"><a href="classeditor_1_1Components_1_1Elements_1_1EnumBox.html">editor.Components.Elements.EnumBox</a></div><div class="ttdef"><b>Definition</b> EnumBox.cs:20</div></div>
 </div><!-- fragment -->
 </div>
 </div>

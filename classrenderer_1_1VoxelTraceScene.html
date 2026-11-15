@@ -119,6 +119,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 </div><!--header-->
 <div class="contents">
 
+<p><a class="el" href="structrenderer_1_1VoxelTraceScene_1_1Volume.html">Volume</a> order shared by scene_trace.slang and the ray query instances.  
+ <a href="#details">More...</a></p>
+
 <p><code>#include &lt;<a class="el" href="voxel__trace__scene_8hpp_source.html">voxel_trace_scene.hpp</a>&gt;</code></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
@@ -166,7 +169,7 @@ static constexpr uint8_t&#160;</td><td class="memItemRight"><b>k_mask_volume</b>
 static constexpr uint8_t&#160;</td><td class="memItemRight"><b>k_mask_glass</b> = 0x04</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Voxel volumes every marched ray walks in one order shared by scene_trace.slang and the ray query instances Without ray queries rays walk a camera centred cell grid over the same list </p>
+<div class="textblock"><p><a class="el" href="structrenderer_1_1VoxelTraceScene_1_1Volume.html">Volume</a> order shared by scene_trace.slang and the ray query instances. </p>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
 <a id="a765154af62b1f1ee15bee628dfd042fb" name="a765154af62b1f1ee15bee628dfd042fb"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a765154af62b1f1ee15bee628dfd042fb">&#9670;&#160;</a></span>addRayQueryInstances()</h2>
@@ -201,7 +204,7 @@ static constexpr uint8_t&#160;</td><td class="memItemRight"><b>k_mask_glass</b> 
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Builds the shared unit box once and adds the brick BLASes of <code class="param">bricks</code> or the unit box per volume of the last update </p><dl class="section return"><dt>Returns</dt><dd>false while the unit box is not usable yet </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>false while the unit box is not usable yet </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
@@ -236,7 +239,7 @@ Here is the caller graph for this function:</div>
 </div><div class="memdoc">
 <b>Initial value:</b><div class="fragment"><div class="line">                                 =</div>
 <div class="line"><a class="code hl_variable" href="#a0681d51224a6ed80171a8351ef4c88b6">k_header_words</a> + (2 * k_grid_dim * k_grid_dim * k_grid_dim) + k_max_entries + (2 * k_max_volumes)</div>
-<div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a0681d51224a6ed80171a8351ef4c88b6"><div class="ttname"><a href="#a0681d51224a6ed80171a8351ef4c88b6">renderer::VoxelTraceScene::k_header_words</a></div><div class="ttdeci">static constexpr uint32_t k_header_words</div><div class="ttdoc">Mirrors scene_trace.slang kTraceHeaderWords.</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:38</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a0681d51224a6ed80171a8351ef4c88b6"><div class="ttname"><a href="#a0681d51224a6ed80171a8351ef4c88b6">renderer::VoxelTraceScene::k_header_words</a></div><div class="ttdeci">static constexpr uint32_t k_header_words</div><div class="ttdoc">Mirrors scene_trace.slang kTraceHeaderWords.</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:37</div></div>
 </div><!-- fragment -->
 </div>
 </div>

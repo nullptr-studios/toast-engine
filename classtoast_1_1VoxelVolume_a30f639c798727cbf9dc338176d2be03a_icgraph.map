@@ -1,0 +1,5 @@
+<map id="toast::VoxelVolume::finishGrid" name="toast::VoxelVolume::finishGrid">
+<area shape="rect" id="Node000001" title=" " alt="" coords="248,5,394,50"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1VoxelLine.html#a9869a0f66ed09d16f44dcc9b06f8e43b" title=" " alt="" coords="5,14,200,42"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="229,28,200,30,200,25,235,27"/>
+</map>

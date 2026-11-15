@@ -1,0 +1,41 @@
+<map id="editor.LuaEditor.Graph.Statement" name="editor.LuaEditor.Graph.Statement">
+<area shape="rect" id="Node000001" title=" " alt="" coords="296,567,533,595"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1LuaEditor_1_1Graph_1_1AssignStatement.html" title=" " alt="" coords="602,5,814,50"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="413,551,420,457,429,394,443,325,464,254,493,183,531,118,579,60,603,46,600,50,583,64,535,121,497,186,469,255,448,326,434,395,425,457,418,552"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1LuaEditor_1_1Graph_1_1BreakStatement.html" title=" " alt="" coords="604,75,811,119"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="415,551,425,468,436,414,452,355,473,294,500,234,536,178,579,130,605,114,602,118,583,134,540,182,505,237,478,296,457,356,441,415,431,469,420,552"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CallStatement.html" title=" " alt="" coords="610,144,805,189"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="417,551,432,480,461,385,482,334,508,285,541,239,579,199,612,181,608,185,583,203,545,242,513,288,487,337,466,387,437,481,422,553"/>
+<area shape="rect" id="Node000006" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CastStatement.html" title=" " alt="" coords="608,213,807,258"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="420,551,439,492,470,415,492,375,517,336,546,300,579,268,610,252,606,256,583,272,550,303,521,339,496,378,475,417,444,493,425,553"/>
+<area shape="rect" id="Node000007" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CommentStatement.html" title=" " alt="" coords="591,283,824,327"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="425,552,447,505,480,447,525,388,551,361,579,337,603,326,599,330,583,342,554,365,529,391,485,450,451,508,429,555"/>
+<area shape="rect" id="Node000008" href="$classeditor_1_1LuaEditor_1_1Graph_1_1DoStatement.html" title=" " alt="" coords="614,352,801,397"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="432,553,492,480,533,440,580,407,616,392,612,396,582,411,537,445,496,484,436,556"/>
+<area shape="rect" id="Node000009" href="$classeditor_1_1LuaEditor_1_1Graph_1_1FunctionDecl.html" title=" " alt="" coords="581,420,834,448"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="440,555,501,505,539,480,580,459,618,447,614,450,582,463,542,485,504,510,444,559"/>
+<area shape="rect" id="Node000010" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GenericFor.html" title=" " alt="" coords="588,472,827,500"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="457,558,515,533,580,509,625,499,621,502,582,514,517,538,460,562"/>
+<area shape="rect" id="Node000011" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GotoStatement.html" title=" " alt="" coords="608,524,808,569"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="547,563,609,557,605,559,550,568"/>
+<area shape="rect" id="Node000012" href="$classeditor_1_1LuaEditor_1_1Graph_1_1IfStatement.html" title=" " alt="" coords="618,593,797,638"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="548,594,621,604,616,606,549,599"/>
+<area shape="rect" id="Node000013" href="$classeditor_1_1LuaEditor_1_1Graph_1_1LabelStatement.html" title=" " alt="" coords="606,663,810,707"/>
+<area shape="poly" id="edge12_Node000001_Node000013" title=" " alt="" coords="460,599,582,648,621,661,615,663,580,653,460,604"/>
+<area shape="rect" id="Node000014" href="$classeditor_1_1LuaEditor_1_1Graph_1_1LocalDecl.html" title=" " alt="" coords="592,731,824,759"/>
+<area shape="poly" id="edge13_Node000001_Node000014" title=" " alt="" coords="438,604,501,662,540,692,582,717,612,730,607,731,580,722,537,697,497,666,438,609"/>
+<area shape="rect" id="Node000015" href="$classeditor_1_1LuaEditor_1_1Graph_1_1NumericFor.html" title=" " alt="" coords="586,783,830,811"/>
+<area shape="poly" id="edge14_Node000001_Node000015" title=" " alt="" coords="432,606,458,644,492,688,534,732,582,768,611,782,606,783,580,773,530,736,488,692,454,647,431,611"/>
+<area shape="rect" id="Node000016" href="$classeditor_1_1LuaEditor_1_1Graph_1_1RawStatement.html" title=" " alt="" coords="609,835,806,879"/>
+<area shape="poly" id="edge15_Node000001_Node000016" title=" " alt="" coords="427,606,451,654,485,712,529,771,554,797,582,820,611,837,606,838,580,825,551,801,525,774,480,715,447,657,426,611"/>
+<area shape="rect" id="Node000017" href="$classeditor_1_1LuaEditor_1_1Graph_1_1RepeatStatement.html" title=" " alt="" coords="600,904,815,949"/>
+<area shape="poly" id="edge16_Node000001_Node000017" title=" " alt="" coords="423,608,444,669,475,745,496,784,521,823,550,859,583,890,603,904,597,904,579,894,546,862,517,826,492,787,470,747,439,670,422,613"/>
+<area shape="rect" id="Node000018" href="$classeditor_1_1LuaEditor_1_1Graph_1_1ReturnStatement.html" title=" " alt="" coords="602,973,814,1018"/>
+<area shape="poly" id="edge17_Node000001_Node000018" title=" " alt="" coords="421,608,437,681,466,775,487,825,513,874,545,920,583,959,604,975,599,974,579,963,541,923,508,877,482,828,461,777,432,682,419,613"/>
+<area shape="rect" id="Node000019" href="$classeditor_1_1LuaEditor_1_1Graph_1_1SequenceStatement.html" title=" " alt="" coords="592,1043,824,1087"/>
+<area shape="poly" id="edge18_Node000001_Node000019" title=" " alt="" coords="418,608,431,693,441,747,457,806,478,866,505,925,540,980,583,1028,599,1043,594,1042,579,1032,536,984,500,928,473,868,452,807,436,748,425,694,417,613"/>
+<area shape="rect" id="Node000020" href="$classeditor_1_1LuaEditor_1_1Graph_1_1WhileStatement.html" title=" " alt="" coords="604,1112,811,1157"/>
+<area shape="poly" id="edge19_Node000001_Node000020" title=" " alt="" coords="417,608,425,705,434,767,448,836,469,907,497,976,535,1041,583,1098,607,1117,602,1115,579,1102,531,1044,493,979,464,908,443,837,429,768,420,705,415,613"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GraphNode.html" title=" " alt="" coords="5,567,248,595"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="262,579,298,579,293,583,264,583"/>
+</map>

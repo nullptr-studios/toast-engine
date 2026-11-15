@@ -1,5 +1,5 @@
 <map id="engine/src/toast/world/light_gizmo.hpp" name="engine/src/toast/world/light_gizmo.hpp">
-<area shape="rect" id="Node000001" title="Selected light shapes and the viewport handles that edit them, laid out like the collider size handle..." alt="" coords="698,5,863,50"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="698,5,863,50"/>
 <area shape="rect" id="Node000002" href="$vulkan__renderer_8cpp.html" title=" " alt="" coords="5,98,190,143"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="679,39,462,65,202,101,190,103,189,97,201,95,461,60,685,38"/>
 <area shape="rect" id="Node000003" href="$vulkan__renderer__lights_8cpp.html" title=" " alt="" coords="213,98,414,143"/>

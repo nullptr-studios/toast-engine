@@ -27,5 +27,6 @@ var searchData=
   ['drawdebug_24',['drawDebug',['../classtoast_1_1ProceduralVoxel.html#aeb4814871ef8a2c2966314c7828c1cce',1,'toast::ProceduralVoxel']]],
   ['drawing_25',['drawing',['../classtoast_1_1VoxelPiece.html#a1b59d37a4121684fd9427d24b076e337',1,'toast::VoxelPiece']]],
   ['drawoverlay_26',['drawOverlay',['../classrenderer_1_1voxel__debug_1_1Monitor.html#a93a01eda4934b45fafb3b3e8839eade1',1,'renderer::voxel_debug::Monitor']]],
-  ['drawpanel_27',['drawPanel',['../classrenderer_1_1voxel__debug_1_1Monitor.html#ae09f8519541cbea9abd74ce9a0ec45e2',1,'renderer::voxel_debug::Monitor']]]
+  ['drawpanel_27',['drawPanel',['../classrenderer_1_1voxel__debug_1_1Monitor.html#ae09f8519541cbea9abd74ce9a0ec45e2',1,'renderer::voxel_debug::Monitor']]],
+  ['dropifremoved_28',['dropIfRemoved',['../structtoast_1_1ClipPlayback.html#a6b87537bb3823a631e1bfa34c09a941d',1,'toast::ClipPlayback']]]
 ];

@@ -51,6 +51,7 @@ var classtoast_1_1VoxelNode =
     [ "worldToVoxel", "classtoast_1_1VoxelNode.html#a2dc105eea2b21aa3fd266e0fab1b691a", null ],
     [ "aabb_fill", "classtoast_1_1VoxelNode.html#aef41f914876028b24813776184273fe0", null ],
     [ "auto_mass_center", "classtoast_1_1VoxelNode.html#a6fe12fcf1a96d558e971e05080cd29e4", null ],
+    [ "break_anchor", "classtoast_1_1VoxelNode.html#a4e1bafa9223c26b961911a3db566c04a", null ],
     [ "broke_apart", "classtoast_1_1VoxelNode.html#a89686336a85691eac3e80e3460c9b9c4", null ],
     [ "contact_begin", "classtoast_1_1VoxelNode.html#a70243fcd2a9759adb1e764290306ac20", null ],
     [ "contact_end", "classtoast_1_1VoxelNode.html#a2f10ad9cc1319c985fe44ea2f2988b6f", null ],

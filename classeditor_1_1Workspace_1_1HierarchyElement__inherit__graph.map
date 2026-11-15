@@ -1,5 +1,7 @@
 <map id="editor.Workspace.HierarchyElement" name="editor.Workspace.HierarchyElement">
-<area shape="rect" id="Node000001" title=" " alt="" coords="5,81,206,126"/>
-<area shape="rect" id="Node000002" title=" " alt="" coords="17,5,194,33"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="107,47,108,81,103,79,104,51"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="107,81,307,126"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,5,182,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="125,40,179,80,174,81,123,45"/>
+<area shape="rect" id="Node000003" href="$interfaceeditor_1_1Workspace_1_1IHierarchyRow.html" title=" " alt="" coords="205,5,438,33"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="293,41,239,83,236,78,288,43"/>
 </map>

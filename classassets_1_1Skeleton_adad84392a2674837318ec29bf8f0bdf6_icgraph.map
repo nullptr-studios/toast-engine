@@ -1,0 +1,5 @@
+<map id="assets::Skeleton::find" name="assets::Skeleton::find">
+<area shape="rect" id="Node000001" title=" " alt="" coords="202,14,361,42"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1SkeletalNode.html#aa8f19bfaaeece3f09ec788a1963f6ca3" title="Skin joint index to bone index, &#45;1 where this skeleton lacks the joint." alt="" coords="5,5,154,50"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="183,28,154,30,154,25,189,27"/>
+</map>

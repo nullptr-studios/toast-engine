@@ -24,7 +24,7 @@ var searchData=
   ['placementfromtransform_21',['placementFromTransform',['../stamp_8hpp.html#a697405fedb3924564d74c53946602920',1,'voxel']]],
   ['placevoxel_22',['placeVoxel',['../stamp_8hpp.html#a82d46d56f9e50950396aec7aa91eba2d',1,'voxel']]],
   ['planwave_23',['planWave',['../namespacetoast_1_1__detail.html#aaacf83db8ac1010e56a59d5e4eee3b96',1,'toast::_detail']]],
-  ['play_24',['play',['../classtoast_1_1AudioEmitter.html#ab75869ebbd86640b17f13386aca2d8d6',1,'toast::AudioEmitter::play()'],['../classinput_1_1HapticsSystem.html#a633d55e8d7dab9f2c8b426957a8859a7',1,'input::HapticsSystem::play()'],['../classtoast_1_1AnimationPlayer.html#a886d6620bf3f0c845f646e6ce9c29d73',1,'toast::AnimationPlayer::play()']]],
+  ['play_24',['play',['../classtoast_1_1AudioEmitter.html#ab75869ebbd86640b17f13386aca2d8d6',1,'toast::AudioEmitter::play()'],['../classinput_1_1HapticsSystem.html#a633d55e8d7dab9f2c8b426957a8859a7',1,'input::HapticsSystem::play()'],['../classtoast_1_1AnimationPlayer.html#a886d6620bf3f0c845f646e6ce9c29d73',1,'toast::AnimationPlayer::play()'],['../classtoast_1_1SkeletalNode.html#a8f5bf2b64a3ef2d087225f604f540565',1,'toast::SkeletalNode::play()']]],
   ['playhaptic_25',['PlayHaptic',['../structevent_1_1PlayHaptic.html#aaa658fb8233c6fea36c12c383236708e',1,'event::PlayHaptic']]],
   ['playhaptic_26',['playHaptic',['../classinput_1_1PlayerController.html#ad81b253647e587f6dacca374971e1fee',1,'input::PlayerController']]],
   ['playhapticdirect_27',['PlayHapticDirect',['../structevent_1_1PlayHapticDirect.html#a4e6a8a1bceee3c4ea135db23bd285bbf',1,'event::PlayHapticDirect']]],
@@ -46,9 +46,10 @@ var searchData=
   ['projectroot_43',['projectRoot',['../classassets_1_1AssetManager.html#a3cb1484819c93ddb448a11a703fda0a5',1,'assets::AssetManager']]],
   ['protoregistrars_44',['protoRegistrars',['../proto__event_8hpp.html#af48f7a78c64192cc32a022c5a3c53558',1,'event::_detail']]],
   ['published_45',['published',['../classrenderer_1_1VoxelChangeTracker.html#ace7bac1d8265e81230473c77a48e9fc8',1,'renderer::VoxelChangeTracker']]],
-  ['punctuallayercount_46',['punctualLayerCount',['../shadow__constants_8hpp.html#ac14b094a6df9668563a9a0acd4dc8737',1,'renderer::shadows']]],
-  ['punctualshadowresolution_47',['punctualShadowResolution',['../shadow__constants_8hpp.html#a1c8da6c3808e9e1b07c35f8822f7f1a6',1,'renderer::shadows']]],
-  ['push_48',['push',['../classassets_1_1DataValue.html#a4a4bd844e76264c7754e7292c6527a19',1,'assets::DataValue::push()'],['../classtoast_1_1ThreadPool.html#a4840f2494b2a12987c7817e1a945f4b4',1,'toast::ThreadPool::push()'],['../classrenderer_1_1DataValue.html#a4a4bd844e76264c7754e7292c6527a19',1,'renderer::DataValue::push()']]],
-  ['pushbody_49',['pushBody',['../classphysics_1_1Simulator.html#ab7ad1534755bea6832ef2d77166320ce',1,'physics::Simulator']]],
-  ['pushraw_50',['pushRaw',['../classtoast_1_1ThreadPool.html#a33a0838ca95de8adde211ca9ff5ae3f5',1,'toast::ThreadPool']]]
+  ['publishedframe_46',['publishedFrame',['../classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613',1,'renderer::GiClipmapPass']]],
+  ['punctuallayercount_47',['punctualLayerCount',['../shadow__constants_8hpp.html#ac14b094a6df9668563a9a0acd4dc8737',1,'renderer::shadows']]],
+  ['punctualshadowresolution_48',['punctualShadowResolution',['../shadow__constants_8hpp.html#a1c8da6c3808e9e1b07c35f8822f7f1a6',1,'renderer::shadows']]],
+  ['push_49',['push',['../classassets_1_1DataValue.html#a4a4bd844e76264c7754e7292c6527a19',1,'assets::DataValue::push()'],['../classtoast_1_1ThreadPool.html#a4840f2494b2a12987c7817e1a945f4b4',1,'toast::ThreadPool::push()'],['../classrenderer_1_1DataValue.html#a4a4bd844e76264c7754e7292c6527a19',1,'renderer::DataValue::push()']]],
+  ['pushbody_50',['pushBody',['../classphysics_1_1Simulator.html#ab7ad1534755bea6832ef2d77166320ce',1,'physics::Simulator']]],
+  ['pushraw_51',['pushRaw',['../classtoast_1_1ThreadPool.html#a33a0838ca95de8adde211ca9ff5ae3f5',1,'toast::ThreadPool']]]
 ];

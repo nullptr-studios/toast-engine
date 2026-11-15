@@ -168,48 +168,38 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('mesh__node_8hp
 <div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordflow">return</span> m_material;</div>
 <div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  }</div>
 <div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span></div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  [[nodiscard]]</div>
-<div class="foldopen" id="foldopen00065" data-start="{" data-end="}">
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno"><a class="line" href="classtoast_1_1MeshNode.html#ae1c54a12aa8e0470d7ca3b42e97eb77a">   65</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1MeshNode.html#ae1c54a12aa8e0470d7ca3b42e97eb77a">getSkinAnimation</a>() const -&gt; const assets::Handle&lt;assets::Animation&gt;&amp; {</div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>    <span class="keywordflow">return</span> m_skin_animation;</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  }</div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00058" data-start="{" data-end="}">
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno"><a class="line" href="classtoast_1_1MeshNode.html#ab57c9e4c5274fc4f2221987c2ba900cb">   58</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1MeshNode.html#ab57c9e4c5274fc4f2221987c2ba900cb">getSkinName</a>() const -&gt; const std::<span class="keywordtype">string</span>&amp; {</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>    <span class="keywordflow">return</span> m_skin_name;</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  }</div>
 </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span></div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  [[nodiscard]]</div>
-<div class="foldopen" id="foldopen00071" data-start="{" data-end="}">
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno"><a class="line" href="classtoast_1_1MeshNode.html#ab57c9e4c5274fc4f2221987c2ba900cb">   71</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classtoast_1_1MeshNode.html#ab57c9e4c5274fc4f2221987c2ba900cb">getSkinName</a>() const -&gt; const std::<span class="keywordtype">string</span>&amp; {</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>    <span class="keywordflow">return</span> m_skin_name;</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  }</div>
-</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span> </div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keywordtype">void</span> updateInspectorMessages() <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">auto</span> inspectorOptions(std::string_view field_name) -&gt; std::vector&lt;std::string&gt; <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  <span class="keywordtype">void</span> init();</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span> end();</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span> destroy();</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>]]</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::Mesh&gt;</a> m_mesh;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span> </div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>]]</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::Material&gt;</a> m_material;</div>
 <div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordtype">void</span> updateInspectorMessages() <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">void</span> init();</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keywordtype">void</span> end();</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordtype">void</span> destroy();</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>]]</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::Mesh&gt;</a> m_mesh;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span> </div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>]]</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::Material&gt;</a> m_material;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Skin Animation&quot;</span>)]]</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <a class="code hl_class" href="classassets_1_1Handle.html">assets::Handle&lt;assets::Animation&gt;</a> m_skin_animation;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Skin Name&quot;</span>)]]</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  std::string m_skin_name;</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordtype">bool</span> m_registered_proxy = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>};</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  [[<a class="code hl_class" href="classtoast_1_1Reflect.html">Reflect</a>, Name(<span class="stringliteral">&quot;Skin Name&quot;</span>), Options]]</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  std::string m_skin_name;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span> </div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  <span class="keywordtype">bool</span> m_registered_proxy = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>};</div>
 </div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>}</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>}</div>
 <div class="ttc" id="aanimation_8hpp_html"><div class="ttname"><a href="animation_8hpp.html">animation.hpp</a></div><div class="ttdoc">Keyframe animation asset (.tanim), imported from glTF.</div></div>
 <div class="ttc" id="aclassassets_1_1Handle_html"><div class="ttname"><a href="classassets_1_1Handle.html">assets::Handle</a></div><div class="ttdoc">Type-safe smart pointer for assets.</div><div class="ttdef"><b>Definition</b> core_types.hpp:149</div></div>
 <div class="ttc" id="aclassassets_1_1Material_html"><div class="ttname"><a href="classassets_1_1Material.html">assets::Material</a></div><div class="ttdoc">Shader-driven material asset.</div><div class="ttdef"><b>Definition</b> material.hpp:49</div></div>
 <div class="ttc" id="aclassassets_1_1Mesh_html"><div class="ttname"><a href="classassets_1_1Mesh.html">assets::Mesh</a></div><div class="ttdef"><b>Definition</b> mesh.hpp:66</div></div>
-<div class="ttc" id="aclasstoast_1_1MeshNode_html_ab57c9e4c5274fc4f2221987c2ba900cb"><div class="ttname"><a href="classtoast_1_1MeshNode.html#ab57c9e4c5274fc4f2221987c2ba900cb">toast::MeshNode::getSkinName</a></div><div class="ttdeci">auto getSkinName() const -&gt; const std::string &amp;</div><div class="ttdef"><b>Definition</b> mesh_node.hpp:71</div></div>
-<div class="ttc" id="aclasstoast_1_1MeshNode_html_ae1c54a12aa8e0470d7ca3b42e97eb77a"><div class="ttname"><a href="classtoast_1_1MeshNode.html#ae1c54a12aa8e0470d7ca3b42e97eb77a">toast::MeshNode::getSkinAnimation</a></div><div class="ttdeci">auto getSkinAnimation() const -&gt; const assets::Handle&lt; assets::Animation &gt; &amp;</div><div class="ttdoc">Which .tanim asset&#39;s Skin drives this mesh, if it&#39;s skinned.</div><div class="ttdef"><b>Definition</b> mesh_node.hpp:65</div></div>
+<div class="ttc" id="aclasstoast_1_1MeshNode_html_ab57c9e4c5274fc4f2221987c2ba900cb"><div class="ttname"><a href="classtoast_1_1MeshNode.html#ab57c9e4c5274fc4f2221987c2ba900cb">toast::MeshNode::getSkinName</a></div><div class="ttdeci">auto getSkinName() const -&gt; const std::string &amp;</div><div class="ttdoc">Skin inside the nearest SkeletalNode ancestor skeleton, empty is the first.</div><div class="ttdef"><b>Definition</b> mesh_node.hpp:58</div></div>
 <div class="ttc" id="aclasstoast_1_1Node3D_html"><div class="ttname"><a href="classtoast_1_1Node3D.html">toast::Node3D</a></div><div class="ttdef"><b>Definition</b> node_3d.hpp:25</div></div>
 <div class="ttc" id="aclasstoast_1_1Reflect_html"><div class="ttname"><a href="classtoast_1_1Reflect.html">toast::Reflect</a></div><div class="ttdef"><b>Definition</b> reflect.hpp:254</div></div>
 <div class="ttc" id="anode__3d_8hpp_html"><div class="ttname"><a href="node__3d_8hpp.html">node_3d.hpp</a></div><div class="ttdoc">Node with 3D spatial transforms.</div></div>

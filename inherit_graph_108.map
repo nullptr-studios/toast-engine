@@ -1,3 +1,69 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$structevent_1_1__detail_1_1ProtoAutoRegister.html" title=" " alt="" coords="5,5,188,50"/>
+<area shape="rect" id="Node000000" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GraphNode.html" title=" " alt="" coords="5,745,248,773"/>
+<area shape="rect" id="Node000001" href="$classeditor_1_1LuaEditor_1_1Graph_1_1ExprNode.html" title=" " alt="" coords="298,317,530,345"/>
+<area shape="poly" id="edge267_Node000000_Node000001" title=" " alt="" coords="143,731,404,343,403,348,148,734"/>
+<area shape="rect" id="Node000014" href="$classeditor_1_1LuaEditor_1_1Graph_1_1FunctionEntry.html" title=" " alt="" coords="302,737,526,782"/>
+<area shape="poly" id="edge280_Node000000_Node000014" title=" " alt="" coords="261,757,304,757,300,761,265,761"/>
+<area shape="rect" id="Node000015" href="$classeditor_1_1LuaEditor_1_1Graph_1_1Statement.html" title=" " alt="" coords="296,1172,533,1200"/>
+<area shape="poly" id="edge281_Node000000_Node000015" title=" " alt="" coords="146,783,406,1171,401,1172,145,788"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1LuaEditor_1_1Graph_1_1BinaryOp.html" title=" " alt="" coords="596,5,825,33"/>
+<area shape="poly" id="edge268_Node000001_Node000002" title=" " alt="" coords="421,302,440,246,472,176,494,139,518,104,547,71,579,44,605,31,601,36,583,48,551,75,523,107,498,142,477,178,445,248,426,303"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CallNode.html" title=" " alt="" coords="596,57,824,85"/>
+<area shape="poly" id="edge269_Node000001_Node000003" title=" " alt="" coords="425,302,447,256,480,200,525,143,551,117,580,96,607,83,604,87,582,100,554,121,529,147,485,203,452,259,430,304"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1LuaEditor_1_1Graph_1_1FunctionNode.html" title=" " alt="" coords="581,109,839,137"/>
+<area shape="poly" id="edge270_Node000001_Node000004" title=" " alt="" coords="430,303,455,267,489,225,531,183,580,148,611,136,607,140,582,152,535,187,493,228,459,270,434,306"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GlobalGet.html" title=" " alt="" coords="593,161,827,189"/>
+<area shape="poly" id="edge271_Node000001_Node000005" title=" " alt="" coords="438,305,499,251,538,223,580,199,617,188,613,192,582,204,541,227,502,255,442,308"/>
+<area shape="rect" id="Node000006" href="$classeditor_1_1LuaEditor_1_1Graph_1_1IndexGet.html" title=" " alt="" coords="596,213,824,241"/>
+<area shape="poly" id="edge272_Node000001_Node000006" title=" " alt="" coords="453,308,512,278,580,251,628,240,624,243,582,256,514,283,457,312"/>
+<area shape="rect" id="Node000007" href="$classeditor_1_1LuaEditor_1_1Graph_1_1MemberGet.html" title=" " alt="" coords="587,265,833,293"/>
+<area shape="poly" id="edge273_Node000001_Node000007" title=" " alt="" coords="511,312,629,292,625,295,514,316"/>
+<area shape="rect" id="Node000008" href="$classeditor_1_1LuaEditor_1_1Graph_1_1ParenNode.html" title=" " alt="" coords="590,317,830,345"/>
+<area shape="poly" id="edge274_Node000001_Node000008" title=" " alt="" coords="545,329,592,330,588,333,548,333"/>
+<area shape="rect" id="Node000009" href="$classeditor_1_1LuaEditor_1_1Graph_1_1RawExpression.html" title=" " alt="" coords="612,369,809,414"/>
+<area shape="poly" id="edge275_Node000001_Node000009" title=" " alt="" coords="500,346,613,370,609,373,502,351"/>
+<area shape="rect" id="Node000010" href="$classeditor_1_1LuaEditor_1_1Graph_1_1TableNode.html" title=" " alt="" coords="592,437,829,465"/>
+<area shape="poly" id="edge276_Node000001_Node000010" title=" " alt="" coords="447,351,509,389,582,423,619,436,615,438,580,428,507,393,449,356"/>
+<area shape="rect" id="Node000011" href="$classeditor_1_1LuaEditor_1_1Graph_1_1UnaryOp.html" title=" " alt="" coords="597,489,823,517"/>
+<area shape="poly" id="edge277_Node000001_Node000011" title=" " alt="" coords="437,354,499,416,539,448,582,474,615,488,610,490,580,479,536,452,496,420,438,359"/>
+<area shape="rect" id="Node000012" href="$classeditor_1_1LuaEditor_1_1Graph_1_1VarargNode.html" title=" " alt="" coords="588,541,833,569"/>
+<area shape="poly" id="edge278_Node000001_Node000012" title=" " alt="" coords="430,356,457,396,490,442,533,488,582,526,610,540,605,542,580,531,529,492,486,445,452,399,431,361"/>
+<area shape="rect" id="Node000013" href="$classeditor_1_1LuaEditor_1_1Graph_1_1VariableGet.html" title=" " alt="" coords="588,593,833,621"/>
+<area shape="poly" id="edge279_Node000001_Node000013" title=" " alt="" coords="426,357,450,407,483,467,527,528,553,555,582,578,607,592,602,594,580,583,550,559,523,531,478,470,445,410,426,362"/>
+<area shape="rect" id="Node000016" href="$classeditor_1_1LuaEditor_1_1Graph_1_1AssignStatement.html" title=" " alt="" coords="604,645,816,690"/>
+<area shape="poly" id="edge282_Node000015_Node000016" title=" " alt="" coords="421,1156,497,904,543,772,563,726,579,700,605,684,602,688,583,704,568,728,548,774,502,905,426,1158"/>
+<area shape="rect" id="Node000017" href="$classeditor_1_1LuaEditor_1_1Graph_1_1BreakStatement.html" title=" " alt="" coords="606,714,814,759"/>
+<area shape="poly" id="edge283_Node000015_Node000017" title=" " alt="" coords="416,1156,428,1079,456,975,477,919,504,864,538,813,579,769,608,753,604,757,583,773,542,817,509,867,482,921,461,976,434,1080,421,1158"/>
+<area shape="rect" id="Node000018" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CallStatement.html" title=" " alt="" coords="613,784,807,828"/>
+<area shape="poly" id="edge284_Node000015_Node000018" title=" " alt="" coords="419,1156,435,1090,465,1005,487,959,512,915,543,874,579,838,615,820,611,824,583,843,547,878,517,918,491,962,470,1007,440,1092,424,1158"/>
+<area shape="rect" id="Node000019" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CastStatement.html" title=" " alt="" coords="611,853,809,898"/>
+<area shape="poly" id="edge285_Node000015_Node000019" title=" " alt="" coords="422,1156,443,1103,475,1036,521,967,548,935,579,908,613,891,609,895,583,912,552,939,525,970,480,1038,447,1105,427,1158"/>
+<area shape="rect" id="Node000020" href="$classeditor_1_1LuaEditor_1_1Graph_1_1CommentStatement.html" title=" " alt="" coords="594,922,827,967"/>
+<area shape="poly" id="edge286_Node000015_Node000020" title=" " alt="" coords="428,1157,452,1117,486,1068,529,1019,580,977,605,965,601,969,582,981,533,1023,490,1071,456,1120,432,1160"/>
+<area shape="rect" id="Node000021" href="$classeditor_1_1LuaEditor_1_1Graph_1_1DoStatement.html" title=" " alt="" coords="616,992,804,1036"/>
+<area shape="poly" id="edge287_Node000015_Node000021" title=" " alt="" coords="437,1159,498,1102,537,1072,580,1046,618,1032,614,1036,582,1051,541,1076,502,1106,441,1163"/>
+<area shape="rect" id="Node000022" href="$classeditor_1_1LuaEditor_1_1Graph_1_1FunctionDecl.html" title=" " alt="" coords="584,1060,837,1088"/>
+<area shape="poly" id="edge288_Node000015_Node000022" title=" " alt="" coords="449,1162,510,1129,580,1098,626,1087,621,1090,582,1103,512,1134,453,1166"/>
+<area shape="rect" id="Node000023" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GenericFor.html" title=" " alt="" coords="590,1112,830,1140"/>
+<area shape="poly" id="edge289_Node000015_Node000023" title=" " alt="" coords="497,1166,580,1149,637,1139,633,1142,582,1154,500,1171"/>
+<area shape="rect" id="Node000024" href="$classeditor_1_1LuaEditor_1_1Graph_1_1GotoStatement.html" title=" " alt="" coords="610,1164,810,1208"/>
+<area shape="poly" id="edge290_Node000015_Node000024" title=" " alt="" coords="548,1183,612,1185,607,1187,549,1188"/>
+<area shape="rect" id="Node000025" href="$classeditor_1_1LuaEditor_1_1Graph_1_1IfStatement.html" title=" " alt="" coords="621,1233,799,1278"/>
+<area shape="poly" id="edge291_Node000015_Node000025" title=" " alt="" coords="491,1201,623,1233,618,1235,492,1206"/>
+<area shape="rect" id="Node000026" href="$classeditor_1_1LuaEditor_1_1Graph_1_1LabelStatement.html" title=" " alt="" coords="608,1302,812,1347"/>
+<area shape="poly" id="edge292_Node000015_Node000026" title=" " alt="" coords="446,1207,508,1248,582,1287,615,1301,610,1302,580,1292,506,1252,447,1212"/>
+<area shape="rect" id="Node000027" href="$classeditor_1_1LuaEditor_1_1Graph_1_1LocalDecl.html" title=" " alt="" coords="594,1371,826,1398"/>
+<area shape="poly" id="edge293_Node000015_Node000027" title=" " alt="" coords="433,1210,460,1245,494,1285,536,1324,582,1357,609,1370,604,1370,580,1361,532,1329,490,1289,456,1248,433,1215"/>
+<area shape="rect" id="Node000028" href="$classeditor_1_1LuaEditor_1_1Graph_1_1NumericFor.html" title=" " alt="" coords="588,1423,832,1450"/>
+<area shape="poly" id="edge294_Node000015_Node000028" title=" " alt="" coords="428,1211,453,1257,486,1310,530,1363,555,1387,582,1408,608,1422,603,1422,580,1412,552,1391,526,1367,482,1313,448,1259,428,1217"/>
+<area shape="rect" id="Node000029" href="$classeditor_1_1LuaEditor_1_1Graph_1_1RawStatement.html" title=" " alt="" coords="612,1474,809,1519"/>
+<area shape="poly" id="edge295_Node000015_Node000029" title=" " alt="" coords="425,1212,447,1266,480,1333,525,1402,552,1433,583,1460,614,1478,608,1479,579,1464,548,1437,521,1405,475,1336,443,1269,424,1217"/>
+<area shape="rect" id="Node000030" href="$classeditor_1_1LuaEditor_1_1Graph_1_1RepeatStatement.html" title=" " alt="" coords="602,1544,818,1588"/>
+<area shape="poly" id="edge296_Node000015_Node000030" title=" " alt="" coords="422,1212,440,1280,470,1365,491,1410,517,1454,547,1494,583,1529,605,1545,599,1545,579,1533,543,1498,512,1457,487,1412,465,1367,435,1281,420,1218"/>
+<area shape="rect" id="Node000031" href="$classeditor_1_1LuaEditor_1_1Graph_1_1ReturnStatement.html" title=" " alt="" coords="604,1613,816,1658"/>
+<area shape="poly" id="edge297_Node000015_Node000031" title=" " alt="" coords="419,1213,434,1292,461,1395,482,1451,509,1505,542,1555,583,1598,606,1616,601,1615,579,1603,538,1558,504,1507,477,1453,456,1397,428,1293,418,1218"/>
+<area shape="rect" id="Node000032" href="$classeditor_1_1LuaEditor_1_1Graph_1_1SequenceStatement.html" title=" " alt="" coords="594,1682,826,1727"/>
+<area shape="poly" id="edge298_Node000015_Node000032" title=" " alt="" coords="418,1213,428,1304,437,1362,452,1426,473,1491,501,1556,537,1616,583,1668,600,1682,594,1681,579,1672,533,1619,496,1558,468,1493,447,1427,432,1363,422,1304,416,1218"/>
+<area shape="rect" id="Node000033" href="$classeditor_1_1LuaEditor_1_1Graph_1_1WhileStatement.html" title=" " alt="" coords="607,1752,813,1796"/>
+<area shape="poly" id="edge299_Node000015_Node000033" title=" " alt="" coords="416,1213,422,1314,430,1382,443,1455,464,1531,493,1606,532,1676,556,1708,583,1737,609,1757,604,1756,579,1741,552,1711,528,1679,488,1608,459,1533,438,1456,425,1382,417,1315,414,1218"/>
 </map>

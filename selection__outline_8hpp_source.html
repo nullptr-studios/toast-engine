@@ -122,102 +122,105 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('selection__out
 <div class="line"><a id="l00006" name="l00006"></a><span class="lineno">    6</span> </div>
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#pragma once</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span> </div>
-<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="gpu__sync_8hpp.html">toast/renderer/core/gpu_sync.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;toast/renderer/core/vulkan_common.hpp&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__target_8hpp.html">toast/renderer/resources/post_process_target.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;toast/renderer/shaders/shader_layout.hpp&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;toast/renderer/shaders/vulkan_pipeline.hpp&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &lt;array&gt;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span> </div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="keyword">namespace </span>renderer {</div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>;</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span></div>
-<div class="foldopen" id="foldopen00027" data-start="{" data-end="};">
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno"><a class="line" href="classrenderer_1_1SelectionOutline.html">   27</a></span><span class="keyword">class </span>SelectionOutline {</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span>  SelectionOutline(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format output_format, vk::Format depth_format, vk::Extent2D extent);</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span></div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno">   32</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1SelectionOutline.html#ac32951c32ea9cfaa8be9b6afffcecbec">onResize</a>(vk::Extent2D extent);</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span></div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno">   35</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1SelectionOutline.html#a936aeb23dd8ba9e70baa44cd2c0a0495">recordMask</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView scene_depth);</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span></div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1SelectionOutline.html#ac34c33f7d53136f7b3345e181ba91d48">recordOutline</a>(vk::CommandBuffer cmd, uint32_t frame_index);</div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">struct </span>MaskPush {</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    uint32_t instance = 0;</div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    uint32_t test_occlusion = 0;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>  };</div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span></div>
-<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>  <span class="keyword">struct </span>OutlinePush {</div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    glm::vec4 solid_color {0.0f};</div>
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    glm::vec4 hidden_color {0.0f};</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    glm::ivec4 rect {0};</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    <span class="keywordtype">float</span> blend = 1.0f;</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    std::array&lt;float, 3&gt; pad {};</div>
-<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>  };</div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span> </div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_volumes = 64;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keywordtype">void</span> createTargets(vk::Extent2D extent);</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span> createMaskPipelines(vk::Extent2D extent);</div>
-<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordtype">void</span> createOutlinePipelines(vk::Format output_format, vk::Format depth_format, vk::Extent2D extent);</div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span></div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  <span class="keyword">auto</span> prepareVolumes(uint32_t frame_index) -&gt; uint32_t;</div>
-<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span></div>
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keywordtype">void</span> recordResolve(vk::CommandBuffer cmd, uint32_t frame_index, <span class="keywordtype">bool</span> reset);</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  vk::Format m_mask_format = vk::Format::eUndefined;</div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  vk::Extent2D m_extent {};</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  std::optional&lt;vma::raii::Image&gt; m_mask;</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  std::optional&lt;vk::raii::ImageView&gt; m_mask_attachment;</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  std::optional&lt;vk::raii::ImageView&gt; m_mask_sampled;</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <a class="code hl_struct" href="structrenderer_1_1sync_1_1ImageState.html">sync::ImageState</a> m_mask_state;</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  std::optional&lt;vk::raii::Sampler&gt; m_sampler;</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span> </div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_mask_layout;</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_mesh_pipeline;</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_voxel_pipeline;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_mask_sets;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_voxel_sets;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  std::vector&lt;vma::raii::Buffer&gt; m_volume_buffers;</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  std::vector&lt;vk::ImageView&gt; m_bound_depth;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  std::vector&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;&gt; m_bound_storage;</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_outline_layout;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_resolve_pipeline;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_composite_pipeline;</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_outline_sets;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  std::vector&lt;std::array&lt;vk::ImageView, 3&gt;&gt; m_bound_outline;</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span></div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  std::array&lt;PostProcessTarget, 2&gt; m_coverage;</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  uint32_t m_write = 0;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordtype">bool</span> m_history_valid = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  glm::mat4 m_history_view_projection {1.0f};</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  std::vector&lt;glm::mat4&gt; m_history_models;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span></div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  <span class="keywordtype">bool</span> m_drawn = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  vk::Rect2D m_outline_rect {};</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>};</div>
+<div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;<a class="code" href="descriptor__cache_8hpp.html">toast/renderer/core/descriptor_cache.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="gpu__sync_8hpp.html">toast/renderer/core/gpu_sync.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;toast/renderer/core/vulkan_common.hpp&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__target_8hpp.html">toast/renderer/resources/post_process_target.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;toast/renderer/shaders/shader_layout.hpp&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;toast/renderer/shaders/vulkan_pipeline.hpp&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &lt;array&gt;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span> </div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>;</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span></div>
+<div class="foldopen" id="foldopen00028" data-start="{" data-end="};">
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno"><a class="line" href="classrenderer_1_1SelectionOutline.html">   28</a></span><span class="keyword">class </span>SelectionOutline {</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span>  SelectionOutline(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format output_format, vk::Format depth_format, vk::Extent2D extent);</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span></div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1SelectionOutline.html#ac32951c32ea9cfaa8be9b6afffcecbec">onResize</a>(vk::Extent2D extent);</div>
+<div class="line"><a id="l00034" name="l00034"></a><span class="lineno">   34</span></div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1SelectionOutline.html#a936aeb23dd8ba9e70baa44cd2c0a0495">recordMask</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView scene_depth);</div>
+<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span></div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  <span class="keywordtype">void</span> <a class="code hl_function" href="classrenderer_1_1SelectionOutline.html#ac34c33f7d53136f7b3345e181ba91d48">recordOutline</a>(vk::CommandBuffer cmd, uint32_t frame_index);</div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span> </div>
+<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>  <span class="keyword">struct </span>MaskPush {</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    uint32_t instance = 0;</div>
+<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span>    uint32_t test_occlusion = 0;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  };</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  <span class="keyword">struct </span>OutlinePush {</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    glm::vec4 solid_color {0.0f};</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    glm::vec4 hidden_color {0.0f};</div>
+<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>    glm::ivec4 rect {0};</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    <span class="keywordtype">float</span> blend = 1.0f;</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    std::array&lt;float, 3&gt; pad {};</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  };</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_volumes = 64;</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span> </div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  <span class="keywordtype">void</span> createTargets(vk::Extent2D extent);</div>
+<div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span>  <span class="keywordtype">void</span> createMaskPipelines(vk::Extent2D extent);</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <span class="keywordtype">void</span> createOutlinePipelines(vk::Format output_format, vk::Format depth_format, vk::Extent2D extent);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span></div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">auto</span> prepareVolumes(uint32_t frame_index) -&gt; uint32_t;</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span></div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keywordtype">void</span> recordResolve(vk::CommandBuffer cmd, uint32_t frame_index, <span class="keywordtype">bool</span> reset);</div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span> </div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  vk::Format m_mask_format = vk::Format::eUndefined;</div>
+<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  vk::Extent2D m_extent {};</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  std::optional&lt;vma::raii::Image&gt; m_mask;</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  std::optional&lt;vk::raii::ImageView&gt; m_mask_attachment;</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  std::optional&lt;vk::raii::ImageView&gt; m_mask_sampled;</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <a class="code hl_struct" href="structrenderer_1_1sync_1_1ImageState.html">sync::ImageState</a> m_mask_state;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>  std::optional&lt;vk::raii::Sampler&gt; m_sampler;</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_mask_layout;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_mesh_pipeline;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_voxel_pipeline;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_mask_sets;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_voxel_sets;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  std::vector&lt;vma::raii::Buffer&gt; m_volume_buffers;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;vk::ImageView&gt;</a> m_bound_depth;</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;</a>&gt; m_bound_storage;</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span> </div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_outline_layout;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_resolve_pipeline;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_composite_pipeline;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_outline_sets;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;std::array&lt;vk::ImageView, 3&gt;</a>&gt; m_bound_outline;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span></div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  std::array&lt;PostProcessTarget, 2&gt; m_coverage;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  uint32_t m_write = 0;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  <span class="keywordtype">bool</span> m_history_valid = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  glm::mat4 m_history_view_projection {1.0f};</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  std::vector&lt;glm::mat4&gt; m_history_models;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordtype">bool</span> m_drawn = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  vk::Rect2D m_outline_rect {};</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>};</div>
 </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
-<div class="ttc" id="aclassrenderer_1_1SelectionOutline_html_a936aeb23dd8ba9e70baa44cd2c0a0495"><div class="ttname"><a href="classrenderer_1_1SelectionOutline.html#a936aeb23dd8ba9e70baa44cd2c0a0495">renderer::SelectionOutline::recordMask</a></div><div class="ttdeci">void recordMask(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView scene_depth)</div><div class="ttdoc">Outside any rendering scope with the scene depth in sync::Usage::depth_sampled.</div><div class="ttdef"><b>Definition</b> selection_outline.cpp:375</div></div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>}</div>
+<div class="ttc" id="aclassrenderer_1_1DescriptorCache_html"><div class="ttname"><a href="classrenderer_1_1DescriptorCache.html">renderer::DescriptorCache</a></div><div class="ttdoc">What each descriptor set slot was last written with.</div><div class="ttdef"><b>Definition</b> descriptor_cache.hpp:32</div></div>
+<div class="ttc" id="aclassrenderer_1_1SelectionOutline_html_a936aeb23dd8ba9e70baa44cd2c0a0495"><div class="ttname"><a href="classrenderer_1_1SelectionOutline.html#a936aeb23dd8ba9e70baa44cd2c0a0495">renderer::SelectionOutline::recordMask</a></div><div class="ttdeci">void recordMask(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView scene_depth)</div><div class="ttdoc">Outside any rendering scope with the scene depth in sync::Usage::depth_sampled.</div><div class="ttdef"><b>Definition</b> selection_outline.cpp:374</div></div>
 <div class="ttc" id="aclassrenderer_1_1SelectionOutline_html_ac32951c32ea9cfaa8be9b6afffcecbec"><div class="ttname"><a href="classrenderer_1_1SelectionOutline.html#ac32951c32ea9cfaa8be9b6afffcecbec">renderer::SelectionOutline::onResize</a></div><div class="ttdeci">void onResize(vk::Extent2D extent)</div><div class="ttdoc">After a device wait idle.</div><div class="ttdef"><b>Definition</b> selection_outline.cpp:126</div></div>
-<div class="ttc" id="aclassrenderer_1_1SelectionOutline_html_ac34c33f7d53136f7b3345e181ba91d48"><div class="ttname"><a href="classrenderer_1_1SelectionOutline.html#ac34c33f7d53136f7b3345e181ba91d48">renderer::SelectionOutline::recordOutline</a></div><div class="ttdeci">void recordOutline(vk::CommandBuffer cmd, uint32_t frame_index)</div><div class="ttdoc">Inside the output scope after recordMask.</div><div class="ttdef"><b>Definition</b> selection_outline.cpp:555</div></div>
+<div class="ttc" id="aclassrenderer_1_1SelectionOutline_html_ac34c33f7d53136f7b3345e181ba91d48"><div class="ttname"><a href="classrenderer_1_1SelectionOutline.html#ac34c33f7d53136f7b3345e181ba91d48">renderer::SelectionOutline::recordOutline</a></div><div class="ttdeci">void recordOutline(vk::CommandBuffer cmd, uint32_t frame_index)</div><div class="ttdoc">Inside the output scope after recordMask.</div><div class="ttdef"><b>Definition</b> selection_outline.cpp:552</div></div>
 <div class="ttc" id="aclassrenderer_1_1ShaderLayout_html"><div class="ttname"><a href="classrenderer_1_1ShaderLayout.html">renderer::ShaderLayout</a></div><div class="ttdef"><b>Definition</b> shader_layout.hpp:12</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:67</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanPipeline_html"><div class="ttname"><a href="classrenderer_1_1VulkanPipeline.html">renderer::VulkanPipeline</a></div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:19</div></div>
+<div class="ttc" id="adescriptor__cache_8hpp_html"><div class="ttname"><a href="descriptor__cache_8hpp.html">descriptor_cache.hpp</a></div></div>
 <div class="ttc" id="agpu__sync_8hpp_html"><div class="ttname"><a href="gpu__sync_8hpp.html">gpu_sync.hpp</a></div></div>
 <div class="ttc" id="apost__process__target_8hpp_html"><div class="ttname"><a href="post__process__target_8hpp.html">post_process_target.hpp</a></div></div>
 <div class="ttc" id="astructrenderer_1_1sync_1_1ImageState_html"><div class="ttname"><a href="structrenderer_1_1sync_1_1ImageState.html">renderer::sync::ImageState</a></div><div class="ttdoc">Owned next to the image it describes.</div><div class="ttdef"><b>Definition</b> gpu_sync.hpp:78</div></div>

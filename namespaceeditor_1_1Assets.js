@@ -13,6 +13,8 @@ var namespaceeditor_1_1Assets =
     [ "BreadcrumbItem", "classeditor_1_1Assets_1_1BreadcrumbItem.html", null ],
     [ "Curve", "classeditor_1_1Assets_1_1Curve.html", null ],
     [ "CurveFile", "classeditor_1_1Assets_1_1CurveFile.html", null ],
+    [ "DetailTextureEntry", "classeditor_1_1Assets_1_1DetailTextureEntry.html", null ],
+    [ "DetailTextureFile", "classeditor_1_1Assets_1_1DetailTextureFile.html", null ],
     [ "GltfSectionDto", "classeditor_1_1Assets_1_1GltfSectionDto.html", null ],
     [ "Haptic", "classeditor_1_1Assets_1_1Haptic.html", null ],
     [ "IMetaSection", "interfaceeditor_1_1Assets_1_1IMetaSection.html", null ],

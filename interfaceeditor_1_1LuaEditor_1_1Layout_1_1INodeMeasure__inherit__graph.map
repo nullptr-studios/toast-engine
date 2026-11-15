@@ -1,0 +1,5 @@
+<map id="editor.LuaEditor.Layout.INodeMeasure" name="editor.LuaEditor.Layout.INodeMeasure">
+<area shape="rect" id="Node000001" title=" " alt="" coords="5,5,180,50"/>
+<area shape="rect" id="Node000002" href="$classeditor_1_1LuaEditor_1_1Layout_1_1DefaultMeasure.html" title=" " alt="" coords="5,98,180,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="94,64,95,99,90,97,91,68"/>
+</map>

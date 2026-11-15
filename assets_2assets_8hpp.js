@@ -6,6 +6,7 @@ var assets_2assets_8hpp =
     [ "event::ShaderAssetReloaded", "structevent_1_1ShaderAssetReloaded.html", null ],
     [ "event::MaterialAssetReloaded", "structevent_1_1MaterialAssetReloaded.html", null ],
     [ "event::VoxelPaletteAssetReloaded", "structevent_1_1VoxelPaletteAssetReloaded.html", null ],
+    [ "event::PreviewAssetToml", "structevent_1_1PreviewAssetToml.html", null ],
     [ "event::DataAssetReloaded", "structevent_1_1DataAssetReloaded.html", null ],
     [ "event::AssetReplaced", "structevent_1_1AssetReplaced.html", null ],
     [ "event::UIAssetReloaded", "structevent_1_1UIAssetReloaded.html", null ],

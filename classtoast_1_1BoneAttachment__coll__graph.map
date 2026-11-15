@@ -1,0 +1,11 @@
+<map id="toast::BoneAttachment" name="toast::BoneAttachment">
+<area shape="rect" id="Node000001" title="Follows one bone of its parent SkeletalNode, offsets go on its children." alt="" coords="5,361,177,388"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Node3D.html" title=" " alt="" coords="34,284,148,311"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="93,325,93,361,89,359,89,329"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Node.html" title=" " alt="" coords="43,207,139,234"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="92,247,94,284,88,283,90,252"/>
+<area shape="rect" id="Node000004" href="$classtoast_1_1INodeOwner.html" title=" " alt="" coords="20,106,162,134"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="92,147,94,206,88,206,90,152"/>
+<area shape="rect" id="Node000005" href="$classphysics_1_1Accumulator.html" title=" " alt="" coords="11,5,171,33"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="91,46,94,106,88,105,91,51"/>
+</map>

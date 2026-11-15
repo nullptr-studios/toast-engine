@@ -37,6 +37,7 @@ var hierarchy =
         ] ],
         [ "assets::PhysicsMaterial", "classassets_1_1PhysicsMaterial.html", null ]
       ] ],
+      [ "assets::DetailTexture", "classassets_1_1DetailTexture.html", null ],
       [ "assets::Font", "classassets_1_1Font.html", null ],
       [ "assets::LocalizationBase", "classassets_1_1LocalizationBase.html", [
         [ "assets::ImageLocalization", "classassets_1_1ImageLocalization.html", null ],
@@ -47,6 +48,7 @@ var hierarchy =
       [ "assets::Schema", "classassets_1_1Schema.html", null ],
       [ "assets::Script", "classassets_1_1Script.html", null ],
       [ "assets::Shader", "classassets_1_1Shader.html", null ],
+      [ "assets::Skeleton", "classassets_1_1Skeleton.html", null ],
       [ "assets::Texture", "classassets_1_1Texture.html", null ],
       [ "assets::UIElement", "classassets_1_1UIElement.html", null ],
       [ "assets::UIImage", "classassets_1_1UIImage.html", null ],
@@ -60,12 +62,14 @@ var hierarchy =
     [ "assets::AssetManager", "classassets_1_1AssetManager.html", null ],
     [ "scripting::AssetProxy", "classscripting_1_1AssetProxy.html", null ],
     [ "assets::AssetRegistry", "classassets_1_1AssetRegistry.html", null ],
+    [ "editor.LuaEditor.Graph.AssignTarget", "classeditor_1_1LuaEditor_1_1Graph_1_1AssignTarget.html", null ],
     [ "renderer::AsyncCompute", "classrenderer_1_1AsyncCompute.html", null ],
     [ "renderer::AsyncComputeTask", "classrenderer_1_1AsyncComputeTask.html", [
       [ "example::DebrisSimulation", "classexample_1_1DebrisSimulation.html", null ],
       [ "physics::DebrisSimulation", "classphysics_1_1DebrisSimulation.html", null ]
     ] ],
     [ "audio::AudioSystem", "classaudio_1_1AudioSystem.html", null ],
+    [ "editor.LuaEditor.Layout.AutoLayout", "classeditor_1_1LuaEditor_1_1Layout_1_1AutoLayout.html", null ],
     [ "editor.Workspace.AutosaveService", "classeditor_1_1Workspace_1_1AutosaveService.html", null ],
     [ "toast::ProceduralVoxel::BakedPart", "structtoast_1_1ProceduralVoxel_1_1BakedPart.html", null ],
     [ "renderer::sync::BarrierBatch", "classrenderer_1_1sync_1_1BarrierBatch.html", null ],
@@ -81,6 +85,7 @@ var hierarchy =
       [ "editor.Assets.Types.CurveAsset", "classeditor_1_1Assets_1_1Types_1_1CurveAsset.html", null ],
       [ "editor.Assets.Types.DataAsset", "classeditor_1_1Assets_1_1Types_1_1DataAsset.html", null ],
       [ "editor.Assets.Types.DestructionMaterialAsset", "classeditor_1_1Assets_1_1Types_1_1DestructionMaterialAsset.html", null ],
+      [ "editor.Assets.Types.DetailTextureAsset", "classeditor_1_1Assets_1_1Types_1_1DetailTextureAsset.html", null ],
       [ "editor.Assets.Types.FontAsset", "classeditor_1_1Assets_1_1Types_1_1FontAsset.html", null ],
       [ "editor.Assets.Types.HapticAsset", "classeditor_1_1Assets_1_1Types_1_1HapticAsset.html", null ],
       [ "editor.Assets.Types.ImageLocalizationAsset", "classeditor_1_1Assets_1_1Types_1_1ImageLocalizationAsset.html", null ],
@@ -96,6 +101,7 @@ var hierarchy =
       [ "editor.Assets.Types.SchemaAsset", "classeditor_1_1Assets_1_1Types_1_1SchemaAsset.html", null ],
       [ "editor.Assets.Types.ScriptAsset", "classeditor_1_1Assets_1_1Types_1_1ScriptAsset.html", null ],
       [ "editor.Assets.Types.ShaderAsset", "classeditor_1_1Assets_1_1Types_1_1ShaderAsset.html", null ],
+      [ "editor.Assets.Types.SkeletonAsset", "classeditor_1_1Assets_1_1Types_1_1SkeletonAsset.html", null ],
       [ "editor.Assets.Types.TextureAsset", "classeditor_1_1Assets_1_1Types_1_1TextureAsset.html", null ],
       [ "editor.Assets.Types.UIElementAsset", "classeditor_1_1Assets_1_1Types_1_1UIElementAsset.html", null ],
       [ "editor.Assets.Types.UIImageAsset", "classeditor_1_1Assets_1_1Types_1_1UIImageAsset.html", null ],
@@ -107,6 +113,8 @@ var hierarchy =
     [ "assets::Prefab::BasicNode", "structassets_1_1Prefab_1_1BasicNode.html", null ],
     [ "debug::Billboard", "structdebug_1_1Billboard.html", null ],
     [ "input::Bind", "classinput_1_1Bind.html", null ],
+    [ "editor.LuaEditor.Graph.Binding", "classeditor_1_1LuaEditor_1_1Graph_1_1Binding.html", null ],
+    [ "editor.LuaEditor.Graph.Block", "classeditor_1_1LuaEditor_1_1Graph_1_1Block.html", null ],
     [ "renderer::PostProcessSettings::Bloom", "structrenderer_1_1PostProcessSettings_1_1Bloom.html", null ],
     [ "physics::Body", "structphysics_1_1Body.html", null ],
     [ "physics::BodyDescriptor", "structphysics_1_1BodyDescriptor.html", null ],
@@ -115,11 +123,14 @@ var hierarchy =
     [ "physics::BodyShapeKey", "structphysics_1_1BodyShapeKey.html", null ],
     [ "physics::BodySlot", "structphysics_1_1BodySlot.html", null ],
     [ "physics::BodyState", "structphysics_1_1BodyState.html", null ],
+    [ "assets::Bone", "structassets_1_1Bone.html", null ],
+    [ "assets::BonePose", "structassets_1_1BonePose.html", null ],
     [ "Border", null, [
       [ "editor.Components.Elements.GitChip", "classeditor_1_1Components_1_1Elements_1_1GitChip.html", null ]
     ] ],
     [ "renderer::MaterialPass::InstanceResources::BoundView", "structrenderer_1_1MaterialPass_1_1InstanceResources_1_1BoundView.html", null ],
     [ "renderer::Box", "structrenderer_1_1Box.html", null ],
+    [ "renderer::gi_clip::Box", "structrenderer_1_1gi__clip_1_1Box.html", null ],
     [ "toast::Box&lt; T &gt;", "classtoast_1_1Box.html", null ],
     [ "physics::_detail::BoxClipVertex", "structphysics_1_1__detail_1_1BoxClipVertex.html", null ],
     [ "physics::_detail::BoxFeature", "structphysics_1_1__detail_1_1BoxFeature.html", null ],
@@ -148,14 +159,18 @@ var hierarchy =
     [ "physics::CachedContact", "structphysics_1_1CachedContact.html", null ],
     [ "physics::CachedManifold", "structphysics_1_1CachedManifold.html", null ],
     [ "toast::MusicPlayer::CallbackData", "structtoast_1_1MusicPlayer_1_1CallbackData.html", null ],
+    [ "editor.LuaEditor.Types.CallResolver", "classeditor_1_1LuaEditor_1_1Types_1_1CallResolver.html", null ],
     [ "renderer::shadow_slots::Candidate", "structrenderer_1_1shadow__slots_1_1Candidate.html", null ],
+    [ "editor.LuaEditor.Canvas.CanvasTheme", "classeditor_1_1LuaEditor_1_1Canvas_1_1CanvasTheme.html", null ],
     [ "physics::CapsuleShape", "structphysics_1_1CapsuleShape.html", null ],
     [ "physics::CapsuleSmash", "structphysics_1_1CapsuleSmash.html", null ],
     [ "physics::_detail::CapsuleVoxelContact", "structphysics_1_1__detail_1_1CapsuleVoxelContact.html", null ],
+    [ "toast::ClipPlayback", "structtoast_1_1ClipPlayback.html", null ],
     [ "physics::CollisionElement", "structphysics_1_1CollisionElement.html", null ],
     [ "physics::CollisionWorldView", "structphysics_1_1CollisionWorldView.html", null ],
     [ "scripting::Color3", "structscripting_1_1Color3.html", null ],
     [ "scripting::Color4", "structscripting_1_1Color4.html", null ],
+    [ "editor.LuaEditor.Types.CompatResult", "structeditor_1_1LuaEditor_1_1Types_1_1CompatResult.html", null ],
     [ "renderer::CompiledShaderCode", "structrenderer_1_1CompiledShaderCode.html", null ],
     [ "toast::ProceduralVoxel::Composed", "structtoast_1_1ProceduralVoxel_1_1Composed.html", null ],
     [ "toast::ProceduralVoxel::ComposeInput", "structtoast_1_1ProceduralVoxel_1_1ComposeInput.html", null ],
@@ -175,6 +190,8 @@ var hierarchy =
     [ "Control", null, [
       [ "editor.Components.CurveCanvas.CurveCanvas", "classeditor_1_1Components_1_1CurveCanvas_1_1CurveCanvas.html", null ],
       [ "editor.Logger.ScrollMarkerOverlay", "classeditor_1_1Logger_1_1ScrollMarkerOverlay.html", null ],
+      [ "editor.LuaEditor.Canvas.GraphCanvas", "classeditor_1_1LuaEditor_1_1Canvas_1_1GraphCanvas.html", null ],
+      [ "editor.LuaEditor.Controls.PinShapeIcon", "classeditor_1_1LuaEditor_1_1Controls_1_1PinShapeIcon.html", null ],
       [ "editor.VoxelEditor.VoxelOrthoView", "classeditor_1_1VoxelEditor_1_1VoxelOrthoView.html", null ],
       [ "editor.Workspace.HierarchyConnectorLayer", "classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html", null ],
       [ "editor.Workspace.HistoryGraphCell", "classeditor_1_1Workspace_1_1HistoryGraphCell.html", null ]
@@ -182,6 +199,7 @@ var hierarchy =
     [ "toast::_detail::ControlBox", "structtoast_1_1__detail_1_1ControlBox.html", null ],
     [ "physics::CoreSplit", "structphysics_1_1CoreSplit.html", null ],
     [ "physics::CoreVoxel", "structphysics_1_1CoreVoxel.html", null ],
+    [ "renderer::GiDirtyBoxes::Counts", "structrenderer_1_1GiDirtyBoxes_1_1Counts.html", null ],
     [ "physics::Crater", "structphysics_1_1Crater.html", null ],
     [ "renderer::CubeFaceBasis", "structrenderer_1_1CubeFaceBasis.html", null ],
     [ "renderer::CubemapTarget", "classrenderer_1_1CubemapTarget.html", null ],
@@ -206,8 +224,13 @@ var hierarchy =
     [ "toast::TickScheduler::DependencyGraph", "structtoast_1_1TickScheduler_1_1DependencyGraph.html", null ],
     [ "renderer::DepthPrepass", "classrenderer_1_1DepthPrepass.html", null ],
     [ "renderer::light_culling::DepthRange", "structrenderer_1_1light__culling_1_1DepthRange.html", null ],
+    [ "renderer::DescriptorCache&lt; Key &gt;", "classrenderer_1_1DescriptorCache.html", null ],
     [ "renderer::DescriptorWriter", "classrenderer_1_1DescriptorWriter.html", null ],
     [ "physics::DetachedComponent", "structphysics_1_1DetachedComponent.html", null ],
+    [ "renderer::DetailArrayData", "structrenderer_1_1DetailArrayData.html", null ],
+    [ "assets::DetailTextureEntry", "structassets_1_1DetailTextureEntry.html", null ],
+    [ "editor.Assets.DetailTextureEntry", "classeditor_1_1Assets_1_1DetailTextureEntry.html", null ],
+    [ "editor.Assets.DetailTextureFile", "classeditor_1_1Assets_1_1DetailTextureFile.html", null ],
     [ "renderer::DeviceScore", "structrenderer_1_1DeviceScore.html", null ],
     [ "renderer::DirectionalLightData", "structrenderer_1_1DirectionalLightData.html", null ],
     [ "toast::SDLWindow::DisplayHdr", "structtoast_1_1SDLWindow_1_1DisplayHdr.html", null ],
@@ -238,6 +261,9 @@ var hierarchy =
     [ "event::EventSystem", "structevent_1_1EventSystem.html", null ],
     [ "Exception", null, [
       [ "editor.Components.Modals.LoaderTaskException", "classeditor_1_1Components_1_1Modals_1_1LoaderTaskException.html", null ]
+    ] ],
+    [ "Exceptionmessage", null, [
+      [ "editor.LuaEditor.Types.TypeSyntaxException", "classeditor_1_1LuaEditor_1_1Types_1_1TypeSyntaxException.html", null ]
     ] ],
     [ "toast::_detail::ExecuteOptions", "structtoast_1_1__detail_1_1ExecuteOptions.html", null ],
     [ "physics::ExplosionDamage", "structphysics_1_1ExplosionDamage.html", null ],
@@ -273,6 +299,7 @@ var hierarchy =
     [ "toast::FunctionInfo", "structtoast_1_1FunctionInfo.html", null ],
     [ "renderer::PostProcessSettings::Fxaa", "structrenderer_1_1PostProcessSettings_1_1Fxaa.html", null ],
     [ "toast::GameplaySettings", "classtoast_1_1GameplaySettings.html", null ],
+    [ "renderer::GiDirtyBoxes", "classrenderer_1_1GiDirtyBoxes.html", null ],
     [ "renderer::GiSettings", "structrenderer_1_1GiSettings.html", null ],
     [ "editor.Git.GitAttributes", "classeditor_1_1Git_1_1GitAttributes.html", null ],
     [ "editor.Git.GitResult", "structeditor_1_1Git_1_1GitResult.html", null ],
@@ -287,6 +314,48 @@ var hierarchy =
     [ "physics::DebrisSimulation::GpuSpawn", "structphysics_1_1DebrisSimulation_1_1GpuSpawn.html", null ],
     [ "renderer::GpuTimer", "classrenderer_1_1GpuTimer.html", null ],
     [ "physics::DebrisSimulation::GpuVolume", "structphysics_1_1DebrisSimulation_1_1GpuVolume.html", null ],
+    [ "editor.LuaEditor.Editing.GraphDocument", "classeditor_1_1LuaEditor_1_1Editing_1_1GraphDocument.html", null ],
+    [ "editor.LuaEditor.Layout.GraphKeys", "classeditor_1_1LuaEditor_1_1Layout_1_1GraphKeys.html", null ],
+    [ "editor.LuaEditor.Layout.GraphLayout", "classeditor_1_1LuaEditor_1_1Layout_1_1GraphLayout.html", null ],
+    [ "editor.LuaEditor.Layout.GraphMeta", "classeditor_1_1LuaEditor_1_1Layout_1_1GraphMeta.html", null ],
+    [ "editor.LuaEditor.Graph.GraphNode", "classeditor_1_1LuaEditor_1_1Graph_1_1GraphNode.html", [
+      [ "editor.LuaEditor.Graph.ExprNode", "classeditor_1_1LuaEditor_1_1Graph_1_1ExprNode.html", [
+        [ "editor.LuaEditor.Graph.BinaryOp", "classeditor_1_1LuaEditor_1_1Graph_1_1BinaryOp.html", null ],
+        [ "editor.LuaEditor.Graph.CallNode", "classeditor_1_1LuaEditor_1_1Graph_1_1CallNode.html", null ],
+        [ "editor.LuaEditor.Graph.FunctionNode", "classeditor_1_1LuaEditor_1_1Graph_1_1FunctionNode.html", null ],
+        [ "editor.LuaEditor.Graph.GlobalGet", "classeditor_1_1LuaEditor_1_1Graph_1_1GlobalGet.html", null ],
+        [ "editor.LuaEditor.Graph.IndexGet", "classeditor_1_1LuaEditor_1_1Graph_1_1IndexGet.html", null ],
+        [ "editor.LuaEditor.Graph.MemberGet", "classeditor_1_1LuaEditor_1_1Graph_1_1MemberGet.html", null ],
+        [ "editor.LuaEditor.Graph.ParenNode", "classeditor_1_1LuaEditor_1_1Graph_1_1ParenNode.html", null ],
+        [ "editor.LuaEditor.Graph.RawExpression", "classeditor_1_1LuaEditor_1_1Graph_1_1RawExpression.html", null ],
+        [ "editor.LuaEditor.Graph.TableNode", "classeditor_1_1LuaEditor_1_1Graph_1_1TableNode.html", null ],
+        [ "editor.LuaEditor.Graph.UnaryOp", "classeditor_1_1LuaEditor_1_1Graph_1_1UnaryOp.html", null ],
+        [ "editor.LuaEditor.Graph.VarargNode", "classeditor_1_1LuaEditor_1_1Graph_1_1VarargNode.html", null ],
+        [ "editor.LuaEditor.Graph.VariableGet", "classeditor_1_1LuaEditor_1_1Graph_1_1VariableGet.html", null ]
+      ] ],
+      [ "editor.LuaEditor.Graph.FunctionEntry", "classeditor_1_1LuaEditor_1_1Graph_1_1FunctionEntry.html", null ],
+      [ "editor.LuaEditor.Graph.Statement", "classeditor_1_1LuaEditor_1_1Graph_1_1Statement.html", [
+        [ "editor.LuaEditor.Graph.AssignStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1AssignStatement.html", null ],
+        [ "editor.LuaEditor.Graph.BreakStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1BreakStatement.html", null ],
+        [ "editor.LuaEditor.Graph.CallStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1CallStatement.html", null ],
+        [ "editor.LuaEditor.Graph.CastStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1CastStatement.html", null ],
+        [ "editor.LuaEditor.Graph.CommentStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1CommentStatement.html", null ],
+        [ "editor.LuaEditor.Graph.DoStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1DoStatement.html", null ],
+        [ "editor.LuaEditor.Graph.FunctionDecl", "classeditor_1_1LuaEditor_1_1Graph_1_1FunctionDecl.html", null ],
+        [ "editor.LuaEditor.Graph.GenericFor", "classeditor_1_1LuaEditor_1_1Graph_1_1GenericFor.html", null ],
+        [ "editor.LuaEditor.Graph.GotoStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1GotoStatement.html", null ],
+        [ "editor.LuaEditor.Graph.IfStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1IfStatement.html", null ],
+        [ "editor.LuaEditor.Graph.LabelStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1LabelStatement.html", null ],
+        [ "editor.LuaEditor.Graph.LocalDecl", "classeditor_1_1LuaEditor_1_1Graph_1_1LocalDecl.html", null ],
+        [ "editor.LuaEditor.Graph.NumericFor", "classeditor_1_1LuaEditor_1_1Graph_1_1NumericFor.html", null ],
+        [ "editor.LuaEditor.Graph.RawStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1RawStatement.html", null ],
+        [ "editor.LuaEditor.Graph.RepeatStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1RepeatStatement.html", null ],
+        [ "editor.LuaEditor.Graph.ReturnStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1ReturnStatement.html", null ],
+        [ "editor.LuaEditor.Graph.SequenceStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1SequenceStatement.html", null ],
+        [ "editor.LuaEditor.Graph.WhileStatement", "classeditor_1_1LuaEditor_1_1Graph_1_1WhileStatement.html", null ]
+      ] ]
+    ] ],
+    [ "editor.LuaEditor.Editing.GraphSession", "classeditor_1_1LuaEditor_1_1Editing_1_1GraphSession.html", null ],
     [ "toast::VoxelPiece::Grid", "structtoast_1_1VoxelPiece_1_1Grid.html", null ],
     [ "renderer::ClusterLightingPass::GridStats", "structrenderer_1_1ClusterLightingPass_1_1GridStats.html", null ],
     [ "assets::Prefab::Group", "structassets_1_1Prefab_1_1Group.html", null ],
@@ -300,11 +369,13 @@ var hierarchy =
       [ "assets::Handle< assets::Haptic >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::Action >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::PhysicsMaterial >", "classassets_1_1Handle.html", null ],
-      [ "assets::Handle< assets::Animation >", "classassets_1_1Handle.html", null ],
+      [ "assets::Handle< assets::DetailTexture >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::AudioEvent >", "classassets_1_1Handle.html", null ],
+      [ "assets::Handle< assets::Animation >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::Prefab >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::UIElement >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::ColorScheme >", "classassets_1_1Handle.html", null ],
+      [ "assets::Handle< assets::Skeleton >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::AudioSnapshot >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::VoxelModel >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::VoxelPalette >", "classassets_1_1Handle.html", null ],
@@ -347,6 +418,7 @@ var hierarchy =
       [ "editor.Editors.PaletteViewModel", "classeditor_1_1Editors_1_1PaletteViewModel.html", null ],
       [ "editor.Editors.SchemaViewModel", "classeditor_1_1Editors_1_1SchemaViewModel.html", null ],
       [ "editor.Editors.TableViewModel", "classeditor_1_1Editors_1_1TableViewModel.html", null ],
+      [ "editor.LuaEditor.LuaGraphEditorViewModel", "classeditor_1_1LuaEditor_1_1LuaGraphEditorViewModel.html", null ],
       [ "editor.Workspace.WorkspaceViewModel", "classeditor_1_1Workspace_1_1WorkspaceViewModel.html", null ]
     ] ],
     [ "toast::IBaseWindow", "classtoast_1_1IBaseWindow.html", [
@@ -366,6 +438,7 @@ var hierarchy =
     ] ],
     [ "IDisposable", null, [
       [ "editor.Assets.AssetBrowserViewModel", "classeditor_1_1Assets_1_1AssetBrowserViewModel.html", null ],
+      [ "editor.DetailTextureEditor.DetailTextureEditorViewModel", "classeditor_1_1DetailTextureEditor_1_1DetailTextureEditorViewModel.html", null ],
       [ "editor.Editors.TableViewModel", "classeditor_1_1Editors_1_1TableViewModel.html", null ],
       [ "editor.Engine.Listener", "classeditor_1_1Engine_1_1Listener.html", null ],
       [ "editor.Engine.ToastEngine", "classeditor_1_1Engine_1_1ToastEngine.html", null ],
@@ -381,6 +454,9 @@ var hierarchy =
       [ "editor.Workspace.SignalConnectionDialogViewModel", "classeditor_1_1Workspace_1_1SignalConnectionDialogViewModel.html", null ],
       [ "editor.Workspace.SignalsViewModel", "classeditor_1_1Workspace_1_1SignalsViewModel.html", null ],
       [ "editor.Workspace.WorkspaceViewModel", "classeditor_1_1Workspace_1_1WorkspaceViewModel.html", null ]
+    ] ],
+    [ "IEquatable", null, [
+      [ "editor.LuaEditor.Types.EquatableArray< T >", "structeditor_1_1LuaEditor_1_1Types_1_1EquatableArray-1-g.html", null ]
     ] ],
     [ "event::_detail::IEvent", "structevent_1_1__detail_1_1IEvent.html", [
       [ "event::Event< AddSignalConnection >", "structevent_1_1Event.html", [
@@ -509,6 +585,9 @@ var hierarchy =
       [ "event::Event< PrefabAssetReloaded >", "structevent_1_1Event.html", [
         [ "event::PrefabAssetReloaded", "structevent_1_1PrefabAssetReloaded.html", null ]
       ] ],
+      [ "event::Event< PreviewAssetToml >", "structevent_1_1Event.html", [
+        [ "event::PreviewAssetToml", "structevent_1_1PreviewAssetToml.html", null ]
+      ] ],
       [ "event::Event< ProceduralVoxelLayout >", "structevent_1_1Event.html", [
         [ "event::ProceduralVoxelLayout", "structevent_1_1ProceduralVoxelLayout.html", null ]
       ] ],
@@ -565,6 +644,9 @@ var hierarchy =
       ] ],
       [ "event::Event< SetCoordinateSpace >", "structevent_1_1Event.html", [
         [ "event::SetCoordinateSpace", "structevent_1_1SetCoordinateSpace.html", null ]
+      ] ],
+      [ "event::Event< SetDetailTexturePreview >", "structevent_1_1Event.html", [
+        [ "event::SetDetailTexturePreview", "structevent_1_1SetDetailTexturePreview.html", null ]
       ] ],
       [ "event::Event< SetEditorCameraSettings >", "structevent_1_1Event.html", [
         [ "event::SetEditorCameraSettings", "structevent_1_1SetEditorCameraSettings.html", null ]
@@ -793,6 +875,11 @@ var hierarchy =
       ] ],
       [ "event::Event< T >", "structevent_1_1Event.html", null ]
     ] ],
+    [ "editor.LuaEditor.Graph.IfClause", "classeditor_1_1LuaEditor_1_1Graph_1_1IfClause.html", null ],
+    [ "editor.Workspace.IHierarchyRow", "interfaceeditor_1_1Workspace_1_1IHierarchyRow.html", [
+      [ "editor.LuaEditor.VariableRow", "classeditor_1_1LuaEditor_1_1VariableRow.html", null ],
+      [ "editor.Workspace.HierarchyElement", "classeditor_1_1Workspace_1_1HierarchyElement.html", null ]
+    ] ],
     [ "IList", null, [
       [ "editor.Logger.ReverseLogList", "classeditor_1_1Logger_1_1ReverseLogList.html", null ]
     ] ],
@@ -815,6 +902,9 @@ var hierarchy =
       [ "editor.Converters.DockContentCornerRadiusConverter", "classeditor_1_1Converters_1_1DockContentCornerRadiusConverter.html", null ],
       [ "editor.Converters.SeverityFillConverter", "classeditor_1_1Converters_1_1SeverityFillConverter.html", null ]
     ] ],
+    [ "editor.LuaEditor.Layout.INodeMeasure", "interfaceeditor_1_1LuaEditor_1_1Layout_1_1INodeMeasure.html", [
+      [ "editor.LuaEditor.Layout.DefaultMeasure", "classeditor_1_1LuaEditor_1_1Layout_1_1DefaultMeasure.html", null ]
+    ] ],
     [ "toast::INodeOwner", "classtoast_1_1INodeOwner.html", [
       [ "toast::Workspace", "classtoast_1_1Workspace.html", [
         [ "toast::PlayWorkspace", "classtoast_1_1PlayWorkspace.html", null ]
@@ -834,6 +924,7 @@ var hierarchy =
       [ "editor.Assets.AssetTypeFilterGroup", "classeditor_1_1Assets_1_1AssetTypeFilterGroup.html", null ],
       [ "editor.Workspace.HierarchyElement", "classeditor_1_1Workspace_1_1HierarchyElement.html", null ]
     ] ],
+    [ "editor.LuaEditor.Graph.InputPin", "classeditor_1_1LuaEditor_1_1Graph_1_1InputPin.html", null ],
     [ "input::InputSample", "structinput_1_1InputSample.html", null ],
     [ "input::InputSystem", "classinput_1_1InputSystem.html", null ],
     [ "event::InspectorContent::InspectorField", "structevent_1_1InspectorContent_1_1InspectorField.html", null ],
@@ -859,6 +950,7 @@ var hierarchy =
     [ "renderer::IPostProcessPass", "classrenderer_1_1IPostProcessPass.html", [
       [ "renderer::BloomPass", "classrenderer_1_1BloomPass.html", null ],
       [ "renderer::FxaaPass", "classrenderer_1_1FxaaPass.html", null ],
+      [ "renderer::GiClipmapPass", "classrenderer_1_1GiClipmapPass.html", null ],
       [ "renderer::GiPass", "classrenderer_1_1GiPass.html", null ],
       [ "renderer::LensFlarePass", "classrenderer_1_1LensFlarePass.html", null ],
       [ "renderer::MotionBlurPass", "classrenderer_1_1MotionBlurPass.html", null ],
@@ -871,7 +963,8 @@ var hierarchy =
       [ "renderer::VolumetricPass", "classrenderer_1_1VolumetricPass.html", null ]
     ] ],
     [ "IReadOnlyList", null, [
-      [ "editor.Logger.ReverseLogList", "classeditor_1_1Logger_1_1ReverseLogList.html", null ]
+      [ "editor.Logger.ReverseLogList", "classeditor_1_1Logger_1_1ReverseLogList.html", null ],
+      [ "editor.LuaEditor.Types.EquatableArray< T >", "structeditor_1_1LuaEditor_1_1Types_1_1EquatableArray-1-g.html", null ]
     ] ],
     [ "IRenderPass", "classIRenderPass.html", [
       [ "renderer::DebrisPass", "classrenderer_1_1DebrisPass.html", null ],
@@ -897,6 +990,7 @@ var hierarchy =
     [ "assets::ISaveable", "classassets_1_1ISaveable.html", [
       [ "assets::Curve", "classassets_1_1Curve.html", null ],
       [ "assets::Data", "classassets_1_1Data.html", null ],
+      [ "assets::DetailTexture", "classassets_1_1DetailTexture.html", null ],
       [ "assets::Prefab", "classassets_1_1Prefab.html", null ],
       [ "assets::VoxelModel", "classassets_1_1VoxelModel.html", null ],
       [ "assets::VoxelPalette", "classassets_1_1VoxelPalette.html", null ]
@@ -913,6 +1007,9 @@ var hierarchy =
       [ "editor.Editors.HapticsViewModel", "classeditor_1_1Editors_1_1HapticsViewModel.html", null ],
       [ "editor.Editors.PaletteViewModel", "classeditor_1_1Editors_1_1PaletteViewModel.html", null ],
       [ "editor.Editors.TableViewModel", "classeditor_1_1Editors_1_1TableViewModel.html", null ]
+    ] ],
+    [ "IToastZoneEditor", null, [
+      [ "editor.LuaEditor.LuaGraphEditorViewModel", "classeditor_1_1LuaEditor_1_1LuaGraphEditorViewModel.html", null ]
     ] ],
     [ "input::ITrigger", "classinput_1_1ITrigger.html", [
       [ "input::Axis1DTrigger", "classinput_1_1Axis1DTrigger.html", null ],
@@ -970,6 +1067,7 @@ var hierarchy =
     [ "voxel::LatticePlacement", "structvoxel_1_1LatticePlacement.html", null ],
     [ "physics::LayerFilter", "structphysics_1_1LayerFilter.html", null ],
     [ "editor.Workspace.LayoutFile", "classeditor_1_1Workspace_1_1LayoutFile.html", null ],
+    [ "editor.LuaEditor.Layout.LayoutGroup", "classeditor_1_1LuaEditor_1_1Layout_1_1LayoutGroup.html", null ],
     [ "editor.Workspace.LayoutNode", "classeditor_1_1Workspace_1_1LayoutNode.html", null ],
     [ "rmlui_vk_sync::LayoutScope", "structrmlui__vk__sync_1_1LayoutScope.html", null ],
     [ "editor.Workspace.LayoutWindowNode", "classeditor_1_1Workspace_1_1LayoutWindowNode.html", null ],
@@ -986,12 +1084,14 @@ var hierarchy =
     [ "logging::Logger", "classlogging_1_1Logger.html", null ],
     [ "renderer::VoxelBlasCache::Lookup", "structrenderer_1_1VoxelBlasCache_1_1Lookup.html", null ],
     [ "scripting::LuaCallback", "classscripting_1_1LuaCallback.html", null ],
+    [ "editor.LuaEditor.Syntax.LuaDocument", "classeditor_1_1LuaEditor_1_1Syntax_1_1LuaDocument.html", null ],
     [ "scripting::LuaEventBinding", "structscripting_1_1LuaEventBinding.html", null ],
     [ "scripting::LuaEventDescriptor", "structscripting_1_1LuaEventDescriptor.html", null ],
     [ "scripting::LuaEventField&lt; Owner, Get, Set &gt;", "structscripting_1_1LuaEventField.html", null ],
     [ "scripting::LuaEventRegistry", "classscripting_1_1LuaEventRegistry.html", null ],
     [ "event::InspectorLuaContent::LuaField", "structevent_1_1InspectorLuaContent_1_1LuaField.html", null ],
     [ "scripting::LuaFunctionDesc", "structscripting_1_1LuaFunctionDesc.html", null ],
+    [ "editor.LuaEditor.Graph.LuaGraph", "classeditor_1_1LuaEditor_1_1Graph_1_1LuaGraph.html", null ],
     [ "event::InspectorLuaContent::LuaGroup", "structevent_1_1InspectorLuaContent_1_1LuaGroup.html", null ],
     [ "scripting::LuaGroup", "structscripting_1_1LuaGroup.html", null ],
     [ "event::InspectorLuaContent::LuaScriptCard", "structevent_1_1InspectorLuaContent_1_1LuaScriptCard.html", null ],
@@ -1002,6 +1102,7 @@ var hierarchy =
     [ "scripting::LuaVarDesc", "structscripting_1_1LuaVarDesc.html", null ],
     [ "toast::LuaVarDesc", "structtoast_1_1LuaVarDesc.html", null ],
     [ "assets::Prefab::LuaVarOverride", "structassets_1_1Prefab_1_1LuaVarOverride.html", null ],
+    [ "editor.LuaEditor.Graph.LuaWriter", "classeditor_1_1LuaEditor_1_1Graph_1_1LuaWriter.html", null ],
     [ "physics::Manifold", "structphysics_1_1Manifold.html", null ],
     [ "physics::ManifoldQueue", "structphysics_1_1ManifoldQueue.html", null ],
     [ "voxel::MassMoments", "structvoxel_1_1MassMoments.html", null ],
@@ -1055,6 +1156,7 @@ var hierarchy =
           [ "toast::AudioSphereEmitter", "classtoast_1_1AudioSphereEmitter.html", null ]
         ] ],
         [ "toast::AudioListener", "classtoast_1_1AudioListener.html", null ],
+        [ "toast::BoneAttachment", "classtoast_1_1BoneAttachment.html", null ],
         [ "toast::Camera", "classtoast_1_1Camera.html", null ],
         [ "toast::FogVolume", "classtoast_1_1FogVolume.html", null ],
         [ "toast::IrradianceVolume", "classtoast_1_1IrradianceVolume.html", null ],
@@ -1067,6 +1169,7 @@ var hierarchy =
         [ "toast::MeshNode", "classtoast_1_1MeshNode.html", null ],
         [ "toast::Panel3D", "classtoast_1_1Panel3D.html", null ],
         [ "toast::ReflectionProbe", "classtoast_1_1ReflectionProbe.html", null ],
+        [ "toast::SkeletalNode", "classtoast_1_1SkeletalNode.html", null ],
         [ "toast::Volume", "classtoast_1_1Volume.html", [
           [ "toast::AudioVolume", "classtoast_1_1AudioVolume.html", [
             [ "toast::AmbienceVolume", "classtoast_1_1AmbienceVolume.html", null ],
@@ -1087,7 +1190,8 @@ var hierarchy =
             [ "toast::VoxelVolume", "classtoast_1_1VoxelVolume.html", [
               [ "toast::CarveVolume", "classtoast_1_1CarveVolume.html", null ],
               [ "toast::FillVolume", "classtoast_1_1FillVolume.html", null ],
-              [ "toast::PaintVolume", "classtoast_1_1PaintVolume.html", null ]
+              [ "toast::PaintVolume", "classtoast_1_1PaintVolume.html", null ],
+              [ "toast::VoxelLine", "classtoast_1_1VoxelLine.html", null ]
             ] ]
           ] ]
         ] ]
@@ -1096,6 +1200,7 @@ var hierarchy =
       [ "toast::PanelContext", "classtoast_1_1PanelContext.html", null ],
       [ "toast::StateMachine", "classtoast_1_1StateMachine.html", null ]
     ] ],
+    [ "editor.LuaEditor.Editing.NodeCatalog", "classeditor_1_1LuaEditor_1_1Editing_1_1NodeCatalog.html", null ],
     [ "toast::_detail::NodeCluster", "structtoast_1_1__detail_1_1NodeCluster.html", null ],
     [ "assets::_detail::NodeFileBinaryHeader", "structassets_1_1__detail_1_1NodeFileBinaryHeader.html", null ],
     [ "toast::NodeInfo", "structtoast_1_1NodeInfo.html", null ],
@@ -1119,6 +1224,8 @@ var hierarchy =
       [ "editor.Components.Modals.AssetFolderNode", "classeditor_1_1Components_1_1Modals_1_1AssetFolderNode.html", null ],
       [ "editor.Components.Modals.MessageModalViewModel", "classeditor_1_1Components_1_1Modals_1_1MessageModalViewModel.html", null ],
       [ "editor.Components.Modals.SaveFileViewModel", "classeditor_1_1Components_1_1Modals_1_1SaveFileViewModel.html", null ],
+      [ "editor.DetailTextureEditor.DetailEntryVM", "classeditor_1_1DetailTextureEditor_1_1DetailEntryVM.html", null ],
+      [ "editor.DetailTextureEditor.DetailTextureEditorViewModel", "classeditor_1_1DetailTextureEditor_1_1DetailTextureEditorViewModel.html", null ],
       [ "editor.Editors.ChannelOption", "classeditor_1_1Editors_1_1ChannelOption.html", null ],
       [ "editor.Editors.CurvePointVM", "classeditor_1_1Editors_1_1CurvePointVM.html", null ],
       [ "editor.Editors.GenericFieldVM", "classeditor_1_1Editors_1_1GenericFieldVM.html", null ],
@@ -1141,6 +1248,11 @@ var hierarchy =
       [ "editor.Git.LockArtworkViewModel", "classeditor_1_1Git_1_1LockArtworkViewModel.html", null ],
       [ "editor.Logger.SeverityFilterViewModel", "classeditor_1_1Logger_1_1SeverityFilterViewModel.html", null ],
       [ "editor.Logger.SinkFilterViewModel", "classeditor_1_1Logger_1_1SinkFilterViewModel.html", null ],
+      [ "editor.LuaEditor.ParamRow", "classeditor_1_1LuaEditor_1_1ParamRow.html", null ],
+      [ "editor.LuaEditor.ReturnRow", "classeditor_1_1LuaEditor_1_1ReturnRow.html", null ],
+      [ "editor.LuaEditor.TableEntryRow", "classeditor_1_1LuaEditor_1_1TableEntryRow.html", null ],
+      [ "editor.LuaEditor.TagRow", "classeditor_1_1LuaEditor_1_1TagRow.html", null ],
+      [ "editor.LuaEditor.VariableRow", "classeditor_1_1LuaEditor_1_1VariableRow.html", null ],
       [ "editor.ViewModelBase", "classeditor_1_1ViewModelBase.html", [
         [ "editor.Assets.Importers.CompactImportWindowViewModel", "classeditor_1_1Assets_1_1Importers_1_1CompactImportWindowViewModel.html", null ],
         [ "editor.Assets.Importers.ImportNodeViewModel", "classeditor_1_1Assets_1_1Importers_1_1ImportNodeViewModel.html", [
@@ -1180,6 +1292,7 @@ var hierarchy =
       [ "editor.Workspace.SubgroupVM", "classeditor_1_1Workspace_1_1SubgroupVM.html", null ],
       [ "editor.Workspace.WorkspaceHistoryState", "classeditor_1_1Workspace_1_1WorkspaceHistoryState.html", null ]
     ] ],
+    [ "editor.LuaEditor.Graph.OutputPin", "classeditor_1_1LuaEditor_1_1Graph_1_1OutputPin.html", null ],
     [ "renderer::OutputSubmitSync", "structrenderer_1_1OutputSubmitSync.html", null ],
     [ "assets::PackArchive", "classassets_1_1PackArchive.html", null ],
     [ "physics::PackedFractureProfile", "structphysics_1_1PackedFractureProfile.html", null ],
@@ -1211,13 +1324,13 @@ var hierarchy =
     [ "toast::VoxelNode::PendingEvents", "structtoast_1_1VoxelNode_1_1PendingEvents.html", null ],
     [ "toast::WorkspaceHistory::PendingMerge", "structtoast_1_1WorkspaceHistory_1_1PendingMerge.html", null ],
     [ "renderer::PendingResourceUpload", "classrenderer_1_1PendingResourceUpload.html", [
+      [ "renderer::DetailArrayUpload", "classrenderer_1_1DetailArrayUpload.html", null ],
       [ "renderer::MeshUpload", "classrenderer_1_1MeshUpload.html", null ],
       [ "renderer::RawTextureUpload", "classrenderer_1_1RawTextureUpload.html", null ],
       [ "renderer::TextureUpload", "classrenderer_1_1TextureUpload.html", null ],
       [ "renderer::VoxelSceneUpload", "classrenderer_1_1VoxelSceneUpload.html", null ]
     ] ],
     [ "physics::Penetration", "structphysics_1_1Penetration.html", null ],
-    [ "renderer::VulkanRenderer::PerfCounters", "structrenderer_1_1VulkanRenderer_1_1PerfCounters.html", null ],
     [ "renderer::PerfWindow", "classrenderer_1_1PerfWindow.html", null ],
     [ "toast::PhaseZones", "classtoast_1_1PhaseZones.html", null ],
     [ "voxel::PhysicalMaterial", "structvoxel_1_1PhysicalMaterial.html", null ],
@@ -1232,6 +1345,7 @@ var hierarchy =
       [ "editor.Components.Modals.HierarchyPickerViewModel", "classeditor_1_1Components_1_1Modals_1_1HierarchyPickerViewModel.html", null ],
       [ "editor.Components.Modals.NodeTypePickerViewModel", "classeditor_1_1Components_1_1Modals_1_1NodeTypePickerViewModel.html", null ]
     ] ],
+    [ "editor.LuaEditor.Controls.PickRow", "classeditor_1_1LuaEditor_1_1Controls_1_1PickRow.html", null ],
     [ "toast::ProceduralVoxel::PieceLayout", "structtoast_1_1ProceduralVoxel_1_1PieceLayout.html", null ],
     [ "physics::PinParams", "structphysics_1_1PinParams.html", null ],
     [ "renderer::PostProcessSettings", "structrenderer_1_1PostProcessSettings.html", null ],
@@ -1273,6 +1387,7 @@ var hierarchy =
     [ "event::ProtoTraits&lt; NodeChangeType &gt;", "structevent_1_1ProtoTraits_3_01NodeChangeType_01_4.html", null ],
     [ "event::ProtoTraits&lt; NodeEnabled &gt;", "structevent_1_1ProtoTraits_3_01NodeEnabled_01_4.html", null ],
     [ "event::ProtoTraits&lt; NodePicked &gt;", "structevent_1_1ProtoTraits_3_01NodePicked_01_4.html", null ],
+    [ "event::ProtoTraits&lt; PreviewAssetToml &gt;", "structevent_1_1ProtoTraits_3_01PreviewAssetToml_01_4.html", null ],
     [ "event::ProtoTraits&lt; ProceduralVoxelLayout &gt;", "structevent_1_1ProtoTraits_3_01ProceduralVoxelLayout_01_4.html", null ],
     [ "event::ProtoTraits&lt; ProceduralVoxelPromoted &gt;", "structevent_1_1ProtoTraits_3_01ProceduralVoxelPromoted_01_4.html", null ],
     [ "event::ProtoTraits&lt; ReloadAssetsManifest &gt;", "structevent_1_1ProtoTraits_3_01ReloadAssetsManifest_01_4.html", null ],
@@ -1289,6 +1404,7 @@ var hierarchy =
     [ "event::ProtoTraits&lt; SetActiveWorkspace &gt;", "structevent_1_1ProtoTraits_3_01SetActiveWorkspace_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetCameraMode &gt;", "structevent_1_1ProtoTraits_3_01SetCameraMode_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetCoordinateSpace &gt;", "structevent_1_1ProtoTraits_3_01SetCoordinateSpace_01_4.html", null ],
+    [ "event::ProtoTraits&lt; SetDetailTexturePreview &gt;", "structevent_1_1ProtoTraits_3_01SetDetailTexturePreview_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetEditorCameraSettings &gt;", "structevent_1_1ProtoTraits_3_01SetEditorCameraSettings_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetFocusedNode &gt;", "structevent_1_1ProtoTraits_3_01SetFocusedNode_01_4.html", null ],
     [ "event::ProtoTraits&lt; SetGizmoTool &gt;", "structevent_1_1ProtoTraits_3_01SetGizmoTool_01_4.html", null ],
@@ -1353,6 +1469,7 @@ var hierarchy =
     [ "renderer::VolumetricPass::Quality", "structrenderer_1_1VolumetricPass_1_1Quality.html", null ],
     [ "physics::QueryContact", "structphysics_1_1QueryContact.html", null ],
     [ "physics::QuerySnapshot", "structphysics_1_1QuerySnapshot.html", null ],
+    [ "physics::QueryVoxel", "structphysics_1_1QueryVoxel.html", null ],
     [ "toast::MusicPlayer::QueuedCb", "structtoast_1_1MusicPlayer_1_1QueuedCb.html", null ],
     [ "renderer::sync::QueueHandoff", "structrenderer_1_1sync_1_1QueueHandoff.html", null ],
     [ "logging::RawBacktrace", "structlogging_1_1RawBacktrace.html", null ],
@@ -1361,11 +1478,15 @@ var hierarchy =
     [ "physics::RayHit", "structphysics_1_1RayHit.html", null ],
     [ "voxel::RayHit", "structvoxel_1_1RayHit.html", null ],
     [ "renderer::RayTracingScene", "classrenderer_1_1RayTracingScene.html", null ],
+    [ "assets::_detail::Reader", "classassets_1_1__detail_1_1Reader.html", null ],
+    [ "assets::Reader", "classassets_1_1Reader.html", null ],
     [ "renderer::SlangVfs::Recorder", "classrenderer_1_1SlangVfs_1_1Recorder.html", null ],
+    [ "editor.LuaEditor.Layout.Rect", "structeditor_1_1LuaEditor_1_1Layout_1_1Rect.html", null ],
     [ "toast::Reflect&lt; T &gt;", "classtoast_1_1Reflect.html", null ],
     [ "toast::Reflect&lt; event::_detail::IEvent &gt;", "structtoast_1_1Reflect_3_01event_1_1__detail_1_1IEvent_01_4.html", null ],
     [ "renderer::ReflectionProbeData", "structrenderer_1_1ReflectionProbeData.html", null ],
     [ "voxel::Region", "structvoxel_1_1Region.html", null ],
+    [ "editor.LuaEditor.Layout.RegionInfo", "classeditor_1_1LuaEditor_1_1Layout_1_1RegionInfo.html", null ],
     [ "assets::AssetManager::ReloadedAsset", "structassets_1_1AssetManager_1_1ReloadedAsset.html", null ],
     [ "physics::RemovedVoxels", "structphysics_1_1RemovedVoxels.html", null ],
     [ "renderer::RenderFrame", "structrenderer_1_1RenderFrame.html", null ],
@@ -1398,6 +1519,7 @@ var hierarchy =
     [ "scripting::ScriptNodeContextScope", "classscripting_1_1ScriptNodeContextScope.html", null ],
     [ "scripting::ScriptRuntime", "classscripting_1_1ScriptRuntime.html", null ],
     [ "scripting::ScriptSchema", "structscripting_1_1ScriptSchema.html", null ],
+    [ "editor.LuaEditor.SearchRow", "classeditor_1_1LuaEditor_1_1SearchRow.html", null ],
     [ "physics::_detail::SegmentAabbClosestPoints", "structphysics_1_1__detail_1_1SegmentAabbClosestPoints.html", null ],
     [ "physics::_detail::SegmentBoxClosestPoints", "structphysics_1_1__detail_1_1SegmentBoxClosestPoints.html", null ],
     [ "physics::_detail::SegmentClosestPoint", "structphysics_1_1__detail_1_1SegmentClosestPoint.html", null ],
@@ -1477,6 +1599,7 @@ var hierarchy =
     [ "Rml::SystemInterface", null, [
       [ "ui::UISystemInterface", "classui_1_1UISystemInterface.html", null ]
     ] ],
+    [ "editor.LuaEditor.Graph.TableField", "classeditor_1_1LuaEditor_1_1Graph_1_1TableField.html", null ],
     [ "voxel::TableProblem", "structvoxel_1_1TableProblem.html", null ],
     [ "voxel::gpu::TagDelta", "structvoxel_1_1gpu_1_1TagDelta.html", null ],
     [ "TemplatedControl", null, [
@@ -1496,6 +1619,7 @@ var hierarchy =
       [ "editor.Components.Elements.NodeBox", "classeditor_1_1Components_1_1Elements_1_1NodeBox.html", null ],
       [ "editor.Components.Elements.StringBox", "classeditor_1_1Components_1_1Elements_1_1StringBox.html", null ]
     ] ],
+    [ "editor.LuaEditor.Syntax.TextEdit", "structeditor_1_1LuaEditor_1_1Syntax_1_1TextEdit.html", null ],
     [ "ui::TextFormatContext", "structui_1_1TextFormatContext.html", null ],
     [ "editor.Assets.TextureSectionDto", "classeditor_1_1Assets_1_1TextureSectionDto.html", null ],
     [ "renderer::MaterialRuntime::TextureSlot", "structrenderer_1_1MaterialRuntime_1_1TextureSlot.html", null ],
@@ -1523,6 +1647,7 @@ var hierarchy =
       [ "editor.Editors.TableViewModel", "classeditor_1_1Editors_1_1TableViewModel.html", null ],
       [ "editor.Git.LocksViewModel", "classeditor_1_1Git_1_1LocksViewModel.html", null ],
       [ "editor.Logger.LogsViewModel", "classeditor_1_1Logger_1_1LogsViewModel.html", null ],
+      [ "editor.LuaEditor.LuaGraphEditorViewModel", "classeditor_1_1LuaEditor_1_1LuaGraphEditorViewModel.html", null ],
       [ "editor.Workspace.HierarchyViewModel", "classeditor_1_1Workspace_1_1HierarchyViewModel.html", null ],
       [ "editor.Workspace.HistoryViewModel", "classeditor_1_1Workspace_1_1HistoryViewModel.html", null ],
       [ "editor.Workspace.InspectorViewModel", "classeditor_1_1Workspace_1_1InspectorViewModel.html", null ],
@@ -1540,9 +1665,11 @@ var hierarchy =
     [ "toast::TreeReadLock", "classtoast_1_1TreeReadLock.html", null ],
     [ "toast::TreeWriteLock", "classtoast_1_1TreeWriteLock.html", null ],
     [ "physics::Tunables", "structphysics_1_1Tunables.html", null ],
+    [ "editor.LuaEditor.Types.TypeChecker", "classeditor_1_1LuaEditor_1_1Types_1_1TypeChecker.html", null ],
     [ "scripting::TypeMarker", "structscripting_1_1TypeMarker.html", null ],
     [ "assets::TypeSwitch", "structassets_1_1TypeSwitch.html", null ],
     [ "assets::TypeSwitchCase", "structassets_1_1TypeSwitchCase.html", null ],
+    [ "editor.LuaEditor.Types.TypeUniverse", "classeditor_1_1LuaEditor_1_1Types_1_1TypeUniverse.html", null ],
     [ "renderer::MaterialRuntime::UboBlob", "structrenderer_1_1MaterialRuntime_1_1UboBlob.html", null ],
     [ "renderer::MaterialPass::InstanceResources::UboBuffer", "structrenderer_1_1MaterialPass_1_1InstanceResources_1_1UboBuffer.html", null ],
     [ "ui::UIBinds", "classui_1_1UIBinds.html", null ],
@@ -1560,6 +1687,7 @@ var hierarchy =
     [ "renderer::sync::UsageInfo", "structrenderer_1_1sync_1_1UsageInfo.html", null ],
     [ "UserControl", null, [
       [ "editor.Assets.AssetBrowserView", "classeditor_1_1Assets_1_1AssetBrowserView.html", null ],
+      [ "editor.DetailTextureEditor.DetailTextureEditorView", "classeditor_1_1DetailTextureEditor_1_1DetailTextureEditorView.html", null ],
       [ "editor.Editors.CurveView", "classeditor_1_1Editors_1_1CurveView.html", null ],
       [ "editor.Editors.GenericView", "classeditor_1_1Editors_1_1GenericView.html", null ],
       [ "editor.Editors.HapticsView", "classeditor_1_1Editors_1_1HapticsView.html", null ],
@@ -1570,6 +1698,9 @@ var hierarchy =
       [ "editor.Git.LockArtworkView", "classeditor_1_1Git_1_1LockArtworkView.html", null ],
       [ "editor.Git.LocksView", "classeditor_1_1Git_1_1LocksView.html", null ],
       [ "editor.Logger.LogsView", "classeditor_1_1Logger_1_1LogsView.html", null ],
+      [ "editor.LuaEditor.Controls.TypeEditor", "classeditor_1_1LuaEditor_1_1Controls_1_1TypeEditor.html", null ],
+      [ "editor.LuaEditor.Controls.TypePicker", "classeditor_1_1LuaEditor_1_1Controls_1_1TypePicker.html", null ],
+      [ "editor.LuaEditor.LuaGraphEditorView", "classeditor_1_1LuaEditor_1_1LuaGraphEditorView.html", null ],
       [ "editor.VoxelEditor.VoxelEditorView", "classeditor_1_1VoxelEditor_1_1VoxelEditorView.html", null ],
       [ "editor.VoxelEditor.VoxelPalettePicker", "classeditor_1_1VoxelEditor_1_1VoxelPalettePicker.html", null ],
       [ "editor.Workspace.HierarchyView", "classeditor_1_1Workspace_1_1HierarchyView.html", null ],
@@ -1583,6 +1714,7 @@ var hierarchy =
       [ "editor.Workspace.WorkspaceView", "classeditor_1_1Workspace_1_1WorkspaceView.html", null ]
     ] ],
     [ "input::Value", "structinput_1_1Value.html", null ],
+    [ "editor.LuaEditor.Layout.Vec", "structeditor_1_1LuaEditor_1_1Layout_1_1Vec.html", null ],
     [ "glm::vec3", null, [
       [ "scripting::Vec3FieldProxy", "classscripting_1_1Vec3FieldProxy.html", null ]
     ] ],
@@ -1668,15 +1800,18 @@ var hierarchy =
         [ "editor.Components.Modals.HierarchyTree", "classeditor_1_1Components_1_1Modals_1_1HierarchyTree.html", null ],
         [ "editor.Components.Modals.NodeTypeTree", "classeditor_1_1Components_1_1Modals_1_1NodeTypeTree.html", null ]
       ] ],
+      [ "editor.Components.Modals.ReimportReviewWindow", "classeditor_1_1Components_1_1Modals_1_1ReimportReviewWindow.html", null ],
       [ "editor.Components.Modals.RenameModal", "classeditor_1_1Components_1_1Modals_1_1RenameModal.html", null ],
       [ "editor.Components.Modals.SaveFileModal", "classeditor_1_1Components_1_1Modals_1_1SaveFileModal.html", null ],
       [ "editor.Components.Modals.SimpleLoaderWindow", "classeditor_1_1Components_1_1Modals_1_1SimpleLoaderWindow.html", null ],
       [ "editor.Components.Modals.SplashLoaderWindow", "classeditor_1_1Components_1_1Modals_1_1SplashLoaderWindow.html", null ],
       [ "editor.Components.Modals.UnsavedChangesModal", "classeditor_1_1Components_1_1Modals_1_1UnsavedChangesModal.html", null ],
+      [ "editor.DetailTextureEditor.DetailTextureEditorWindow", "classeditor_1_1DetailTextureEditor_1_1DetailTextureEditorWindow.html", null ],
       [ "editor.Git.CommitWindow", "classeditor_1_1Git_1_1CommitWindow.html", null ],
       [ "editor.Git.GitPassphraseModal", "classeditor_1_1Git_1_1GitPassphraseModal.html", null ],
       [ "editor.Git.LockArtworkWindow", "classeditor_1_1Git_1_1LockArtworkWindow.html", null ],
       [ "editor.Logger.LogDetailWindow", "classeditor_1_1Logger_1_1LogDetailWindow.html", null ],
+      [ "editor.LuaEditor.LuaEditorWindow", "classeditor_1_1LuaEditor_1_1LuaEditorWindow.html", null ],
       [ "editor.StartWindow.NewProjectWindow", "classeditor_1_1StartWindow_1_1NewProjectWindow.html", null ],
       [ "editor.StartWindow.StartWindow", "classeditor_1_1StartWindow_1_1StartWindow.html", null ],
       [ "editor.VoxelEditor.VoxelEditorWindow", "classeditor_1_1VoxelEditor_1_1VoxelEditorWindow.html", null ],
@@ -1696,5 +1831,7 @@ var hierarchy =
     [ "toast::_detail::WorldTestAccess", "structtoast_1_1__detail_1_1WorldTestAccess.html", null ],
     [ "assets::Volume::WritableBrick", "structassets_1_1Volume_1_1WritableBrick.html", null ],
     [ "voxel::Volume::WritableBrick", "structvoxel_1_1Volume_1_1WritableBrick.html", null ],
-    [ "voxel::WriteBrush", "structvoxel_1_1WriteBrush.html", null ]
+    [ "voxel::WriteBrush", "structvoxel_1_1WriteBrush.html", null ],
+    [ "assets::_detail::Writer", "classassets_1_1__detail_1_1Writer.html", null ],
+    [ "assets::Writer", "classassets_1_1Writer.html", null ]
 ];

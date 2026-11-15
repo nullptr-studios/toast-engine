@@ -1,6 +1,7 @@
 var dir_20330d6dfc41c442bcafdf57d149ce1b =
 [
     [ "depth_convention.hpp", "depth__convention_8hpp.html", "depth__convention_8hpp" ],
+    [ "descriptor_cache.hpp", "descriptor__cache_8hpp.html", "descriptor__cache_8hpp" ],
     [ "descriptor_writer.cpp", "descriptor__writer_8cpp.html", null ],
     [ "descriptor_writer.hpp", "descriptor__writer_8hpp.html", "descriptor__writer_8hpp" ],
     [ "gpu_sync.cpp", "gpu__sync_8cpp.html", "gpu__sync_8cpp" ],

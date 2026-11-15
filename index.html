@@ -128,37 +128,30 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('index.html',''
 <li>Alexey</li>
 <li>Akaansh</li>
 </ul>
-<h1 class="doxsection"><a class="anchor" id="autotoc_md100"></a>
+<h1 class="doxsection"><a class="anchor" id="autotoc_md101"></a>
 Building</h1>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md101"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md102"></a>
 Prerequisites</h2>
 <ul>
 <li>CMake &gt;=3.24</li>
 <li>A C++23 compiler (VS18 and GCC15 tested)</li>
-<li>Rustc and Cargo</li>
-<li>C# .NET10 toolchain</li>
+<li>C# .NET8 toolchain</li>
 <li>VCPKG with <span class="tt">VCPKG_ROOT</span> set up in PATH</li>
 </ul>
-<h2 class="doxsection"><a class="anchor" id="autotoc_md102"></a>
+<h2 class="doxsection"><a class="anchor" id="autotoc_md103"></a>
 Generation</h2>
-<p>Powershell </p><div class="fragment"><div class="line">cmake -B build/Debug -G &quot;Visual Studio 18 2026&quot; -DCMAKE_TOOLCHAIN_FILE=&quot;$env:VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake&quot;</div>
-</div><!-- fragment --><p>Linux </p><div class="fragment"><div class="line">cmake -B build/Debug -G &quot;Visual Studio 18 2026&quot; -DCMAKE_TOOLCHAIN_FILE=&quot;$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake&quot;</div>
+<p>Powershell </p><div class="fragment"><div class="line">cmake --template win-relwithdebinfo</div>
+</div><!-- fragment --><p>Linux </p><div class="fragment"><div class="line">cmake --template linux-relwithdebinfo</div>
 </div><!-- fragment --><p>Or using the Nix flake </p><div class="fragment"><div class="line">nix develop</div>
 <div class="line">cmake-gen</div>
-</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md103"></a>
-Build</h2>
-<div class="fragment"><div class="line">cmake --build ./build/Debug</div>
-</div><!-- fragment --><div class="fragment"><div class="line">dotnet run --project editor</div>
-</div><!-- fragment --><p>Or using the Nix flake </p><div class="fragment"><div class="line">cmake-build</div>
 </div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md104"></a>
+Build</h2>
+<div class="fragment"><div class="line">cmake --build --template win-relwithdebinfo --target editor</div>
+</div><!-- fragment --><p>Or using the Nix flake </p><div class="fragment"><div class="line">cmake-build</div>
+</div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md105"></a>
 Tests</h2>
 <div class="fragment"><div class="line">ctest --test-dir build/Debug -C Debug</div>
-</div><!-- fragment --><h1 class="doxsection"><a class="anchor" id="autotoc_md105"></a>
-Other tooling</h1>
-<p>To properly install <span class="tt">kenzo</span> on release and be properly accessible through your entire computer run the following command:</p>
-<div class="fragment"><div class="line">cargo install --git https://github.com/nullptr-studios/toast-engine.git --branch main kenzo</div>
-</div><!-- fragment --><p>It's even faster than running the Release version you make through Cargo! </p>
-</div></div><!-- PageDoc -->
+</div><!-- fragment --> </div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"></a>
 </div><!-- contents -->
 </div><!-- doc-content -->

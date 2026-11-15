@@ -14,6 +14,7 @@ var classrenderer_1_1VoxelPass =
     [ "recordCellCull", "classrenderer_1_1VoxelPass.html#aabd5d8148fa70a3911baa330b2453cf5", null ],
     [ "recordDenoiseComposite", "classrenderer_1_1VoxelPass.html#a65ccc7ad91b774f83f5fe7788f9610fa", null ],
     [ "recordDenoiseTemporal", "classrenderer_1_1VoxelPass.html#a9beab196d01d75c0a41036b1c646763e", null ],
+    [ "recordGiGather", "classrenderer_1_1VoxelPass.html#a4f5cfcc4c5e715da28d909032889e299", null ],
     [ "recordGlass", "classrenderer_1_1VoxelPass.html#af09bfe6c7c2eea1d3d9cbf251dcaaf2e", null ],
     [ "recordGlassSurfaces", "classrenderer_1_1VoxelPass.html#a24f2c9ba12ba266c1c25bcb5d6fd948a", null ],
     [ "recordLate", "classrenderer_1_1VoxelPass.html#ab15c0b117d48dd90b296066c9a4798e5", null ],

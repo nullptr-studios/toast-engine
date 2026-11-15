@@ -2,7 +2,6 @@ var classrenderer_1_1VulkanRenderer =
 [
     [ "FrameContext", "structrenderer_1_1VulkanRenderer_1_1FrameContext.html", "structrenderer_1_1VulkanRenderer_1_1FrameContext" ],
     [ "PassInfo", "structrenderer_1_1VulkanRenderer_1_1PassInfo.html", null ],
-    [ "PerfCounters", "structrenderer_1_1VulkanRenderer_1_1PerfCounters.html", null ],
     [ "UploadStats", "structrenderer_1_1VulkanRenderer_1_1UploadStats.html", null ],
     [ "addPostProcessPass", "classrenderer_1_1VulkanRenderer.html#abb888b7f0d33fd8f18e2e67c0cb9333b", null ],
     [ "debugOverlayHidden", "classrenderer_1_1VulkanRenderer.html#a89efe9e6447bcaf50dfc3175133eed3a", null ],
@@ -42,7 +41,7 @@ var classrenderer_1_1VulkanRenderer =
     [ "setVolumetricDistance", "classrenderer_1_1VulkanRenderer.html#a3e662594611274c05c48a895f680a258", null ],
     [ "setVoxelAmbientRays", "classrenderer_1_1VulkanRenderer.html#a10e4ada2b298ce18fdf9d5a551c390b6", null ],
     [ "setVoxelCellBoxes", "classrenderer_1_1VulkanRenderer.html#ac52de4fe63aa84d00caca0e78c8b0a9f", null ],
-    [ "setVoxelDetailLibrary", "classrenderer_1_1VulkanRenderer.html#a1e95f928658e7463bbbf60dc88f22adc", null ],
+    [ "setVoxelDetailTexture", "classrenderer_1_1VulkanRenderer.html#ae6b492fbca27743d89b130cda9d7ed6b", null ],
     [ "setVoxelGlassRefraction", "classrenderer_1_1VulkanRenderer.html#ad7e4a1822be26b7d83e5c9b47fc183f2", null ],
     [ "setVoxelGlassRefractionEnabled", "classrenderer_1_1VulkanRenderer.html#a55e469472018093c5ed96d44fd32af7f", null ],
     [ "setVoxelHighlight", "classrenderer_1_1VulkanRenderer.html#a475b98fb320ebb76f5b96ee1e67df8d5", null ],
