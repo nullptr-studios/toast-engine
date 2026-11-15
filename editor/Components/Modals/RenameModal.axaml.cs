@@ -6,6 +6,8 @@ using Lucide.Avalonia;
 namespace editor.Components.Modals;
 
 public partial class RenameModal : Window {
+	public RenameModal() : this("") { }
+
 	public RenameModal(
 		string initialName,
 		string title = "Rename",

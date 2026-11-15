@@ -228,6 +228,8 @@ struct VoxelCreatePiece : Event<VoxelCreatePiece> {
 	glm::ivec3 max {0};
 	toast::UID script;
 	uint32_t mode = 0;
+	toast::UID model;
+	uint32_t axis = 0;
 };
 
 struct VoxelExtrude : Event<VoxelExtrude> {
@@ -327,6 +329,7 @@ struct SetVoxelTool : Event<SetVoxelTool> {
 	uint32_t paint_id = 1;
 	toast::UID default_script;
 	uint32_t default_mode = 0;
+	toast::UID default_model;
 };
 
 struct SetShowOthers : Event<SetShowOthers> {
@@ -426,6 +429,12 @@ struct EditorCameraFlyMode : Event<EditorCameraFlyMode> {
 /// viewport; no-op if RenderDoc isn't attached
 struct CaptureFrame : Event<CaptureFrame> { };
 
+struct SetDetailTexturePreview : Event<SetDetailTexturePreview> {
+	std::string uid;
+
+	SetDetailTexturePreview(std::string uid) : uid(std::move(uid)) { }
+};
+
 /// @brief Held-key snapshot for the editor fly camera
 struct EditorCameraMoveState : Event<EditorCameraMoveState> {
 	bool forward, back, left, right, up, down, boost;
@@ -479,8 +488,12 @@ struct InspectorContent : Event<InspectorContent> {
 	struct InspectorField {
 		std::string name;
 		std::string value;
+		std::vector<std::string> options;
 
-		InspectorField(std::string_view name, std::string_view value) : name(name), value(value) { }
+		InspectorField(std::string_view name, std::string_view value, std::vector<std::string> options = {})
+		    : name(name),
+		      value(value),
+		      options(std::move(options)) { }
 	};
 
 	std::string uid;

@@ -59,7 +59,7 @@ void FxaaPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight, vk::ImageView {});
+	m_bound_views.resize(VulkanRenderer::k_frames_in_flight);
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -70,7 +70,7 @@ void FxaaPass::createResources(const VulkanCore& core) {
 
 void FxaaPass::createTarget(const VulkanCore& core, vk::Extent2D extent) {
 	m_target.create(core, extent, m_ldr_format, "FxaaPass");
-	std::ranges::fill(m_bound_views, vk::ImageView {});
+	m_bound_views.invalidate();
 }
 
 void FxaaPass::onResize(vk::Extent2D extent) {
@@ -95,7 +95,7 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		return source_view;
 	}
 
-	if (m_bound_views[frame_index] != source_view) {
+	if (m_bound_views.update(frame_index, source_view)) {
 		vk::DescriptorImageInfo image_info {};
 		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		image_info.imageView = source_view;
@@ -105,7 +105,6 @@ auto FxaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		    *m_descriptor_sets[frame_index], 0, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
 		);
 		m_core->getDevice().updateDescriptorSets(write, {});
-		m_bound_views[frame_index] = source_view;
 	}
 
 	m_target.beginScope(cmd);

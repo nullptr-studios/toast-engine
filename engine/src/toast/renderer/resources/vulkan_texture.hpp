@@ -6,6 +6,7 @@
 #include "ktx.h"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/core/vulkan_resource_base.hpp"
+#include "toast/renderer/resources/detail_array.hpp"
 
 #include <cstdint>
 #include <string>
@@ -115,6 +116,28 @@ private:
 	vk::Format m_format = vk::Format::eUndefined;
 	std::string m_debug_name;
 	vma::raii::Buffer m_staging_buffer = nullptr;
+	bool m_released = false;
+};
+
+class DetailArrayUpload : public PendingResourceUpload {
+public:
+	DetailArrayUpload(VulkanTexture& texture, DetailArrayData data, std::string_view debug_name = {})
+	    : m_texture(&texture),
+	      m_data(std::move(data)),
+	      m_debug_name(debug_name) { }
+
+	void build(const VulkanCore& core) override;
+	void record(vk::CommandBuffer cmd) override;
+	void recordAcquire(sync::BarrierBatch& batch) override;
+
+	auto resource() -> IVulkanResource* override { return m_texture; }
+
+private:
+	VulkanTexture* m_texture = nullptr;
+	DetailArrayData m_data;
+	std::string m_debug_name;
+	vma::raii::Buffer m_staging_buffer = nullptr;
+	std::vector<vk::BufferImageCopy> m_copy_regions;
 	bool m_released = false;
 };
 

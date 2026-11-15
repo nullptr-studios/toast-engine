@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <mutex>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 
 namespace voxel {
 
@@ -21,6 +22,6 @@ TOAST_API auto runtimeBrickPool() -> BrickPool&;
 
 /// Held while physics writes runtime volumes and while the renderer packs them
 [[nodiscard]]
-TOAST_API auto runtimePoolMutex() -> std::recursive_mutex&;
+TOAST_API auto runtimePoolMutex() -> TOAST_LOCKABLE_BASE(std::recursive_mutex) &;
 
 }

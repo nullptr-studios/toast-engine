@@ -129,6 +129,7 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 
 			var outputs = await ArtworkImport.RunAsync(importer, realSourcePath, sourceVirtual, destDir,
 				AssetDatabase.GetArtworkOutputs(sourceVirtual), log, progress);
+			if (outputs is null) return;
 			AssetDatabase.UpdateArtworkDatabase(sourceVirtual, hash, outputs);
 		} else {
 			log("Note: source outside project — reimport unavailable.");

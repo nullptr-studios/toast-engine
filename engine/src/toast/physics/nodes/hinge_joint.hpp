@@ -16,8 +16,7 @@ public:
 	[[Reflect, Range(0.0, 1.0)]]
 	float bias = 0.3f;
 
-	/// Torque that holds the hinge against turning per newton it carries, the friction of the material times the radius of
-	/// the pin. Zero swings forever
+	/// Material friction times pin radius as torque per newton carried and zero swings forever
 	[[Reflect, Unit("m"), Range(0.0, 0.1)]]
 	float friction = k_default_joint_friction;
 

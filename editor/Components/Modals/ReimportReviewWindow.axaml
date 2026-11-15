@@ -1,0 +1,147 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:lucide="using:Lucide.Avalonia"
+        xmlns:local="using:editor.Components.Modals"
+        x:Class="editor.Components.Modals.ReimportReviewWindow"
+        x:DataType="local:ReimportReviewViewModel"
+        Title="Review Reimport"
+        Width="600"
+        SizeToContent="Height"
+        CanResize="False"
+        CanMaximize="False"
+        WindowStartupLocation="CenterOwner"
+        KeyboardNavigation.TabNavigation="Cycle"
+        ShowInTaskbar="False"
+        Background="{StaticResource Bg3}">
+
+	<Window.Styles>
+		<Style Selector="Button.asset-action">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+			<Setter Property="Width" Value="32" />
+			<Setter Property="Height" Value="30" />
+			<Setter Property="Padding" Value="0" />
+			<Setter Property="HorizontalContentAlignment" Value="Center" />
+			<Setter Property="VerticalContentAlignment" Value="Center" />
+			<Setter Property="CornerRadius" Value="6" />
+		</Style>
+		<Style Selector="Button.asset-action.chosen">
+			<Setter Property="Background" Value="Transparent" />
+			<Setter Property="BorderBrush" Value="Transparent" />
+		</Style>
+		<Style Selector="Button.asset-action:disabled /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="Button.asset-action lucide|LucideIcon">
+			<Setter Property="Foreground" Value="{StaticResource Text}" />
+		</Style>
+		<Style Selector="Button.asset-action.chosen.keep lucide|LucideIcon">
+			<Setter Property="Foreground" Value="{StaticResource Green}" />
+		</Style>
+		<Style Selector="Button.asset-action.chosen.replace lucide|LucideIcon">
+			<Setter Property="Foreground" Value="{StaticResource Blue}" />
+		</Style>
+		<Style Selector="Button.asset-action.chosen.delete lucide|LucideIcon">
+			<Setter Property="Foreground" Value="{StaticResource Red}" />
+		</Style>
+		<Style Selector="Button.footer-action">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="Button.footer-action:disabled /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background" Value="{StaticResource Bg4}" />
+		</Style>
+	</Window.Styles>
+
+	<StackPanel Margin="24" Spacing="16">
+		<Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+			<lucide:LucideIcon Kind="RefreshCw" Size="32" StrokeWidth="2.5" VerticalAlignment="Center"
+			                   Foreground="{StaticResource Blue}" />
+			<StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+				<TextBlock Text="Review Reimport" FontSize="16" FontWeight="SemiBold" />
+				<TextBlock Text="{Binding Source}" Foreground="{StaticResource TextMuted}"
+				           TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Source}" />
+			</StackPanel>
+			<Border Grid.Column="2" VerticalAlignment="Center" Background="{StaticResource Bg1}"
+			        CornerRadius="8" Padding="12,8">
+				<StackPanel Orientation="Horizontal" Spacing="16">
+					<StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="Added assets">
+						<lucide:LucideIcon Kind="Plus" Size="16" StrokeWidth="2.5" VerticalAlignment="Center"
+						                   Foreground="{StaticResource Green}" />
+						<TextBlock Text="{Binding AddedCount}" FontWeight="Bold"
+						           AutomationProperties.Name="{Binding AddedCount, StringFormat='Added assets: {0}'}" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="Modified or renamed assets">
+						<lucide:LucideIcon Kind="Pencil" Size="16" StrokeWidth="2.5" VerticalAlignment="Center"
+						                   Foreground="{StaticResource Orange}" />
+						<TextBlock Text="{Binding ModifiedCount}" FontWeight="Bold"
+						           AutomationProperties.Name="{Binding ModifiedCount, StringFormat='Modified or renamed assets: {0}'}" />
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" Spacing="6" ToolTip.Tip="Missing assets">
+						<lucide:LucideIcon Kind="Minus" Size="16" StrokeWidth="2.5" VerticalAlignment="Center"
+						                   Foreground="{StaticResource Red}" />
+						<TextBlock Text="{Binding MissingCount}" FontWeight="Bold"
+						           AutomationProperties.Name="{Binding MissingCount, StringFormat='Missing assets: {0}'}" />
+					</StackPanel>
+				</StackPanel>
+			</Border>
+		</Grid>
+
+		<Border Background="{StaticResource Bg1}" CornerRadius="8" Padding="8">
+			<StackPanel Spacing="6">
+				<TextBlock Text="Choose what to do with each missing asset" FontWeight="SemiBold"
+				           Foreground="{StaticResource TextMuted}" Margin="8,0" />
+				<ScrollViewer MaxHeight="240" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+					<ItemsControl ItemsSource="{Binding Missing}">
+						<ItemsControl.ItemsPanel>
+							<ItemsPanelTemplate><StackPanel Spacing="2" /></ItemsPanelTemplate>
+						</ItemsControl.ItemsPanel>
+						<ItemsControl.ItemTemplate>
+							<DataTemplate x:DataType="local:ReimportMissingRow">
+								<Border Background="{StaticResource Bg2}" CornerRadius="6" Padding="8,6">
+									<Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+										<StackPanel Spacing="2" VerticalAlignment="Center">
+											<TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis"
+											           ToolTip.Tip="{Binding Label}" />
+											<TextBlock Text="{Binding ReplacementLabel}" IsVisible="{Binding HasReplacement}"
+											           TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ReplacementLabel}"
+											           Foreground="{StaticResource TextMuted}" />
+										</StackPanel>
+										<StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+											<Button Classes="asset-action keep" Classes.chosen="{Binding HasResolution}" IsVisible="{Binding ShowKeep}"
+											        ToolTip.Tip="{Binding KeepTip}" AutomationProperties.Name="{Binding KeepTip}"
+											        Click="OnKeep">
+												<lucide:LucideIcon Kind="Check" Size="16" />
+											</Button>
+											<Button Classes="asset-action replace" Classes.chosen="{Binding HasResolution}"
+											        IsVisible="{Binding ShowReplace}" IsEnabled="{Binding CanReplace}"
+											        ToolTip.Tip="{Binding ReplaceTip}" AutomationProperties.Name="{Binding ReplaceTip}"
+											        Click="OnReplace">
+												<lucide:LucideIcon Kind="Replace" Size="16" />
+											</Button>
+											<Button Classes="asset-action delete" Classes.chosen="{Binding HasResolution}" IsVisible="{Binding ShowDelete}"
+											        ToolTip.Tip="{Binding DeleteTip}" AutomationProperties.Name="{Binding DeleteTip}"
+											        Click="OnDelete">
+												<lucide:LucideIcon Kind="X" Size="16" />
+											</Button>
+										</StackPanel>
+									</Grid>
+								</Border>
+							</DataTemplate>
+						</ItemsControl.ItemTemplate>
+					</ItemsControl>
+				</ScrollViewer>
+			</StackPanel>
+		</Border>
+
+		<Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+			<Button Classes="footer-action" IsCancel="True" Content="Cancel" MinWidth="80" CornerRadius="6"
+			        HorizontalContentAlignment="Center" Click="OnCancel" />
+			<Button x:Name="ApplyButton" Classes="footer-action" Grid.Column="2" IsDefault="True" IsEnabled="False" CornerRadius="6"
+			        Click="OnApply">
+				<StackPanel Orientation="Horizontal" Spacing="6">
+					<lucide:LucideIcon Kind="RefreshCw" Size="16" StrokeWidth="2.5" />
+					<TextBlock Text="Apply Reimport" />
+				</StackPanel>
+			</Button>
+		</Grid>
+	</StackPanel>
+</Window>

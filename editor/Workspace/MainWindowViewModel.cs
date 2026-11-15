@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -45,6 +44,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	private ulong m_activeWorkspaceHandle;
 	private bool m_applyingLayout;
 	[ObservableProperty] private bool m_curveEditorVisible;
+	[ObservableProperty] private bool m_luaEditorVisible;
 	[ObservableProperty] private bool m_genericEditorVisible;
 	[ObservableProperty] private bool m_hapticsEditorVisible;
 	[ObservableProperty] private bool m_paletteEditorVisible;
@@ -129,11 +129,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			if (e.Dockable == m_toastZoneFactory.CurveEditorVm) m_curveEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.TableEditorVm) m_tableEditorVisible = false;
 			if (e.Dockable == m_toastZoneFactory.PaletteEditorVm) m_paletteEditorVisible = false;
+			if (e.Dockable == m_toastZoneFactory.LuaEditorVm) m_luaEditorVisible = false;
 
 			OnPropertyChanged(nameof(LogsVisible));
 			OnPropertyChanged(nameof(HapticsEditorVisible));
 			OnPropertyChanged(nameof(CurveEditorVisible));
 			OnPropertyChanged(nameof(TableEditorVisible));
+			OnPropertyChanged(nameof(LuaEditorVisible));
 			OnPropertyChanged(nameof(PaletteEditorVisible));
 		};
 
@@ -216,6 +218,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.HapticsEditorVm is { } haptics) yield return haptics;
 		if (m_toastZoneFactory.TableEditorVm is { } table) yield return table;
 		if (m_toastZoneFactory.PaletteEditorVm is { } palette) yield return palette;
+		if (m_toastZoneFactory.LuaEditorVm is { } lua) yield return lua;
 	}
 
 	[RelayCommand]
@@ -380,6 +383,19 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		ToggleToastTool("Curve", value);
 	}
 
+	partial void OnLuaEditorVisibleChanged(bool value) {
+		if (m_applyingLayout || value == LuaEditor.LuaEditorWindow.IsOpen) return;
+		if (value && m_toastZoneFactory.LuaEditorVm is { } vm) ShowLuaWindow(vm);
+		else if (!value) LuaEditor.LuaEditorWindow.CloseOpen();
+	}
+
+	private void ShowLuaWindow(LuaEditor.LuaGraphEditorViewModel vm) {
+		// old layouts may still contain a docked lua editor
+		m_toastZoneFactory.EvictLuaTool();
+		LuaEditor.LuaEditorWindow.ShowFor(vm, App.MainWindow, () => LuaEditorVisible = false);
+		LuaEditorVisible = true;
+	}
+
 	partial void OnShowDebugWindowsChanged(bool value) {
 		ToastEngine.SetShowDebugWindows(value);
 	}
@@ -447,12 +463,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				}
 
 				break;
+			case "LuaEditor":
+				if (m_toastZoneFactory.LuaEditorVm is { } luaVm) {
+					_ = OpenToastEditorAsync(luaVm, uid, virtualPath, def, recoverPath);
+					ShowLuaWindow(luaVm);
+				}
+
+				break;
 			case "PaletteEditor":
 				if (m_toastZoneFactory.PaletteEditorVm is { } paletteVm) {
 					_ = OpenToastEditorAsync(paletteVm, uid, virtualPath, def, recoverPath);
 					PaletteEditorVisible = true;
 				}
 
+				break;
+			case "DetailTextureEditor":
+				DetailTextureEditor.DetailTextureEditorWindow.Open(uid);
 				break;
 		}
 	}
@@ -641,6 +667,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.HapticsEditorVm is { IsDirty: true }) dirty.Add("Haptics");
 		if (m_toastZoneFactory.TableEditorVm is { IsDirty: true }) dirty.Add("Table");
 		if (m_toastZoneFactory.PaletteEditorVm is { IsDirty: true }) dirty.Add("Palette");
+		if (m_toastZoneFactory.LuaEditorVm is { IsDirty: true }) dirty.Add("Lua");
 		return dirty;
 	}
 
@@ -678,6 +705,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (m_toastZoneFactory.PaletteEditorVm is { } palette)
 			AddEditor("Palette", palette.IsDirty, palette.CurrentPath, palette.CurrentUid, palette.SaveCommand,
 				() => palette.IsDirty);
+		if (m_toastZoneFactory.LuaEditorVm is { } luaGraph)
+			AddEditor("Lua", luaGraph.IsDirty, luaGraph.CurrentPath, luaGraph.CurrentUid, luaGraph.SaveCommand, () => luaGraph.IsDirty);
 
 		return items;
 	}
@@ -713,11 +742,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			case "Haptics": HapticsEditorVisible = true; break;
 			case "Table": TableEditorVisible = true; break;
 			case "Palette": PaletteEditorVisible = true; break;
+			case "Lua": LuaEditorVisible = true; break;
 		}
 	}
 
 #pragma warning disable MVVMTK0034
 	private void SyncVisibilityFromDocks() {
+		m_toastZoneFactory.EvictLuaTool();
 		m_hierarchyVisible = m_dockFactory.IsToolVisible("Hierarchy");
 		m_historyVisible = m_dockFactory.IsToolVisible("History");
 		m_locksVisible = m_dockFactory.IsToolVisible("Locks");
@@ -730,6 +761,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		m_curveEditorVisible = m_toastZoneFactory.IsToolVisible("Curve");
 		m_tableEditorVisible = m_toastZoneFactory.IsToolVisible("Table");
 		m_paletteEditorVisible = m_toastZoneFactory.IsToolVisible("Palette");
+		m_luaEditorVisible = LuaEditor.LuaEditorWindow.IsOpen;
 
 		OnPropertyChanged(nameof(HierarchyVisible));
 		OnPropertyChanged(nameof(HistoryVisible));
@@ -742,6 +774,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		OnPropertyChanged(nameof(HapticsEditorVisible));
 		OnPropertyChanged(nameof(CurveEditorVisible));
 		OnPropertyChanged(nameof(TableEditorVisible));
+		OnPropertyChanged(nameof(LuaEditorVisible));
 		OnPropertyChanged(nameof(PaletteEditorVisible));
 	}
 #pragma warning restore MVVMTK0034
@@ -1200,7 +1233,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			}
 		}
 
-		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir, string manifestJsonPath) {
+		async Task BakeAndPack(Action<string> log, string dbName, string dbSourceDir) {
 			var stageDir = Path.Combine(stageRoot, dbName);
 			if (Directory.Exists(stageDir)) {
 					foreach (var f in Directory.EnumerateFiles(stageDir, "*", SearchOption.AllDirectories))
@@ -1214,6 +1247,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			await Task.Run(() => {
 				foreach (var srcFile in Directory.EnumerateFiles(dbSourceDir, "*", SearchOption.AllDirectories)) {
 					var rel = Path.GetRelativePath(dbSourceDir, srcFile);
+					if (rel.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+						continue;
 					var dest = Path.Combine(stageDir, rel);
 					Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
 					File.Copy(srcFile, dest, true);
@@ -1221,32 +1256,13 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				}
 			});
 
-			// Read the manifest JSON to find all node UIDs, then overwrite their staged files with binary
 			log($"  baking nodes in {dbName}/ ...");
-			if (File.Exists(manifestJsonPath)) {
-				var manifestJson = JsonNode.Parse(File.ReadAllText(manifestJsonPath));
-				if (manifestJson?["node"] is JsonObject nodeCollection)
-					foreach (var (uid, pathNode) in nodeCollection) {
-						var virtualPath = pathNode?.GetValue<string>();
-						if (virtualPath is null) continue;
-						var sep = virtualPath.IndexOf("://", StringComparison.Ordinal);
-						if (sep < 0) continue;
-						var rel = virtualPath[(sep + 3)..];
-						var dest = Path.Combine(stageDir, rel.Replace('/', Path.DirectorySeparatorChar));
-						Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
-						log($"    bake {rel}");
-						if (!await Task.Run(() => ToastEngine.BakeAsset(uid, dest)))
-							throw new Exception($"could not bake node {virtualPath}");
-					}
-			}
-
-			// Copy the manifest JSON into the stage folder root
-			var manifestDest = Path.Combine(stageDir, $"{dbName}.json");
-			if (File.Exists(manifestJsonPath)) {
-				log($"  copying manifest {dbName}.json");
-				await Task.Run(() => File.Copy(manifestJsonPath, manifestDest, true));
-			} else {
-				log($"  warning: manifest not found at {manifestJsonPath}");
+			foreach (var node in AssetStore.ListByType("node").Where(n => n.Db == dbName)) {
+				var dest = Path.Combine(stageDir, node.Path.Replace('/', Path.DirectorySeparatorChar));
+				Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+				log($"    bake {node.Path}");
+				if (!await Task.Run(() => ToastEngine.BakeAsset(node.Uid, dest)))
+					throw new Exception($"could not bake node {node.Virtual}");
 			}
 
 			// Run the Rust packer on the staging directory
@@ -1258,23 +1274,12 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 					FileName = packerBin,
 					Arguments = $"\"{stageDir}\" \"{pakOut}\"",
 					WorkingDirectory = ProjectContext.ProjectPath,
-					RedirectStandardOutput = true,
-					RedirectStandardError = true,
 					UseShellExecute = false,
 					CreateNoWindow = true
 				};
-				proc.OutputDataReceived += (_, e) => {
-					if (e.Data is not null) log(e.Data);
-				};
-				proc.ErrorDataReceived += (_, e) => {
-					if (e.Data is not null) log(e.Data);
-				};
-				proc.Start();
-				proc.BeginOutputReadLine();
-				proc.BeginErrorReadLine();
-				proc.WaitForExit();
-				if (proc.ExitCode != 0)
-					throw new Exception($"packer exited with code {proc.ExitCode} for {dbName}");
+				var exitCode = TerminalReader.Run(proc, log);
+				if (exitCode != 0)
+					throw new Exception($"packer exited with code {exitCode} for {dbName}");
 			});
 		}
 
@@ -1292,7 +1297,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			LoaderTask.Run(
 				$"cmake configure ({gameConfig})",
 				"cmake",
-				$"lib/ -B {cmakeCache} {cmakeGenerator} -DTOAST_PATH={toastPath} -DCMAKE_BUILD_TYPE={gameConfig}"
+				$"lib/ -B {cmakeCache} {cmakeGenerator} -DTOAST_PATH=\"{toastPath}\" -DCMAKE_BUILD_TYPE={gameConfig}"
 			),
 			// Build Game DLL
 			LoaderTask.Run(
@@ -1307,17 +1312,24 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		};
 
 		// Bake assets
+		var paks = new List<(string Db, string File)>();
 		foreach (var db in ProjectContext.Databases) {
 			var dbSource = Path.Combine(ProjectContext.ProjectPath, db);
-			var manifestJs = Path.Combine(ProjectContext.CachePath, $"{db}.json");
 			var dbCapture = db;
-			tasks.Add(LoaderTask.Do($"bake & pack {db}://", log => BakeAndPack(log, dbCapture, dbSource, manifestJs)));
+			paks.Add((db, $"{db}.pak"));
+			tasks.Add(LoaderTask.Do($"bake & pack {db}://", log => BakeAndPack(log, dbCapture, dbSource)));
 		}
 
 		// Bake core
-		var coreManifest = Path.Combine(ProjectContext.CachePath, "core.json");
+		paks.Add((AssetStore.CoreDb, $"{AssetStore.CoreDb}.pak"));
 		tasks.Add(LoaderTask.Do("bake & pack core://",
-			log => BakeAndPack(log, "core", ProjectContext.CorePath, coreManifest)));
+			log => BakeAndPack(log, AssetStore.CoreDb, ProjectContext.CorePath)));
+
+		tasks.Add(LoaderTask.Do("write game.db", async log => {
+			var path = Path.Combine(outputDir, AssetStore.RuntimeDatabaseName);
+			await Task.Run(() => AssetStore.ExportRuntimeDatabase(path, paks));
+			log($"  wrote {AssetStore.RuntimeDatabaseName} ({paks.Count} pak(s))");
+		}));
 
 		var vm = new LoaderViewModel(tasks);
 		await new SimpleLoaderWindow(vm).ShowDialog(owner);

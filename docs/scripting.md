@@ -196,7 +196,7 @@ a bitmask at load, so a node whose script only defines `init` costs nothing per 
 
 `tests/scripting` covers schema extraction (types, groups, ordering, collisions),
 scheduling of Lua-only tick functions, hot-reload value preservation, and error
-reporting. The reflection generator's stub emission is covered by its own cargo tests.
+reporting. The reflection generator's stub emission is covered by its own dotnet tests.
 
 ## Expansion
 

@@ -1,6 +1,7 @@
 // Forward glass one box per glass brick far to near
 import voxel_dda;
 import lighting;
+import gi_sample;
 import scene_normal;
 import depth_convention;
 
@@ -21,6 +22,8 @@ struct GlassPush
     uint refractionVoxels;
     /// Lit glass surfaces per brick and pixel past which layers only absorb
     uint litSurfaces;
+    /// 1 when gBackdropDepth holds this frame opaque depth and the pipeline keeps only glass in front of it
+    uint depthTest;
 };
 
 [[vk::push_constant]]
@@ -151,6 +154,8 @@ float3 shadeInterface(float3 hitWorld, float3 normal, float3 view, float2 pixel,
     const float facing = pow(1.0 - saturate(dot(normal, view)), 5.0);
     fresnel = f0 + (1.0 - f0) * facing;
 
+    // Glass scatters a sliver of its diffuse light and a pixel can cross several panes
+    gGiGathered = giCheap(hitWorld, normal);
     // One pass split into lobes since each pass resamples every shadow map
     const ShadingResult lit = shadeSurfaceLighting(surface);
     debugView = lit.isDebugView;
@@ -444,6 +449,18 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
             {
                 touched = true;
                 firstT = t;
+                // Depth is written so the depth test runs after shading and hidden glass would be lit for nothing
+                if (gGlassPush.depthTest != 0u)
+                {
+                    const float4 entry = mul(gCamera.viewProjection, float4(camera + worldDirection * t, 1.0));
+                    const float entryDepth = entry.z / entry.w;
+                    const float opaque = gBackdropDepth.Load(int3(int2(input.position.xy), 0)).r;
+                    // A margin so anything the real test might keep still reaches it
+                    if (isCloserDepth(opaque, entryDepth) && abs(opaque - entryDepth) > 1e-5)
+                    {
+                        return false;
+                    }
+                }
             }
 
             if (!inside && axis >= 0)
@@ -634,4 +651,16 @@ SurfaceOutput fragmentSurface(VSOutput input, out float depth : SV_Depth)
         output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
     }
     return output;
+}
+
+[shader("fragment")]
+float4 fragmentMask(VSOutput input, out float depth : SV_Depth) : SV_Target0
+{
+    GlassComposite glass;
+    if (!compositeGlass(input, true, glass))
+    {
+        discard;
+    }
+    depth = glass.depth;
+    return float4(1.0, 1.0, 1.0, 1.0);
 }

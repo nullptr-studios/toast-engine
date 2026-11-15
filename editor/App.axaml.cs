@@ -1,3 +1,6 @@
+using System;
+using System.IO;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
@@ -24,10 +27,20 @@ public class App : Application {
 		if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop) {
 			desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
-			desktop.MainWindow = new StartWindow.StartWindow {
-				DataContext = new StartWindowViewModel()
-			};
-			desktop.MainWindow.Show();
+			var vm = new StartWindowViewModel();
+
+			// Opened by double clicking a .toast file
+			var projectArg = desktop.Args?.FirstOrDefault(a =>
+				a.EndsWith(".toast", StringComparison.OrdinalIgnoreCase) && File.Exists(a));
+
+			if (projectArg != null) {
+				vm.LaunchProject(Path.GetFullPath(projectArg), null);
+			} else {
+				desktop.MainWindow = new StartWindow.StartWindow {
+					DataContext = vm
+				};
+				desktop.MainWindow.Show();
+			}
 		}
 
 		base.OnFrameworkInitializationCompleted();

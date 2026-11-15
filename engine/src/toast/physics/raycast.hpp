@@ -61,7 +61,7 @@ struct SphereHit {
 	ShapeType shape_type = ShapeType::sphere;
 };
 
-/// The optional layer filter limits which bodies can overlap the sphere.
+/// The optional layer filter limits which bodies can overlap the sphere
 TOAST_API auto sphereOverlap(glm::vec3 position, float radius, std::optional<LayerFilter> layers = std::nullopt)
     -> std::optional<SphereHit>;
 

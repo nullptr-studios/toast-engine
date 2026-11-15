@@ -307,6 +307,15 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		return true;
 	});
 
+	m_capture_listener.subscribe<event::SetDetailTexturePreview>([this](const auto& e) {
+		if (e.uid.empty()) {
+			setVoxelDetailPreview({});
+		} else {
+			setVoxelDetailPreview(assets::load<assets::DetailTexture>(toast::UID(toast::UID::fromString(e.uid))));
+		}
+		return true;
+	});
+
 #if defined(TOAST_DEV_TOOLS)
 	m_imgui_input_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		m_imgui_mouse_pos = {e.x, e.y};
@@ -656,7 +665,7 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 		if (m_voxel_pass != nullptr) {
 			m_voxel_pass->onTargetsRecreated();
 		}
-		std::ranges::fill(m_present_bound_views, vk::ImageView {});
+		bumpTargetGeneration();
 		m_current_frame = 0;
 	} catch (const std::exception& e) { TOAST_CRITICAL("Render", "Failed to recreate output target on resize: {}", e.what()); }
 }

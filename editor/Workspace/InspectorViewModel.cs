@@ -290,6 +290,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 
 			foreach (var p in e.Parameters) {
 				if (!m_fieldByParam.TryGetValue(p.Name, out var vm)) continue;
+				vm.ApplyEngineOptions(p.Options);
 				// don't clobber a value the user is actively editing
 				if ((DateTime.UtcNow - vm.LastEdit).TotalMilliseconds < 250) continue;
 				vm.ApplyEngineString(p.Value);

@@ -1,3 +1,4 @@
+#include "asset_db_fixture.hpp"
 #include "prefab_instancing/prefab_test_helpers.hpp"
 #include "scripting_test_helpers.hpp"
 #include "test_registry.hpp"
@@ -63,8 +64,8 @@ auto sceneWithScriptedLeaves() -> assets::Handle<assets::Prefab> {
 		);
 	}
 	writeFile(assets_dir / "scene.node", scene);
-	writeFile(
-	    cache_dir / "database.json", R"({"node":{"SlowScene00":"assets://scene.node"},"script":{"SlowScrpt00":"assets://slow.lua"}})"
+	test_support::writeAssetDb(
+	    cache_dir / "assets.db", {{"SlowScene00", "node", "assets", "scene.node"}, {"SlowScrpt00", "script", "assets", "slow.lua"}}
 	);
 	WorldTestAccess::initAssetManager(assets_dir.string(), cache_dir.string());
 

@@ -8,11 +8,11 @@
 namespace event {
 
 std::unordered_map<std::type_index, EventSystem::EventInfo> EventSystem::event_data;
-std::shared_mutex EventSystem::registration_mutex;
-std::mutex EventSystem::pool_mutex;
+TOAST_SHARED_LOCKABLE(std::shared_mutex, EventSystem::registration_mutex, "Event registration");
+TOAST_LOCKABLE(std::mutex, EventSystem::pool_mutex, "Event pool");
 std::unordered_map<std::type_index, std::function<void(std::any)>> EventSystem::unsubscribe_map;
 std::vector<std::unique_ptr<void, void (*)(void*)>> EventSystem::deletion_queue;
-std::mutex EventSystem::deletion_mutex;
+TOAST_LOCKABLE(std::mutex, EventSystem::deletion_mutex, "Event deletion");
 
 namespace {
 struct Pool {

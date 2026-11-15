@@ -25,11 +25,13 @@ inline constexpr uint32_t k_occupancy_words_per_brick = 16;
 
 inline constexpr uint32_t k_coarse_bricks = 4;
 
-inline constexpr uint32_t k_palette_words = k_palette_size * 4;
+inline constexpr uint32_t k_palette_entry_words = 8;
+
+inline constexpr uint32_t k_palette_words = k_palette_size * k_palette_entry_words;
 
 static_assert(k_brick_voxel_count % 4 == 0, "brick material bytes must pack into whole 32-bit words");
 static_assert(sizeof(BrickOccupancy) == 64, "occupancy must be eight 64-bit slices");
-static_assert(sizeof(PaletteEntry) == 16, "a palette entry must be four 32-bit words");
+static_assert(sizeof(PaletteEntry) == k_palette_entry_words * sizeof(uint32_t), "a palette entry must be eight 32-bit words");
 
 /// @brief Mirrored member for member by voxel_dda.slang so only 4-byte scalars
 struct VolumeRecord {

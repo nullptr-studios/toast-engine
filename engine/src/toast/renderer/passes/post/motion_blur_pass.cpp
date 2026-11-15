@@ -65,7 +65,7 @@ void MotionBlurPass::createResources(const VulkanCore& core) {
 	const vk::DescriptorPool pool = VulkanRenderer::instance->getDescriptorPoolHandle();
 
 	m_descriptor_sets.clear();
-	m_bound_views.assign(VulkanRenderer::k_frames_in_flight, {});
+	m_bound_views.resize(VulkanRenderer::k_frames_in_flight);
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -77,7 +77,7 @@ void MotionBlurPass::createResources(const VulkanCore& core) {
 void MotionBlurPass::onResize(vk::Extent2D extent) {
 	if (m_core != nullptr) {
 		m_target.create(*m_core, extent, m_scene_format, "MotionBlurPass");
-		std::ranges::fill(m_bound_views, vk::ImageView {});
+		m_bound_views.invalidate();
 	}
 }
 
@@ -110,7 +110,7 @@ auto MotionBlurPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 		m_sequence = frame->sequence;
 	}
 
-	if (m_bound_views[frame_index] != source_view) {
+	if (m_bound_views.update(frame_index, source_view)) {
 		const std::array image_infos {
 		  vk::DescriptorImageInfo(*m_linear_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  // Depth stays eDepthReadOnlyOptimal for the overlay stage
@@ -125,7 +125,6 @@ auto MotionBlurPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Ima
 			);
 		}
 		m_core->getDevice().updateDescriptorSets(writes, {});
-		m_bound_views[frame_index] = source_view;
 	}
 
 	const auto width = static_cast<float>(m_target.extent().width);

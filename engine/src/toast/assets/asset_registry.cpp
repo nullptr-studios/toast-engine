@@ -2,6 +2,10 @@
 
 #include "types.hpp"
 
+#include <algorithm>
+#include <format>
+#include <vector>
+
 namespace assets {
 
 std::unordered_map<std::string, AssetRegistry::RawLoader> AssetRegistry::s_raw;
@@ -35,11 +39,13 @@ void AssetRegistry::init() {
 	s_raw["image_localization"] = [](std::vector<uint8_t> d) { return std::make_unique<ImageLocalization>(std::move(d)); };
 	s_raw["shader"] = [](std::vector<uint8_t> d) { return std::make_unique<Shader>(std::move(d)); };
 	s_raw["animation"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Animation>(d); };
+	s_raw["skeleton"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Skeleton>(d); };
 	s_raw["voxel_model"] = [](const std::vector<uint8_t>& d) { return std::make_unique<VoxelModel>(d); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
 	s_toml["voxel_palette"] = [](const toml::table& t) { return VoxelPalette::fromToml(t); };
+	s_toml["detail_texture"] = [](const toml::table& t) { return DetailTexture::fromToml(t); };
 
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
@@ -112,6 +118,9 @@ void AssetRegistry::init() {
 	s_lua_names["image_localization"] = "ImageLocalization";
 	s_lua_names["voxel_model"] = "VoxelModel";
 	s_lua_names["voxel_palette"] = "VoxelPalette";
+	s_lua_names["detail_texture"] = "DetailTexture";
+	s_lua_names["animation"] = "Animation";
+	s_lua_names["physics_material"] = "PhysicsMaterial";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {
@@ -120,6 +129,22 @@ void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_
 
 auto AssetRegistry::registeredLuaNames() -> const std::unordered_map<std::string, std::string>& {
 	return s_lua_names;
+}
+
+auto AssetRegistry::luaStubs() -> std::string {
+	std::vector<std::string> names;
+	names.reserve(s_lua_names.size());
+	for (const auto& [type, lua_name] : s_lua_names) {
+		names.push_back(lua_name);
+	}
+	std::ranges::sort(names);
+
+	std::string out = "-- generated from registered asset types\n";
+	for (const auto& name : names) {
+		// separate annotations keep the marker from replacing its class
+		out += std::format("\n---@class {0} : Asset\n\n---@type TypeMarker<{0}>\n{0} = nil\n", name);
+	}
+	return out;
 }
 
 void AssetRegistry::registerRaw(std::string_view type, RawLoader loader) {

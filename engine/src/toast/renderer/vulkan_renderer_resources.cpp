@@ -27,6 +27,7 @@
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 #include "toast/renderer/vulkan_renderer_detail.hpp"
+#include "vulkan/vulkan.hpp"
 
 #include <SDL3/SDL_keycode.h>
 #include <iostream>
@@ -297,13 +298,16 @@ void VulkanRenderer::createSceneColorResources() {
 		TOAST_CRITICAL("Render", "Toast Engine Error: VulkanRenderer requires a non-zero output extent for the scene target!");
 	}
 
-	const auto create = [&](
-	                        SceneColorResources& target, vk::Format format, std::string_view label, vk::ImageUsageFlags usage = {}
-	                    ) {
+	const auto create = [&](SceneColorResources& target,
+	                        vk::Format format,
+	                        std::string_view label,
+	                        vk::ImageUsageFlags usage = {},
+	                        uint32_t divide = 1) {
 		target.view.reset();
 		target.image.reset();
 
-		const auto image_ci = colorTargetImageInfo(extent, format, usage);
+		const vk::Extent2D size {(extent.width + divide - 1) / divide, (extent.height + divide - 1) / divide};
+		const auto image_ci = colorTargetImageInfo(size, format, usage);
 
 		vma::AllocationCreateInfo allocation_ci {};
 		allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
@@ -325,6 +329,7 @@ void VulkanRenderer::createSceneColorResources() {
 
 	create(m_scene_color, m_scene_color_format, "SceneColor", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop, m_scene_color_format, "GlassBackdrop", vk::ImageUsageFlagBits::eTransferDst);
+	create(m_glass_mask, vk::Format::eR8Unorm, "GlassMask");
 	create(m_scene_normal, m_scene_normal_format, "SceneNormal", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop_normal, m_scene_normal_format, "GlassBackdropNormal", vk::ImageUsageFlagBits::eTransferDst);
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
@@ -335,6 +340,7 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_voxel_detail_normal, k_voxel_face_normal_format, "VoxelDetailNormal");
 	create(m_voxel_noisy_diffuse, k_voxel_noisy_format, "VoxelNoisyDiffuse");
 	create(m_voxel_noisy_specular, k_voxel_noisy_format, "VoxelNoisySpecular");
+	create(m_voxel_gi, k_voxel_gi_format, "VoxelGi", {}, 2);
 	create(m_voxel_reservoirs[0], k_voxel_reservoir_format, "VoxelReservoirs0");
 	create(m_voxel_reservoirs[1], k_voxel_reservoir_format, "VoxelReservoirs1");
 	create(m_voxel_candidate_reservoirs, k_voxel_reservoir_format, "VoxelCandidateReservoirs");
@@ -459,7 +465,7 @@ void VulkanRenderer::createPresentResources() {
 	const vk::DescriptorSetLayout set_layout = *layouts[0];
 	m_present_sets.clear();
 	m_depth_upscale_sets.clear();
-	m_present_bound_views.assign(k_frames_in_flight, vk::ImageView {});
+	m_present_bound.resize(k_frames_in_flight);
 	for (uint32_t i = 0; i < k_frames_in_flight; ++i) {
 		const vk::DescriptorSetAllocateInfo alloc_info(*m_descriptor_pool, 1, &set_layout);
 		auto allocated = device.allocateDescriptorSets(alloc_info);
@@ -469,7 +475,7 @@ void VulkanRenderer::createPresentResources() {
 		m_depth_upscale_sets.push_back(std::move(depth_set[0]));
 		setDebugName(*m_core, *m_depth_upscale_sets[i], std::format("VulkanRenderer DepthUpscaleSet[{}]", i));
 	}
-	m_depth_upscale_bound.assign(k_frames_in_flight, vk::ImageView {});
+	m_depth_upscale_bound.resize(k_frames_in_flight);
 }
 
 void VulkanRenderer::createFrameResources() {
@@ -758,25 +764,83 @@ void VulkanRenderer::createDefaultDetailArray() {
 	setDebugName(*m_core, *m_detail_sampler, "VulkanRenderer DetailSampler");
 }
 
-void VulkanRenderer::setVoxelDetailLibrary(assets::Handle<assets::Texture> texture) {
+void VulkanRenderer::setVoxelDetailTexture(assets::Handle<assets::DetailTexture> detail) {
 	const std::lock_guard lock(m_detail_mutex);
-	m_voxel_detail_library = std::move(texture);
+	m_voxel_detail_project = std::move(detail);
+}
+
+void VulkanRenderer::setVoxelDetailPreview(assets::Handle<assets::DetailTexture> detail) {
+	const std::lock_guard lock(m_detail_mutex);
+	m_voxel_detail_preview = std::move(detail);
+}
+
+void VulkanRenderer::updateVoxelDetailArray() {
+	ZoneScoped;
+
+	assets::Handle<assets::DetailTexture> active;
+	{
+		const std::lock_guard lock(m_detail_mutex);
+		active = m_voxel_detail_preview.hasValue() ? m_voxel_detail_preview : m_voxel_detail_project;
+
+		// the new array replaces the current one once it can be sampled
+		if (m_detail_array_pending && m_detail_array_pending->isReady() && m_detail_array_pending->getView()) {
+			if (m_detail_array) {
+				m_detail_array_retired.push_back(std::move(m_detail_array));
+			}
+			m_detail_array = std::move(m_detail_array_pending);
+			// wait until the frames in flight no longer use it before retiring
+			while (m_detail_array_retired.size() > 3) {
+				m_detail_array_retired.erase(m_detail_array_retired.begin());
+			}
+		} else if (m_detail_array_pending && m_detail_array_pending->hasFailed()) {
+			m_detail_array_pending.reset();
+		}
+	}
+
+	const uint64_t uid = active.hasValue() ? active.uid().data() : 0;
+	const uint32_t revision = active.hasValue() ? active->revision() : 0;
+	if (uid == m_detail_built_uid && revision == m_detail_built_revision) {
+		return;
+	}
+	// Wait for the upload of the previous build rather than stacking them
+	if (m_detail_array_pending) {
+		return;
+	}
+	m_detail_built_uid = uid;
+	m_detail_built_revision = revision;
+
+	std::optional<DetailArrayData> data;
+	if (active.hasValue()) {
+		data = buildDetailArray(*active);
+	}
+
+	VulkanTexture* target = nullptr;
+	{
+		const std::lock_guard lock(m_detail_mutex);
+		if (!data) {
+			// ddrop back to the neutral default
+			if (m_detail_array) {
+				m_detail_array_retired.push_back(std::move(m_detail_array));
+			}
+			return;
+		}
+		m_detail_array_pending = std::make_unique<VulkanTexture>();
+		target = m_detail_array_pending.get();
+	}
+	queueResourceUpload(std::make_unique<DetailArrayUpload>(*target, std::move(*data), "VoxelDetailArray"));
 }
 
 auto VulkanRenderer::voxelDetailView() const -> vk::ImageView {
 	const std::lock_guard lock(m_detail_mutex);
-	if (m_voxel_detail_library.hasValue()) {
-		const VulkanTexture& gpu = m_voxel_detail_library->gpuTexture();
-		if (gpu.isReady() && gpu.getView()) {
-			return gpu.getView();
-		}
+	if (m_detail_array && m_detail_array->isReady() && m_detail_array->getView()) {
+		return m_detail_array->getView();
 	}
 	return *m_default_detail_view;
 }
 
 void VulkanRenderer::queueResourceUpload(std::unique_ptr<PendingResourceUpload> upload_job) {
 	{
-		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		std::lock_guard lock(m_upload_mutex);
 		m_upload_waiting.push_back(std::move(upload_job));
 	}
 	pumpUploadQueue();
@@ -788,7 +852,7 @@ void VulkanRenderer::pumpUploadQueue() {
 	while (true) {
 		std::unique_ptr<PendingResourceUpload> job;
 		{
-			std::lock_guard<std::mutex> lock(m_upload_mutex);
+			std::lock_guard lock(m_upload_mutex);
 			if (m_upload_waiting.empty()) {
 				return;
 			}
@@ -805,7 +869,7 @@ void VulkanRenderer::pumpUploadQueue() {
 			m_upload_host_bytes.fetch_add(j->host_bytes, std::memory_order_acq_rel);
 
 			{
-				std::lock_guard<std::mutex> lock(m_upload_mutex);
+				std::lock_guard lock(m_upload_mutex);
 				m_upload_staging.push_back(std::move(j));
 			}
 			m_pending_upload_builds.fetch_sub(1, std::memory_order_acq_rel);
@@ -870,7 +934,7 @@ void VulkanRenderer::flushResourceUploads() {
 
 	std::vector<std::unique_ptr<PendingResourceUpload>> jobs_to_flush;
 	{
-		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		std::lock_guard lock(m_upload_mutex);
 		if (m_upload_staging.empty()) {
 			return;
 		}
@@ -883,7 +947,7 @@ void VulkanRenderer::flushResourceUploads() {
 		if (jobs.empty()) {
 			return;
 		}
-		std::lock_guard<std::mutex> lock(m_upload_mutex);
+		std::lock_guard lock(m_upload_mutex);
 		m_upload_staging.insert(m_upload_staging.begin(), std::make_move_iterator(jobs.begin()), std::make_move_iterator(jobs.end()));
 		jobs.clear();
 	};

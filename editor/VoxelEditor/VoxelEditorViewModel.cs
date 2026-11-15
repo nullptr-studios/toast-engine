@@ -14,7 +14,7 @@ using HierarchyElement = editor.Workspace.HierarchyElement;
 
 namespace editor.VoxelEditor;
 
-public enum VoxelTool { Select, Move, Extrude, Buildup, Carve, Paint, Bucket, Split, Slice }
+public enum VoxelTool { Select, Move, Extrude, Buildup, Carve, Paint, Bucket, Split, Slice, Line }
 
 public enum VoxelViewMode { Lit, Albedo, MetallicRoughness, PaletteId, PhysicsMaterial, DdaSteps, Volumes }
 
@@ -72,6 +72,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	[ObservableProperty] private bool m_snapToUnit;
 	[ObservableProperty] private int m_paletteId = 1;
 	[ObservableProperty] private string? m_defaultScript;
+	[ObservableProperty] private string? m_defaultModel;
 	[ObservableProperty] private string m_defaultFillModeName = "Replace";
 	public static IReadOnlyList<string> FillModes { get; } = ["Replace", "Empty Only", "Solid Only", "Match"];
 	private uint DefaultFillMode => (uint)Math.Max(0, FillModes.ToList().IndexOf(DefaultFillModeName));
@@ -137,6 +138,10 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 			"CarveVolume" => [
 				new InspectorSection("Volume", green, "BoxOccluder", ["position", "size"]),
 				new InspectorSection("Script", "Magenta", "Circle", ["m_shape_script"])
+			],
+			"VoxelLine" => [
+				new InspectorSection("Line", green, "BoxMesh", ["position", "size", "axis", "tile_space", "tile_offset", "flip", "mode", "match_id"]),
+				new InspectorSection("Model", green, "MeshItem", ["m_model", "m_palette"])
 			],
 			"VoxelMesh" => [
 				new InspectorSection("Position", green, "Move3d", ["position"]),
@@ -378,6 +383,17 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 		});
 	}
 
+	public void CreateLine((int X, int Y, int Z) min, (int X, int Y, int Z) max, int axis) {
+		if (string.IsNullOrEmpty(DefaultModel)) {
+			_ = App.Modals.ShowWarning("Line", "Pick a voxel model for the Line tool in the toolbar first");
+			return;
+		}
+		Events.Send(new VoxelCreatePiece {
+			Parent = CreationParent(), Type = "toast::VoxelLine", Min = Int3(min), Max = Int3(max), Model = DefaultModel,
+			Axis = (uint)axis, Mode = DefaultFillMode
+		});
+	}
+
 	[RelayCommand]
 	private void AddMesh() {
 		EnsureEngine();
@@ -482,7 +498,8 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	}
 
 	private static bool IsPiece(HierarchyElement node) {
-		return IsVolume(node) || node.Type.EndsWith("VoxelMesh", StringComparison.Ordinal);
+		return IsVolume(node) || node.Type.EndsWith("VoxelMesh", StringComparison.Ordinal) ||
+		       node.Type.EndsWith("VoxelLine", StringComparison.Ordinal);
 	}
 
 	// Split and Slice only cut the selected shape
@@ -491,7 +508,9 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	}
 
 	private string CreationParent() {
-		if (Hierarchy.SelectedNode is { Type: "toast::VoxelGroup" } group) return group.Uid;
+		var selected = Hierarchy.SelectedNode;
+		if (selected is { Type: "toast::VoxelGroup" } group) return group.Uid;
+		if (selected?.Parent is { Type: "toast::VoxelGroup" } owner) return owner.Uid;
 		return Workspace.RootUid ?? "";
 	}
 
@@ -524,6 +543,10 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 	}
 
 	partial void OnDefaultScriptChanged(string? value) {
+		SendTool();
+	}
+
+	partial void OnDefaultModelChanged(string? value) {
 		SendTool();
 	}
 
@@ -603,7 +626,7 @@ public partial class VoxelEditorViewModel : ObservableObject, IDisposable {
 		if (!OwnsEngine) return;
 		Events.Send(new SetVoxelTool {
 			Tool = (uint)ActiveTool, PaintId = (uint)Math.Clamp(PaletteId, 1, 255), DefaultScript = DefaultScript ?? "",
-			DefaultMode = DefaultFillMode
+			DefaultMode = DefaultFillMode, DefaultModel = DefaultModel ?? ""
 		});
 		var gizmo = ActiveTool == VoxelTool.Move ? GizmoTool.VolumeFaces : GizmoTool.Select;
 		Events.Send(new SetGizmoTool { Tool = (uint)gizmo });

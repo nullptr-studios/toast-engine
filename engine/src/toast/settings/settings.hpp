@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 #include <unordered_map>
 #include <variant>
 #include <vector>
@@ -186,7 +187,7 @@ private:
 		auto operator()(std::string_view key) const -> size_t { return std::hash<std::string_view> {}(key); }
 	};
 
-	std::recursive_mutex m_mutex;
+	TOAST_LOCKABLE(std::recursive_mutex, m_mutex, "Settings");
 	std::deque<Entry> m_entries;
 	std::unordered_map<std::string, Entry*, TransparentHash, std::equal_to<>> m_by_key;
 

@@ -221,7 +221,7 @@ function VoxelNodeProxy:localBoundingSphere() end
 
 -- Procedural voxel pieces
 --
--- FillVolume, CarveVolume, PaintVolume and VoxelMesh are pieces of a ProceduralVoxel
+-- FillVolume, CarveVolume, PaintVolume, VoxelMesh and VoxelLine are pieces of a ProceduralVoxel
 -- Each one draws into its own grid with editShape and the ProceduralVoxel applies them top to bottom
 -- Positions are in voxels from the piece corner and nothing can be drawn past getSize()
 --
@@ -427,6 +427,25 @@ function VoxelMeshProxy:getPalette() end
 
 ---@param palette Asset
 function VoxelMeshProxy:setPalette(palette) end
+
+---@class VoxelLine: VoxelVolume
+---@field flip boolean The model is mirrored across the line so the other side faces out
+local VoxelLineProxy = {}
+
+--- The voxel model the line repeats
+---@return Asset
+function VoxelLineProxy:getModel() end
+
+--- Swaps the model and redraws the line
+---@param model Asset
+function VoxelLineProxy:setModel(model) end
+
+--- The palette that replaces the model colors
+---@return Asset
+function VoxelLineProxy:getPalette() end
+
+---@param palette Asset
+function VoxelLineProxy:setPalette(palette) end
 
 ---@class VoxelBucket
 local VoxelBucketProxy = {}

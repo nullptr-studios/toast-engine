@@ -1,5 +1,6 @@
 <Solution>
-    <Project Path="editor/editor.csproj"/>
-    <Project Path="tools/player/player.csproj"/>
-    <Project Path="tools/crash_reporter/crash_reporter.csproj"/>
+    <Project Path="editor/editor.csproj" />
+    <Project Path="tools/player/player.csproj" />
+    <Project Path="tools/crash_reporter/crash_reporter.csproj" />
+    <Project Path="tools/reflection_generator/reflection_generator.csproj" />
 </Solution>

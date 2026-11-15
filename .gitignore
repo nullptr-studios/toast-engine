@@ -14,6 +14,8 @@ logs/
 **[Oo]bj**
 **[Tt]arget**
 !**/CrashTarget.cs
+!**/BuildInfo.cs
+!editor/LuaEditor/Graph/GraphBuilder.cs
 [Oo]ut
 engine/include/
 vcpkg_installed/
@@ -31,12 +33,10 @@ CMakeUserPresets.json
 **.sln
 vsxmake**/
 vs**/
-Cargo.lock
 *.user
 
 # exclusions
 !/tests/**
 !/toast/src/**
 
-!/tools/reflection_generator/build.rs
 **/imgui.ini

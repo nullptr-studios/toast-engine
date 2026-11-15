@@ -4,9 +4,12 @@
 //
 
 using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using editor.Engine;
 using editor.Git;
+using editor.Install;
 
 namespace editor;
 
@@ -15,6 +18,14 @@ internal sealed class Program {
 	public static int Main(string[] args) {
 		// Launched by git or ssh as the askpass program
 		if (GitAskpass.IsHelperInvocation) return GitAskpass.RunHelper(args);
+
+		// Used by the Linux install script
+		if (args.Contains("--register")) {
+			ShellIntegration.Apply();
+			return 0;
+		}
+
+		Task.Run(ShellIntegration.Apply);
 
 		return BuildAvaloniaApp()
 			.StartWithClassicDesktopLifetime(args);

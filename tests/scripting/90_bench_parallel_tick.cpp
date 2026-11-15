@@ -1,3 +1,4 @@
+#include "asset_db_fixture.hpp"
 #include "scripting_test_helpers.hpp"
 #include "test_registry.hpp"
 #include "toast/scripting/lua_state.hpp"
@@ -292,9 +293,8 @@ void instantiateCase(int leaf_count, int chunk_iterations) {
 		);
 	}
 	writeFile(tmp / "assets" / "scene.node", scene);
-	writeFile(
-	    tmp / "cache" / "database.json",
-	    std::format(R"({{"node":{{"{0}":"assets://scene.node"}},"script":{{"{1}":"assets://bench.lua"}}}})", scene_uid, script_uid)
+	test_support::writeAssetDb(
+	    tmp / "cache" / "assets.db", {{scene_uid, "node", "assets", "scene.node"}, {script_uid, "script", "assets", "bench.lua"}}
 	);
 	toast::_detail::WorldTestAccess::initAssetManager((tmp / "assets").string(), (tmp / "cache").string());
 

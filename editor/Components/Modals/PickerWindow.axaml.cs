@@ -21,6 +21,15 @@ public partial class PickerWindow : Window {
 	private object? m_selected;
 	private string? m_hoveredThumbnail;
 
+	public PickerWindow() : this(new EmptyPickerViewModel()) { }
+
+	private sealed class EmptyPickerViewModel : PickerViewModel {
+		public override string WindowTitle => "Select";
+		public override System.Collections.IEnumerable Items => Array.Empty<object>();
+		public override void UpdateFilter(string query, bool caseSensitive) { }
+		public override string? GetResult(object? selected) => null;
+	}
+
 	protected PickerWindow(PickerViewModel vm) {
 		DataContext = vm;
 		InitializeComponent();

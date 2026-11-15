@@ -14,6 +14,9 @@ jobs:
   release:
     name: tag and release
     runs-on: [self-hosted, Linux, X64]
+    outputs:
+      new_tag: ${{ steps.version.outputs.new_tag }}
+      create_release: ${{ steps.version.outputs.create_release }}
     if: github.event.pull_request.merged == true && github.event.pull_request.base.repo.fork == false && github.event.pull_request.base.repo.full_name == github.repository
     steps:
       - name: Checkout repository
@@ -83,8 +86,32 @@ jobs:
               repo: context.repo.repo,
               tag_name: tag,
               name: `Toast Engine v${tag}`,
-              body: ""
+              body: "",
+              // Published once the installers are attached, editors only follow the latest published release
+              draft: true
             });
+
+  package:
+    name: package installers
+    needs: release
+    if: needs.release.outputs.create_release == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/package-release.yml
+    with:
+      tag: ${{ needs.release.outputs.new_tag }}
+
+  publish:
+    name: publish release
+    needs: [release, package]
+    runs-on: [self-hosted, Linux, X64]
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit "${{ needs.release.outputs.new_tag }}" --repo "${{ github.repository }}" --draft=false --latest
 
   deploy-docs:
     name: Deploy Doxygen docs

@@ -1,97 +1,13 @@
 #include "animation.hpp"
 
+#include "binary_io.hpp"
+
 namespace assets {
 
 namespace {
 
-/// @brief Bounds-checked sequential reader over the .tanim byte blob
-///
-/// Every read goes through here so a truncated or corrupt file fails on the read that runs off the end
-/// rather than quietly returning garbage that only shows up as a broken pose much later
-class Reader {
-public:
-	explicit Reader(std::span<const uint8_t> data) : m_data(data) { }
-
-	template<typename T>
-	auto read() -> T {
-		static_assert(std::is_trivially_copyable_v<T>);
-		if (m_offset + sizeof(T) > m_data.size()) {
-			m_overflowed = true;
-			return T {};
-		}
-		T value {};
-		std::memcpy(&value, m_data.data() + m_offset, sizeof(T));
-		m_offset += sizeof(T);
-		return value;
-	}
-
-	auto readString() -> std::string {
-		const auto length = read<uint32_t>();
-		if (m_overflowed || m_offset + length > m_data.size()) {
-			m_overflowed = true;
-			return {};
-		}
-		std::string value(reinterpret_cast<const char*>(m_data.data() + m_offset), length);
-		m_offset += length;
-		return value;
-	}
-
-	/// @brief Reads a length-prefixed array of trivially copyable values
-	template<typename T>
-	auto readArray() -> std::vector<T> {
-		const auto count = read<uint32_t>();
-		if (m_overflowed || m_offset + (static_cast<size_t>(count) * sizeof(T)) > m_data.size()) {
-			m_overflowed = true;
-			return {};
-		}
-		std::vector<T> values(count);
-		if (count > 0) {
-			std::memcpy(values.data(), m_data.data() + m_offset, static_cast<size_t>(count) * sizeof(T));
-			m_offset += static_cast<size_t>(count) * sizeof(T);
-		}
-		return values;
-	}
-
-	[[nodiscard]]
-	auto overflowed() const -> bool {
-		return m_overflowed;
-	}
-
-private:
-	std::span<const uint8_t> m_data;
-	size_t m_offset = 0;
-	bool m_overflowed = false;
-};
-
-/// @brief Append-only writer producing the layout Reader expects
-class Writer {
-public:
-	template<typename T>
-	void write(const T& value) {
-		static_assert(std::is_trivially_copyable_v<T>);
-		const auto* bytes = reinterpret_cast<const uint8_t*>(&value);
-		m_data.insert(m_data.end(), bytes, bytes + sizeof(T));
-	}
-
-	void writeString(const std::string& value) {
-		write(static_cast<uint32_t>(value.size()));
-		m_data.insert(m_data.end(), value.begin(), value.end());
-	}
-
-	template<typename T>
-	void writeArray(const std::vector<T>& values) {
-		write(static_cast<uint32_t>(values.size()));
-		if (!values.empty()) {
-			const auto* bytes = reinterpret_cast<const uint8_t*>(values.data());
-			m_data.insert(m_data.end(), bytes, bytes + (values.size() * sizeof(T)));
-		}
-	}
-
-	auto take() -> std::vector<uint8_t> { return std::move(m_data); }
-
-private:
-	std::vector<uint8_t> m_data;
-};
+using _detail::Reader;
+using _detail::Writer;
 
 constexpr std::array<uint8_t, 4> k_magic {'T', 'A', 'N', 'M'};
 
@@ -200,20 +116,6 @@ auto AnimationTrack::sampleQuat(float time) const -> glm::quat {
 	return glm::normalize(glm::slerp(quat_values[index], quat_values[index + 1], t));
 }
 
-auto Skin::jointMatrices(std::span<const glm::mat4> joint_world_transforms) const -> std::vector<glm::mat4> {
-	ZoneScoped;
-	std::vector<glm::mat4> matrices(joints.size(), glm::mat4(1.0f));
-
-	for (size_t i = 0; i < joints.size(); ++i) {
-		const glm::mat4 world = i < joint_world_transforms.size() ? joint_world_transforms[i] : glm::mat4(1.0f);
-		// An empty inverse-bind array is legal in glTF and means identity for every joint
-		const glm::mat4 inverse_bind = i < inverse_bind_matrices.size() ? inverse_bind_matrices[i] : glm::mat4(1.0f);
-		matrices[i] = world * inverse_bind;
-	}
-
-	return matrices;
-}
-
 auto AnimationClip::sample(float time) const -> std::unordered_map<std::string, NodePose> {
 	ZoneScoped;
 	std::unordered_map<std::string, NodePose> poses;
@@ -225,22 +127,33 @@ auto AnimationClip::sample(float time) const -> std::unordered_map<std::string, 
 		NodePose& pose = poses[track.target_node];
 
 		switch (track.target) {
-			case TrackTarget::translation:
-				pose.translation = track.sampleVec3(time);
-				pose.has_translation = true;
-				break;
-			case TrackTarget::rotation:
-				pose.rotation = track.sampleQuat(time);
-				pose.has_rotation = true;
-				break;
+			case TrackTarget::translation: pose.translation = track.sampleVec3(time); break;
+			case TrackTarget::rotation: pose.rotation = track.sampleQuat(time); break;
 			case TrackTarget::scale:
-				pose.scale = track.sampleVec3(time);
-				pose.has_scale = true;
+				// pose.scale = track.sampleVec3(time);
+				// pose.has_scale = true; // fuck the scale
 				break;
 		}
 	}
 
 	return poses;
+}
+
+void AnimationClip::sampleInto(float time, std::span<const int32_t> track_to_bone, std::span<BonePose> pose) const {
+	ZoneScoped;
+	const size_t count = std::min(tracks.size(), track_to_bone.size());
+	for (size_t i = 0; i < count; ++i) {
+		const int32_t bone = track_to_bone[i];
+		if (bone < 0 || std::cmp_greater_equal(bone, pose.size())) {
+			continue;
+		}
+		const auto& track = tracks[i];
+		switch (track.target) {
+			case TrackTarget::translation: pose[bone].translation = track.sampleVec3(time); break;
+			case TrackTarget::rotation: pose[bone].rotation = track.sampleQuat(time); break;
+			case TrackTarget::scale: break;    // ignored like sample()
+		}
+	}
 }
 
 Animation::Animation(std::span<const uint8_t> data) {
@@ -261,91 +174,42 @@ Animation::Animation(std::span<const uint8_t> data) {
 		return;
 	}
 
-	const auto clip_count = reader.read<uint32_t>();
-	m_clips.reserve(clip_count);
-	for (uint32_t i = 0; i < clip_count && !reader.overflowed(); ++i) {
-		AnimationClip clip;
-		clip.name = reader.readString();
-		clip.duration = reader.read<float>();
-
-		const auto track_count = reader.read<uint32_t>();
-		clip.tracks.reserve(track_count);
-		for (uint32_t t = 0; t < track_count && !reader.overflowed(); ++t) {
-			AnimationTrack track;
-			track.target_node = reader.readString();
-			track.target = static_cast<TrackTarget>(reader.read<uint8_t>());
-			track.interpolation = static_cast<Interpolation>(reader.read<uint8_t>());
-			track.times = reader.readArray<float>();
-			track.vec3_values = reader.readArray<glm::vec3>();
-			track.quat_values = reader.readArray<glm::quat>();
-			clip.tracks.push_back(std::move(track));
-		}
-		m_clips.push_back(std::move(clip));
-	}
-
-	const auto skin_count = reader.read<uint32_t>();
-	m_skins.reserve(skin_count);
-	for (uint32_t i = 0; i < skin_count && !reader.overflowed(); ++i) {
-		Skin skin;
-		skin.name = reader.readString();
-		skin.skeleton_root = reader.readString();
-
-		const auto joint_count = reader.read<uint32_t>();
-		skin.joints.reserve(joint_count);
-		for (uint32_t j = 0; j < joint_count && !reader.overflowed(); ++j) {
-			skin.joints.push_back(reader.readString());
-		}
-		skin.inverse_bind_matrices = reader.readArray<glm::mat4>();
-		m_skins.push_back(std::move(skin));
+	m_clip.name = reader.readString();
+	m_clip.duration = reader.read<float>();
+	const auto track_count = reader.read<uint32_t>();
+	m_clip.tracks.reserve(track_count);
+	for (uint32_t t = 0; t < track_count && !reader.overflowed(); ++t) {
+		AnimationTrack track;
+		track.target_node = reader.readString();
+		track.target = static_cast<TrackTarget>(reader.read<uint8_t>());
+		track.interpolation = static_cast<Interpolation>(reader.read<uint8_t>());
+		track.times = reader.readArray<float>();
+		track.vec3_values = reader.readArray<glm::vec3>();
+		track.quat_values = reader.readArray<glm::quat>();
+		m_clip.tracks.push_back(std::move(track));
 	}
 
 	if (reader.overflowed()) {
-		TOAST_ERROR("Animation", "Truncated .tanim file; loaded {} clip(s) before running out of data", m_clips.size());
+		TOAST_ERROR("Animation", "Truncated .tanim file '{}'", m_clip.name);
 	}
 }
 
-auto Animation::findClip(std::string_view name) const -> const AnimationClip* {
-	for (const auto& clip : m_clips) {
-		if (clip.name == name) {
-			return &clip;
-		}
-	}
-	return nullptr;
-}
-
-auto Animation::toBinary(const std::vector<AnimationClip>& clips, const std::vector<Skin>& skins) -> std::vector<uint8_t> {
+auto Animation::toBinary(const AnimationClip& clip) -> std::vector<uint8_t> {
 	ZoneScoped;
 	Writer writer;
 	writer.write(k_magic);
 	writer.write(_detail::animation_format_version);
-
-	writer.write(static_cast<uint32_t>(clips.size()));
-	for (const auto& clip : clips) {
-		writer.writeString(clip.name);
-		writer.write(clip.duration);
-
-		writer.write(static_cast<uint32_t>(clip.tracks.size()));
-		for (const auto& track : clip.tracks) {
-			writer.writeString(track.target_node);
-			writer.write(static_cast<uint8_t>(track.target));
-			writer.write(static_cast<uint8_t>(track.interpolation));
-			writer.writeArray(track.times);
-			writer.writeArray(track.vec3_values);
-			writer.writeArray(track.quat_values);
-		}
+	writer.writeString(clip.name);
+	writer.write(clip.duration);
+	writer.write(static_cast<uint32_t>(clip.tracks.size()));
+	for (const auto& track : clip.tracks) {
+		writer.writeString(track.target_node);
+		writer.write(static_cast<uint8_t>(track.target));
+		writer.write(static_cast<uint8_t>(track.interpolation));
+		writer.writeArray(track.times);
+		writer.writeArray(track.vec3_values);
+		writer.writeArray(track.quat_values);
 	}
-
-	writer.write(static_cast<uint32_t>(skins.size()));
-	for (const auto& skin : skins) {
-		writer.writeString(skin.name);
-		writer.writeString(skin.skeleton_root);
-		writer.write(static_cast<uint32_t>(skin.joints.size()));
-		for (const auto& joint : skin.joints) {
-			writer.writeString(joint);
-		}
-		writer.writeArray(skin.inverse_bind_matrices);
-	}
-
 	return writer.take();
 }
 

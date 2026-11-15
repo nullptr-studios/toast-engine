@@ -43,6 +43,8 @@ inline constexpr vk::Format k_voxel_face_normal_format = vk::Format::eA2B10G10R1
 
 /// Marched and sampled light terms before voxel_denoise.slang and never negative
 inline constexpr vk::Format k_voxel_noisy_format = vk::Format::eB10G11R11UfloatPack32;
+/// Half resolution clipmap gather with a signed alpha marking pixels that gathered nothing
+inline constexpr vk::Format k_voxel_gi_format = vk::Format::eR16G16B16A16Sfloat;
 
 /// voxel_lighting.slang packReservoir
 inline constexpr vk::Format k_voxel_reservoir_format = vk::Format::eR32G32B32A32Uint;

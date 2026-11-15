@@ -67,6 +67,8 @@ public partial class NewProjectWindow : Window {
 		UpdateProjectData();
 	}
 
+	private static string Res(string relative) => Path.Combine(AppContext.BaseDirectory, "Resources", relative);
+
 	private async void Create_OnClick(object? sender, RoutedEventArgs e) {
 		UpdateProjectData();
 		ProjectVersion = [1, 0, 0];
@@ -99,17 +101,17 @@ public partial class NewProjectWindow : Window {
 			Directory.CreateDirectory(Path.Combine(m_projectFolder, "build"));
 
 			// Gitignore
-			File.Copy("Resources/files/project.gitignore", Path.Combine(m_projectFolder, ".gitignore"));
-			File.Copy("Resources/files/project.luarc.json", Path.Combine(m_projectFolder, ".luarc.json"));
+			File.Copy(Res("files/project.gitignore"), Path.Combine(m_projectFolder, ".gitignore"));
+			File.Copy(Res("files/project.luarc.json"), Path.Combine(m_projectFolder, ".luarc.json"));
 
 			// C++ library
 			Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src"));
 			Directory.CreateDirectory(Path.Combine(m_projectFolder, "lib", "src", "_detail"));
-			File.Copy("Resources/files/lib/CMakeLists.txt", Path.Combine(m_projectFolder, "lib", "CMakeLists.txt"));
-			File.Copy("Resources/files/lib/src/my_game.hpp", Path.Combine(m_projectFolder, "lib", "src", "my_game.hpp"));
-			File.Copy("Resources/files/lib/src/_detail/game.h",
+			File.Copy(Res("files/lib/CMakeLists.txt"), Path.Combine(m_projectFolder, "lib", "CMakeLists.txt"));
+			File.Copy(Res("files/lib/src/my_game.hpp"), Path.Combine(m_projectFolder, "lib", "src", "my_game.hpp"));
+			File.Copy(Res("files/lib/src/_detail/game.h"),
 				Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.h"));
-			File.Copy("Resources/files/lib/src/_detail/game.cpp",
+			File.Copy(Res("files/lib/src/_detail/game.cpp"),
 				Path.Combine(m_projectFolder, "lib", "src", "_detail", "game.cpp"));
 
 			Close(true);

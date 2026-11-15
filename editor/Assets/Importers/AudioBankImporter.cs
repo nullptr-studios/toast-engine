@@ -30,7 +30,7 @@ public class AudioBankImporter : IAssetImporter {
 			File.Copy(realSourcePath, destPath, true);
 
 			log("Writing .meta sidecar...");
-			var uid = ctx.UidFor(0);
+			var uid = UidGenerator.Generate();
 			var header = new MetaHeader { Uid = uid, Type = PrimaryOutputType.Type, Source = ctx.SourceVirtualPath };
 			MetaFile.Write(destPath, header);
 			return Task.FromResult<IReadOnlyList<string>>([uid]);

@@ -97,6 +97,9 @@
       "version>=": "1.10.0"
     },
     {
+      "name": "sqlite3"
+    },
+    {
       "name": "indicators",
       "version>=": "2.3"
     },
@@ -142,8 +145,7 @@
   "overrides": [
     {
       "name": "tracy",
-      "version": "0.14.1",
-      "port-version": 1
+      "version": "0.15.0"
     },
     {
       "name": "lua",

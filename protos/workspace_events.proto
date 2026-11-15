@@ -1,4 +1,5 @@
 syntax = "proto3";
+option optimize_for = LITE_RUNTIME;
 package proto.events;
 
 message HierarchyElement {
@@ -202,6 +203,8 @@ message VoxelCreatePiece {
   VoxelInt3 max = 5;
   string script = 6;
   uint32 mode = 7;
+  string model = 8;
+  uint32 axis = 9;
 }
 
 message VoxelExtrude {
@@ -310,6 +313,7 @@ message SetVoxelTool {
   uint32 paint_id = 2;
   string default_script = 3;
   uint32 default_mode = 4;
+  string default_model = 5;
 }
 
 message SetShowOthers {
@@ -356,6 +360,15 @@ message EditorCameraFlyMode {
 // Requests a single RenderDoc frame capture around the next rendered frame; no-op if RenderDoc isn't attached
 message CaptureFrame {}
 
+message PreviewAssetToml {
+  string uid = 1;
+  string toml = 2;
+}
+
+message SetDetailTexturePreview {
+  string uid = 1;
+}
+
 message EditorCameraMoveState {
   bool forward = 1;
   bool back = 2;
@@ -394,6 +407,7 @@ message EditorCameraGesture {
 message InspectorField {
   string name = 1;
   string value = 2;
+  repeated string options = 3;
 }
 
 message InspectorMessage {

@@ -1,0 +1,148 @@
+name: package-release
+
+# Builds editor RelWithDebInfo
+# Attaches the Windows installer and the Linux tarball to a release
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag, e.g. 2.8.0
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, e.g. 2.8.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  windows:
+    name: windows installer
+    runs-on: [self-hosted, windows]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 1
+          submodules: true
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup vcpkg
+        id: vcpkg
+        uses: ./.github/actions/setup-vcpkg
+
+      - name: Build editor
+        run: |
+          cmake -B build/package `
+            -G Ninja `
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo `
+            -DCMAKE_C_COMPILER=cl `
+            -DCMAKE_CXX_COMPILER=cl `
+            -DCMAKE_TOOLCHAIN_FILE="${{ steps.vcpkg.outputs.toolchain-file }}" `
+            -DVCPKG_TARGET_TRIPLET=x64-windows
+          cmake --build build/package --target editor
+
+      - name: Stage out/RelWithDebInfo
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stage = Join-Path $env:RUNNER_TEMP 'toast-stage'
+          if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
+          New-Item -ItemType Directory $stage | Out-Null
+          Copy-Item -Recurse -Force 'out/RelWithDebInfo/*' $stage
+          foreach ($name in Get-Content tools/installer/exclude.txt) {
+            if ($name.Trim()) { Remove-Item -Recurse -Force (Join-Path $stage $name.Trim()) -ErrorAction SilentlyContinue }
+          }
+          Set-Content -NoNewline -Path (Join-Path $stage 'version.txt') -Value '${{ inputs.tag }}'
+          "STAGE=$stage" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $dir = Join-Path $env:RUNNER_TOOL_CACHE 'InnoSetup'
+          if (-not (Test-Path (Join-Path $dir 'ISCC.exe'))) {
+            $setup = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
+            Invoke-WebRequest -Uri 'https://jrsoftware.org/download.php/is.exe' -OutFile $setup
+            Start-Process -Wait -FilePath $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=$dir"
+          }
+          "ISCC=$(Join-Path $dir 'ISCC.exe')" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          & $env:ISCC "/DAppVersion=${{ inputs.tag }}" "/DSourceDir=$env:STAGE" "/O$env:RUNNER_TEMP" tools/installer/toast-engine.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed" }
+
+      - name: Upload to release
+        shell: pwsh
+        run: gh release upload "${{ inputs.tag }}" "$env:RUNNER_TEMP/ToastEngine-${{ inputs.tag }}-setup.exe" --clobber --repo "${{ github.repository }}"
+
+  linux:
+    name: linux tarball
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 1
+          submodules: true
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31.10.6
+
+      - name: Build editor
+        run: nix develop --command bash -c "
+          rustup toolchain install stable --no-self-update &&
+          rustup default stable &&
+          cmake -B build/package -G Ninja
+            -DCMAKE_C_COMPILER=clang
+            -DCMAKE_CXX_COMPILER=clang++
+            -DCMAKE_BUILD_TYPE=RelWithDebInfo
+            -DTOAST_X86_MARCH=x86-64
+            -DCMAKE_TOOLCHAIN_FILE=\$VCPKG_ROOT/scripts/buildsystems/vcpkg.cmake
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache &&
+          cmake --build build/package --parallel \$(nproc) --target editor
+          "
+
+      - name: Package
+        shell: bash
+        run: |
+          set -euo pipefail
+          name="toast-engine-${{ inputs.tag }}-linux-x64"
+          stage="${RUNNER_TEMP}/${name}"
+          rm -rf "${stage}"
+          mkdir -p "${stage}"
+          cp -r out/RelWithDebInfo/. "${stage}/"
+          while read -r entry; do
+            [[ -n "${entry}" ]] && rm -rf "${stage:?}/${entry}"
+          done < tools/installer/exclude.txt
+          printf '%s' "${{ inputs.tag }}" > "${stage}/version.txt"
+          cp tools/installer/linux/install.sh "${stage}/install.sh"
+          chmod +x "${stage}/install.sh"
+          tar -C "${RUNNER_TEMP}" -czf "${RUNNER_TEMP}/${name}.tar.gz" "${name}"
+          echo "TARBALL=${RUNNER_TEMP}/${name}.tar.gz" >> "${GITHUB_ENV}"
+
+      - name: Upload to release
+        run: gh release upload "${{ inputs.tag }}" "${TARBALL}" --clobber --repo "${{ github.repository }}"

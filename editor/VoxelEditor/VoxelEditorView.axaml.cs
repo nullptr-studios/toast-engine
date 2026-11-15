@@ -67,6 +67,7 @@ public partial class VoxelEditorView : UserControl {
 			case Key.T when mods == KeyModifiers.Shift: vm.SetToolCommand.Execute("Bucket"); break;
 			case Key.Y when mods == KeyModifiers.None: vm.SetToolCommand.Execute("Split"); break;
 			case Key.Y when mods == KeyModifiers.Shift: vm.SetToolCommand.Execute("Slice"); break;
+			case Key.U when mods == KeyModifiers.None: vm.SetToolCommand.Execute("Line"); break;
 			case Key.G when mods == KeyModifiers.None: vm.ShowUnitGrid = !vm.ShowUnitGrid; break;
 			case Key.G when mods == KeyModifiers.Shift: vm.ShowVoxelGrid = !vm.ShowVoxelGrid; break;
 			case Key.G when mods == KeyModifiers.Alt: vm.ShowVoxelEdges = !vm.ShowVoxelEdges; break;

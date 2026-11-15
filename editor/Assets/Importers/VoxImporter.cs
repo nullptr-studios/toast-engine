@@ -80,16 +80,11 @@ public partial class VoxImporter : IAssetImporter {
 		log($"Reading {Path.GetFileName(realSourcePath)}...");
 		await Task.Run(() => vox_generate_intermediates(realSourcePath, tempDir, paletteUid));
 
-		// An empty directory means the native parse failed
 		var temp = new DirectoryInfo(tempDir);
-		var models = temp.Exists ? temp.GetFiles("*.tvox").OrderBy(f => f.Name).ToList() : [];
-		// we need to allow when we only have a palette and no models
-		//if (models.Count == 0) {
-		//	throw new Exception(
-		//		$"Voxel import produced no models in {tempDir} - check the editor log for the underlying error");
-		//}
-
-		var manifest = temp.GetFiles("*.json").FirstOrDefault();
+		var manifest = temp.Exists ? temp.GetFiles("*.json").FirstOrDefault() : null;
+		if (manifest is null)
+			throw new InvalidOperationException($"Voxel import produced no manifest for {realSourcePath}.");
+		var models = temp.GetFiles("*.tvox").OrderBy(f => f.Name).ToList();
 		var importedUids = new List<string>();
 		var totalItems = models.Count + 2;
 		var doneItems = 0;
@@ -143,7 +138,7 @@ public partial class VoxImporter : IAssetImporter {
 		doneItems++;
 		ReportProgress();
 
-		if (m_settings.GeneratePrefab && manifest is not null) {
+		if (m_settings.GeneratePrefab) {
 			log("Updating the scene manifest with UIDs...");
 			var json = await File.ReadAllTextAsync(manifest.FullName);
 			foreach (var (fileName, uid) in modelUids) {
@@ -168,8 +163,7 @@ public partial class VoxImporter : IAssetImporter {
 		doneItems++;
 		ReportProgress();
 
-		log("Rebuilding asset database...");
-		AssetDatabase.RebuildAssetDatabase();
+		if (!ctx.IsStaging) AssetDatabase.RebuildAssetDatabase();
 
 		log("Removing intermediates...");
 		if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
