@@ -477,6 +477,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				}
 
 				break;
+			case "DetailTextureEditor":
+				DetailTextureEditor.DetailTextureEditorWindow.Open(uid);
+				break;
 		}
 	}
 

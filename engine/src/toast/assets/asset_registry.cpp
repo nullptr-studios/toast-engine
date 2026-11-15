@@ -45,6 +45,7 @@ void AssetRegistry::init() {
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
 	s_toml["voxel_palette"] = [](const toml::table& t) { return VoxelPalette::fromToml(t); };
+	s_toml["detail_texture"] = [](const toml::table& t) { return DetailTexture::fromToml(t); };
 
 	// TOML + Schema loaders
 	s_schema_toml["data"] = [](const toml::table& t, Handle<Schema> s) { return std::make_unique<Data>(t, std::move(s)); };
@@ -117,6 +118,7 @@ void AssetRegistry::init() {
 	s_lua_names["image_localization"] = "ImageLocalization";
 	s_lua_names["voxel_model"] = "VoxelModel";
 	s_lua_names["voxel_palette"] = "VoxelPalette";
+	s_lua_names["detail_texture"] = "DetailTexture";
 	s_lua_names["animation"] = "Animation";
 	s_lua_names["physics_material"] = "PhysicsMaterial";
 }

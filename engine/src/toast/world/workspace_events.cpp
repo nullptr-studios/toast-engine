@@ -587,6 +587,39 @@ struct ProtoTraits<CaptureFrame> {
 TOAST_PROTO_EVENT(CaptureFrame);
 
 template<>
+struct ProtoTraits<PreviewAssetToml> {
+	using Proto = proto::events::PreviewAssetToml;
+	using Event = PreviewAssetToml;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_uid(e.uid);
+		p.set_toml(e.toml);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.uid(), p.toml()}; }
+};
+
+TOAST_PROTO_EVENT(PreviewAssetToml);
+
+template<>
+struct ProtoTraits<SetDetailTexturePreview> {
+	using Proto = proto::events::SetDetailTexturePreview;
+	using Event = SetDetailTexturePreview;
+
+	static auto toProto(const Event& e) -> Proto {
+		Proto p;
+		p.set_uid(e.uid);
+		return p;
+	}
+
+	static auto fromProto(const Proto& p) -> Event { return {p.uid()}; }
+};
+
+TOAST_PROTO_EVENT(SetDetailTexturePreview);
+
+template<>
 struct ProtoTraits<EditorCameraMoveState> {
 	using Proto = proto::events::EditorCameraMoveState;
 	using Event = EditorCameraMoveState;

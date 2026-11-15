@@ -51,6 +51,8 @@ StructuredBuffer<uint> gBrickOccupancy;
 StructuredBuffer<uint> gVolumeGrids;
 [[vk::binding(3, 1)]]
 StructuredBuffer<uint> gVolumeCoarse;
+static const uint kPaletteEntryWords = 8u;
+
 [[vk::binding(4, 1)]]
 StructuredBuffer<uint> gPalettes;
 [[vk::binding(5, 1)]]
@@ -289,7 +291,7 @@ bool volumeHasGlass(uint volume)
 /// Mirrors voxel::isGlass
 bool glassEntry(VolumeRecord record, uint index)
 {
-    const uint word2 = gPalettes[(record.paletteOffset + index) * 4u + 2u];
+    const uint word2 = gPalettes[(record.paletteOffset + index) * kPaletteEntryWords + 2u];
     return index != 0u && ((word2 >> 8) & 0xFFu) < 255u;
 }
 
@@ -356,7 +358,7 @@ struct TintGlass : IGlassPass
     [mutating]
     bool pass(VolumeRecord record, uint material, float tEnter, float tExit, float voxelsPerT)
     {
-        const uint base = (record.paletteOffset + material) * 4u;
+        const uint base = (record.paletteOffset + material) * kPaletteEntryWords;
         const uint word0 = gPalettes[base];
         const uint word2 = gPalettes[base + 2u];
         const float alpha = float((word2 >> 8) & 0xFFu) / 255.0;
@@ -906,6 +908,7 @@ struct PaletteSample
 
     /// 0 for no detail texture
     uint detailLayer;
+    float3 detailTint;
     /// Texels per voxel edge
     float detailScale;
     float detailAlbedo;
@@ -919,11 +922,12 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     const uint paletteOffset = record.paletteOffset;
     const float maxEmissive = record.maxEmissive;
 
-    const uint base = (paletteOffset + index) * 4;
+    const uint base = (paletteOffset + index) * kPaletteEntryWords;
     const uint word0 = gPalettes[base];
     const uint word1 = gPalettes[base + 1];
     const uint word2 = gPalettes[base + 2];
     const uint word3 = gPalettes[base + 3];
+    const uint word4 = gPalettes[base + 4];
 
     PaletteSample sample;
     sample.albedo = srgbToLinear(float3(word0 & 0xFFu, (word0 >> 8) & 0xFFu, (word0 >> 16) & 0xFFu) / 255.0);
@@ -938,6 +942,7 @@ PaletteSample samplePalette(VolumeRecord record, uint index)
     sample.ior = iorByte == 0u ? kDefaultIor : 1.0 + float(iorByte) / 100.0;
     // voxel::PaletteEntry detail_layer then detail_scale detail_albedo detail_roughness detail_bump
     sample.detailLayer = word2 >> 24;
+    sample.detailTint = float3(word4 & 0xFFu, (word4 >> 8) & 0xFFu, (word4 >> 16) & 0xFFu) / 255.0;
     const uint scaleByte = word3 & 0xFFu;
     sample.detailScale = scaleByte == 0u ? 4.0 : float(scaleByte);
     sample.detailAlbedo = float((word3 >> 8) & 0xFFu) / 255.0;

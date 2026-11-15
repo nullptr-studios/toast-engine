@@ -271,6 +271,100 @@ void RawTextureUpload::recordAcquire(sync::BarrierBatch& batch) {
 	);
 }
 
+void DetailArrayUpload::build(const VulkanCore& core) {
+	ZoneScoped;
+	if (m_data.pixels.empty() || m_data.size == 0 || m_data.layer_count == 0) {
+		TOAST_ERROR("Render", "Detail array '{}' has no data to upload", m_debug_name);
+		m_texture->markFailed(IVulkanResource::UploadState::failed_load);
+		return;
+	}
+
+	VulkanTexture::Params params {};
+	params.format = vk::Format::eR8G8B8A8Unorm;
+	params.extent = vk::Extent3D(m_data.size, m_data.size, 1);
+	params.mip_levels = m_data.mip_levels;
+	params.layer_count = std::max(2u, m_data.layer_count);
+	params.is_cubemap = false;
+
+	try {
+		m_texture->create(core, params, m_debug_name);
+	} catch (const std::exception& e) {
+		TOAST_ERROR("Render", "Detail array '{}' could not be created on the device: {}", m_debug_name, e.what());
+		m_texture->markFailed(IVulkanResource::UploadState::failed_gpu);
+		return;
+	}
+	m_texture->markUploading();
+
+	vk::BufferCreateInfo staging_ci {};
+	staging_ci.size = static_cast<vk::DeviceSize>(m_data.pixels.size());
+	staging_ci.usage = vk::BufferUsageFlagBits::eTransferSrc;
+
+	vma::AllocationCreateInfo alloc_ci {};
+	alloc_ci.usage = vma::MemoryUsage::eAuto;
+	alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;
+	m_staging_buffer = core.getAllocator().createBuffer(staging_ci, alloc_ci);
+	host_bytes = 2 * static_cast<vk::DeviceSize>(m_data.pixels.size());
+	if (!m_debug_name.empty()) {
+		setDebugName(core, *m_staging_buffer, m_debug_name + " StagingBuffer");
+	}
+
+	void* mapped = m_staging_buffer.getAllocation().getInfo().pMappedData;
+	if (mapped == nullptr) {
+		TOAST_CRITICAL("Render", "Detail array staging buffer is not mapped");
+	}
+	std::memcpy(mapped, m_data.pixels.data(), m_data.pixels.size());
+
+	for (uint32_t layer = 0; layer < m_data.layer_count; ++layer) {
+		for (uint32_t mip = 0; mip < m_data.mip_levels; ++mip) {
+			vk::BufferImageCopy region {};
+			region.bufferOffset = m_data.mipOffset(layer, mip);
+			region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
+			region.imageSubresource.mipLevel = mip;
+			region.imageSubresource.baseArrayLayer = layer;
+			region.imageSubresource.layerCount = 1;
+			region.imageExtent = vk::Extent3D {m_data.mipSize(mip), m_data.mipSize(mip), 1};
+			m_copy_regions.push_back(region);
+		}
+	}
+
+	// A single layer array still has a second layer so leave that one neutral
+	if (params.layer_count > m_data.layer_count) {
+		TOAST_WARN("Render", "Detail array '{}' has one layer, the extra layer is left uninitialised", m_debug_name);
+	}
+}
+
+void DetailArrayUpload::record(vk::CommandBuffer cmd) {
+	ZoneScoped;
+	if (m_texture->hasFailed() || !*m_staging_buffer) {
+		return;
+	}
+
+	const vk::Image image = m_texture->getImage();
+	const vk::ImageSubresourceRange range(
+	    vk::ImageAspectFlagBits::eColor, 0, m_data.mip_levels, 0, std::max(2u, m_data.layer_count)
+	);
+
+	sync::BarrierBatch barriers;
+	barriers.image(image, range, sync::Usage::none, sync::Usage::transfer_dst);
+	barriers.flush(cmd);
+
+	cmd.copyBufferToImage(*m_staging_buffer, image, vk::ImageLayout::eTransferDstOptimal, m_copy_regions);
+
+	barriers.release(image, range, sync::Usage::transfer_dst, sync::Usage::shader_sampled, m_handoff);
+	barriers.flush(cmd);
+	m_released = true;
+}
+
+void DetailArrayUpload::recordAcquire(sync::BarrierBatch& batch) {
+	if (!m_released || m_texture->hasFailed()) {
+		return;
+	}
+	const vk::ImageSubresourceRange range(
+	    vk::ImageAspectFlagBits::eColor, 0, m_data.mip_levels, 0, std::max(2u, m_data.layer_count)
+	);
+	batch.acquire(m_texture->getImage(), range, sync::Usage::transfer_dst, sync::Usage::shader_sampled, m_handoff);
+}
+
 auto uploadTextureSync(const VulkanCore& core, VulkanTexture& texture, std::vector<uint8_t> data, std::string_view debug_name)
     -> bool {
 	ZoneScoped;

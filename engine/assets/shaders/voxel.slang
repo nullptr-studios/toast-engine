@@ -332,7 +332,7 @@ void applyDetail(PaletteSample palette, VolumeRecord record, RayHit hit, float3 
 
     const uint layer = min(palette.detailLayer, layers - 1u);
     const float4 detail = gVoxelDetail.SampleGrad(float3(uv, float(layer)), gradient, gradient);
-    albedo *= max(1.0 + (detail.r - 0.5) * 2.0 * palette.detailAlbedo, 0.0);
+    albedo *= max(1.0 + (detail.r - 0.5) * 2.0 * palette.detailTint * palette.detailAlbedo, 0.0);
     roughness = clamp(roughness + (detail.g - 0.5) * 2.0 * palette.detailRoughness, 0.045, 1.0);
 
     // Height slope per voxel from one texel steps, faded once a pixel spans more than a texel

@@ -258,6 +258,8 @@ void VulkanRenderer::mainRenderThread() try {
 		}
 #endif
 
+		updateVoxelDetailArray();
+
 #if defined(TOAST_DEV_TOOLS)
 		const auto draw_start = clock::now();
 #endif

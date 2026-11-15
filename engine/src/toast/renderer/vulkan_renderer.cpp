@@ -307,6 +307,15 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 		return true;
 	});
 
+	m_capture_listener.subscribe<event::SetDetailTexturePreview>([this](const auto& e) {
+		if (e.uid.empty()) {
+			setVoxelDetailPreview({});
+		} else {
+			setVoxelDetailPreview(assets::load<assets::DetailTexture>(toast::UID(toast::UID::fromString(e.uid))));
+		}
+		return true;
+	});
+
 #if defined(TOAST_DEV_TOOLS)
 	m_imgui_input_listener.subscribe<event::WindowMousePosition>([this](const auto& e) {
 		m_imgui_mouse_pos = {e.x, e.y};

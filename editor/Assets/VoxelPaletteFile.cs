@@ -42,8 +42,10 @@ public sealed class VoxelPaletteEntry {
 
 	public int TransformsTo { get; set; }
 
-	/// <summary>Layer of the detail library, 0 for none</summary>
-	public int DetailLayer { get; set; }
+	public int DetailId { get; set; }
+	public byte DetailTintR { get; set; } = 255;
+	public byte DetailTintG { get; set; } = 255;
+	public byte DetailTintB { get; set; } = 255;
 
 	/// <summary>Texels per voxel edge, 0 for the engine default</summary>
 	public int DetailScale { get; set; }
@@ -51,6 +53,8 @@ public sealed class VoxelPaletteEntry {
 	public float DetailAlbedo { get; set; }
 	public float DetailRoughness { get; set; }
 	public float DetailBump { get; set; }
+
+	public bool HasDetail => DetailId != 0;
 
 	public void CopyFrom(VoxelPaletteEntry other) {
 		InUse = other.InUse;
@@ -66,6 +70,14 @@ public sealed class VoxelPaletteEntry {
 		Material = other.Material;
 		HasMaterial = other.HasMaterial;
 		TransformsTo = other.TransformsTo;
+		DetailId = other.DetailId;
+		DetailTintR = other.DetailTintR;
+		DetailTintG = other.DetailTintG;
+		DetailTintB = other.DetailTintB;
+		DetailScale = other.DetailScale;
+		DetailAlbedo = other.DetailAlbedo;
+		DetailRoughness = other.DetailRoughness;
+		DetailBump = other.DetailBump;
 	}
 
 	public void Clear() {
@@ -77,7 +89,9 @@ public sealed class VoxelPaletteEntry {
 		Alpha = 1f;
 		Ior = DefaultIor;
 		TransformsTo = 0;
-		DetailLayer = DetailScale = 0;
+		DetailId = 0;
+		DetailTintR = DetailTintG = DetailTintB = 255;
+		DetailScale = 0;
 		DetailAlbedo = DetailRoughness = DetailBump = 0f;
 	}
 }
@@ -184,7 +198,12 @@ public sealed class VoxelPaletteFile {
 
 			target.TransformsTo = GetInt(entry, "transforms_to", 0);
 
-			target.DetailLayer = GetInt(entry, "detail_layer", 0);
+			target.DetailId = Math.Clamp(GetInt(entry, "detail_id", 0), 0, 255);
+			if (entry.TryGetValue("detail_tint", out var tint) && tint is TomlArray tintRgb && tintRgb.Count == 3) {
+				target.DetailTintR = ToByte(tintRgb[0]);
+				target.DetailTintG = ToByte(tintRgb[1]);
+				target.DetailTintB = ToByte(tintRgb[2]);
+			}
 			target.DetailScale = GetInt(entry, "detail_scale", 0);
 			target.DetailAlbedo = GetFloat(entry, "detail_albedo", 0f);
 			target.DetailRoughness = GetFloat(entry, "detail_roughness", 0f);
@@ -246,8 +265,11 @@ public sealed class VoxelPaletteFile {
 				table["ior"] = Math.Round((double)Math.Clamp(entry.Ior, 1f, VoxelPaletteEntry.MaxIor), 2);
 			if (entry.HasMaterial) table["material"] = (long)Math.Clamp(entry.Material, 0, SlotCount - 1);
 			table["transforms_to"] = (long)Math.Clamp(entry.TransformsTo, 0, 255);
-			if (entry.DetailLayer != 0) {
-				table["detail_layer"] = (long)Math.Clamp(entry.DetailLayer, 0, 255);
+			if (entry.HasDetail) {
+				table["detail_id"] = (long)Math.Clamp(entry.DetailId, 0, 255);
+				table["detail_tint"] = new TomlArray {
+					(long)entry.DetailTintR, (long)entry.DetailTintG, (long)entry.DetailTintB
+				};
 				table["detail_scale"] = (long)Math.Clamp(entry.DetailScale, 0, 255);
 				table["detail_albedo"] = (double)Clamp01(entry.DetailAlbedo);
 				table["detail_roughness"] = (double)Clamp01(entry.DetailRoughness);

@@ -426,6 +426,12 @@ struct EditorCameraFlyMode : Event<EditorCameraFlyMode> {
 /// viewport; no-op if RenderDoc isn't attached
 struct CaptureFrame : Event<CaptureFrame> { };
 
+struct SetDetailTexturePreview : Event<SetDetailTexturePreview> {
+	std::string uid;
+
+	SetDetailTexturePreview(std::string uid) : uid(std::move(uid)) { }
+};
+
 /// @brief Held-key snapshot for the editor fly camera
 struct EditorCameraMoveState : Event<EditorCameraMoveState> {
 	bool forward, back, left, right, up, down, boost;

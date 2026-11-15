@@ -1,0 +1,283 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dt="using:editor.DetailTextureEditor"
+             xmlns:ws="using:editor.Workspace"
+             xmlns:elements="using:editor.Components.Elements"
+             x:Class="editor.DetailTextureEditor.DetailTextureEditorView"
+             x:DataType="dt:DetailTextureEditorViewModel"
+             Background="{StaticResource Bg2}"
+             Padding="6">
+	<UserControl.Styles>
+		<StyleInclude Source="avares://editor/Resources/ToolbarStyles.axaml" />
+		<Style Selector="TextBlock.lbl">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+
+		<!-- rows like the hierarchy -->
+		<Style Selector="Border.row">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Height"
+			        Value="26" />
+		</Style>
+		<Style Selector="Border.row:pointerover">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="Border.row.selected">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="TextBlock.selected">
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+		</Style>
+	</UserControl.Styles>
+
+	<Grid ColumnDefinitions="300,4,*">
+		<DockPanel Grid.Column="0"
+		           VerticalSpacing="4">
+			<Border DockPanel.Dock="Top"
+			        Background="{StaticResource Bg3}"
+			        Padding="6"
+			        CornerRadius="8">
+				<Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto"
+				      ColumnSpacing="4">
+					<Button Grid.Column="0"
+					        Command="{Binding AddTextureCommand}"
+					        CornerRadius="6"
+					        Background="{StaticResource Bg4}"
+					        Classes="compact-control">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="2">
+							<LucideIcon Kind="Plus"
+							            Size="16"
+							            StrokeWidth="3" />
+							<TextBlock Text="Add" Classes="compact-text" />
+						</StackPanel>
+						<ToolTip.Tip>
+							Add a texture
+						</ToolTip.Tip>
+					</Button>
+					<Button Grid.Column="2"
+					        Command="{Binding MoveUpCommand}"
+					        IsEnabled="{Binding HasSelection}"
+					        CornerRadius="6"
+					        Background="{StaticResource Bg4}"
+					        Classes="compact-control">
+						<LucideIcon Kind="ChevronUp"
+						            Size="16"
+						            StrokeWidth="2.5" />
+						<ToolTip.Tip>
+							Move up
+						</ToolTip.Tip>
+					</Button>
+					<Button Grid.Column="3"
+					        Command="{Binding MoveDownCommand}"
+					        IsEnabled="{Binding HasSelection}"
+					        CornerRadius="6"
+					        Background="{StaticResource Bg4}"
+					        Classes="compact-control">
+						<LucideIcon Kind="ChevronDown"
+						            Size="16"
+						            StrokeWidth="2.5" />
+						<ToolTip.Tip>
+							Move down
+						</ToolTip.Tip>
+					</Button>
+					<Button Grid.Column="4"
+					        Command="{Binding DeleteSelectedCommand}"
+					        IsEnabled="{Binding HasSelection}"
+					        CornerRadius="6"
+					        Background="{StaticResource Bg4}"
+					        Classes="compact-control">
+						<LucideIcon Kind="Trash2"
+						            Size="16"
+						            StrokeWidth="2.5" />
+						<ToolTip.Tip>
+							Delete the selected texture
+						</ToolTip.Tip>
+					</Button>
+				</Grid>
+			</Border>
+
+			<Border DockPanel.Dock="Bottom"
+			        Background="{StaticResource Bg3}"
+			        Padding="6"
+			        CornerRadius="8"
+			        IsVisible="{Binding HasSelection}">
+				<StackPanel Spacing="4"
+				            DataContext="{Binding SelectedItem}"
+				            x:DataType="dt:DetailEntryVM">
+					<Grid ColumnDefinitions="Auto,*"
+					      RowDefinitions="Auto,Auto,Auto,Auto"
+					      RowSpacing="4"
+					      ColumnSpacing="4">
+						<TextBlock Grid.Row="0"
+						           Grid.Column="0"
+						           Text="Name"
+						           Classes="lbl compact-text" />
+						<elements:StringBox Grid.Row="0"
+						                    Grid.Column="1"
+						                    Value="{Binding Name, Mode=TwoWay}"
+						                    Classes="compact-field" />
+						<TextBlock Grid.Row="1"
+						           Grid.Column="0"
+						           Text="Albedo"
+						           Classes="lbl compact-text" />
+						<elements:AssetBox Grid.Row="1"
+						                   Grid.Column="1"
+						                   AssetType="texture"
+						                   Value="{Binding AlbedoUid, Mode=TwoWay}"
+						                   ToolTip.Tip="Grayscale texture for the red channel"
+						                   Classes="compact-field" />
+						<TextBlock Grid.Row="2"
+						           Grid.Column="0"
+						           Text="Roughness"
+						           Classes="lbl compact-text" />
+						<elements:AssetBox Grid.Row="2"
+						                   Grid.Column="1"
+						                   AssetType="texture"
+						                   Value="{Binding RoughnessUid, Mode=TwoWay}"
+						                   ToolTip.Tip="Grayscale texture for the green channel"
+						                   Classes="compact-field" />
+						<TextBlock Grid.Row="3"
+						           Grid.Column="0"
+						           Text="Heightmap"
+						           Classes="lbl compact-text" />
+						<elements:AssetBox Grid.Row="3"
+						                   Grid.Column="1"
+						                   AssetType="texture"
+						                   Value="{Binding HeightUid, Mode=TwoWay}"
+						                   ToolTip.Tip="Grayscale texture for the blue channel"
+						                   Classes="compact-field" />
+					</Grid>
+				</StackPanel>
+			</Border>
+
+			<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+			              Background="Transparent">
+				<ItemsControl ItemsSource="{Binding Items}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate x:DataType="dt:DetailEntryVM">
+							<Border Classes="row"
+							        Classes.selected="{Binding IsSelected}"
+							        Padding="6,0,8,0"
+							        PointerPressed="OnRowPressed">
+								<Grid ColumnDefinitions="Auto,*"
+								      VerticalAlignment="Center">
+									<LucideIcon Grid.Column="0"
+									            Kind="Layers"
+									            Size="16"
+									            StrokeWidth="2" />
+									<TextBlock Grid.Column="1"
+									           Classes="compact-text"
+									           Classes.selected="{Binding IsSelected}"
+									           Text="{Binding Label}"
+									           TextTrimming="CharacterEllipsis"
+									           VerticalAlignment="Center"
+									           Margin="8,0,0,0" />
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</ScrollViewer>
+		</DockPanel>
+
+		<GridSplitter Grid.Column="1"
+		              ResizeDirection="Columns"
+		              Background="Transparent" />
+
+		<Grid Grid.Column="2"
+		      RowDefinitions="Auto,*"
+		      RowSpacing="4">
+			<ScrollViewer x:Name="ToolbarScroll"
+			              Grid.Row="0"
+			              HorizontalScrollBarVisibility="Auto"
+			              VerticalScrollBarVisibility="Disabled">
+				<Grid MinWidth="{Binding #ToolbarScroll.Bounds.Width}"
+				      ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto"
+				      ColumnSpacing="10">
+					<StackPanel Grid.Column="1"
+					            Orientation="Horizontal"
+					            Spacing="4"
+					            ToolTip.Tip="How much the selected texture affects the color">
+						<TextBlock Text="Albedo" Classes="lbl compact-text" />
+						<elements:DragFloatBox Value="{Binding Albedo, Mode=TwoWay}"
+						                       Minimum="0"
+						                       Maximum="1"
+						                       Width="90"
+						                       Classes="compact-field" />
+					</StackPanel>
+
+					<StackPanel Grid.Column="0"
+					            Orientation="Horizontal"
+					            Spacing="4"
+					            ToolTip.Tip="Colors what the texture adds, the voxel itself is left alone">
+						<TextBlock Text="Tint" Classes="lbl compact-text" />
+						<elements:Color3Box R="{Binding TintR, Mode=TwoWay}"
+						                    G="{Binding TintG, Mode=TwoWay}"
+						                    B="{Binding TintB, Mode=TwoWay}"
+						                    Width="190"
+						                    Classes="compact-field" />
+					</StackPanel>
+
+					<StackPanel Grid.Column="2"
+					            Orientation="Horizontal"
+					            Spacing="4"
+					            ToolTip.Tip="How much the selected texture affects roughness">
+						<TextBlock Text="Roughness" Classes="lbl compact-text" />
+						<elements:DragFloatBox Value="{Binding Roughness, Mode=TwoWay}"
+						                       Minimum="0"
+						                       Maximum="1"
+						                       Width="90"
+						                       Classes="compact-field" />
+					</StackPanel>
+
+					<StackPanel Grid.Column="3"
+					            Orientation="Horizontal"
+					            Spacing="4"
+					            ToolTip.Tip="How strongly the selected texture bumps the surface">
+						<TextBlock Text="Bump" Classes="lbl compact-text" />
+						<elements:DragFloatBox Value="{Binding Bump, Mode=TwoWay}"
+						                       Minimum="0"
+						                       Maximum="1"
+						                       Width="90"
+						                       Classes="compact-field" />
+					</StackPanel>
+
+					
+
+					<Button Grid.Column="5"
+					        Classes="chev compact-control"
+					        CornerRadius="6"
+					        Command="{Binding SaveCommand}"
+					        ToolTip.Tip="Save (Ctrl+S)">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4">
+							<LucideIcon Kind="Save" Size="16" StrokeWidth="2.5" />
+							<TextBlock Text="Save"
+							           VerticalAlignment="Center"
+							           Classes="compact-text" />
+						</StackPanel>
+					</Button>
+				</Grid>
+			</ScrollViewer>
+
+			<Border Grid.Row="1"
+			        CornerRadius="6"
+			        ClipToBounds="True">
+				<ws:ViewportControl x:Name="Viewport"
+				                    DataContext="{Binding Workspace}"
+				                    Detached="True"
+				                    ViewOnly="True" />
+			</Border>
+		</Grid>
+	</Grid>
+</UserControl>

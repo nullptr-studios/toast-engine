@@ -939,21 +939,21 @@ void registerVoxels(VulkanRenderer& renderer) {
 	    .onChange([&renderer](int64_t v) { renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
 
 	toast::settings::declareString(
-	    "renderer.voxels.detail_library",
+	    "renderer.voxels.detail_texture",
 	    "",
-	    {.label = "Voxel detail library",
+	    {.label = "Voxel detail texture",
 			 .category = "Voxels",
-			 .description = "Texture array read by palette detail layers, RGBA8 linear with R albedo G roughness B height "
-			                "around 0.5 and at least two layers. None keeps the neutral default",
-			 .asset_type = "texture"}
+			 .description = "The DetailTexture the engine packs into the texture array that palette detail ids read. "
+			                "None keeps the neutral default",
+			 .asset_type = "detail_texture"}
 	)
 	    .onChange([&renderer](const std::string& v) {
 		    if (v.empty()) {
-			    renderer.setVoxelDetailLibrary({});
+			    renderer.setVoxelDetailTexture({});
 		    } else if (v.contains("://")) {
-			    renderer.setVoxelDetailLibrary(assets::load<assets::Texture>(v));
+			    renderer.setVoxelDetailTexture(assets::load<assets::DetailTexture>(v));
 		    } else {
-			    renderer.setVoxelDetailLibrary(assets::load<assets::Texture>(toast::UID(toast::UID::fromString(v))));
+			    renderer.setVoxelDetailTexture(assets::load<assets::DetailTexture>(toast::UID(toast::UID::fromString(v))));
 		    }
 	    });
 

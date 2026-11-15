@@ -62,6 +62,33 @@ AssetManager::AssetManager() {
 
 	listener.subscribe<event::ReloadAssetsManifest>([this] { reloadManifest(); });
 	listener.subscribe<event::ClearUnusedAssets>([this] { clearUnusedAssets(); });
+
+	listener.subscribe<event::PreviewAssetToml>([this](const event::PreviewAssetToml& e) {
+		const toast::UID uid(toast::UID::fromString(e.uid));
+		bool reloaded = false;
+		{
+			std::lock_guard lock(mutex);
+			const auto it = cache.find(uid.data());
+			if (it == cache.end()) {
+				return true;
+			}
+			const std::string_view type = it->second->type();
+			try {
+				const toml::table table = toml::parse(e.toml);
+				if (type == "voxel_palette") {
+					static_cast<VoxelPalette*>(it->second.get())->reload(table);
+					reloaded = true;
+				} else if (type == "detail_texture") {
+					static_cast<DetailTexture*>(it->second.get())->reload(table);
+				}
+			} catch (const std::exception& err) { TOAST_WARN("AssetManager", "Preview of {} was rejected: {}", e.uid, err.what()); }
+		}
+		if (reloaded) {
+			event::send<event::VoxelPaletteAssetReloaded>(uid);
+			voxel::invalidateBrushes();
+		}
+		return true;
+	});
 }
 
 auto AssetManager::get() noexcept -> AssetManager& {
@@ -702,8 +729,9 @@ auto isReplacedOnReload(std::string_view type) -> bool {
 }
 
 auto isWatchedType(std::string_view type) -> bool {
-	return type == "script" || type == "shader" || type == "voxel_palette" || type == "curve" || type == "voxel_model" ||
-	       type == "node" || isUiType(type) || isReplacedOnReload(type) || AssetRegistry::hasSchemaToml(type);
+	return type == "script" || type == "shader" || type == "voxel_palette" || type == "detail_texture" || type == "curve" ||
+	       type == "voxel_model" || type == "node" || isUiType(type) || isReplacedOnReload(type) ||
+	       AssetRegistry::hasSchemaToml(type);
 }
 
 }
@@ -829,6 +857,8 @@ auto AssetManager::applyPendingReloads() -> std::vector<ReloadedAsset> {
 						static_cast<ColorScheme*>(asset_it->second.get())->reload(table);
 					} else if (type == "voxel_palette") {
 						static_cast<VoxelPalette*>(asset_it->second.get())->reload(table);
+					} else if (type == "detail_texture") {
+						static_cast<DetailTexture*>(asset_it->second.get())->reload(table);
 					} else if (type == "curve") {
 						static_cast<Curve*>(asset_it->second.get())->reload(table);
 					} else if (auto* data = dynamic_cast<Data*>(asset_it->second.get())) {

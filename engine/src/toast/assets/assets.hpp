@@ -104,6 +104,13 @@ struct VoxelPaletteAssetReloaded : public Event<VoxelPaletteAssetReloaded> {
 	explicit VoxelPaletteAssetReloaded(toast::UID uid) : uid(uid) { }
 };
 
+struct PreviewAssetToml : public Event<PreviewAssetToml> {
+	std::string uid;
+	std::string toml;
+
+	PreviewAssetToml(std::string uid, std::string toml) : uid(std::move(uid)), toml(std::move(toml)) { }
+};
+
 /// Anything that copied values out of the asset has to read them again
 struct DataAssetReloaded : public Event<DataAssetReloaded> {
 	toast::UID uid;
