@@ -216,12 +216,12 @@ protected:
 		UID default_model;
 		glm::ivec3 line_tile {1};
 		Phase phase = Phase::idle;
-		bool dragging = false;       ///< if its drawing the mouse make it 2 clicks rather than 3
-		UID extrude_source;          ///< The piece Extrude grows from
-		int axis = 2;                ///< The face the box lies on
-		int32_t surface = 0;         ///< The voxel layer of the face that was clicked
-		float plane = 0.0f;          ///< Where along axis the mouse ray is cut to find the rectangle
-		int32_t sign = 1;            ///< Which way is out of the face
+		bool dragging = false;    ///< if its drawing the mouse make it 2 clicks rather than 3
+		UID extrude_source;       ///< The piece Extrude grows from
+		int axis = 2;             ///< The face the box lies on
+		int32_t surface = 0;      ///< The voxel layer of the face that was clicked
+		float plane = 0.0f;       ///< Where along axis the mouse ray is cut to find the rectangle
+		int32_t sign = 1;         ///< Which way is out of the face
 		int32_t depth = 1;
 		int32_t snap_plane = 1;
 		int32_t snap_depth = 1;

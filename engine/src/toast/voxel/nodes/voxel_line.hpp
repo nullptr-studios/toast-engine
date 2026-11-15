@@ -1,4 +1,3 @@
-
 #pragma once
 #include "voxel_volume.hpp"
 
