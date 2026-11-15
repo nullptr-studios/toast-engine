@@ -123,6 +123,8 @@ private:
 
 	ClipPlayback m_playback;
 
+	/// Held so a cleared or swapped Skeleton field cannot free m_bound or reuse its address
+	assets::Handle<assets::Skeleton> m_bound_asset;
 	const assets::Skeleton* m_bound = nullptr;
 	std::vector<assets::BonePose> m_local;
 	std::vector<glm::mat4> m_model;
