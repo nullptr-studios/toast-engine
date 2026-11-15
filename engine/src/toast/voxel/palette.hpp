@@ -62,7 +62,7 @@ struct PaletteEntry {
 	uint8_t detail_tint_r = 255;
 	uint8_t detail_tint_g = 255;
 	uint8_t detail_tint_b = 255;
-	uint8_t reserved[13] {};
+	std::array<uint8_t, 13> reserved {};
 	[[nodiscard]]
 	constexpr auto operator==(const PaletteEntry&) const noexcept -> bool = default;
 };

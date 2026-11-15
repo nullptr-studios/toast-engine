@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <sstream>
+#include <utility>
 
 namespace assets {
 
@@ -59,7 +60,7 @@ auto DetailTexture::parseToml(const toml::table& table) -> std::vector<DetailTex
 		}
 
 		const std::optional<int64_t> id = entry->get("id") != nullptr ? entry->get("id")->value<int64_t>() : std::nullopt;
-		if (!id || *id < 1 || *id > static_cast<int64_t>(k_max_detail_textures)) {
+		if (!id || *id < 1 || std::cmp_greater(*id, k_max_detail_textures)) {
 			throw fail("id must be a whole number 1-255");
 		}
 		if (seen[static_cast<size_t>(*id)]) {
