@@ -69,7 +69,8 @@ public partial class GltfImporter : IAssetImporter {
 		AssetTypeRegistry.ByExtension(".tnode")!,
 		AssetTypeRegistry.ByExtension(".ktx2")!,
 		AssetTypeRegistry.ByExtension(".tmat")!,
-		AssetTypeRegistry.ByExtension(".tanim")!
+		AssetTypeRegistry.ByExtension(".tanim")!,
+		AssetTypeRegistry.ByExtension(".tskel")!
 	];
 
 	/// <summary>
@@ -165,8 +166,10 @@ public partial class GltfImporter : IAssetImporter {
 			: [];
 		var materials = m_settings.ImportMaterials ? byExtension.GetValueOrDefault(".tmat") ?? [] : [];
 		var animations = m_settings.ImportAnimations ? byExtension.GetValueOrDefault(".tanim") ?? [] : [];
+		// Skeletons import even with animations off since BoneAttachments and skinned meshes need them
+		var skeletons = byExtension.GetValueOrDefault(".tskel") ?? [];
 		var scenes = m_settings.GeneratePrefab ? byExtension.GetValueOrDefault(".json") ?? [] : [];
-		var totalItems = meshes.Count + textures.Count * 10 + materials.Count + animations.Count +
+		var totalItems = meshes.Count + textures.Count * 10 + materials.Count + animations.Count + skeletons.Count +
 		                 scenes.Count * 2; // *2: patch + create
 		var doneItems = 0;
 
@@ -301,6 +304,23 @@ public partial class GltfImporter : IAssetImporter {
 			}
 		}
 
+		var skeletonUids = new Dictionary<string, string>();
+		foreach (var sk in skeletons) {
+			var skeletonName = Path.GetFileNameWithoutExtension(sk.Name);
+			var destPath = Path.Combine(destDir, skeletonName + ".tskel");
+			var uid = UidGenerator.Generate();
+			skeletonUids[skeletonName] = uid;
+
+			log($"Skeleton {skeletonName}");
+			File.Copy(sk.FullName, destPath, true);
+			var header = new MetaHeader
+				{ Uid = uid, Type = AssetTypeRegistry.ByExtension(".tskel")!.Type, Source = ctx.SourceVirtualPath };
+			MetaFile.Write(destPath, header, m_settings.ToSection());
+			importedUids.Add(uid);
+			doneItems++;
+			ReportProgress();
+		}
+
 		if (!ctx.IsStaging) AssetDatabase.RebuildAssetDatabase();
 
 		// Scenes
@@ -320,15 +340,19 @@ public partial class GltfImporter : IAssetImporter {
 						if (p["material"] is { } matNode &&
 						    materialUids.TryGetValue(matNode.GetValue<string>(), out var matUid))
 							p["material"] = matUid;
-						if (p["skin_animation"] is { } skinAnimNode &&
-						    animationUids.TryGetValue(skinAnimNode.GetValue<string>(), out var skinAnimUid))
-							p["skin_animation"] = skinAnimUid;
 					}
-				} else if (nodeType == "toast::AnimationPlayer") {
+				} else if (nodeType is "toast::AnimationPlayer" or "toast::SkeletalNode") {
 					var p = node["params"]?.AsObject();
-					if (p != null && p["animation"] is { } animNode &&
-					    animationUids.TryGetValue(animNode.GetValue<string>(), out var animUid))
-						p["animation"] = animUid;
+					if (p?["skeleton"] is { } skeletonNode &&
+					    skeletonUids.TryGetValue(skeletonNode.GetValue<string>(), out var skeletonUid))
+						p["skeleton"] = skeletonUid;
+					// Clips skipped by Import Animations have no UID and drop out of the list
+					if (p?["clips"] is JsonArray clipNames)
+						p["clips"] = new JsonArray(clipNames
+							.Select(c => animationUids.TryGetValue(c!.GetValue<string>(), out var clipUid) ? clipUid : null)
+							.Where(clipUid => clipUid != null)
+							.Select(clipUid => (JsonNode)JsonValue.Create(clipUid)!)
+							.ToArray());
 				}
 
 				if (node["children"] is not JsonArray children) return;

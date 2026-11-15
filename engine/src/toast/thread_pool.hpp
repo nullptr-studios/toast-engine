@@ -14,6 +14,7 @@
 #include <queue>
 #include <thread>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -138,15 +139,15 @@ private:
 	static void enqueue(std::move_only_function<void()>&& job);
 
 	struct {
-		std::atomic<int> active_jobs = 0;                    ///< Number of jobs currently executing
-		std::atomic<int> idle_workers = 0;                   ///< Number of workers waiting for a job
-		bool should_stop = false;                            ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;                               ///< Number of jobs currently executing
+		std::atomic<int> idle_workers = 0;                              ///< Number of workers waiting for a job
+		bool should_stop = false;                                       ///< Flag to signal workers to stop
 
-		std::mutex queue_mutex;                              ///< Mutex protecting the job queue
-		std::condition_variable job_available;               ///< Notified when a job is enqueued or stop is requested
-		std::condition_variable all_done;                    ///< Notified when activeJobs hits 0 and queue is empty
-		std::vector<std::jthread> workers;                   ///< Worker threads (auto-join on destruction)
-		std::queue<std::move_only_function<void()>> jobs;    ///< Pending job queue
+		TOAST_LOCKABLE(std::mutex, queue_mutex, "Thread pool jobs");    ///< Mutex protecting the job queue
+		ConditionVariable job_available;                                ///< Notified when a job is enqueued or stop is requested
+		ConditionVariable all_done;                                     ///< Notified when activeJobs hits 0 and queue is empty
+		std::vector<std::jthread> workers;                              ///< Worker threads (auto-join on destruction)
+		std::queue<std::move_only_function<void()>> jobs;               ///< Pending job queue
 	} m;
 };
 

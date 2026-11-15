@@ -63,8 +63,7 @@ void quadMeshMain(uint3 group : SV_GroupID, uint thread : SV_GroupIndex, in payl
     }
     GroupMemoryBarrierWithGroupSync();
 
-    // A quad with all four corners outside one frustum plane covers no pixel so it never becomes a vertex
-    // The survivors compact through a scan and the vertex and triangle counts shrink to them
+    // Quads with all corners outside one frustum plane drop and the survivors compact through a scan
     QuadVSOutput corners[4];
     uint packedQuad = 0u;
     bool visible = false;

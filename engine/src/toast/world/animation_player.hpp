@@ -6,6 +6,7 @@
  */
 
 #pragma once
+#include "clip_playback.hpp"
 #include "node_3d.hpp"
 
 #include <string>
@@ -30,8 +31,7 @@ class [[ToastNode, Icon("Animation")]] TOAST_API AnimationPlayer : public Node3D
 public:
 	AnimationPlayer() = default;
 
-	/// @brief Starts the named clip from the beginning
-	/// @returns false when the asset has no clip by that name
+	/// Empty plays the first clip
 	[[Reflect]]
 	auto play(std::string_view clip_name) -> bool;
 
@@ -40,29 +40,21 @@ public:
 
 	[[Reflect]]
 	void pause(bool value) {
-		m_paused = value;
+		m_playback.paused = value;
 	}
 
 	[[nodiscard]]
 	auto isPlaying() const noexcept -> bool {
-		return m_playing;
+		return m_playback.playing;
 	}
 
 	/// @returns seconds into the current clip
 	[[nodiscard]]
 	auto time() const noexcept -> float {
-		return m_time;
+		return m_playback.time;
 	}
 
-	void time(float seconds) noexcept { m_time = seconds; }
-
-	/**
-	 * @brief World transforms of a skin's joints, in joint-index order
-	 *
-	 * A joint the tree does not contain contributes an identity rather than shifting every later index
-	 */
-	[[nodiscard]]
-	auto jointWorldTransforms(const assets::Skin& skin) -> std::vector<glm::mat4>;
+	void time(float seconds) noexcept { m_playback.time = seconds; }
 
 	/**
 	 * @brief Advances playback by one frame and writes the sampled pose onto its target nodes
@@ -74,18 +66,18 @@ public:
 
 private:
 	void begin();
+	auto inspectorOptions(std::string_view field_name) -> std::vector<std::string> override;
+	void onReflectedFieldChanged(std::string_view field_name) override;
 
 	/// @brief Finds a node by name among this player's descendants, memoised for the lifetime of the clip
 	auto resolveNode(const std::string& name) -> Node3D*;
 
-	[[Reflect, Name("Animation")]]
-	assets::Handle<assets::Animation> m_animation;
+	[[Reflect, Name("Clips")]]
+	std::vector<assets::Handle<assets::Animation>> m_clips;
 
-	[[Reflect, Name("Clip")]]
-	std::string m_clip_name;
-
-	[[Reflect, Name("Play On Begin")]]
-	bool m_play_on_begin = true;
+	/// Played on begin, empty plays nothing
+	[[Reflect, Name("Autoplay"), Options]]
+	std::string m_autoplay;
 
 	[[Reflect, Name("Loop")]]
 	bool m_loop = true;
@@ -93,11 +85,7 @@ private:
 	[[Reflect, Unit("x"), Range(0.0, 10.0)]]
 	float m_speed = 1.0f;
 
-	bool m_playing = false;
-	bool m_paused = false;
-	float m_time = 0.0f;
-
-	const assets::AnimationClip* m_active_clip = nullptr;
+	ClipPlayback m_playback;
 
 	// Name lookups walk the subtree, which is far too expensive to redo per track per frame. Cleared
 	// whenever the clip changes, since a different clip may target an entirely different set of nodes

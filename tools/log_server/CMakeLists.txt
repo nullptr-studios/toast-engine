@@ -32,7 +32,7 @@ set(LOG_SERVER_SOURCES src/main.cpp ${LOG_SERVER_CORE_SOURCES})
 
 add_executable(log_server ${LOG_SERVER_SOURCES} ${LOG_SERVER_PROTO_SOURCES})
 target_include_directories(log_server PRIVATE src "${LOG_SERVER_GENERATED_DIR}")
-target_link_libraries(log_server PRIVATE protobuf::libprotobuf asio::asio Threads::Threads CURL::libcurl ZLIB::ZLIB nlohmann_json::nlohmann_json)
+target_link_libraries(log_server PRIVATE protobuf::libprotobuf-lite asio::asio Threads::Threads CURL::libcurl ZLIB::ZLIB nlohmann_json::nlohmann_json)
 target_compile_definitions(log_server PRIVATE ASIO_STANDALONE ASIO_NO_DEPRECATED)
 toast_copy_runtime_dlls(log_server)
 
@@ -51,7 +51,7 @@ endforeach ()
 
 add_executable(log_server_checks EXCLUDE_FROM_ALL checks/checks.cpp ${LOG_SERVER_CORE_SOURCES} ${LOG_SERVER_PROTO_SOURCES})
 target_include_directories(log_server_checks PRIVATE src "${LOG_SERVER_GENERATED_DIR}")
-target_link_libraries(log_server_checks PRIVATE protobuf::libprotobuf asio::asio Threads::Threads CURL::libcurl ZLIB::ZLIB nlohmann_json::nlohmann_json)
+target_link_libraries(log_server_checks PRIVATE protobuf::libprotobuf-lite asio::asio Threads::Threads CURL::libcurl ZLIB::ZLIB nlohmann_json::nlohmann_json)
 target_compile_definitions(log_server_checks PRIVATE ASIO_STANDALONE ASIO_NO_DEPRECATED)
 toast_copy_runtime_dlls(log_server_checks)
 if (MSVC)

@@ -9,10 +9,11 @@
 
 #include <mutex>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 
 namespace physics {
 
 [[nodiscard]]
-TOAST_API auto voxelDataMutex() -> std::recursive_mutex&;
+TOAST_API auto voxelDataMutex() -> TOAST_LOCKABLE_BASE(std::recursive_mutex) &;
 
 }

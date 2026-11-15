@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -72,7 +73,7 @@ private:
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	/// Source then previous resolve last written into each set
-	std::vector<std::array<vk::ImageView, 4>> m_bound_views;
+	DescriptorCache<std::array<vk::ImageView, 4>> m_bound_views;
 
 	PostProcessTarget m_hit_target;
 	PostProcessTarget m_resolve_target;

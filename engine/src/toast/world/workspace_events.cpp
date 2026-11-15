@@ -672,10 +672,15 @@ struct ProtoTraits<InspectorContent::InspectorField> {
 		Proto p;
 		p.set_name(e.name);
 		p.set_value(e.value);
+		for (const auto& option : e.options) {
+			p.add_options(option);
+		}
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {p.name(), p.value()}; }
+	static auto fromProto(const Proto& p) -> Event {
+		return {p.name(), p.value(), std::vector<std::string>(p.options().begin(), p.options().end())};
+	}
 };
 
 template<>

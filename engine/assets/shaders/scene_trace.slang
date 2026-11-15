@@ -1,5 +1,4 @@
-// Voxel rays across every traced volume through ray queries when the TLAS holds the volumes and a camera centred
-// cell grid otherwise and both march the same volumes with voxel_dda
+// Voxel rays through ray queries or a camera centred cell grid that both march with voxel_dda
 import voxel_dda;
 import lighting;
 

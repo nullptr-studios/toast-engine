@@ -33,6 +33,7 @@
 #include "toast/renderer/passes/debug/grid_pass.hpp"
 #include "toast/renderer/passes/geometry/voxel_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/passes/lighting/gi_clipmap_pass.hpp"
 #include "toast/renderer/passes/lighting/gi_pass.hpp"
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
@@ -90,6 +91,81 @@ void addDebrisPass(
 	    std::make_unique<renderer::DebrisPass>(core, renderer.getSceneColorFormat(), depth_format, extent, std::move(debris));
 	renderer.setDebrisPass(debris_pass.get());
 	renderer.addRenderPass(std::move(debris_pass));
+}
+
+/// Everything up to the display space overlays which differ between the game window and the editor viewport
+auto addScenePasses(
+    const renderer::VulkanCore& core, renderer::VulkanRenderer& renderer, vk::Format color_format, vk::Format depth_format,
+    vk::Extent2D extent
+) -> const renderer::ClusterLightingPass& {
+	// Constructed before any material pass so materials can bind the culled light buffers straight away
+	auto cluster_lighting_pass = std::make_unique<renderer::ClusterLightingPass>(core);
+	const auto& cluster_lighting_pass_ref = *cluster_lighting_pass;
+	renderer.setClusterLightingPass(&cluster_lighting_pass_ref);
+	renderer.addComputePass(std::move(cluster_lighting_pass));
+
+	// Same ordering requirement as the lighting pass
+	auto shadow_pass = std::make_unique<renderer::ShadowPass>(core);
+	renderer.setShadowPass(shadow_pass.get());
+	renderer.addRenderPass(std::move(shadow_pass));
+
+	// Environment cubemaps
+	auto environment_pass = std::make_unique<renderer::EnvironmentPass>(core, renderer.getSceneColorFormat(), depth_format);
+	renderer.setEnvironmentPass(environment_pass.get());
+	renderer.addRenderPass(std::move(environment_pass));
+
+	// Probe cubemaps
+	auto reflection_probe_pass =
+	    std::make_unique<renderer::ReflectionProbePass>(core, renderer.getSceneColorFormat(), depth_format);
+	renderer.setReflectionProbePass(reflection_probe_pass.get());
+	renderer.addRenderPass(std::move(reflection_probe_pass));
+
+	// Mesh rendering runs through per-material passes
+
+	// World-stage passes render into the HDR scene target
+	const auto scene_format = renderer.getSceneColorFormat();
+
+	// Before the passes whose scene sets bind its cascades
+	auto gi_pass = std::make_unique<renderer::GiPass>(core, scene_format, extent);
+	renderer.setGiPass(gi_pass.get());
+	auto gi_clipmap_pass = std::make_unique<renderer::GiClipmapPass>(core, scene_format, extent);
+	renderer.setGiClipmapPass(gi_clipmap_pass.get());
+
+	// Recorded in its own scopes so registration order here does not matter
+	auto voxel_pass = std::make_unique<renderer::VoxelPass>(core, scene_format, depth_format, extent);
+	renderer.setVoxelPass(voxel_pass.get());
+	renderer.addRenderPass(std::move(voxel_pass));
+	addDebrisPass(core, renderer, depth_format, extent);
+
+	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
+	renderer.addRenderPass(std::make_unique<ui::WorldUIPass>(core, scene_format, depth_format, extent));
+
+	// First in the chain so the probes read depth before any post pass
+	renderer.addPostProcessPass(std::move(gi_pass));
+	renderer.addPostProcessPass(std::move(gi_clipmap_pass));
+
+	if (core.isRayTracingSupported()) {
+		renderer.addPostProcessPass(std::make_unique<renderer::TracedShadowPass>(core, scene_format, extent));
+	}
+
+	// SSAO first
+	renderer.addPostProcessPass(std::make_unique<renderer::SsaoPass>(core, scene_format, extent));
+	// Before SSR so the scene colour it reads already holds the traced voxel reflections
+	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(core, scene_format, extent);
+	renderer.setTracedSpecularPass(traced_specular.get());
+	renderer.addPostProcessPass(std::move(traced_specular));
+	renderer.addPostProcessPass(std::make_unique<renderer::SsrPass>(core, scene_format, extent));
+	renderer.addPostProcessPass(std::make_unique<renderer::VolumetricPass>(core, scene_format, extent));
+	auto taa = std::make_unique<renderer::TaaPass>(core, scene_format, extent);
+	renderer.setTaaPass(taa.get());
+	renderer.addPostProcessPass(std::move(taa));
+	renderer.addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(core, scene_format, extent));
+	renderer.addPostProcessPass(std::make_unique<renderer::LensFlarePass>(core, scene_format, extent));
+	renderer.addPostProcessPass(std::make_unique<renderer::BloomPass>(core, scene_format, extent));
+	renderer.addPostProcessPass(std::make_unique<renderer::TonemapPass>(core, color_format, extent));
+	renderer.addPostProcessPass(std::make_unique<renderer::FxaaPass>(core, color_format, extent));
+
+	return cluster_lighting_pass_ref;
 }
 }
 
@@ -655,70 +731,8 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 	m->renderer->setDisplayHdr(display_hdr.sdr_white, display_hdr.headroom);
 
-	// Constructed before any material pass so materials can bind the culled light buffers straight away
-	auto cluster_lighting_pass = std::make_unique<renderer::ClusterLightingPass>(*m->vulkan_core);
-	const auto& cluster_lighting_pass_ref = *cluster_lighting_pass;
-	m->renderer->setClusterLightingPass(&cluster_lighting_pass_ref);
-	m->renderer->addComputePass(std::move(cluster_lighting_pass));
-
-	// Same ordering requirement as the lighting pass
-	auto shadow_pass = std::make_unique<renderer::ShadowPass>(*m->vulkan_core);
-	m->renderer->setShadowPass(shadow_pass.get());
-	m->renderer->addRenderPass(std::move(shadow_pass));
-
-	// Environment cubemaps
-	auto environment_pass =
-	    std::make_unique<renderer::EnvironmentPass>(*m->vulkan_core, m->renderer->getSceneColorFormat(), depth_format);
-	m->renderer->setEnvironmentPass(environment_pass.get());
-	m->renderer->addRenderPass(std::move(environment_pass));
-
-	// Probe cubemaps
-	auto reflection_probe_pass =
-	    std::make_unique<renderer::ReflectionProbePass>(*m->vulkan_core, m->renderer->getSceneColorFormat(), depth_format);
-	m->renderer->setReflectionProbePass(reflection_probe_pass.get());
-	m->renderer->addRenderPass(std::move(reflection_probe_pass));
-
-	// Mesh rendering runs through per-material passes
-
-	// World-stage passes render into the HDR scene target
-	const auto scene_format = m->renderer->getSceneColorFormat();
-
-	// Before the passes whose scene sets bind its cascades
-	auto gi_pass = std::make_unique<renderer::GiPass>(*m->vulkan_core, scene_format, extent);
-	m->renderer->setGiPass(gi_pass.get());
-
-	// Recorded in its own scopes so registration order here does not matter
-	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
-	m->renderer->setVoxelPass(voxel_pass.get());
-	m->renderer->addRenderPass(std::move(voxel_pass));
-	addDebrisPass(*m->vulkan_core, *m->renderer, depth_format, extent);
-
-	// World-space UI panels are scene content and get exposed with it, the screen-space UI does not
-	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
-
-	// First in the chain so the probes read depth before any post pass
-	m->renderer->addPostProcessPass(std::move(gi_pass));
-
-	if (m->vulkan_core->isRayTracingSupported()) {
-		m->renderer->addPostProcessPass(std::make_unique<renderer::TracedShadowPass>(*m->vulkan_core, scene_format, extent));
-	}
-
-	// SSAO first
-	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
-	// Before SSR so the scene colour it reads already holds the traced voxel reflections
-	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(*m->vulkan_core, scene_format, extent);
-	m->renderer->setTracedSpecularPass(traced_specular.get());
-	m->renderer->addPostProcessPass(std::move(traced_specular));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::VolumetricPass>(*m->vulkan_core, scene_format, extent));
-	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
-	m->renderer->setTaaPass(taa.get());
-	m->renderer->addPostProcessPass(std::move(taa));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::LensFlarePass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
+	[[maybe_unused]]
+	const auto& cluster_lighting_pass_ref = addScenePasses(*m->vulkan_core, *m->renderer, color_format, depth_format, extent);
 
 	// always_on_top world panels, after the tonemap and under the screen-space UI
 	m->renderer->addRenderPass(
@@ -763,70 +777,8 @@ void Engine::createAvaloniaWindow() {
 
 	m->renderer = std::make_unique<renderer::VulkanRenderer>(*m->vulkan_core, std::move(output_target));
 
-	// Constructed before any material pass so materials can bind the culled light buffers straight away
-	auto cluster_lighting_pass = std::make_unique<renderer::ClusterLightingPass>(*m->vulkan_core);
-	const auto& cluster_lighting_pass_ref = *cluster_lighting_pass;
-	m->renderer->setClusterLightingPass(&cluster_lighting_pass_ref);
-	m->renderer->addComputePass(std::move(cluster_lighting_pass));
-
-	// Same ordering requirement as the lighting pass
-	auto shadow_pass = std::make_unique<renderer::ShadowPass>(*m->vulkan_core);
-	m->renderer->setShadowPass(shadow_pass.get());
-	m->renderer->addRenderPass(std::move(shadow_pass));
-
-	// Environment cubemaps
-	auto environment_pass =
-	    std::make_unique<renderer::EnvironmentPass>(*m->vulkan_core, m->renderer->getSceneColorFormat(), depth_format);
-	m->renderer->setEnvironmentPass(environment_pass.get());
-	m->renderer->addRenderPass(std::move(environment_pass));
-
-	// Probe cubemaps
-	auto reflection_probe_pass =
-	    std::make_unique<renderer::ReflectionProbePass>(*m->vulkan_core, m->renderer->getSceneColorFormat(), depth_format);
-	m->renderer->setReflectionProbePass(reflection_probe_pass.get());
-	m->renderer->addRenderPass(std::move(reflection_probe_pass));
-
-	// Mesh rendering runs through per-material passes
-
-	// World-stage passes render into the HDR scene target
-	const auto scene_format = m->renderer->getSceneColorFormat();
-
-	// Before the passes whose scene sets bind its cascades
-	auto gi_pass = std::make_unique<renderer::GiPass>(*m->vulkan_core, scene_format, extent);
-	m->renderer->setGiPass(gi_pass.get());
-
-	// Recorded in its own scopes so registration order here does not matter
-	auto voxel_pass = std::make_unique<renderer::VoxelPass>(*m->vulkan_core, scene_format, depth_format, extent);
-	m->renderer->setVoxelPass(voxel_pass.get());
-	m->renderer->addRenderPass(std::move(voxel_pass));
-	addDebrisPass(*m->vulkan_core, *m->renderer, depth_format, extent);
-
-	// World-space UI panels are scene content
-	m->renderer->addRenderPass(std::make_unique<ui::WorldUIPass>(*m->vulkan_core, scene_format, depth_format, extent));
-
-	// First in the chain so the probes read depth before any post pass
-	m->renderer->addPostProcessPass(std::move(gi_pass));
-
-	if (m->vulkan_core->isRayTracingSupported()) {
-		m->renderer->addPostProcessPass(std::make_unique<renderer::TracedShadowPass>(*m->vulkan_core, scene_format, extent));
-	}
-
-	// SSAO first
-	m->renderer->addPostProcessPass(std::make_unique<renderer::SsaoPass>(*m->vulkan_core, scene_format, extent));
-	// Before SSR so the scene colour it reads already holds the traced voxel reflections
-	auto traced_specular = std::make_unique<renderer::TracedSpecularPass>(*m->vulkan_core, scene_format, extent);
-	m->renderer->setTracedSpecularPass(traced_specular.get());
-	m->renderer->addPostProcessPass(std::move(traced_specular));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::SsrPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::VolumetricPass>(*m->vulkan_core, scene_format, extent));
-	auto taa = std::make_unique<renderer::TaaPass>(*m->vulkan_core, scene_format, extent);
-	m->renderer->setTaaPass(taa.get());
-	m->renderer->addPostProcessPass(std::move(taa));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::MotionBlurPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::LensFlarePass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::BloomPass>(*m->vulkan_core, scene_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::TonemapPass>(*m->vulkan_core, color_format, extent));
-	m->renderer->addPostProcessPass(std::make_unique<renderer::FxaaPass>(*m->vulkan_core, color_format, extent));
+	[[maybe_unused]]
+	const auto& cluster_lighting_pass_ref = addScenePasses(*m->vulkan_core, *m->renderer, color_format, depth_format, extent);
 
 	// Editor overlays, drawn after the tonemap in display space (see DebugPass::stage() / GridPass::stage())
 	m->renderer->addRenderPass(std::make_unique<renderer::GridPass>(*m->vulkan_core, color_format, depth_format, extent));

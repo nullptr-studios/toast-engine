@@ -425,7 +425,7 @@ void ShadowPass::createVoxelResources(const VulkanCore& core) {
 	m_voxel_shadow_sets.clear();
 	m_voxel_storage_sets.clear();
 	m_voxel_instance_buffers.clear();
-	m_voxel_bound_storage.assign(VulkanRenderer::k_frames_in_flight, nullptr);
+	m_voxel_bound_storage.resize(VulkanRenderer::k_frames_in_flight);
 
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo buffer_ci {};
@@ -573,10 +573,9 @@ auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
 		return 0;
 	}
 
-	if (m_voxel_bound_storage[frame_index] != storage) {
+	if (m_voxel_bound_storage.update(frame_index, storage)) {
 		// Safe since the fence of this slot was waited on
 		writeVoxelStorageDescriptors(m_core->getDevice(), *m_voxel_storage_sets[frame_index], *storage);
-		m_voxel_bound_storage[frame_index] = storage;
 	}
 
 	const auto& allocation = m_voxel_instance_buffers[frame_index].getAllocation();

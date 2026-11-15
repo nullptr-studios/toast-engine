@@ -53,20 +53,7 @@ public:
 		return m_material;
 	}
 
-	/**
-	 * @brief Which .tanim asset's Skin drives this mesh, if it's skinned
-	 *
-	 * Only meaningful when getMesh()->isSkinned(). The skeleton that actually poses the joints isn't
-	 * referenced here - the renderer looks for the nearest toast::AnimationPlayer ancestor and resolves
-	 * this Skin's joint names against its subtree, matching how AnimationPlayer itself resolves clip
-	 * targets. That keeps this a data-only reference instead of a second cross-node link to keep in sync
-	 */
-	[[nodiscard]]
-	auto getSkinAnimation() const -> const assets::Handle<assets::Animation>& {
-		return m_skin_animation;
-	}
-
-	/// @returns which Skin inside skinAnimation() to use; empty means "the first one"
+	/// Skin inside the nearest SkeletalNode ancestor skeleton, empty is the first
 	[[nodiscard]]
 	auto getSkinName() const -> const std::string& {
 		return m_skin_name;
@@ -74,6 +61,7 @@ public:
 
 private:
 	void updateInspectorMessages() override;
+	auto inspectorOptions(std::string_view field_name) -> std::vector<std::string> override;
 	void init();
 	void end();
 	void destroy();
@@ -84,10 +72,7 @@ private:
 	[[Reflect]]
 	assets::Handle<assets::Material> m_material;
 
-	[[Reflect, Name("Skin Animation")]]
-	assets::Handle<assets::Animation> m_skin_animation;
-
-	[[Reflect, Name("Skin Name")]]
+	[[Reflect, Name("Skin Name"), Options]]
 	std::string m_skin_name;
 
 	bool m_registered_proxy = false;

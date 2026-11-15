@@ -336,6 +336,11 @@ public partial class FieldVM : ObservableObject {
 			}
 		}
 
+		if (!info.IsArray && info.FieldType == "string_t" && ReflectionDatabase.HasAttr(info.Attributes, "Options")) {
+			Kind = WidgetKind.Enum;
+			HasDynamicOptions = true;
+		}
+
 		var isColor = ReflectionDatabase.HasAttr(info.Attributes, "Color");
 		if (isColor && !info.IsArray) {
 			if (info.FieldType == "vec3_t") Kind = WidgetKind.Color3;
@@ -483,6 +488,20 @@ public partial class FieldVM : ObservableObject {
 		_ => 0
 	};
 	public ObservableCollection<string> EnumOptions { get; } = [];
+
+	public bool HasDynamicOptions { get; }
+
+	public void ApplyEngineOptions(IReadOnlyList<string> options) {
+		if (!HasDynamicOptions || EnumOptions.SequenceEqual(options, StringComparer.Ordinal)) return;
+		EnumOptions.Clear();
+		m_enumLabelToValue.Clear();
+		m_enumValueToLabel.Clear();
+		foreach (var option in options) {
+			EnumOptions.Add(option);
+			m_enumLabelToValue[option] = option;
+			m_enumValueToLabel[option] = option;
+		}
+	}
 	internal string EngineValue => ToEngineString();
 	public IAsyncCanExecuteCommand PasteCommand => m_pasteCommand ??= new InspectorPasteCommand(
 		component => m_clipboardHost?.PasteFieldAsync(this, ClipboardComponent(component)) ?? Task.CompletedTask,

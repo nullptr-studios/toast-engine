@@ -19,6 +19,7 @@
 #include <string_view>
 #include <toast/assets/prefab.hpp>
 #include <toast/export.hpp>
+#include <toast/lock_profiling.hpp>
 #include <toast/physics/accumulator.hpp>
 #include <toast/scripting/lua_value_codec.hpp>
 #include <toast/uid.hpp>
@@ -63,7 +64,7 @@ public:
 	auto isEditing() noexcept -> bool;
 
 	[[nodiscard]]
-	auto treeMutex() const noexcept -> std::shared_mutex& {
+	auto treeMutex() const noexcept -> TOAST_SHARED_LOCKABLE_BASE(std::shared_mutex) & {
 		return m_tree_mutex;
 	}
 
@@ -206,7 +207,7 @@ protected:
 private:
 	friend class CameraController;
 
-	mutable std::shared_mutex m_tree_mutex;
+	mutable TOAST_SHARED_LOCKABLE(std::shared_mutex, m_tree_mutex, "Node tree");
 	std::unordered_set<_detail::ControlBox> nodes;
 
 	std::unique_ptr<Camera> m_fallback_camera;
