@@ -143,7 +143,6 @@ void DebrisSimulation::step(uint32_t steps, double fixed_delta, std::shared_ptr<
 	Params params {
 	  .gravity = settings.gravity,
 	  .dt = static_cast<float>(total / static_cast<double>(substeps)),
-	  .fade_in = k_fade_in_seconds,
 	  .restitution = settings.debris_restitution,
 	  .friction = settings.debris_friction,
 	  .voxel_size = voxel::k_voxel_size,

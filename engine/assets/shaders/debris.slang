@@ -3,7 +3,6 @@
 struct Params {
     float3 gravity;
     float dt;
-    float fadeIn;
     float restitution;
     float friction;
     float voxelSize;
@@ -19,6 +18,7 @@ struct Params {
     uint pad0;
     uint pad1;
     uint pad2;
+    uint pad3;
 };
 
 [[vk::push_constant]]
@@ -125,7 +125,6 @@ static const uint kTagUniform = 1;
 static const uint kMaskBits = 0xFFu;
 static const uint kFlagAsleep = 1u << 24;
 static const uint kFlagGlass = 1u << 25;
-static const float kSpawnScale = 0.4;       // grows from this share of its size
 
 static const float kSleepSpeed = 0.2;       // below this speed a piece may sleep
 static const uint kSleepSteps = 15;
@@ -239,11 +238,10 @@ float pieceRadius(uint mask, float scale) {
     return gParams.voxelSize * scale * lerp(0.6, 1.0, float(countbits(mask & kMaskBits)) / 8.0);
 }
 
-// Grows in after spawning and shrinks away before dying
+// Shrinks away before dying
 float displayScale(DebrisMotion motion) {
-    float grow = lerp(kSpawnScale, 1.0, saturate(motion.age / max(gParams.fadeIn, 1e-4)));
     float shrink = smoothstep(0.0, max(gParams.fadeOut, 1e-4), motion.lifetime - motion.age);
-    return motion.baseScale * grow * shrink;
+    return motion.baseScale * shrink;
 }
 
 struct Contact {

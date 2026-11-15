@@ -36,7 +36,7 @@ public:
 		glm::vec4 rotation {0.0f, 0.0f, 0.0f, 1.0f};
 		glm::vec3 velocity {0.0f};
 		uint32_t albedo_roughness = 0;
-		/// Base scale times the spawn and death fades
+		/// Base scale times the death fade
 		float scale = 0.0f;
 		/// Alpha and ior byte << 8 and only read with k_flag_glass in packed
 		uint32_t glass = 0;
@@ -86,7 +86,6 @@ public:
 	static constexpr uint32_t k_voxels_per_particle = 8;
 	/// Mirrors debris.slang where bits 0 to 7 are the voxel mask
 	static constexpr uint32_t k_flag_glass = 1u << 25;
-	static constexpr float k_fade_in_seconds = 0.12f;
 	static constexpr float k_fade_out_seconds = 0.6f;
 	/// Slots past the cap so pieces shrinking away still have room
 	static constexpr uint32_t k_cap_headroom_divisor = 4;
@@ -141,7 +140,6 @@ private:
 	struct Params {
 		glm::vec3 gravity {0.0f};
 		float dt = 0.0f;
-		float fade_in = 0.0f;
 		float restitution = 0.0f;
 		float friction = 0.0f;
 		float voxel_size = 0.0f;
@@ -154,7 +152,7 @@ private:
 		float fade_out = 0.0f;
 		float max_speed = 0.0f;
 		float max_spin = 0.0f;
-		std::array<uint32_t, 3> pad {};
+		std::array<uint32_t, 4> pad {};
 	};
 
 	static_assert(sizeof(Params) == 80, "Params is mirrored by debris.slang");
