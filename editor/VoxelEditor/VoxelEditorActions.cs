@@ -76,13 +76,13 @@ public static class VoxelEditorActions {
 		// Every volume gets a model
 		void Walk(HierarchyElement parent) {
 			foreach (var child in parent.Children) {
-				if (child.Type is "toast::FillVolume" or "toast::VoxelMesh") {
+				if (child.Type is "toast::FillVolume" or "toast::VoxelMesh" or "toast::VoxelLine") {
 					var path = $"{folder}/{UniqueFileName(child.Name, taken)}.tvox";
 					CreateVoxelFile(path);
 					bake.Pieces.Add(new VoxelBakePiece { Uid = child.Uid, Path = path });
 				}
-				if (child.Type is "toast::VoxelGroup" or "toast::FillVolume" or "toast::VoxelMesh" or "toast::CarveVolume"
-				    or "toast::PaintVolume") {
+				if (child.Type is "toast::VoxelGroup" or "toast::FillVolume" or "toast::VoxelMesh" or "toast::VoxelLine"
+				    or "toast::CarveVolume" or "toast::PaintVolume") {
 					Walk(child);
 				}
 			}

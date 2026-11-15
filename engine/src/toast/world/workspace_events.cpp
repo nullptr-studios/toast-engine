@@ -1250,6 +1250,10 @@ struct ProtoTraits<VoxelCreatePiece> {
 			p.set_script(e.script);
 		}
 		p.set_mode(e.mode);
+		if (e.model.data() != 0) {
+			p.set_model(e.model);
+		}
+		p.set_axis(e.axis);
 		return p;
 	}
 
@@ -1262,6 +1266,8 @@ struct ProtoTraits<VoxelCreatePiece> {
 		e.max = readInt3(p.max());
 		e.script = toast::UID::fromString(p.script());
 		e.mode = p.mode();
+		e.model = toast::UID::fromString(p.model());
+		e.axis = p.axis();
 		return e;
 	}
 };
@@ -1551,6 +1557,9 @@ struct ProtoTraits<SetVoxelTool> {
 			p.set_default_script(e.default_script);
 		}
 		p.set_default_mode(e.default_mode);
+		if (e.default_model.data() != 0) {
+			p.set_default_model(e.default_model);
+		}
 		return p;
 	}
 
@@ -1560,6 +1569,7 @@ struct ProtoTraits<SetVoxelTool> {
 		e.paint_id = p.paint_id();
 		e.default_script = toast::UID::fromString(p.default_script());
 		e.default_mode = p.default_mode();
+		e.default_model = toast::UID::fromString(p.default_model());
 		return e;
 	}
 };

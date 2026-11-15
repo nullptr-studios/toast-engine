@@ -271,6 +271,8 @@ public:
 	/** Set by the ProceduralVoxel when the transform had to be snapped to the voxel lattice */
 	void setMisaligned(bool misaligned);
 
+	virtual void landedAt(const voxel::LatticePlacement&) { }
+
 protected:
 	/** The size scripts draw into, the grid itself is rounded up to whole bricks */
 	[[nodiscard]]

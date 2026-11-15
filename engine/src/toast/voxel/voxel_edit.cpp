@@ -1008,6 +1008,24 @@ auto tileVolume(
 	return result;
 }
 
+auto tileLine(
+    Volume& target, const Volume& pattern, int axis, glm::ivec3 origin, int32_t length, int32_t phase,
+    const PaletteRemapTable& remap, WriteMode mode, uint8_t match_id
+) -> EditResult {
+	const std::optional<EditBounds> solid = occupiedBounds(pattern);
+	if (!solid.has_value() || length < 1 || (axis != 0 && axis != 1)) {
+		return {};
+	}
+
+	glm::ivec3 last = origin + (solid->max - solid->min);
+	last[axis] = origin[axis] + length - 1;
+
+	TileOptions options;
+	options.fit = TileFit::crop;
+	options.offset[axis] = phase;
+	return tileVolume(target, pattern, origin, last, options, remap, mode, match_id);
+}
+
 auto floodFill(Volume& volume, glm::ivec3 seed, uint8_t id) -> EditResult {
 	ZoneScoped;
 	EditResult result;
