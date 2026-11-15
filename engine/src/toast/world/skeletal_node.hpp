@@ -26,6 +26,10 @@ public:
 	[[Reflect]]
 	auto play(std::string_view clip_name) -> bool;
 
+	/// Blends from the current pose into the clip over @p seconds
+	[[Reflect]]
+	auto crossfade(std::string_view clip_name, float seconds) -> bool;
+
 	[[Reflect]]
 	void stop();
 
@@ -34,10 +38,39 @@ public:
 		m_playback.paused = value;
 	}
 
-	[[nodiscard]]
+	[[nodiscard, Reflect]]
 	auto isPlaying() const noexcept -> bool {
 		return m_playback.playing;
 	}
+
+	[[nodiscard, Reflect]]
+	auto isPaused() const noexcept -> bool {
+		return m_playback.paused;
+	}
+
+	/// Empty when no clip was played yet
+	[[nodiscard, Reflect]]
+	auto clipName() const -> std::string {
+		return m_playback.clip != nullptr ? m_playback.clip->name : std::string {};
+	}
+
+	[[nodiscard, Reflect]]
+	auto clipTime() const noexcept -> float {
+		return m_playback.time;
+	}
+
+	[[nodiscard, Reflect]]
+	auto clipDuration() const noexcept -> float {
+		return m_playback.clip != nullptr ? m_playback.clip->duration : 0.0f;
+	}
+
+	[[Reflect]]
+	void seek(float seconds) noexcept {
+		m_playback.time = seconds;
+	}
+
+	/// Fires once when a non looping clip reaches its end
+	signals::Signal<std::string_view> clip_finished;
 
 	[[nodiscard]]
 	auto time() const noexcept -> float {
@@ -127,6 +160,9 @@ private:
 	assets::Handle<assets::Skeleton> m_bound_asset;
 	const assets::Skeleton* m_bound = nullptr;
 	std::vector<assets::BonePose> m_local;
+	std::vector<assets::BonePose> m_fade_from;
+	float m_fade_time = 0.0f;
+	float m_fade_duration = 0.0f;
 	std::vector<glm::mat4> m_model;
 	std::vector<int32_t> m_parents;
 
