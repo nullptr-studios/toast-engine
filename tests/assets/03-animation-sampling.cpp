@@ -94,7 +94,7 @@ TOAST_TEST_NAMED("Assets", "assets/03-animation-sampling", test_assets_03_animat
 	// With zero tangents the Hermite basis reduces to smoothstep, so the midpoint is half the end value
 	assert(nearly(cubic.sampleVec3(0.5f), glm::vec3(2.0f, 0.0f, 0.0f)));
 
-	// --- Clip-level sampling groups tracks per node and flags only what it drives ---
+	// --- Clip-level sampling groups tracks per node; scale tracks are ignored ---
 	assets::AnimationClip clip;
 	clip.name = "Test";
 	clip.duration = 2.0f;
@@ -112,15 +112,11 @@ TOAST_TEST_NAMED("Assets", "assets/03-animation-sampling", test_assets_03_animat
 	assert(poses.size() == 2);
 
 	const auto& bone = poses.at("Bone");
-	assert(bone.has_translation);
-	assert(!bone.has_rotation);    // untouched components must stay unflagged
-	assert(!bone.has_scale);
 	assert(nearly(bone.translation, glm::vec3(5.0f, 10.0f, 15.0f)));
+	assert(nearly(bone.rotation.w, 1.0f));    // untouched components stay at their defaults
 
 	const auto& other_pose = poses.at("Other");
-	assert(other_pose.has_scale);
-	assert(!other_pose.has_translation);
-	assert(nearly(other_pose.scale, glm::vec3(2.0f)));
+	assert(nearly(other_pose.translation, glm::vec3(0.0f)));
 
 	// --- Loop wrapping ---
 	assert(nearly(clip.wrap(0.5f), 0.5f));

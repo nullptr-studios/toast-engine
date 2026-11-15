@@ -2,6 +2,8 @@
 
 #include "binary_io.hpp"
 
+#include <utility>
+
 namespace assets {
 
 namespace {
@@ -46,7 +48,7 @@ Skeleton::Skeleton(std::span<const uint8_t> data) {
 		bone.parent = reader.read<int32_t>();
 		bone.rest = reader.read<BonePose>();
 		// Parent below child is what lets SkeletalNode pose in one forward pass
-		if (bone.parent >= static_cast<int32_t>(b)) {
+		if (std::cmp_greater_equal(bone.parent, b)) {
 			bone.parent = -1;
 		}
 		m_bones.push_back(std::move(bone));

@@ -91,7 +91,7 @@ struct NodePose {
 	// uint8_t has_translation = false;
 	// uint8_t has_rotation = false;
 
-	float _pad;
+	float pad = 0.0f;
 };
 
 /// @brief A named set of tracks that play together

@@ -647,8 +647,13 @@ auto GiClipmapPass::opacityViews() const -> std::array<vk::ImageView, k_max_leve
 	std::array<vk::ImageView, k_max_levels> views;
 	for (uint32_t i = 0; i < k_max_levels; ++i) {
 		const Level& level = m_levels[i < m_level_count ? i : 0];
-		views[i] = m_level_count == 0 ? **m_dummy_view
-		                              : (level.opacity_all_view.has_value() ? **level.opacity_all_view : **level.opacity_view);
+		if (m_level_count == 0) {
+			views[i] = **m_dummy_view;
+		} else if (level.opacity_all_view.has_value()) {
+			views[i] = **level.opacity_all_view;
+		} else {
+			views[i] = **level.opacity_view;
+		}
 	}
 	return views;
 }
