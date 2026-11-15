@@ -44,7 +44,7 @@ public static class NodeShape {
 
 		if (node is FunctionEntry entry) slots.Add(new Slot(SlotKind.ExecOut, right++, "", node, Child: entry.Body));
 		if (node is Statement s) {
-			var roles = s is FunctionDecl ? [] : s.ChildBlocks.ToList();
+			var roles = s is FunctionDecl ? new() : s.ChildBlocks.ToList();
 			foreach (var block in roles) slots.Add(new Slot(SlotKind.ExecOut, right++, RoleLabel(s, block), node, Child: block));
 			if (HasContinuation(s)) slots.Add(new Slot(SlotKind.ExecOut, right++, roles.Count > 0 ? ContinuationLabel : "", node));
 		}
