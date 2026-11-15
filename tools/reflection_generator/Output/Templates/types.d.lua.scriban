@@ -15,7 +15,7 @@
 ---@field {{ signal.name }} {{ signal.lua_type }}
 {{ end ~}}
 
----@type TypeMarker
+---@type TypeMarker<{{ node.name }}>
 {{ node.name }} = nil
 
 {{ end ~}}

@@ -29,7 +29,15 @@ internal static class LuaTypes
 		if (inner.StartsWith("Box<", StringComparison.Ordinal)) {
 			return inner["Box<".Length..].TrimEnd('>').Bare();
 		}
-		return inner.Contains("Handle<") ? "Asset" : "any";
+		return inner.Contains("Handle<") ? ForHandle(inner) : "any";
+	}
+
+	// asset handles need the same type names as runtime markers
+	private static string ForHandle(string type)
+	{
+		var afterBracket = type[(type.IndexOf("Handle<", StringComparison.Ordinal) + "Handle<".Length)..].TrimStart();
+		var name = new string(afterBracket.TakeWhile(c => char.IsLetterOrDigit(c) || c is '_' or ':').ToArray());
+		return name.Length == 0 ? "Asset" : name.Bare();
 	}
 
 	// parameters, return values and signal arguments
@@ -53,7 +61,7 @@ internal static class LuaTypes
 			var inner = type.Split("Box<").ElementAtOrDefault(1) ?? "Node";
 			return inner.TrimEnd('>', '&', ' ').Bare();
 		}
-		if (type.Contains("Handle<")) return "Asset";
+		if (type.Contains("Handle<")) return ForHandle(type);
 		if (type.Contains("physics::RayHit")) return "RayHit";
 		if (type.Contains("bool")) return "boolean";
 		if (type.Contains("float") || type.Contains("double")) return "number";
@@ -101,7 +109,7 @@ internal static class LuaTypes
 			return ForEventField(element, enumNames) is { } inner ? (inner.Lua + "[]", inner.Readable) : null;
 		}
 		if (bare.StartsWith("assets::Handle<", StringComparison.Ordinal) || bare.StartsWith("Handle<", StringComparison.Ordinal)) {
-			return ("Asset", true);
+			return (ForHandle(bare), true);
 		}
 		if (enumNames.Contains(bare.Bare())) return ("integer", true);
 

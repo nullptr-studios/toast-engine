@@ -354,6 +354,10 @@
 					          ToggleType="CheckBox"
 					          IsChecked="{Binding PaletteEditorVisible, Mode=TwoWay}"
 					          InputGesture="Alt+D7" />
+					<MenuItem Header="Lua _Graph Editor"
+					          ToggleType="CheckBox"
+					          IsChecked="{Binding LuaEditorVisible, Mode=TwoWay}"
+					          InputGesture="Alt+D8" />
 				</MenuItem>
 				<MenuItem x:Name="WindowMenu"
 				          Header="_Window">

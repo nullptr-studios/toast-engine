@@ -126,6 +126,8 @@ public partial class ToastEngine : IDisposable {
 		toast_init();
 		IsEngineReady = true;
 		DataSchemaStubGenerator.Generate();
+		// fresh projects need asset markers after engine startup
+		ProjectContext.GenerateAssetTypeStubs();
 		toast_create_avalonia_window();
 
 		ReflectionDatabase.Update();
@@ -236,7 +238,7 @@ public partial class ToastEngine : IDisposable {
 				failure = new OperationCanceledException("The engine stopped before the work could run");
 				finished.Set();
 			}));
-			
+
 		// The loop may have ended before the adding to the queue
 		if (!engine.m_ticking) engine.CancelPendingTickWork();
 		finished.Wait();
@@ -643,6 +645,13 @@ public partial class ToastEngine : IDisposable {
 	/// Regenerates the Schemas.* lua stuff
 	public static bool GenerateDataSchemaStubs(string outPath) {
 		return IsEngineReady && toast_generate_data_schema_stubs(outPath) != 0;
+	}
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial int toast_generate_asset_type_stubs(string outPath);
+
+	public static bool GenerateAssetTypeStubs(string outPath) {
+		return IsEngineReady && toast_generate_asset_type_stubs(outPath) != 0;
 	}
 
 	private delegate IntPtr GameCreate();

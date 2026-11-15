@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,6 +16,7 @@ public class ToastZoneFactory : Factory {
 	private bool m_curveClosePending;
 	private bool m_hapticsClosePending;
 	private bool m_paletteClosePending;
+	private bool m_luaClosePending;
 	private IRootDock? m_rootDock;
 	private bool m_tableClosePending;
 	private IToolDock? m_toolDock;
@@ -25,6 +26,7 @@ public class ToastZoneFactory : Factory {
 	public HapticsViewModel? HapticsEditorVm { get; private set; }
 	public TableViewModel? TableEditorVm { get; private set; }
 	public PaletteViewModel? PaletteEditorVm { get; private set; }
+	public LuaEditor.LuaGraphEditorViewModel? LuaEditorVm { get; private set; }
 	public AssetBrowserViewModel? AssetBrowserVm { get; private set; }
 
 	public override IRootDock CreateLayout() {
@@ -41,6 +43,8 @@ public class ToastZoneFactory : Factory {
 			{ Id = "Table", Title = "Table Editor", CanPin = false, CanFloat = false };
 		var paletteEditor = new PaletteViewModel
 			{ Id = "Palette", Title = "Palette Editor", CanPin = false, CanFloat = false };
+		var luaEditor = new LuaEditor.LuaGraphEditorViewModel
+			{ Id = "Lua", Title = "Lua Graph", CanPin = false, CanFloat = false };
 
 		AssetBrowserVm = assetBrowser;
 		LogsVm = logs;
@@ -48,6 +52,7 @@ public class ToastZoneFactory : Factory {
 		CurveEditorVm = curveEditor;
 		TableEditorVm = tableEditor;
 		PaletteEditorVm = paletteEditor;
+		LuaEditorVm = luaEditor;
 
 		m_toolDock = new ToolDock {
 			AllowedDropOperations = DockOperationMask.Fill | DockOperationMask.Left | DockOperationMask.Right,
@@ -110,6 +115,10 @@ public class ToastZoneFactory : Factory {
 		};
 	}
 
+	public void EvictLuaTool() {
+		if (LuaEditorVm is { } lua && LayoutSerializer.ContainsVisible(m_rootDock, lua)) HideTool(lua);
+	}
+
 	public bool IsToolVisible(string id) {
 		return ToolById(id) is { } tool && LayoutSerializer.ContainsVisible(m_rootDock, tool);
 	}
@@ -145,6 +154,7 @@ public class ToastZoneFactory : Factory {
 		yield return CurveEditorVm;
 		yield return TableEditorVm;
 		yield return PaletteEditorVm;
+		yield return LuaEditorVm;
 	}
 
 	private static IToolDock? FindBottomDock(IRootDock root) {
@@ -187,14 +197,16 @@ public class ToastZoneFactory : Factory {
 			["Haptics"] = () => layout,
 			["Curve"] = () => layout,
 			["Table"] = () => layout,
-			["Palette"] = () => layout
+			["Palette"] = () => layout,
+			["Lua"] = () => layout
 		};
 		DockableLocator = new Dictionary<string, Func<IDockable?>> {
 			["Root"] = () => m_rootDock,
 			["Haptics"] = () => HapticsEditorVm,
 			["Curve"] = () => CurveEditorVm,
 			["Table"] = () => TableEditorVm,
-			["Palette"] = () => PaletteEditorVm
+			["Palette"] = () => PaletteEditorVm,
+			["Lua"] = () => LuaEditorVm
 		};
 		HostWindowLocator = new Dictionary<string, Func<IHostWindow?>> {
 			[nameof(IDockWindow)] = () => new EditorHostWindow()
@@ -223,6 +235,11 @@ public class ToastZoneFactory : Factory {
 
 		if (dockable == PaletteEditorVm && PaletteEditorVm!.IsDirty && !m_paletteClosePending) {
 			_ = GatedClose(PaletteEditorVm, PaletteEditorVm, v => m_paletteClosePending = v);
+			return;
+		}
+
+		if (dockable == LuaEditorVm && LuaEditorVm!.IsDirty && !m_luaClosePending) {
+			_ = GatedClose(LuaEditorVm, LuaEditorVm, v => m_luaClosePending = v);
 			return;
 		}
 

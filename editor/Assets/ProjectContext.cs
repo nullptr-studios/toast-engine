@@ -75,6 +75,17 @@ public static class ProjectContext {
 		DataSchemaStubGenerator.StartWatching();
 	}
 
+	// use runtime names so the stubs match registered asset types
+	public static void GenerateAssetTypeStubs(Action<string>? log = null) {
+		var path = Path.Combine(CachePath, "lua", "asset_types.d.lua");
+		if (!ToastEngine.IsEngineReady) {
+			log?.Invoke("Engine not ready, asset_types.d.lua not regenerated yet");
+			return;
+		}
+		Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+		if (!ToastEngine.GenerateAssetTypeStubs(path)) log?.Invoke($"warning: failed to write {path}");
+	}
+
 	public static void SyncLuaDefinitions(Action<string>? log = null) {
 		var src = Path.Combine(CorePath, "lua");
 		var dst = Path.Combine(CachePath, "lua");
@@ -95,6 +106,9 @@ public static class ProjectContext {
 		// Emit UI bind stubs alongside the engine definitions
 		UIBindStubGenerator.Generate();
 		DataSchemaStubGenerator.Generate();
+
+		// asset markers are unavailable until the engine starts
+		GenerateAssetTypeStubs(log);
 
 		var luarc = Path.Combine(ProjectPath, ".luarc.json");
 		if (File.Exists(luarc)) return;

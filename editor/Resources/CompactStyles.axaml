@@ -28,6 +28,11 @@
         <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
         <Setter Property="Padding" Value="{StaticResource CompactFieldPadding}" />
     </Style>
+    <Style Selector="MenuItem.compact-menu">
+        <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
+        <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />
+        <Setter Property="Padding" Value="{StaticResource CompactFieldPadding}" />
+    </Style>
     <Style Selector="CheckBox.compact-control">
         <Setter Property="FontSize" Value="{StaticResource CompactFontSize}" />
         <Setter Property="MinHeight" Value="{StaticResource CompactControlHeight}" />

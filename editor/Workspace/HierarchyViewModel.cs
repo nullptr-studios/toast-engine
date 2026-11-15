@@ -20,7 +20,7 @@ using Proto.Events;
 
 namespace editor.Workspace;
 
-public class HierarchyElement : INotifyPropertyChanged {
+public class HierarchyElement : INotifyPropertyChanged, IHierarchyRow {
 	private double? m_visualHeight;
 	public double VisualHeight {
 		get => m_visualHeight ?? HierarchyConnectorLayer.RowHeight;
