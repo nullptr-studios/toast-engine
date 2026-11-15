@@ -81,9 +81,12 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $dir = Join-Path $env:RUNNER_TOOL_CACHE 'InnoSetup'
           if (-not (Test-Path (Join-Path $dir 'ISCC.exe'))) {
-            $setup = Join-Path $env:RUNNER_TEMP 'innosetup.exe'
-            Invoke-WebRequest -Uri 'https://jrsoftware.org/download.php/is.exe' -OutFile $setup
-            Start-Process -Wait -FilePath $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=$dir"
+            # jrsoftware.org hands the runner a truncated file; GitHub releases are reliable and pinned
+            gh release download is-7_1_1 --repo jrsoftware/issrc --pattern 'innosetup-*-x64.exe' --dir $env:RUNNER_TEMP --clobber
+            if ($LASTEXITCODE -ne 0) { throw "Inno Setup download failed" }
+            $setup = Join-Path $env:RUNNER_TEMP 'innosetup-7.1.1-x64.exe'
+            $p = Start-Process -Wait -PassThru -FilePath $setup -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/CURRENTUSER', "/DIR=$dir"
+            if ($p.ExitCode -ne 0) { throw "Inno Setup install failed ($($p.ExitCode))" }
           }
           "ISCC=$(Join-Path $dir 'ISCC.exe')" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
