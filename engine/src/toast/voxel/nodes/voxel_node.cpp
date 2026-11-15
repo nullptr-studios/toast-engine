@@ -10,6 +10,7 @@
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/destruction_event.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/world/bone_attachment.hpp>
 
 namespace toast {
 
@@ -885,13 +886,18 @@ void VoxelNode::updateInspectorMessages() {
 	};
 	static const toast::NodeMessage palette_message {
 	  .severity = toast::NodeMessage::warning,
-	  .id = 1,
+	  .id = 2,
 	  .text = "Voxel node has no valid palette",
 	};
 	static const toast::NodeMessage material_message {
 	  .severity = toast::NodeMessage::warning,
-	  .id = 1,
+	  .id = 3,
 	  .text = "Voxel node has no valid physical material library",
+	};
+	static const toast::NodeMessage bone_message {
+	  .severity = toast::NodeMessage::warning,
+	  .id = 4,
+	  .text = "Under a BoneAttachment use Kinematic with Break Anchor Largest Piece so physics follows the bone",
 	};
 	if (resolvedModel() != nullptr) {
 		removeInspectorMessage(model_message);
@@ -907,6 +913,16 @@ void VoxelNode::updateInspectorMessages() {
 		removeInspectorMessage(material_message);
 	} else {
 		addInspectorMessage(material_message);
+	}
+
+	bool on_bone = false;
+	for (toast::Box<toast::Node> cursor = parent(); cursor.exists() && !on_bone; cursor = cursor->parent()) {
+		on_bone = cursor.as<toast::BoneAttachment>().exists();
+	}
+	if (on_bone && (simulation_type != SimulationType::kinematic || break_anchor != BreakAnchor::largest_piece)) {
+		addInspectorMessage(bone_message);
+	} else {
+		removeInspectorMessage(bone_message);
 	}
 }
 

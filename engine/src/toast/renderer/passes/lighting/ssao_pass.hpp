@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -62,7 +63,7 @@ private:
 	vk::raii::Sampler m_point_sampler = nullptr;
 
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
-	std::vector<vk::ImageView> m_bound_views;
+	DescriptorCache<vk::ImageView> m_bound_views;
 
 	PostProcessTarget m_occlusion_target;
 	PostProcessTarget m_target;

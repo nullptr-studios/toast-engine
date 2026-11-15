@@ -60,6 +60,12 @@ enum class SimulationType : uint8_t {
 	dynamic = 2,        ///< Fully simulated
 };
 
+/// Which voxels stay on a static or kinematic node when it breaks apart
+enum class BreakAnchor : uint8_t {
+	bottom_face = 0,      ///< Voxels connected to the model bottom face
+	largest_piece = 1,    ///< The biggest connected piece, for props carried by a BoneAttachment
+};
+
 struct VoxelPart {
 	uint64_t key = 0;
 	std::unique_ptr<voxel::Volume> volume;
@@ -564,6 +570,10 @@ protected:
 	 */
 	[[Reflect, Name("Simulation Type"), Enum("Static", "Kinematic", "Dynamic")]]
 	SimulationType simulation_type = SimulationType::dynamic;
+
+	/// Ignored by dynamic nodes, they always keep the largest piece
+	[[Reflect, Name("Break Anchor"), Enum("Bottom Face", "Largest Piece")]]
+	BreakAnchor break_anchor = BreakAnchor::bottom_face;
 
 	[[Reflect, ReadOnly, Unit("kg")]]
 	float mass = 0.0f;

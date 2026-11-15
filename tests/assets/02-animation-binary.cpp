@@ -13,8 +13,7 @@ auto nearly(float a, float b) -> bool {
 }
 
 TOAST_TEST_NAMED("Assets", "assets/02-animation-binary", test_assets_02_animation_binary) {
-	// One clip covering every track target and all three interpolation modes, plus a skin, so the round
-	// trip exercises every branch of the .tanim reader/writer
+	// Every track target and interpolation mode so the round trip hits every .tanim branch
 	assets::AnimationClip clip;
 	clip.name = "Walk";
 	clip.duration = 2.5f;
@@ -58,25 +57,16 @@ TOAST_TEST_NAMED("Assets", "assets/02-animation-binary", test_assets_02_animatio
 	};
 	clip.tracks.push_back(scale);
 
-	assets::Skin skin;
-	skin.name = "Body";
-	skin.skeleton_root = "Hips";
-	skin.joints = {"Hips", "Spine", "Head"};
-	skin.inverse_bind_matrices = {glm::mat4(1.0f), glm::mat4(2.0f), glm::mat4(3.0f)};
-
-	const auto bytes = assets::Animation::toBinary({clip}, {skin});
+	const auto bytes = assets::Animation::toBinary(clip);
 	assert(!bytes.empty());
 
 	const assets::Animation loaded(bytes);
 	assert(loaded.type() == "animation");
-	assert(loaded.clips().size() == 1);
-	assert(loaded.skins().size() == 1);
 
-	const auto* round_tripped = loaded.findClip("Walk");
-	assert(round_tripped != nullptr);
+	const auto* round_tripped = &loaded.clip();
+	assert(round_tripped->name == "Walk");
 	assert(nearly(round_tripped->duration, 2.5f));
 	assert(round_tripped->tracks.size() == 3);
-	assert(loaded.findClip("Run") == nullptr);
 
 	const auto& t0 = round_tripped->tracks[0];
 	assert(t0.target_node == "Hips");
@@ -101,22 +91,13 @@ TOAST_TEST_NAMED("Assets", "assets/02-animation-binary", test_assets_02_animatio
 	assert(t2.vec3_values.size() == 6);
 	assert(nearly(t2.vec3_values[4].x, 2.0f));
 
-	const auto& loaded_skin = loaded.skins()[0];
-	assert(loaded_skin.name == "Body");
-	assert(loaded_skin.skeleton_root == "Hips");
-	assert(loaded_skin.joints.size() == 3);
-	assert(loaded_skin.joints[2] == "Head");
-	assert(loaded_skin.inverse_bind_matrices.size() == 3);
-	assert(nearly(loaded_skin.inverse_bind_matrices[2][0][0], 3.0f));
-
 	// A truncated file must be rejected rather than silently yielding partial garbage
 	const std::vector<uint8_t> truncated(bytes.begin(), bytes.begin() + (bytes.size() / 2));
 	const assets::Animation partial(truncated);
-	assert(partial.clips().size() <= 1);
+	assert(partial.clip().tracks.size() <= 3);
 
 	// Wrong magic entirely
 	const std::vector<uint8_t> junk {'N', 'O', 'P', 'E', 0, 0, 0, 0};
 	const assets::Animation rejected(junk);
-	assert(rejected.clips().empty());
-	assert(rejected.skins().empty());
+	assert(rejected.clip().tracks.empty());
 }

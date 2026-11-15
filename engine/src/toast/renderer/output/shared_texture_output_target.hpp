@@ -12,6 +12,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <toast/lock_profiling.hpp>
 #include <vector>
 
 namespace renderer {
@@ -156,16 +157,16 @@ private:
 	std::atomic<SharingState> m_sharing {SharingState::off};
 	std::atomic<bool> m_readback_requested {false};
 
-	std::mutex m_frame_mutex;
+	TOAST_LOCKABLE(std::mutex, m_frame_mutex, "Viewport frames");
 	std::vector<SharedImage> m_images;
 	uint32_t m_next_acquire_index = 0;
 
 	std::atomic<int32_t> m_latest_ready {-1};
 	std::atomic<int32_t> m_latest_readback {-1};
 	int32_t m_reading = -1;
-	std::condition_variable m_reading_done;
+	toast::ConditionVariable m_reading_done;
 	/// Woken when the editor gives a slot back
-	std::condition_variable m_slot_freed;
+	toast::ConditionVariable m_slot_freed;
 	std::atomic<uint64_t> m_frame_counter {0};
 	std::unique_ptr<Interop> m_interop;
 };

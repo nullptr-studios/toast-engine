@@ -247,6 +247,7 @@ public:
 	}
 
 private:
+	void createInstance(std::span<const char* const> required_instance_extensions, bool validate_ray_query);
 	void pickPhysicalDevice(std::span<const char* const> required_device_extensions);
 	void createLogicalDeviceAndAllocator(std::span<const char* const> required_device_extensions);
 

@@ -35,6 +35,7 @@ void AssetRegistry::init() {
 	s_raw["image_localization"] = [](std::vector<uint8_t> d) { return std::make_unique<ImageLocalization>(std::move(d)); };
 	s_raw["shader"] = [](std::vector<uint8_t> d) { return std::make_unique<Shader>(std::move(d)); };
 	s_raw["animation"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Animation>(d); };
+	s_raw["skeleton"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Skeleton>(d); };
 	s_raw["voxel_model"] = [](const std::vector<uint8_t>& d) { return std::make_unique<VoxelModel>(d); };
 
 	// Plain TOML loaders

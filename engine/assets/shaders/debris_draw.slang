@@ -1,6 +1,7 @@
 // Opaque debris into the voxel G-buffer and glass debris blended forward like voxel glass
 import voxel_gbuffer;
 import lighting;
+import gi_sample;
 import glass_common;
 
 struct PushConstants {
@@ -221,6 +222,7 @@ GlassShade shadeDebrisGlass(VSOutput input) {
     surface.viewSpaceZ = mul(gCamera.view, float4(input.worldPosition, 1.0)).z;
     surface.pixel = input.position.xy;
 
+    gGiGathered = giCheap(input.worldPosition, normal);
     GlassShade shade;
     const ShadingResult lit = shadeSurfaceLighting(surface);
     if (lit.isDebugView) {

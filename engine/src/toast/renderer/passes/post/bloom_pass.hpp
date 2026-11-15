@@ -36,6 +36,8 @@ public:
 
 	void onResize(vk::Extent2D extent) override;
 
+	void setGlassSources(vk::ImageView backdrop, vk::ImageView mask) override;
+
 private:
 	/// Mirrors bloom.slang BloomParams
 	struct Params {
@@ -57,7 +59,12 @@ private:
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
 	void createPipelines(const VulkanCore& core);
 
-	void writeDescriptor(vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene);
+	void writeDescriptor(
+	    vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView backdrop, vk::ImageView mask
+	);
+
+	vk::ImageView m_glass_backdrop = nullptr;
+	vk::ImageView m_glass_mask = nullptr;
 
 	void drawInto(
 	    vk::CommandBuffer cmd, const VulkanPipeline& pipeline, vk::DescriptorSet set, const Mip& target, const Params& params,
@@ -85,6 +92,8 @@ private:
 		std::vector<vk::raii::DescriptorSet> upsample;
 		vk::raii::DescriptorSet composite = nullptr;
 		vk::ImageView bound_source = nullptr;
+		vk::ImageView bound_backdrop = nullptr;
+		vk::ImageView bound_mask = nullptr;
 	};
 
 	std::vector<FrameSets> m_frame_sets;

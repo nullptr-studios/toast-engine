@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/passes/render_pass_base.hpp"
 #include "toast/renderer/resources/hiz_pyramid.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -72,6 +73,14 @@ public:
 	/// Writes scene colour indirect rounded normal and noisy diffuse while reading the G-buffer and depth
 	void recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
 
+	[[nodiscard]]
+	auto giGatherActive() const noexcept -> bool {
+		return m_gi_gather;
+	}
+
+	/// Inside a scope over the half resolution GI target and before recordLighting() which upsamples it
+	void recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
+
 	/// After prepare() whether recordAmbient() has rays to trace
 	[[nodiscard]]
 	auto ambientRaysActive() const noexcept -> bool {
@@ -102,11 +111,15 @@ public:
 	/// After every blended draw
 	void recordGlassSurfaces(vk::CommandBuffer cmd, uint32_t frame_index);
 
+	void recordGlassMask(vk::CommandBuffer cmd, uint32_t frame_index);
+
 	/// Whether the backdrop must be copied before glass draws
 	[[nodiscard]]
 	auto refractsGlass() const -> bool;
 
 	void setBackdropCaptured(bool captured) noexcept { m_backdrop_captured = captured; }
+
+	void setBackdropDepthValid(bool valid) noexcept { m_backdrop_depth_valid = valid; }
 
 	/// After prepare() whether the lighting scope writes denoised terms
 	[[nodiscard]]
@@ -305,7 +318,7 @@ private:
 
 	std::vector<vma::raii::Buffer> m_instance_buffers;
 
-	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
+	DescriptorCache<std::shared_ptr<const VoxelGpuStorage>> m_bound_storage;
 
 	std::vector<Draw> m_draws;
 
@@ -367,7 +380,11 @@ private:
 	uint32_t m_shadow_instance_count = 0;
 
 	/// Albedo face normal material and depth last written into each set
-	std::vector<std::array<vk::ImageView, 11>> m_bound_gbuffer;
+	DescriptorCache<std::array<vk::ImageView, 12>> m_bound_gbuffer;
+	auto updateGbufferSet(uint32_t frame_index) -> bool;
+	VulkanPipeline m_gi_gather_pipeline;
+	bool m_gi_gather = false;
+	bool m_gi_clipmap = false;
 	VulkanPipeline m_spatial_pipeline;
 	VulkanPipeline m_spatial_opaque_pipeline;
 	VulkanPipeline m_marched_pipeline;
@@ -376,11 +393,12 @@ private:
 	bool m_spatial_active = false;
 	bool m_scene_glass = false;
 	bool m_backdrop_captured = false;
+	bool m_backdrop_depth_valid = false;
 	bool m_glass_dual_source = false;
 	vk::raii::Sampler m_backdrop_sampler = nullptr;
 	vk::raii::Sampler m_backdrop_depth_sampler = nullptr;
 	/// Backdrop colour and depth each glass set was written with
-	std::vector<std::array<vk::ImageView, 2>> m_bound_backdrop;
+	DescriptorCache<std::array<vk::ImageView, 2>> m_bound_backdrop;
 	/// The push the lighting draw used so the spatial draw matches it
 	LightingPushConstants m_lighting_push;
 
@@ -416,7 +434,7 @@ private:
 	vk::raii::Sampler m_linear_sampler = nullptr;
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_denoise_sets;
-	std::vector<std::array<vk::ImageView, k_denoise_bindings>> m_denoise_bound;
+	DescriptorCache<std::array<vk::ImageView, k_denoise_bindings>> m_denoise_bound;
 	/// [term][parity] where the temporal pass writes the parity and reads the other
 	std::array<std::array<PostProcessTarget, 2>, 2> m_denoise_history;
 	uint32_t m_denoise_parity = 0;
@@ -438,11 +456,13 @@ private:
 		float refraction_distance = 0.0f;
 		uint32_t refraction_voxels = 0;
 		uint32_t lit_surfaces = 0;
+		uint32_t depth_test = 0;
 	};
 
 	ShaderLayout m_glass_layout;
 	VulkanPipeline m_glass_pipeline;
 	VulkanPipeline m_glass_surface_pipeline;
+	VulkanPipeline m_glass_mask_pipeline;
 	SceneDescriptorSets m_glass_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_glass_sets;
 	/// Instance index and brick grid index per drawn glass brick

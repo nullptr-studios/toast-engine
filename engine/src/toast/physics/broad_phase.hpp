@@ -70,7 +70,7 @@ public:
 	auto stats() const -> const BroadPhaseStats&;
 
 	[[nodiscard]]
-	auto snapshotTree() const -> AABBTree {
+	auto tree() const -> const AABBTree& {
 		return m_tree;
 	}
 

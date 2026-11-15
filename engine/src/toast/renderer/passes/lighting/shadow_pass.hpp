@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/lighting/shadow_constants.hpp"
 #include "toast/renderer/passes/render_pass_base.hpp"
@@ -223,7 +224,7 @@ private:
 	std::vector<vk::raii::DescriptorSet> m_voxel_shadow_sets;
 	std::vector<vk::raii::DescriptorSet> m_voxel_storage_sets;
 	std::vector<vma::raii::Buffer> m_voxel_instance_buffers;
-	std::vector<std::shared_ptr<const VoxelGpuStorage>> m_voxel_bound_storage;
+	DescriptorCache<std::shared_ptr<const VoxelGpuStorage>> m_voxel_bound_storage;
 	bool m_voxels_ready = false;
 
 	/// Depth units of the rasterizer constant bias since SV_Depth skips it
