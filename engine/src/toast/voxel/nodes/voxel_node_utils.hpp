@@ -24,6 +24,7 @@ namespace toast::_detail {
 enum : uint8_t {
 	k_message_outside = 40,
 	k_message_misaligned = 41,
+	k_message_no_model = 42,
 };
 
 /** The loaded asset when it is really of type, null otherwise */

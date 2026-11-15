@@ -86,12 +86,20 @@
 					<LucideIcon Kind="Scissors" Size="16" StrokeWidth="2.5" />
 				</ToggleButton>
 				<ToggleButton Classes="tool orange compact-control compact-icon"
-				              CornerRadius="0,6,6,0"
+				              CornerRadius="0"
 				              ToolTip.Tip="Slice (Shift+Y)"
 				              Command="{Binding SetToolCommand}"
 				              CommandParameter="Slice"
 				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Slice, Mode=OneWay}">
 					<LucideIcon Kind="Slice" Size="16" StrokeWidth="2.5" />
+				</ToggleButton>
+				<ToggleButton Classes="tool green compact-control compact-icon"
+				              CornerRadius="0,6,6,0"
+				              ToolTip.Tip="Line: drag along X or Y to repeat the model (U)"
+				              Command="{Binding SetToolCommand}"
+				              CommandParameter="Line"
+				              IsChecked="{Binding ActiveTool, Converter={StaticResource EnumEqualsConverter}, ConverterParameter=Line, Mode=OneWay}">
+					<LucideIcon Kind="BrickWall" Size="16" StrokeWidth="2.5" />
 				</ToggleButton>
 			</StackPanel>
 
@@ -228,12 +236,19 @@
 				<elements:AssetBox AssetType="Script"
 				                   Width="200"
 				                   Value="{Binding DefaultScript, Mode=TwoWay}" Classes="compact-field" />
+				<LucideIcon Kind="BrickWall" Size="16" StrokeWidth="2.5"
+				            Foreground="{StaticResource TextMuted}"
+				            VerticalAlignment="Center" />
+				<elements:AssetBox AssetType="voxel_model"
+				                   Width="200"
+				                   ToolTip.Tip="Model the Line tool repeats"
+				                   Value="{Binding DefaultModel, Mode=TwoWay}" Classes="compact-field" />
 			</StackPanel>
 
 			<StackPanel Grid.Column="7"
 			            Orientation="Horizontal"
 			            Spacing="4"
-			            ToolTip.Tip="Fill mode new volumes get">
+			            ToolTip.Tip="Fill mode new fills and lines get">
 				<LucideIcon Kind="Blend" Size="16" StrokeWidth="2.5"
 				            Foreground="{StaticResource TextMuted}"
 				            VerticalAlignment="Center" />

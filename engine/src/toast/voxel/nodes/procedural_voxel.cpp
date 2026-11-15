@@ -673,6 +673,7 @@ auto ProceduralVoxel::land(const std::vector<Collected>& pieces, bool wait) -> s
 	for (const Collected& entry : pieces) {
 		const auto [placement, exact] = snappedPlacement(entry.to_root);
 		entry.piece->setMisaligned(!exact);
+		entry.piece->landedAt(placement);
 		VoxelPiece::GridRef grid = wait ? entry.piece->gridRef() : entry.piece->readyGrid();
 		if (grid == nullptr) {
 			continue;
@@ -771,6 +772,7 @@ void ProceduralVoxel::tickAsyncBuild() {
 	std::vector<Collected> pieces;
 	collect(*this, glm::mat4(1.0f), pieces);
 	for (const Collected& entry : pieces) {
+		entry.piece->landedAt(snappedPlacement(entry.to_root).first);
 		entry.piece->collectGrid();
 		entry.piece->requestGrid();
 	}

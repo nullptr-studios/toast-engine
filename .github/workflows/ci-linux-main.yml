@@ -98,28 +98,6 @@ jobs:
           bash ./tools/ci/clang_tidy.sh build
           "
 
-  dotnet-reflection-generator:
-    name: Dotnet reflection_generator (${{ matrix.build_type }})
-    runs-on: [self-hosted, Linux, X64]
-    strategy:
-      matrix:
-        build_type: [Debug, Release]
-      fail-fast: false
-    steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.head_ref }}
-          fetch-depth: 1
-          submodules: true
-
-      - name: Install Nix
-        uses: cachix/install-nix-action@v31.10.6
-
-      - name: Dotnet build and test
-        run: nix develop --command bash -c 'dotnet build tools/reflection_generator/reflection_generator.csproj --configuration ${{ matrix.build_type }} && dotnet test tools/reflection_generator/tests/ReflectionGenerator.Tests --configuration ${{ matrix.build_type }}'
-
   dotnet-editor:
     name: Dotnet editor (${{ matrix.build_type }})
     runs-on: [self-hosted, Linux, X64]

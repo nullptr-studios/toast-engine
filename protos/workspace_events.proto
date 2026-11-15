@@ -202,6 +202,8 @@ message VoxelCreatePiece {
   VoxelInt3 max = 5;
   string script = 6;
   uint32 mode = 7;
+  string model = 8;
+  uint32 axis = 9;
 }
 
 message VoxelExtrude {
@@ -310,6 +312,7 @@ message SetVoxelTool {
   uint32 paint_id = 2;
   string default_script = 3;
   uint32 default_mode = 4;
+  string default_model = 5;
 }
 
 message SetShowOthers {

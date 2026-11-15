@@ -213,6 +213,8 @@ protected:
 		uint8_t paint_id = 1;
 		UID default_script;          ///< What new volumes draw with
 		uint8_t default_mode = 0;    ///< voxel::WriteMode new fill volumes land with
+		UID default_model;
+		glm::ivec3 line_tile {1};
 		Phase phase = Phase::idle;
 		bool dragging = false;       ///< if its drawing the mouse make it 2 clicks rather than 3
 		UID extrude_source;          ///< The piece Extrude grows from

@@ -12,6 +12,7 @@
 #include <toast/voxel/nodes/fill_volume.hpp>
 #include <toast/voxel/nodes/paint_volume.hpp>
 #include <toast/voxel/nodes/procedural_voxel.hpp>
+#include <toast/voxel/nodes/voxel_line.hpp>
 #include <toast/voxel/nodes/voxel_mesh.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
@@ -63,7 +64,9 @@ auto voxelQuarterTurn(uint32_t axis, int32_t turns) -> glm::mat3 {
 	return out;
 }
 
-constexpr std::array<std::string_view, 3> k_volume_types {"toast::FillVolume", "toast::CarveVolume", "toast::PaintVolume"};
+constexpr std::array<std::string_view, 4> k_volume_types {
+  "toast::FillVolume", "toast::CarveVolume", "toast::PaintVolume", "toast::VoxelLine"
+};
 
 }
 
@@ -104,6 +107,7 @@ enum : uint8_t {
 	k_tool_bucket = 6,
 	k_tool_split = 7,
 	k_tool_slice = 8,
+	k_tool_line = 9,
 };
 
 constexpr uint32_t k_left_button = 1;
@@ -131,6 +135,9 @@ auto boxToolNodeType(uint32_t tool) noexcept -> const char* {
 	}
 	if (tool == k_tool_paint) {
 		return "toast::PaintVolume";
+	}
+	if (tool == k_tool_line) {
+		return "toast::VoxelLine";
 	}
 	return "toast::FillVolume";
 }
@@ -210,6 +217,22 @@ auto Workspace::voxelToolShape() -> ProceduralVoxel* {
 }
 
 auto Workspace::VoxelToolState::box() const -> std::pair<glm::ivec3, glm::ivec3> {
+	if (tool == k_tool_line) {
+		const int along = lineAxisFor(anchor, current) == LineAxis::y ? 1 : 0;
+		const int across = 1 - along;
+		const glm::ivec3 tile = along == 1 ? glm::ivec3(line_tile.y, line_tile.x, line_tile.z) : line_tile;
+		const auto floor_to = [this](int32_t v) {
+			return snap_plane > 1 ? static_cast<int32_t>(std::floor(static_cast<double>(v) / snap_plane)) * snap_plane : v;
+		};
+		const auto ceil_to = [this, &floor_to](int32_t v) { return snap_plane > 1 ? floor_to(v) + snap_plane - 1 : v; };
+		glm::ivec3 first = anchor;
+		first[across] = floor_to(anchor[across]);
+		glm::ivec3 last = first + tile - 1;
+		const int32_t low = floor_to(std::min(anchor[along], current[along]));
+		first[along] = low;
+		last[along] = anchor[along] == current[along] ? low + tile[along] - 1 : ceil_to(std::max(anchor[along], current[along]));
+		return {first, last};
+	}
 	glm::ivec3 min = glm::min(anchor, current);
 	glm::ivec3 max = glm::max(anchor, current);
 	if (snap_plane > 1) {
@@ -551,13 +574,25 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 			event::send<event::VoxelExtrude>(extrude);
 		} else {
 			event::VoxelCreatePiece create;
-			const bool in_group = m_focused_node.exists() && reflect_cast<VoxelGroup>(&*m_focused_node) != nullptr;
-			create.parent = in_group ? m_focused_node->uid() : shape->uid();
+			Box<Node> home;
+			if (m_focused_node.exists()) {
+				Box<Node> above = m_focused_node->parentInternal();
+				if (reflect_cast<VoxelGroup>(&*m_focused_node) != nullptr) {
+					home = m_focused_node;
+				} else if (above.exists() && reflect_cast<VoxelGroup>(&*above) != nullptr) {
+					home = above;
+				}
+			}
+			create.parent = home.exists() ? home->uid() : shape->uid();
 			create.type = boxToolNodeType(tool);
 			create.min = min;
 			create.max = max;
 			create.script = m_voxel_tool.default_script;
 			create.mode = m_voxel_tool.default_mode;
+			if (tool == k_tool_line) {
+				create.model = m_voxel_tool.default_model;
+				create.axis = lineAxisFor(m_voxel_tool.anchor, m_voxel_tool.current) == LineAxis::y ? 1u : 0u;
+			}
 			event::send<event::VoxelCreatePiece>(create);
 		}
 		voxelToolCancel();
@@ -606,6 +641,12 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 			return true;
 
 		case VoxelToolState::Phase::box:
+			if (tool == k_tool_line) {
+				if (!pressed && m_voxel_tool.dragging) {
+					place();
+				}
+				return true;
+			}
 			if (!pressed && m_voxel_tool.dragging) {
 				// trackpad support, dragging is akward
 				if (m_voxel_tool.current == m_voxel_tool.anchor) {
@@ -638,7 +679,7 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 		case VoxelToolState::Phase::idle: break;
 	}
 
-	if (!box_tool && !cut_tool && tool != k_tool_bucket) {
+	if (!box_tool && !cut_tool && tool != k_tool_bucket && tool != k_tool_line) {
 		return tool == k_tool_extrude;
 	}
 	if (!pressed) {
@@ -670,6 +711,46 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 
 	m_voxel_tool.face_min = glm::ivec3(std::numeric_limits<int32_t>::min());
 	m_voxel_tool.face_max = glm::ivec3(std::numeric_limits<int32_t>::max());
+
+	if (tool == k_tool_line) {
+		m_voxel_tool.line_tile = VoxelLine::tileSizeOf(assets::load<assets::VoxelModel>(m_voxel_tool.default_model));
+		if (glm::any(glm::lessThan(m_voxel_tool.line_tile, glm::ivec3(1)))) {
+			TOAST_WARN("Voxel", "The Line tool needs a voxel model to repeat, pick one in the toolbar");
+			return true;
+		}
+		glm::ivec3 cell;
+		int32_t layer = 0;
+		if (hit.has_value()) {
+			layer = hit->voxel.z + hit->normal.z;
+			cell = glm::ivec3(hit->voxel.x + hit->normal.x, hit->voxel.y + hit->normal.y, layer);
+		} else {
+			const std::optional<glm::ivec3> ground = voxelCellOnPlane(local, 2, 0.0f);
+			if (!ground.has_value()) {
+				return true;
+			}
+			cell = *ground;
+			layer = 0;
+		}
+		cell.z = layer;
+		m_voxel_tool.axis = 2;
+		m_voxel_tool.sign = 1;
+		m_voxel_tool.surface = layer - 1;
+		m_voxel_tool.plane = static_cast<float>(layer);
+		m_voxel_tool.anchor = cell;
+		m_voxel_tool.current = cell;
+		m_voxel_tool.snap_plane = voxelSnapStep(m_translate_snap);
+		m_voxel_tool.snap_depth = 1;
+		m_voxel_tool.depth = 1;
+		m_voxel_tool.dragging = true;
+		m_voxel_tool.phase = VoxelToolState::Phase::box;
+
+		renderer::EditorOverlays& line_overlays = renderer::editorOverlays();
+		line_overlays.tool_root = shape->uid();
+		line_overlays.tool_box_color = boxToolColor(tool);
+		voxelUpdatePreview(boxToolKind(tool));
+		return true;
+	}
+
 	if (hit.has_value()) {
 		int axis = 2;
 		if (hit->normal.x != 0) {
@@ -733,12 +814,13 @@ void Workspace::subscribeVoxelEditing() {
 		}
 		// Selecting a piece picks its color we shouldn't resend everything
 		const auto mode = static_cast<uint8_t>(std::min(e.default_mode, 3u));
-		const bool only_colour =
-		    e.tool == m_voxel_tool.tool && e.default_script == m_voxel_tool.default_script && mode == m_voxel_tool.default_mode;
+		const bool only_colour = e.tool == m_voxel_tool.tool && e.default_script == m_voxel_tool.default_script &&
+		                         mode == m_voxel_tool.default_mode && e.default_model == m_voxel_tool.default_model;
 		m_voxel_tool.tool = e.tool;
 		m_voxel_tool.paint_id = static_cast<uint8_t>(std::clamp(e.paint_id, 1u, 255u));
 		m_voxel_tool.default_script = e.default_script;
 		m_voxel_tool.default_mode = mode;
+		m_voxel_tool.default_model = e.default_model;
 		if (auto* shape = m_root_node.exists() ? reflect_cast<ProceduralVoxel>(&*m_root_node) : nullptr; shape && !only_colour) {
 			shape->sendLayout();
 		}
@@ -831,13 +913,23 @@ void Workspace::subscribeVoxelEditing() {
 			}
 			if (VoxelPiece* piece = voxelPieceOf(made)) {
 				piece->setClipPlanes({});
+				auto* line = voxelPieceOf(source) == nullptr ? reflect_cast<VoxelLine>(piece) : nullptr;
+				if (line != nullptr) {
+					line->setAxis(e.axis == 1 ? LineAxis::y : LineAxis::x);
+				}
 				placePiece(*piece, orientation, e.min, e.max);
 				if (e.script.data() != 0) {
 					piece->setShapeScript(assets::load<assets::Script>(e.script));
 				}
-				// Only fills take a mode
-				if (auto* fill = reflect_cast<FillVolume>(piece); fill != nullptr && voxelPieceOf(source) == nullptr) {
-					fill->setMode(static_cast<voxel::WriteMode>(std::min(e.mode, 3u)));
+				if (line != nullptr && e.model.data() != 0) {
+					line->setModel(assets::load<assets::VoxelModel>(e.model));
+				}
+				if (voxelPieceOf(source) == nullptr) {
+					if (auto* fill = reflect_cast<FillVolume>(piece)) {
+						fill->setMode(static_cast<voxel::WriteMode>(std::min(e.mode, 3u)));
+					} else if (line != nullptr) {
+						line->setMode(static_cast<voxel::WriteMode>(std::min(e.mode, 3u)));
+					}
 				}
 			}
 		});

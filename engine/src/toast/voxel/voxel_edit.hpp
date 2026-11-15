@@ -202,6 +202,11 @@ TOAST_API auto tileVolume(
     WriteMode mode = WriteMode::replace, uint8_t match_id = k_empty_palette_index
 ) -> EditResult;
 
+TOAST_API auto tileLine(
+    Volume& target, const Volume& pattern, int axis, glm::ivec3 origin, int32_t length, int32_t phase,
+    const PaletteRemapTable& remap, WriteMode mode = WriteMode::replace, uint8_t match_id = k_empty_palette_index
+) -> EditResult;
+
 /** Repaints the solid voxels connected to seed that share its id */
 TOAST_API auto floodFill(Volume& volume, glm::ivec3 seed, uint8_t id) -> EditResult;
 

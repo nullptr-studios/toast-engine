@@ -39,7 +39,9 @@ public sealed class VoxelOrthoView : Control {
 	private bool m_awaitingSliceSide;
 	private bool m_boxClickMode;    // a plain click started the box, it follows the mouse until the next click
 
-	private enum Drag { None, Pan, Move, EdgeMinH, EdgeMaxH, EdgeMinV, EdgeMaxV, Extrude, Box, Cut }
+	private enum Drag { None, Pan, Move, EdgeMinH, EdgeMaxH, EdgeMinV, EdgeMaxV, Extrude, Box, Cut, Line }
+
+	private bool m_lineAlongH = true;
 
 	static VoxelOrthoView() {
 		AffectsRender<VoxelOrthoView>(ProjectionProperty);
@@ -226,7 +228,7 @@ public sealed class VoxelOrthoView : Control {
 			DrawPiece(context, piece, box, selected);
 		}
 
-		if (m_drag is Drag.Box or Drag.Extrude) DrawPreviewBox(context);
+		if (m_drag is Drag.Box or Drag.Extrude or Drag.Line) DrawPreviewBox(context);
 		if (m_cutLine is { } line) DrawCut(context, bounds, line.A, line.B);
 		DrawLabel(context, Projection.ToString(), new Point(8, 6), Brush("TextMuted", Brushes.Gray));
 	}
@@ -469,6 +471,11 @@ public sealed class VoxelOrthoView : Control {
 				m_drag = Drag.Box;
 				m_dragBox = SnapBox(cell.Item1, cell.Item2, cell.Item1, cell.Item2);
 				break;
+			case VoxelTool.Line:
+				m_drag = Drag.Line;
+				m_lineAlongH = true;
+				m_dragBox = LineBox(cell.Item1, cell.Item2, cell.Item1, cell.Item2, true);
+				break;
 			case VoxelTool.Split or VoxelTool.Slice:
 				m_drag = Drag.Cut;
 				var cutStart = SnapPoint(point.Position);
@@ -569,6 +576,17 @@ public sealed class VoxelOrthoView : Control {
 				m_dragBox = SnapBox((int)Math.Floor(h0), (int)Math.Floor(v0), (int)Math.Floor(h), (int)Math.Floor(v));
 				break;
 			}
+			case Drag.Line: {
+				var (h, v) = ToVoxel(at);
+				var (h0, v0) = ToVoxel(m_pressed);
+				var (ch, cv) = ((int)Math.Floor(h0), (int)Math.Floor(v0));
+				var (dh, dv) = ((int)Math.Floor(h) - ch, (int)Math.Floor(v) - cv);
+				m_lineAlongH = VAxis > 1 || Math.Abs(dv) <= Math.Abs(dh);
+				m_dragBox = m_lineAlongH
+					? LineBox(Math.Min(ch, ch + dh), cv, Math.Max(ch, ch + dh), cv, true)
+					: LineBox(ch, Math.Min(cv, cv + dv), ch, Math.Max(cv, cv + dv), false);
+				break;
+			}
 			case Drag.Cut when m_cutLine is { } line:
 				var cutEnd = SnapPoint(at);
 				m_cutLine = (line.A, cutEnd);
@@ -633,6 +651,9 @@ public sealed class VoxelOrthoView : Control {
 			case Drag.Box:
 				CreateFromBox(editor);
 				break;
+			case Drag.Line:
+				CreateLine(editor);
+				break;
 			case Drag.Extrude when m_dragPiece is { } piece:
 				editor.Extrude(piece.Uid, ToShape(piece, m_dragBox, false), ToShape(piece, m_dragBox, true), false);
 				break;
@@ -686,6 +707,24 @@ public sealed class VoxelOrthoView : Control {
 		min[DepthAxis] = d0;
 		max[DepthAxis] = d1;
 		editor.CreateVolume(editor.ActiveTool, (min[0], min[1], min[2]), (max[0], max[1], max[2]));
+	}
+
+	private (int H0, int V0, int H1, int V1) LineBox(int h0, int v0, int h1, int v1, bool alongH) {
+		var box = SnapBox(h0, v0, h1, v1);
+		return alongH ? (box.H0, box.V0, box.H1, box.V0) : (box.H0, box.V0, box.H0, box.V1);
+	}
+
+	private void CreateLine(VoxelEditorViewModel editor) {
+		var depth = editor.SelectedPiece is { } around ? around.Axis(DepthAxis, false) : 0;
+		int[] min = new int[3];
+		int[] max = new int[3];
+		min[HAxis] = m_dragBox.H0;
+		max[HAxis] = m_dragBox.H1;
+		min[VAxis] = m_dragBox.V0;
+		max[VAxis] = m_dragBox.V1;
+		min[DepthAxis] = depth;
+		max[DepthAxis] = depth;
+		editor.CreateLine((min[0], min[1], min[2]), (max[0], max[1], max[2]), m_lineAlongH ? HAxis : VAxis);
 	}
 
 	private void BucketAt(VoxelEditorViewModel editor, (int H, int V) cell) {
