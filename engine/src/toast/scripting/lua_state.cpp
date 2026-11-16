@@ -703,22 +703,29 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addProperty("g", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
 	    .addProperty("b", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
 	    // Lua looks up operator metamethods raw on the object's own metatable, so deriveClass doesn't inherit them from vec3
-	    .addFunction("__add", [](const glm::vec3& a, const glm::vec3& b) { return a + b; })
-	    .addFunction("__sub", [](const glm::vec3& a, const glm::vec3& b) { return a - b; })
+	    // LuaBridge needs the first parameter to be the exact class; the base glm::vec3 is kept in sync by commit()
+	    .addFunction("__add", [](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 { return glm::vec3(a) + b; })
+	    .addFunction("__sub", [](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 { return glm::vec3(a) - b; })
 	    .addFunction(
 	        "__mul",
-	        overload<const glm::vec3&, float>(+[](const glm::vec3& v, float s) { return v * s; }),
-	        overload<const glm::vec3&, const glm::vec3&>(+[](const glm::vec3& a, const glm::vec3& b) { return a * b; })
+	        overload<const Vec3FieldProxy&, float>(+[](const Vec3FieldProxy& v, float s) -> glm::vec3 { return glm::vec3(v) * s; }),
+	        overload<const Vec3FieldProxy&, const glm::vec3&>(+[](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 {
+		        return glm::vec3(a) * b;
+	        })
 	    )
 	    .addFunction(
 	        "__div",
-	        overload<const glm::vec3&, float>(+[](const glm::vec3& v, float s) { return v / s; }),
-	        overload<const glm::vec3&, const glm::vec3&>(+[](const glm::vec3& a, const glm::vec3& b) { return a / b; })
+	        overload<const Vec3FieldProxy&, float>(+[](const Vec3FieldProxy& v, float s) -> glm::vec3 { return glm::vec3(v) / s; }),
+	        overload<const Vec3FieldProxy&, const glm::vec3&>(+[](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 {
+		        return glm::vec3(a) / b;
+	        })
 	    )
-	    .addFunction("__unm", [](const glm::vec3& v, const glm::vec3&) { return -v; })
-	    .addFunction("__eq", [](const glm::vec3& a, const glm::vec3& b) { return a == b; })
-	    .addFunction("__len", [](const glm::vec3& v) { return glm::length(v); })
-	    .addFunction("__tostring", [](const glm::vec3& v) -> std::string { return std::format("vec3({}, {}, {})", v.x, v.y, v.z); })
+	    .addFunction("__unm", [](const Vec3FieldProxy& v, const glm::vec3&) -> glm::vec3 { return -glm::vec3(v); })
+	    .addFunction("__eq", [](const Vec3FieldProxy& a, const glm::vec3& b) { return glm::vec3(a) == b; })
+	    .addFunction("__len", [](const Vec3FieldProxy& v) { return glm::length(glm::vec3(v)); })
+	    .addFunction(
+	        "__tostring", [](const Vec3FieldProxy& v) -> std::string { return std::format("vec3({}, {}, {})", v.x, v.y, v.z); }
+	    )
 	    .endClass()
 
 	    // vec4
