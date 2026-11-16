@@ -16,6 +16,10 @@ constexpr uint32_t k_debris_set = 1;
 constexpr uint32_t k_debris_particles_binding = 0;
 constexpr uint32_t k_debris_list_binding = 1;
 
+/// Bounds and cache signature only, the rest comes from the push constants
+auto shadowBoundsOf(const physics::DebrisSimulation& simulation, const AsyncComputeTask::FrameView& view, float extrapolation)
+    -> DebrisPass::ShadowDraw;
+
 }
 
 DebrisPass::DebrisPass(
@@ -129,7 +133,50 @@ auto DebrisPass::prepare(vk::CommandBuffer cmd, uint32_t frame_index) -> bool {
 	  .voxel_size = voxel::k_voxel_size,
 	  .list_capacity = m_simulation->capacity() * physics::DebrisSimulation::k_voxels_per_particle,
 	};
+	m_shadow = shadowBoundsOf(*m_simulation, view, m_push.extrapolation);
+	m_shadow.extrapolation = m_push.extrapolation;
+	m_shadow.voxel_size = m_push.voxel_size;
+	m_shadow.list_capacity = m_push.list_capacity;
 	return true;
+}
+
+namespace {
+
+auto shadowBoundsOf(const physics::DebrisSimulation& simulation, const AsyncComputeTask::FrameView& view, float extrapolation)
+    -> DebrisPass::ShadowDraw {
+	DebrisPass::ShadowDraw draw;
+	physics::DebrisSimulation::ShadowBounds bounds;
+	if (!view.read(simulation.shadowBoundsId(), std::as_writable_bytes(std::span {&bounds, 1}))) {
+		// No readback so cast everywhere and redraw every frame
+		draw.bounds_radius = std::numeric_limits<float>::max();
+		return draw;
+	}
+
+	const auto unordered = [](uint32_t bits) {
+		return std::bit_cast<float>((bits & 0x80000000u) != 0u ? bits & 0x7FFFFFFFu : ~bits);
+	};
+	const glm::vec3 low(unordered(bounds.min[0]), unordered(bounds.min[1]), unordered(bounds.min[2]));
+	const glm::vec3 high(unordered(bounds.max[0]), unordered(bounds.max[1]), unordered(bounds.max[2]));
+	if (bounds.min[0] > bounds.max[0]) {
+		// No opaque pieces, stable so their last shadow clears once
+		draw.signature = 0;
+		return draw;
+	}
+
+	// The step is drawn moved by velocity times the extrapolation
+	const float drift = std::bit_cast<float>(bounds.max_speed) * std::abs(extrapolation);
+	draw.bounds_center = (low + high) * 0.5f;
+	draw.bounds_radius = (glm::length(high - low) * 0.5f) + drift;
+	if (bounds.changing == 0) {
+		uint64_t hash = 0xCBF29CE484222325ull;
+		for (const uint32_t word : {bounds.min[0], bounds.min[1], bounds.min[2], bounds.max[0], bounds.max[1], bounds.max[2]}) {
+			hash = (hash ^ word) * 0x100000001B3ull;
+		}
+		draw.signature = hash;
+	}
+	return draw;
+}
+
 }
 
 void DebrisPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index) {

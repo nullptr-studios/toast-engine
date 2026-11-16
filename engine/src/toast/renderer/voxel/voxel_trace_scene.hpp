@@ -85,6 +85,8 @@ private:
 		vma::raii::Buffer bounds = nullptr;
 		vma::raii::Buffer grid = nullptr;
 		vma::raii::Buffer brick_bases = nullptr;
+		/// What the grid buffer holds so an unchanged scene and camera cell skip rewriting it
+		std::optional<uint64_t> grid_signature;
 	};
 
 	void writeGrid(FrameResources& frame, glm::vec3 camera_position, float cell_size);
@@ -95,6 +97,9 @@ private:
 	std::vector<Volume> m_volumes;
 	std::vector<uint32_t> m_cell_counts;
 	std::vector<uint32_t> m_cell_cursor;
+	/// writeGrid scratch kept for its capacity
+	std::vector<uint32_t> m_far;
+	std::vector<uint32_t> m_glass;
 
 	std::optional<vma::raii::Buffer> m_box_aabb;
 	std::optional<vma::raii::Buffer> m_box_storage;

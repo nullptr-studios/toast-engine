@@ -2356,7 +2356,13 @@ auto classifyBoxVoxelSplit(const BoxVoxelPairView& view) -> BoxVoxelSplitInfo {
 	const glm::vec3 local_world_extents = glm::abs(local_box.rotation[0]) * local_box.half_extents.x +
 	                                      glm::abs(local_box.rotation[1]) * local_box.half_extents.y +
 	                                      glm::abs(local_box.rotation[2]) * local_box.half_extents.z;
-	const AABB local_bounds {.min = local_box.center - local_world_extents, .max = local_box.center + local_world_extents};
+	// Only the overlap with the volume can hold contacts, so a big ground box under a small body neither splits nor slabs the empty
+	// rest
+	const glm::vec3 volume_extent = glm::vec3(view.voxel_data.volume->voxelDims()) * voxel::k_voxel_size;
+	const AABB local_bounds {
+	  .min = glm::max(local_box.center - local_world_extents, glm::vec3(0.0f)),
+	  .max = glm::min(local_box.center + local_world_extents, volume_extent),
+	};
 
 	return {.local_bounds = local_bounds, .estimated_voxels = querySurfaceAreaInVoxels(local_bounds)};
 }

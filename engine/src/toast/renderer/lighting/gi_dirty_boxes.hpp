@@ -6,12 +6,16 @@
 
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <optional>
 #include <span>
 #include <unordered_map>
 #include <vector>
 
 namespace renderer {
 struct RenderFrame;
+
+/// Appends low then high, or once @p max_boxes are held grows the box that grows least so one blast does not swallow the rest
+void addDirtyBox(std::vector<glm::vec3>& boxes, size_t max_boxes, glm::vec3 low, glm::vec3 high);
 
 class GiDirtyBoxes {
 public:
@@ -27,7 +31,8 @@ public:
 	};
 
 	/// Every rendered frame so skipped updates still reach the next one
-	void gather(const RenderFrame& frame, float motion_threshold);
+	/// @param motion_threshold nullopt for edits only when the caller tracks bodies itself
+	void gather(const RenderFrame& frame, std::optional<float> motion_threshold);
 
 	/// Low then high per box
 	[[nodiscard]]

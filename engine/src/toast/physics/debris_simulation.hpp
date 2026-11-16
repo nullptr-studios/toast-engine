@@ -81,6 +81,18 @@ public:
 	static_assert(sizeof(GpuSpawn) == 80, "GpuSpawn is mirrored by debris.slang");
 	static_assert(sizeof(GpuVolume) == 128, "GpuVolume is mirrored by debris.slang");
 
+	/// Mirrors gShadowBounds in debris.slang, the box is in ordered uints and empty while min is above max
+	struct ShadowBounds {
+		std::array<uint32_t, 3> min {};
+		std::array<uint32_t, 3> max {};
+		/// Opaque pieces whose shadow moved in this step
+		uint32_t changing = 0;
+		/// Float bits of the fastest opaque piece
+		uint32_t max_speed = 0;
+	};
+
+	static_assert(sizeof(ShadowBounds) == 32, "ShadowBounds is mirrored by debris.slang");
+
 	static constexpr uint32_t k_max_spawns_per_step = 4096;
 	static constexpr uint32_t k_max_volumes = 512;
 	static constexpr uint32_t k_voxels_per_particle = 8;
@@ -136,6 +148,11 @@ public:
 		return m_draw_args;
 	}
 
+	[[nodiscard]]
+	auto shadowBoundsId() const -> BufferId {
+		return m_shadow_bounds;
+	}
+
 private:
 	struct Params {
 		glm::vec3 gravity {0.0f};
@@ -186,6 +203,7 @@ private:
 	BufferId m_volumes = 0;
 	BufferId m_retires = 0;
 	BufferId m_grid = 0;
+	BufferId m_shadow_bounds = 0;
 
 	std::deque<GpuSpawn> m_pending;
 	bool m_clear_pending = false;

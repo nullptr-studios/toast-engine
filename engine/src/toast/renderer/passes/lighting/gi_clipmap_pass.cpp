@@ -102,6 +102,49 @@ struct FillPush {
 	glm::ivec4 box_size {0};
 };
 
+auto cellCount(const gi_clip::Box& box) -> int64_t {
+	const glm::i64vec3 size(box.max - box.min);
+	return size.x * size.y * size.z;
+}
+
+/// Folds @p box into the first box where the union costs no more than both apart so overlaps fill once
+void mergeInto(std::vector<gi_clip::Box>& boxes, const gi_clip::Box& box) {
+	for (gi_clip::Box& other : boxes) {
+		const gi_clip::Box both {.min = glm::min(other.min, box.min), .max = glm::max(other.max, box.max)};
+		if (cellCount(both) <= cellCount(other) + cellCount(box)) {
+			other = both;
+			return;
+		}
+	}
+	boxes.push_back(box);
+}
+
+/// Moves up to @p budget cells from the front of @p pending into @p out, splitting the last box into z layers
+void takeBudget(std::vector<gi_clip::Box>& pending, int64_t budget, std::vector<gi_clip::Box>& out) {
+	size_t taken = 0;
+	for (; taken < pending.size() && budget > 0; ++taken) {
+		gi_clip::Box& box = pending[taken];
+		const int64_t cells = cellCount(box);
+		if (cells <= budget) {
+			out.push_back(box);
+			budget -= cells;
+			continue;
+		}
+		// At least one layer so a box wider than the budget still progresses
+		const glm::i64vec3 size(box.max - box.min);
+		const int layers = static_cast<int>(std::max<int64_t>(budget / (size.x * size.y), 1));
+		gi_clip::Box slab = box;
+		slab.max.z = std::min(box.min.z + layers, box.max.z);
+		out.push_back(slab);
+		box.min.z = slab.max.z;
+		if (gi_clip::empty(box)) {
+			++taken;
+		}
+		break;
+	}
+	pending.erase(pending.begin(), pending.begin() + static_cast<std::ptrdiff_t>(taken));
+}
+
 }
 
 GiClipmapPass::GiClipmapPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent)
@@ -591,17 +634,9 @@ void GiClipmapPass::createLevels(uint32_t resolution, uint32_t levels) {
 }
 
 void GiClipmapPass::gatherBodies(const RenderFrame& frame) {
-	const auto add = [&](glm::vec3 low, glm::vec3 high) {
-		if (m_body_boxes.size() < 2 * k_max_body_boxes) {
-			m_body_boxes.push_back(low);
-			m_body_boxes.push_back(high);
-			return;
-		}
-		auto last = m_body_boxes.end() - 2;
-		last[0] = glm::min(last[0], low);
-		last[1] = glm::max(last[1], high);
+	const auto sphere = [&](const glm::vec4& bounds) {
+		addDirtyBox(m_body_boxes, k_max_body_boxes, glm::vec3(bounds) - bounds.w, glm::vec3(bounds) + bounds.w);
 	};
-	const auto sphere = [&](const glm::vec4& bounds) { add(glm::vec3(bounds) - bounds.w, glm::vec3(bounds) + bounds.w); };
 
 	// Settled bodies still jitter so motion is measured against the last fill and only a real move refills
 	const float threshold = 0.25f * m_cell;
@@ -613,28 +648,49 @@ void GiClipmapPass::gatherBodies(const RenderFrame& frame) {
 		return glm::distance(glm::vec3(from.bounds), glm::vec3(to.bounds)) + (spread * to.bounds.w / scale);
 	};
 
-	m_bodies_next.clear();
+	// Updated in place so a steady scene allocates nothing
+	const uint64_t gather = ++m_body_gather;
+	size_t seen = 0;
 	for (const auto& proxy : frame.voxel_instances) {
 		const Body body {.model = proxy.model, .bounds = glm::vec4(proxy.bounds_center, proxy.bounds_radius)};
-		const auto found = m_bodies.find(proxy.node_rid);
-		if (found == m_bodies.end()) {
+		auto [found, inserted] = m_bodies.try_emplace(proxy.node_rid);
+		TrackedBody& tracked = found->second;
+		if (inserted) {
+			++seen;
 			sphere(body.bounds);
-		} else if (found->second.model != body.model) {
-			if (motion(found->second, body) < threshold) {
-				m_bodies_next.emplace(proxy.node_rid, found->second);
-				continue;
+			tracked = TrackedBody {.filled = body, .seen = body, .gather = gather};
+			continue;
+		}
+		if (tracked.gather == gather) {
+			continue;
+		}
+		++seen;
+		tracked.gather = gather;
+		const bool drifted = tracked.filled.model != body.model && motion(tracked.filled, body) >= threshold;
+		// A fragment in flight refills once it lands, or every few frames if it never stops, instead of every frame
+		const bool flying = tracked.seen.model != body.model && motion(tracked.seen, body) >= threshold;
+		tracked.seen = body;
+		if (!drifted) {
+			tracked.flying = 0;
+		} else if (flying && ++tracked.flying < k_flying_refill_frames) {
+			// Waits with the old fill in place
+		} else {
+			sphere(tracked.filled.bounds);
+			sphere(body.bounds);
+			tracked.filled = body;
+			tracked.flying = 0;
+		}
+	}
+	// Only walks the map when a body left
+	if (m_bodies.size() > seen) {
+		std::erase_if(m_bodies, [&](const auto& item) {
+			if (item.second.gather == gather) {
+				return false;
 			}
-			sphere(found->second.bounds);
-			sphere(body.bounds);
-		}
-		m_bodies_next.emplace(proxy.node_rid, body);
+			sphere(item.second.filled.bounds);
+			return true;
+		});
 	}
-	for (const auto& [rid, body] : m_bodies) {
-		if (!m_bodies_next.contains(rid)) {
-			sphere(body.bounds);
-		}
-	}
-	std::swap(m_bodies, m_bodies_next);
 }
 
 auto GiClipmapPass::ambientViews() const -> std::array<vk::ImageView, k_max_levels * k_faces> {
@@ -725,7 +781,7 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 
 	gatherBodies(*frame);
 	// Bodies are tracked above against the last fill so only edits and new bodies come from here
-	m_dirty_boxes.gather(*frame, std::numeric_limits<float>::max());
+	m_dirty_boxes.gather(*frame, std::nullopt);
 	GiDirtyBoxes::Counts counts;
 	const bool known = m_dirty_boxes.take(counts);
 
@@ -863,17 +919,25 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 			boxes[i].push_back({.min = origin, .max = origin + side});
 			whole[i] = true;
 			scrolled_boxes[i] = 1;
+			level.pending.clear();
 		} else {
 			std::array<gi_clip::Box, 3> slabs;
 			const uint32_t count = gi_clip::scrolled(level.origin, origin, side, slabs);
 			boxes[i].assign(slabs.begin(), slabs.begin() + count);
 			scrolled_boxes[i] = count;
+			// Queued cells that scrolled out are gone and the ones that scrolled in come with the slabs
+			std::erase_if(level.pending, [&](gi_clip::Box& box) {
+				box.min = glm::max(box.min, origin);
+				box.max = glm::min(box.max, origin + side);
+				return gi_clip::empty(box);
+			});
 			for (size_t b = 0; b + 1 < dirty.size(); b += 2) {
 				const gi_clip::Box box = gi_clip::cells(dirty[b], dirty[b + 1], level_cell, origin, side);
 				if (!gi_clip::empty(box)) {
-					boxes[i].push_back(box);
+					mergeInto(level.pending, box);
 				}
 			}
+			takeBudget(level.pending, k_fill_budget_cells, boxes[i]);
 		}
 		level.origin = origin;
 		level.needs_full = false;
@@ -886,6 +950,9 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 			const uint64_t box_cells = static_cast<uint64_t>(size.x * size.y * size.z);
 			stats.cells[i] += box_cells;
 			stats.largest[i] = std::max(stats.largest[i], box_cells);
+		}
+		for (const gi_clip::Box& box : level.pending) {
+			stats.queued[i] += static_cast<uint64_t>(cellCount(box));
 		}
 #endif
 	}

@@ -55,6 +55,7 @@ DebrisSimulation::DebrisSimulation(uint32_t max_particles)
 	m_volumes = addHostBuffer(sizeof(GpuVolume) * k_max_volumes);
 	m_retires = addHostBuffer(sizeof(uint32_t) * k_max_spawns_per_step);
 	m_grid = addPersistentBuffer(sizeof(uint32_t) * k_grid_cells * k_grid_stride);
+	m_shadow_bounds = addRingBuffer(sizeof(ShadowBounds), true);
 	setAcquireUsage(m_draw_args, renderer::sync::Usage::indirect_read);
 
 	bind(0, m_particles, Copy::previous);
@@ -66,6 +67,7 @@ DebrisSimulation::DebrisSimulation(uint32_t max_particles)
 	bind(6, m_volumes);
 	bind(7, m_retires);
 	bind(8, m_grid);
+	bind(9, m_shadow_bounds);
 
 	const auto section = [this](renderer::VoxelGpuStorage::Section which) {
 		return [this, which]() -> vk::Buffer {

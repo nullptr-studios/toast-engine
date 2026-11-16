@@ -13,7 +13,9 @@
 #include "toast/renderer/shaders/vulkan_pipeline.hpp"
 
 #include <array>
+#include <glm/glm.hpp>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -49,6 +51,31 @@ public:
 		return "Debris";
 	}
 
+	/// What the shadow pass needs to draw the opaque debris, args is null unless prepare() succeeded this frame
+	struct ShadowDraw {
+		vk::DescriptorSet set = nullptr;
+		vk::Buffer args = nullptr;
+		float extrapolation = 0.0f;
+		float voxel_size = 0.0f;
+		uint32_t list_capacity = 0;
+		/// Sphere around every opaque piece as drawn, radius below 0 when there are none
+		glm::vec3 bounds_center {0.0f};
+		float bounds_radius = -1.0f;
+		/// Empty while a piece moves so its shadow must redraw, otherwise stable until one changes
+		std::optional<uint64_t> signature;
+	};
+
+	[[nodiscard]]
+	auto shadowDraw(uint32_t frame_index) const -> ShadowDraw {
+		if (!m_args || frame_index >= m_sets.size()) {
+			return {};
+		}
+		ShadowDraw draw = m_shadow;
+		draw.set = *m_sets[frame_index];
+		draw.args = m_args;
+		return draw;
+	}
+
 private:
 	struct PushConstants {
 		float extrapolation = 0.0f;
@@ -68,6 +95,8 @@ private:
 	DescriptorCache<std::array<vk::Buffer, 2>> m_bound;
 	vk::Buffer m_args = nullptr;
 	PushConstants m_push;
+	/// Without the set and args which come per frame
+	ShadowDraw m_shadow;
 };
 
 }

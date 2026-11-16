@@ -982,11 +982,12 @@ void PerfWindow::drawSceneTab() {
 		if (clip.history_lost) {
 			ImGui::TextColored(k_perf_warn, "Change history lost so every level refilled whole");
 		}
-		if (ImGui::BeginTable("##perf_gi_clip", 4, ImGuiTableFlags_SizingFixedFit)) {
+		if (ImGui::BeginTable("##perf_gi_clip", 5, ImGuiTableFlags_SizingFixedFit)) {
 			ImGui::TableSetupColumn("Level");
 			ImGui::TableSetupColumn("Boxes");
 			ImGui::TableSetupColumn("Cells");
 			ImGui::TableSetupColumn("Largest box");
+			ImGui::TableSetupColumn("Queued");
 			ImGui::TableHeadersRow();
 			for (uint32_t i = 0; i < clip.levels && i < GiClipmapPass::k_max_levels; ++i) {
 				ImGui::TableNextRow();
@@ -998,6 +999,8 @@ void PerfWindow::drawSceneTab() {
 				ImGui::Text("%llu", static_cast<unsigned long long>(clip.cells[i]));
 				ImGui::TableNextColumn();
 				ImGui::Text("%llu", static_cast<unsigned long long>(clip.largest[i]));
+				ImGui::TableNextColumn();
+				ImGui::Text("%llu", static_cast<unsigned long long>(clip.queued[i]));
 			}
 			ImGui::EndTable();
 		}

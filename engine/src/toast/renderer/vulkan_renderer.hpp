@@ -894,6 +894,11 @@ public:
 
 	void setDebrisPass(DebrisPass* pass) noexcept { m_debris_pass = pass; }
 
+	[[nodiscard]]
+	auto getDebrisPass() const noexcept -> const DebrisPass* {
+		return m_debris_pass;
+	}
+
 	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
 
 	void setGiClipmapPass(GiClipmapPass* pass) noexcept { m_gi_clipmap_pass = pass; }
@@ -1491,6 +1496,8 @@ private:
 	TracedSpecularPass* m_traced_specular_pass = nullptr;
 	TaaPass* m_taa_pass = nullptr;
 	bool m_traced_specular_frame = false;
+	/// DebrisPass::prepare result, run before the shadow pass so both draw the same step
+	bool m_debris_prepared = false;
 
 	std::atomic_bool m_probe_bake_requested {false};
 	std::atomic<uint32_t> m_probe_stale_count {0};
@@ -1729,10 +1736,37 @@ private:
 	/// Describes the newest storage whether published or pending so a patch starts from it
 	VoxelScenePatcher m_voxel_patcher;
 
-	std::unordered_map<uint64_t, glm::mat4> m_voxel_previous_models;
+	/// Stamped with the proxy frame so entries are rewritten in place instead of reallocated every frame
+	struct VoxelDrawnModel {
+		glm::mat4 model {1.0f};
+		uint64_t frame = 0;
+	};
+
+	std::unordered_map<uint64_t, VoxelDrawnModel> m_voxel_previous_models;
 
 	/// Swaps into m_voxel_previous_models unless this frame is a probe capture
-	std::unordered_map<uint64_t, glm::mat4> m_voxel_drawn_models;
+	std::unordered_map<uint64_t, VoxelDrawnModel> m_voxel_drawn_models;
+
+	/// Per volume math reused while its model and dims hold
+	struct VoxelProxyMath {
+		glm::mat4 model {1.0f};
+		glm::mat4 inverse {1.0f};
+		glm::vec4 sphere {0.0f};
+		glm::uvec3 dims {0};
+		uint32_t record = 0;
+		bool mirrored = false;
+		uint64_t frame = 0;
+	};
+
+	std::unordered_map<uint64_t, VoxelProxyMath> m_voxel_proxy_math;
+	/// Scratch for the camera distance order of the voxel proxies
+	std::vector<uint32_t> m_voxel_sort_order;
+	std::vector<VoxelVolumeProxy> m_voxel_sorted;
+	uint64_t m_voxel_proxy_frame = 0;
+
+	/// What the published collision world was built from so a still scene keeps it
+	const VoxelGpuStorage* m_voxel_collision_storage = nullptr;
+	size_t m_voxel_collision_count = 0;
 	std::unordered_map<uint64_t, glm::mat4> m_mesh_previous_models;
 	bool m_voxel_upload_failed_warned = false;
 
@@ -1779,6 +1813,8 @@ private:
 		float radius = 0.0f;
 		glm::vec3 light_direction {0.0f};
 		uint32_t resolution = 0;
+		/// Padding the anchor had over its slice when it was fit
+		float slack = 0.0f;
 	};
 
 	std::array<CascadeAnchor, shadows::k_cascade_count> m_cascade_anchors {};

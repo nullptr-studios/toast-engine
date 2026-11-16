@@ -1249,6 +1249,7 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		case 0: version_score = 0; break;
 		case 1: version_score = 25; break;
 		case 2: version_score = 50; break;
+		case 3: version_score = 75; break;
 		default: version_score = 100; break;
 	}
 

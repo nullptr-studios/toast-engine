@@ -7,6 +7,7 @@
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
+#include "toast/renderer/lighting/gi_clip_math.hpp"
 #include "toast/renderer/lighting/gi_dirty_boxes.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -47,6 +48,8 @@ public:
 		std::array<uint32_t, k_max_levels> boxes {};
 		std::array<uint64_t, k_max_levels> cells {};
 		std::array<uint64_t, k_max_levels> largest {};
+		/// Cells left over for later frames
+		std::array<uint64_t, k_max_levels> queued {};
 		std::array<bool, k_max_levels> whole {};
 	};
 
@@ -123,7 +126,12 @@ private:
 		std::array<Face, k_faces> ambient;
 		glm::ivec3 origin {0};
 		bool needs_full = true;
+		/// Dirty cells past the fill budget that later frames refill first
+		std::vector<gi_clip::Box> pending;
 	};
+
+	/// Dirty cells refilled per level each frame on top of the scroll so a blast spreads over frames
+	static constexpr int64_t k_fill_budget_cells = 16384;
 
 	auto createPipelines(const VulkanCore& core) -> bool;
 	/// Waits for the device so no frame in flight still reads the old images
@@ -196,9 +204,21 @@ private:
 		glm::vec4 bounds {0.0f};
 	};
 
+	struct TrackedBody {
+		/// Where the clipmap last saw it
+		Body filled;
+		/// Where it was last frame
+		Body seen;
+		/// Frames it has moved since the last fill
+		uint32_t flying = 0;
+		/// Last gather that saw it so leavers are found without rebuilding the map
+		uint64_t gather = 0;
+	};
+
 	static constexpr size_t k_max_body_boxes = 256;
-	std::unordered_map<uint64_t, Body> m_bodies;
-	std::unordered_map<uint64_t, Body> m_bodies_next;
+	static constexpr uint32_t k_flying_refill_frames = 8;
+	std::unordered_map<uint64_t, TrackedBody> m_bodies;
+	uint64_t m_body_gather = 0;
 	std::vector<glm::vec3> m_body_boxes;
 
 #if defined(TOAST_DEV_TOOLS)

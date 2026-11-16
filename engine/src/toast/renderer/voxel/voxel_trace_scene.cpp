@@ -121,14 +121,34 @@ void VoxelTraceScene::writeGrid(FrameResources& frame, glm::vec3 camera_position
 	const auto dim = static_cast<int32_t>(k_grid_dim);
 	const glm::vec3 origin = (glm::floor(camera_position / cell) - glm::vec3(static_cast<float>(dim / 2.0))) * cell;
 
+	// The grid only reads bounds, glass, the origin and the cell so the same inputs leave this slot's words as they are
+	uint64_t signature = 0xCBF29CE484222325ull;
+	const auto mix = [&signature](uint32_t word) { signature = (signature ^ word) * 0x100000001B3ull; };
+	for (const float value : {origin.x, origin.y, origin.z, cell}) {
+		mix(std::bit_cast<uint32_t>(value));
+	}
+	mix(static_cast<uint32_t>(m_volumes.size()));
+	for (const Volume& volume : m_volumes) {
+		for (int c = 0; c < 4; ++c) {
+			mix(std::bit_cast<uint32_t>(volume.bounds[c]));
+		}
+		mix(volume.glass ? 1u : 0u);
+	}
+	if (frame.grid_signature == signature) {
+		return;
+	}
+	frame.grid_signature = signature;
+
 	struct Span {
 		glm::ivec3 lo;
 		glm::ivec3 hi;
 	};
 
 	std::vector<Span> spans(m_volumes.size());
-	std::vector<uint32_t> far;
-	std::vector<uint32_t> glass;
+	std::vector<uint32_t>& far = m_far;
+	std::vector<uint32_t>& glass = m_glass;
+	far.clear();
+	glass.clear();
 	std::ranges::fill(m_cell_counts, 0u);
 
 	const auto cell_index = [dim](int32_t x, int32_t y, int32_t z) {

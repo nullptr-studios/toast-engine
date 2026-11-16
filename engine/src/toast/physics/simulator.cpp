@@ -1840,6 +1840,9 @@ auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComp
 	glm::quat local_rotation = shape->voxel.local_rotation;
 	voxel::Palette palette = data->palette;
 	voxel::MaterialLibrary materials = data->materials;
+	const uint64_t palette_uid = data->palette_uid;
+	// The renderer only draws a fragment whose origin a node owns, so pieces broken off this split need the source origin
+	const BodyID origin = valid(data->fragment_origin) ? data->fragment_origin : shape->owner;
 
 	const DensityTable densities = voxel::densityTable(palette, materials);
 	auto extracted_fragment = [&] {
@@ -1898,6 +1901,12 @@ auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComp
 		restore_to_source(*owned_volume);
 		return true;
 	}
+	if (const Shape* stored = tryGetShape(split_shape)) {
+		if (VoxelShapeData* split_data = tryGetVoxelData(stored->voxel.data)) {
+			split_data->fragment_origin = origin;
+			split_data->palette_uid = palette_uid;
+		}
+	}
 
 	shape = tryGetShape(source_shape_id);
 	if (shape != nullptr) {
@@ -1934,7 +1943,8 @@ void Simulator::despawnSettledFragments(float dt) {
 		}
 
 		const Body* body = tryGetBody(slot.shape.owner);
-		if (body == nullptr || not body->enabled || body->awake) {
+		// Static splits carry an origin too but stay anchored in the world
+		if (body == nullptr || not body->enabled || body->awake || body->type != BodyType::dynamic_body) {
 			data->fragment_sleep_seconds = 0.0f;
 			continue;
 		}
@@ -3195,7 +3205,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 				TOAST_WARN(
 				    "Physics",
 				    "[box-voxel slow] {:.2f} ms, {} regions, {} candidates, local extent {:.1f}x{:.1f}x{:.1f} m | box type {} awake {} "
-						"size {:.1f}x{:.1f}x{:.1f} | "
+				    "size {:.1f}x{:.1f}x{:.1f} | "
 				    "voxel type {} awake {} bricks {}x{}x{} solid {} fragment {}",
 				    split_ms,
 				    partials.size(),

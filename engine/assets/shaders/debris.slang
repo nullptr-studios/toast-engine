@@ -90,6 +90,9 @@ StructuredBuffer<DebrisVolume> gVolumes;
 StructuredBuffer<uint> gRetires;
 [[vk::binding(8, 0)]]
 RWStructuredBuffer<uint> gGrid;
+/// Opaque caster box min xyz and max xyz as ordered uints then changing pieces then the fastest speed bits
+[[vk::binding(9, 0)]]
+RWStructuredBuffer<uint> gShadowBounds;
 
 struct VolumeRecord {
     uint brickDimsX;
@@ -359,9 +362,46 @@ void appendVoxels(uint index, uint mask, bool glass) {
     }
 }
 
+/// Sorts like the float it came from
+uint orderedFloat(float value) {
+    uint bits = asuint(value);
+    return (bits & 0x80000000u) != 0u ? ~bits : bits | 0x80000000u;
+}
+
+/// Feeds the shadow pass cull and cache, changing means its shadow moves this step
+void addShadowCaster(DebrisParticle particle, DebrisMotion motion, bool changing) {
+    if ((particle.packed & kFlagGlass) != 0u) {
+        return;
+    }
+    // Two voxel wide box around the center at any rotation
+    const float radius = 1.74 * gParams.voxelSize * motion.baseScale;
+    const float3 low = particle.position - radius;
+    const float3 high = particle.position + radius;
+    InterlockedMin(gShadowBounds[0], orderedFloat(low.x));
+    InterlockedMin(gShadowBounds[1], orderedFloat(low.y));
+    InterlockedMin(gShadowBounds[2], orderedFloat(low.z));
+    InterlockedMax(gShadowBounds[3], orderedFloat(high.x));
+    InterlockedMax(gShadowBounds[4], orderedFloat(high.y));
+    InterlockedMax(gShadowBounds[5], orderedFloat(high.z));
+    const bool fading = motion.age > motion.lifetime - gParams.fadeOut;
+    if (changing || fading) {
+        InterlockedAdd(gShadowBounds[6], 1u);
+    }
+    // Positive floats sort as uints
+    InterlockedMax(gShadowBounds[7], asuint(length(particle.velocity)));
+}
+
 [shader("compute")]
 [numthreads(1, 1, 1)]
 void resetMain(uint3 id : SV_DispatchThreadID) {
+    gShadowBounds[0] = 0xFFFFFFFFu;
+    gShadowBounds[1] = 0xFFFFFFFFu;
+    gShadowBounds[2] = 0xFFFFFFFFu;
+    gShadowBounds[3] = 0u;
+    gShadowBounds[4] = 0u;
+    gShadowBounds[5] = 0u;
+    gShadowBounds[6] = 0u;
+    gShadowBounds[7] = 0u;
     gDrawArgs[0] = 36u;
     gDrawArgs[1] = 0u;
     gDrawArgs[2] = 0u;
@@ -542,6 +582,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
             gCurrent[i] = particle;
             gMotion[i] = motion;
             appendVoxels(i, mask, glass);
+            addShadowCaster(particle, motion, false);
             return;
         }
         particle.packed &= ~kFlagAsleep;
@@ -693,6 +734,8 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
     gCurrent[i] = particle;
     gMotion[i] = motion;
     appendVoxels(i, mask, glass);
+    // Falling asleep this step still moved it
+    addShadowCaster(particle, motion, true);
 }
 
 [shader("compute")]
@@ -731,4 +774,5 @@ void spawnMain(uint3 id : SV_DispatchThreadID) {
     gCurrent[spawn.slot] = particle;
 
     appendVoxels(spawn.slot, spawn.packed & kMaskBits, (spawn.packed & kFlagGlass) != 0u);
+    addShadowCaster(particle, motion, true);
 }

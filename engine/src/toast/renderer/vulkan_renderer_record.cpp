@@ -284,6 +284,8 @@ void VulkanRenderer::updateVoxelTraceScene() {
 				m_trace_volumes.push_back(volume);
 			}
 		}
+		// The index is the TLAS custom index so a camera dependent order would rebuild the TLAS whenever the camera moves
+		std::ranges::sort(m_trace_volumes, {}, [](const VoxelTraceScene::Volume& volume) { return volume.instance.record_index; });
 	}
 	m_voxel_trace_scene->update(m_current_frame, m_trace_volumes, render_frame->frame_data.camera_position, voxelTraceCellSize());
 }
@@ -531,8 +533,7 @@ auto VulkanRenderer::recordVoxelScopes(
 		m_voxel_pass->recordCellCull(cmd, m_current_frame, scissor.extent);
 	}
 
-	const bool debris_drawn =
-	    m_debris_pass != nullptr && m_debris_pass->isEnabled() && m_debris_pass->prepare(cmd, m_current_frame);
+	const bool debris_drawn = m_debris_prepared;
 	sync::BarrierBatch barriers;
 
 	const auto attachment = [](const SceneColorResources& target, vk::AttachmentLoadOp load, const vk::ClearValue& clear) {
@@ -926,6 +927,10 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Acceleration structures");
 		recordAccelerationStructureBuilds(frame);
 	}
+
+	// Before the shadow pass which casts the debris it acquires
+	m_debris_prepared =
+	    m_debris_pass != nullptr && m_debris_pass->isEnabled() && m_debris_pass->prepare(*frame.command_buffer, m_current_frame);
 
 	{
 		const GpuScope offscreen_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Off-screen");

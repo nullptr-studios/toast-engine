@@ -16,6 +16,7 @@
 #include <span>
 #include <string>
 #include <toast/voxel/gpu_layout.hpp>
+#include <unordered_map>
 #include <vector>
 
 namespace renderer {
@@ -162,6 +163,8 @@ private:
 	friend class VoxelSceneUpload;
 
 	std::vector<uint64_t> m_node_rids;
+	/// First record of each rid so recordIndexOf is not a scan per call
+	std::unordered_map<uint64_t, uint32_t> m_record_of;
 	std::vector<glm::uvec3> m_brick_dims;
 
 	std::shared_ptr<VoxelGpuSections> m_sections;
