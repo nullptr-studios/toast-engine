@@ -27,7 +27,7 @@ void VoxelScenePatcher::adopt(const voxel::gpu::PackedScene& scene, uint32_t poo
 }
 
 auto VoxelScenePatcher::paletteMatches(const voxel::gpu::VolumeRecord& record, const voxel::Palette& palette) const -> bool {
-	const size_t base = size_t {record.palette_offset} * 4u;
+	const size_t base = size_t {record.palette_offset} * voxel::gpu::k_palette_entry_words;
 	return record.max_emissive == palette.max_emissive && base + voxel::gpu::k_palette_words <= m_scene.palettes.size() &&
 	       std::memcmp(m_scene.palettes.data() + base, palette.entries.data(), voxel::gpu::k_palette_words * sizeof(uint32_t)) == 0;
 }
@@ -36,13 +36,13 @@ auto VoxelScenePatcher::findOrAppendPalette(const voxel::Palette& palette) -> ui
 	using voxel::gpu::k_palette_words;
 	for (size_t base = 0; base + k_palette_words <= m_scene.palettes.size(); base += k_palette_words) {
 		if (std::memcmp(m_scene.palettes.data() + base, palette.entries.data(), k_palette_words * sizeof(uint32_t)) == 0) {
-			return static_cast<uint32_t>(base / 4u);
+			return static_cast<uint32_t>(base / voxel::gpu::k_palette_entry_words);
 		}
 	}
 	const size_t base = m_scene.palettes.size();
 	m_scene.palettes.resize(base + k_palette_words);
 	std::memcpy(m_scene.palettes.data() + base, palette.entries.data(), k_palette_words * sizeof(uint32_t));
-	return static_cast<uint32_t>(base / 4u);
+	return static_cast<uint32_t>(base / voxel::gpu::k_palette_entry_words);
 }
 
 auto VoxelScenePatcher::tryPatch(

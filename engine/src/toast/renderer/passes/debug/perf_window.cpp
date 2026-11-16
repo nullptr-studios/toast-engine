@@ -9,6 +9,7 @@
 #include "toast/renderer/compute/async_compute.hpp"
 #include "toast/renderer/core/vulkan_core.hpp"
 #include "toast/renderer/lighting/shadow_constants.hpp"
+#include "toast/renderer/passes/lighting/gi_clipmap_pass.hpp"
 #include "toast/renderer/passes/lighting/gi_pass.hpp"
 #include "toast/renderer/settings/renderer_settings.hpp"
 #include "toast/renderer/shaders/shader_compiler.hpp"
@@ -965,6 +966,41 @@ void PerfWindow::drawSceneTab() {
 		row("Voxel volumes", std::format("{} visible of {}", visible_voxels, frame->voxel_instances.size()));
 		row("Lights", std::format("{} of {} submitted", frame->lights.size(), frame->light_stats.submitted));
 		ImGui::EndTable();
+	}
+
+	if (const GiClipmapPass* clipmap = VulkanRenderer::instance->giClipmapPass(); clipmap != nullptr && clipmap->isEnabled()) {
+		ImGui::SeparatorText("Radiance clipmap fill");
+		const GiClipmapPass::Stats clip = clipmap->stats();
+		const bool edits_full = clip.edit_boxes >= GiDirtyBoxes::k_max_boxes;
+		ImGui::Text(
+		    "%u edits in %u of %u boxes, %u body boxes", clip.edits, clip.edit_boxes, GiDirtyBoxes::k_max_boxes, clip.body_boxes
+		);
+		if (edits_full) {
+			ImGui::SameLine();
+			ImGui::TextColored(k_perf_warn, "full, the rest merged into the last box");
+		}
+		if (clip.history_lost) {
+			ImGui::TextColored(k_perf_warn, "Change history lost so every level refilled whole");
+		}
+		if (ImGui::BeginTable("##perf_gi_clip", 4, ImGuiTableFlags_SizingFixedFit)) {
+			ImGui::TableSetupColumn("Level");
+			ImGui::TableSetupColumn("Boxes");
+			ImGui::TableSetupColumn("Cells");
+			ImGui::TableSetupColumn("Largest box");
+			ImGui::TableHeadersRow();
+			for (uint32_t i = 0; i < clip.levels && i < GiClipmapPass::k_max_levels; ++i) {
+				ImGui::TableNextRow();
+				ImGui::TableNextColumn();
+				ImGui::Text("l%u%s", i, clip.whole[i] ? " whole" : "");
+				ImGui::TableNextColumn();
+				ImGui::Text("%u", clip.boxes[i]);
+				ImGui::TableNextColumn();
+				ImGui::Text("%llu", static_cast<unsigned long long>(clip.cells[i]));
+				ImGui::TableNextColumn();
+				ImGui::Text("%llu", static_cast<unsigned long long>(clip.largest[i]));
+			}
+			ImGui::EndTable();
+		}
 	}
 
 	const GiPass* gi = VulkanRenderer::instance->giPass();

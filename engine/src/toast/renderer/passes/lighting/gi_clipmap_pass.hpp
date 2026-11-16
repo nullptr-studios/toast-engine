@@ -17,6 +17,7 @@
 #include <array>
 #include <glm/glm.hpp>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +34,25 @@ public:
 	static constexpr uint32_t k_max_tail = 5;
 	/// Mirrors gi_clip_common kGiClipFaces
 	static constexpr uint32_t k_faces = 6;
+
+#if defined(TOAST_DEV_TOOLS)
+	/// What the last fill refilled and why
+	struct Stats {
+		uint32_t levels = 0;
+		uint32_t edits = 0;
+		/// Of GiDirtyBoxes::k_max_boxes where a full list merges the rest into its last box
+		uint32_t edit_boxes = 0;
+		uint32_t body_boxes = 0;
+		bool history_lost = false;
+		std::array<uint32_t, k_max_levels> boxes {};
+		std::array<uint64_t, k_max_levels> cells {};
+		std::array<uint64_t, k_max_levels> largest {};
+		std::array<bool, k_max_levels> whole {};
+	};
+
+	[[nodiscard]]
+	auto stats() const -> Stats;
+#endif
 
 	GiClipmapPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
 
@@ -180,6 +200,11 @@ private:
 	std::unordered_map<uint64_t, Body> m_bodies;
 	std::unordered_map<uint64_t, Body> m_bodies_next;
 	std::vector<glm::vec3> m_body_boxes;
+
+#if defined(TOAST_DEV_TOOLS)
+	mutable std::mutex m_stats_mutex;
+	Stats m_stats;
+#endif
 };
 
 }

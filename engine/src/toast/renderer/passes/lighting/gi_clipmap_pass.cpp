@@ -13,6 +13,8 @@
 #include "toast/renderer/voxel/voxel_trace_scene.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
+#include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace renderer {
@@ -601,17 +603,31 @@ void GiClipmapPass::gatherBodies(const RenderFrame& frame) {
 	};
 	const auto sphere = [&](const glm::vec4& bounds) { add(glm::vec3(bounds) - bounds.w, glm::vec3(bounds) + bounds.w); };
 
+	// Settled bodies still jitter so motion is measured against the last fill and only a real move refills
+	const float threshold = 0.25f * m_cell;
+	const auto motion = [](const Body& from, const Body& to) {
+		const glm::mat3 change = glm::mat3(to.model) - glm::mat3(from.model);
+		const float spread =
+		    std::sqrt(glm::dot(change[0], change[0]) + glm::dot(change[1], change[1]) + glm::dot(change[2], change[2]));
+		const float scale = std::max(glm::length(glm::vec3(to.model[0])), 1e-6f);
+		return glm::distance(glm::vec3(from.bounds), glm::vec3(to.bounds)) + (spread * to.bounds.w / scale);
+	};
+
 	m_bodies_next.clear();
 	for (const auto& proxy : frame.voxel_instances) {
 		const Body body {.model = proxy.model, .bounds = glm::vec4(proxy.bounds_center, proxy.bounds_radius)};
-		m_bodies_next.emplace(proxy.node_rid, body);
 		const auto found = m_bodies.find(proxy.node_rid);
 		if (found == m_bodies.end()) {
 			sphere(body.bounds);
 		} else if (found->second.model != body.model) {
+			if (motion(found->second, body) < threshold) {
+				m_bodies_next.emplace(proxy.node_rid, found->second);
+				continue;
+			}
 			sphere(found->second.bounds);
 			sphere(body.bounds);
 		}
+		m_bodies_next.emplace(proxy.node_rid, body);
 	}
 	for (const auto& [rid, body] : m_bodies) {
 		if (!m_bodies_next.contains(rid)) {
@@ -672,6 +688,13 @@ void GiClipmapPass::unpublish(vk::CommandBuffer cmd) {
 	barriers.flush(cmd);
 	m_published_valid = false;
 }
+
+#if defined(TOAST_DEV_TOOLS)
+auto GiClipmapPass::stats() const -> Stats {
+	std::scoped_lock lock(m_stats_mutex);
+	return m_stats;
+}
+#endif
 
 void GiClipmapPass::markFull() {
 	for (Level& level : m_levels) {
@@ -815,6 +838,15 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 	};
 
 	const int side = static_cast<int>(resolution);
+#if defined(TOAST_DEV_TOOLS)
+	Stats stats {
+	  .levels = level_count,
+	  .edits = counts.edits,
+	  .edit_boxes = static_cast<uint32_t>(m_dirty_boxes.boxes().size() / 2),
+	  .body_boxes = static_cast<uint32_t>(m_body_boxes.size() / 2),
+	  .history_lost = !known,
+	};
+#endif
 	std::vector<glm::vec3> dirty = std::move(m_body_boxes);
 	m_body_boxes.clear();
 	dirty.insert(dirty.end(), m_dirty_boxes.boxes().begin(), m_dirty_boxes.boxes().end());
@@ -846,8 +878,24 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 		level.origin = origin;
 		level.needs_full = false;
 		any = any || !boxes[i].empty();
+#if defined(TOAST_DEV_TOOLS)
+		stats.boxes[i] = static_cast<uint32_t>(boxes[i].size());
+		stats.whole[i] = whole[i];
+		for (const gi_clip::Box& box : boxes[i]) {
+			const glm::i64vec3 size(box.max - box.min);
+			const uint64_t box_cells = static_cast<uint64_t>(size.x * size.y * size.z);
+			stats.cells[i] += box_cells;
+			stats.largest[i] = std::max(stats.largest[i], box_cells);
+		}
+#endif
 	}
 	m_dirty_boxes.clear();
+#if defined(TOAST_DEV_TOOLS)
+	{
+		std::scoped_lock lock(m_stats_mutex);
+		m_stats = stats;
+	}
+#endif
 
 	const auto& allocation = m_frame_data[frame_index].getAllocation();
 	std::memcpy(allocation.getInfo().pMappedData, &data, sizeof(data));

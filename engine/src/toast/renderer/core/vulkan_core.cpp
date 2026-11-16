@@ -413,6 +413,10 @@ VulkanCore::VulkanCore(
 	// Layer settings are fixed at instance creation but ray query use is only known once a device is picked
 	if (m_validation_enabled && probeRayQuery(m_physical_device).used()) {
 		m_physical_device = nullptr;
+#ifndef NDEBUG
+		// before the instance since destroying it after leaves the new messenger dead
+		m_debug_messenger = nullptr;
+#endif
 		m_instance = nullptr;
 		createInstance(required_instance_extensions, true);
 		pickPhysicalDevice(required_device_extensions);

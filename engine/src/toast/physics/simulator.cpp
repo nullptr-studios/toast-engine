@@ -3178,8 +3178,45 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 			m_profile.rejected_manifolds += queue.rejected_manifold_count;
 			m_profile.contact_points += queue.contact_count;
 			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::box_voxel)];
-			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::box_voxel)] +=
-			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
+			const double split_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
+			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::box_voxel)] += split_ms;
+			if (split_ms > 2.0) {
+				// diagnostic, remove; body type 0 static 1 dynamic 2 kinematic
+				const Body& box_body = split.view.box.body;
+				const Body& voxel_body = split.view.voxel.body;
+				const glm::vec3 box_size = split.view.box.shape.box.size;
+				const glm::uvec3 voxel_dims = split.view.voxel_data.volume->brickDims();
+				size_t candidates = 0;
+				for (const VoxelPairPartial& partial : partials) {
+					for (const auto& per_normal : partial.candidates_per_normal) {
+						candidates += per_normal.size();
+					}
+				}
+				TOAST_WARN(
+				    "Physics",
+				    "[box-voxel slow] {:.2f} ms, {} regions, {} candidates, local extent {:.1f}x{:.1f}x{:.1f} m | box type {} awake {} "
+						"size {:.1f}x{:.1f}x{:.1f} | "
+				    "voxel type {} awake {} bricks {}x{}x{} solid {} fragment {}",
+				    split_ms,
+				    partials.size(),
+				    candidates,
+				    split.local_bounds.max.x - split.local_bounds.min.x,
+				    split.local_bounds.max.y - split.local_bounds.min.y,
+				    split.local_bounds.max.z - split.local_bounds.min.z,
+				    static_cast<int>(box_body.type),
+				    box_body.awake,
+				    box_size.x,
+				    box_size.y,
+				    box_size.z,
+				    static_cast<int>(voxel_body.type),
+				    voxel_body.awake,
+				    voxel_dims.x,
+				    voxel_dims.y,
+				    voxel_dims.z,
+				    split.view.voxel_data.solid_voxel_count,
+				    valid(split.view.voxel_data.fragment_origin)
+				);
+			}
 			merged.insert_range(merged.end(), std::move(queue.manifolds));
 		}
 	}
