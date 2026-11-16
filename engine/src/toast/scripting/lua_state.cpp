@@ -702,6 +702,23 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addProperty("r", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
 	    .addProperty("g", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
 	    .addProperty("b", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
+	    // Lua looks up operator metamethods raw on the object's own metatable, so deriveClass doesn't inherit them from vec3
+	    .addFunction("__add", [](const glm::vec3& a, const glm::vec3& b) { return a + b; })
+	    .addFunction("__sub", [](const glm::vec3& a, const glm::vec3& b) { return a - b; })
+	    .addFunction(
+	        "__mul",
+	        overload<const glm::vec3&, float>(+[](const glm::vec3& v, float s) { return v * s; }),
+	        overload<const glm::vec3&, const glm::vec3&>(+[](const glm::vec3& a, const glm::vec3& b) { return a * b; })
+	    )
+	    .addFunction(
+	        "__div",
+	        overload<const glm::vec3&, float>(+[](const glm::vec3& v, float s) { return v / s; }),
+	        overload<const glm::vec3&, const glm::vec3&>(+[](const glm::vec3& a, const glm::vec3& b) { return a / b; })
+	    )
+	    .addFunction("__unm", [](const glm::vec3& v, const glm::vec3&) { return -v; })
+	    .addFunction("__eq", [](const glm::vec3& a, const glm::vec3& b) { return a == b; })
+	    .addFunction("__len", [](const glm::vec3& v) { return glm::length(v); })
+	    .addFunction("__tostring", [](const glm::vec3& v) -> std::string { return std::format("vec3({}, {}, {})", v.x, v.y, v.z); })
 	    .endClass()
 
 	    // vec4
