@@ -123,3 +123,71 @@ function tracy.Message(text) end
 ---Marker for a reference to any asset type.
 ---@type TypeMarker<Asset>
 Asset = nil
+
+---@class Debug
+Debug = {}
+
+---@param start vec3
+---@param end_ vec3
+---@param color? vec4
+function Debug.drawLine(start, end_, color) end
+
+---Axis-aligned wireframe box
+---@param min vec3
+---@param max vec3
+---@param color? vec4
+function Debug.drawBox(min, max, color) end
+
+---@param center vec3
+---@param radius number
+---@param color? vec4
+---@param segments? integer default 8
+function Debug.drawSphere(center, radius, color, segments) end
+
+---@param center vec3
+---@param radius number
+---@param color? vec4
+function Debug.drawSolidSphere(center, radius, color) end
+
+---@param world_position vec3
+---@param size number
+---@param texture Asset|UID
+---@param tint? vec4
+function Debug.drawBillboard(world_position, size, texture, tint) end
+
+---@param mesh Asset
+---@param transform userdata mat4
+---@param tint? vec4
+function Debug.drawMesh(mesh, transform, tint) end
+
+---@param from vec3
+---@param to vec3
+---@param color? vec4
+---@param head_size? number default 0.2
+function Debug.drawArrow(from, to, color, head_size) end
+
+---@param apex vec3
+---@param direction vec3
+---@param length number
+---@param half_angle_degrees number
+---@param color? vec4
+---@param segments? integer default 24
+function Debug.drawCone(apex, direction, length, half_angle_degrees, color, segments) end
+
+---@param camera Camera
+---@param aspect number
+---@param color? vec4 default yellow
+---@param far_override? number 0 uses the camera's far plane
+function Debug.drawFrustum(camera, aspect, color, far_override) end
+
+---@param transform userdata mat4
+---@param color vec4
+---@param fill boolean
+function Debug.drawShapeBox(transform, color, fill) end
+
+---@param transform userdata mat4
+---@param radius number
+---@param height number
+---@param color vec4
+---@param fill boolean
+function Debug.drawCapsule(transform, radius, height, color, fill) end

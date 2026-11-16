@@ -298,8 +298,15 @@ endif ()
 
 
 if (WIN32)
+    set(_vcpkg_prefix "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+    file(GLOB _vcpkg_dlls_debug CONFIGURE_DEPENDS "${_vcpkg_prefix}/debug/bin/*.dll")
+    file(GLOB _vcpkg_dlls_release CONFIGURE_DEPENDS "${_vcpkg_prefix}/bin/*.dll")
     add_custom_command(TARGET toast_engine POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different $<TARGET_RUNTIME_DLLS:toast_engine> "${TOAST_ENGINE_BIN_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_RUNTIME_DLLS:toast_engine>
+                "$<$<CONFIG:Debug>:${_vcpkg_dlls_debug}>"
+                "$<$<NOT:$<CONFIG:Debug>>:${_vcpkg_dlls_release}>"
+                "${TOAST_ENGINE_BIN_DIR}"
             COMMENT "Copying runtime DLLs"
             COMMAND_EXPAND_LISTS
             VERBATIM
