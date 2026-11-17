@@ -105,9 +105,10 @@ auto AsyncCompute::submit(const std::function<void(vk::CommandBuffer)>& record, 
 		submitLocked(std::move(slot));
 	}
 
-	if (!debug_name.empty()) {
-		TOAST_TRACE("Render", "Async compute job '{}' submitted as ticket {}", debug_name, ticket);
-	}
+	// shutup
+	// if (!debug_name.empty()) {
+	// 	TOAST_TRACE("Render", "Async compute job '{}' submitted as ticket {}", debug_name, ticket);
+	// }
 	return ticket;
 }
 

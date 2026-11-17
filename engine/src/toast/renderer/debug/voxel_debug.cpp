@@ -167,10 +167,10 @@ auto voxelDebugMaterialsDrawn(const RenderFrame& frame) -> std::bitset<voxel::k_
 			continue;
 		}
 
-		const size_t base = static_cast<size_t>(scene.records[proxy.record_index].palette_offset) * 4;
+		const size_t base = static_cast<size_t>(scene.records[proxy.record_index].palette_offset) * voxel::gpu::k_palette_entry_words;
 		for (uint32_t index = 1; index < voxel::k_palette_size; ++index) {
-			const size_t word = base + (static_cast<size_t>(index) * 4);
-			if (word + 4 > scene.palettes.size()) {
+			const size_t word = base + (static_cast<size_t>(index) * voxel::gpu::k_palette_entry_words);
+			if (word + voxel::gpu::k_palette_entry_words > scene.palettes.size()) {
 				break;
 			}
 			voxel::PaletteEntry entry;
@@ -413,8 +413,8 @@ auto probe(const RenderFrame& frame, glm::vec2 cursor) -> std::optional<ProbeRes
 			out.face[hit.axis] = voxel_direction[hit.axis] > 0.0f ? -1 : 1;
 		}
 
-		const size_t palette_word = (static_cast<size_t>(record.palette_offset) + hit.material) * 4;
-		if (palette_word + 4 <= packed.scene.palettes.size()) {
+		const size_t palette_word = (static_cast<size_t>(record.palette_offset) + hit.material) * voxel::gpu::k_palette_entry_words;
+		if (palette_word + voxel::gpu::k_palette_entry_words <= packed.scene.palettes.size()) {
 			std::memcpy(&out.palette_entry, packed.scene.palettes.data() + palette_word, sizeof(voxel::PaletteEntry));
 		}
 		result.hit = out;

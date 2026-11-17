@@ -50,6 +50,23 @@ Sampler2D gDiffuseCurrent;
 [[vk::binding(9, 0)]]
 Sampler2D gSpecularCurrent;
 
+/// This frame's noisy clipmap GI voxel_lighting.slang left for SSAO which tells its share of the noisy diffuse
+[[vk::binding(10, 0)]]
+Sampler2D gSceneIndirect;
+
+struct CompositeOutput
+{
+    /// Additive into the scene colour
+    float4 color : SV_Target0;
+    /// The GI share of the denoised diffuse with alpha 1 so SSAO occludes it instead of the noisy one
+    float4 indirect : SV_Target1;
+};
+
+float luminance(float3 value)
+{
+    return dot(value, float3(0.2126, 0.7152, 0.0722));
+}
+
 /// Blend floors so a settled pixel still follows changes
 static const float kDiffuseBlend = 0.1;
 static const float kSpecularBlend = 0.2;
@@ -273,9 +290,8 @@ float noiseAt(float2 pixel)
     return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
 }
 
-/// Additive into the scene colour
 [shader("fragment")]
-float4 compositeMain(VSOutput input) : SV_Target0
+CompositeOutput compositeMain(VSOutput input)
 {
     const int2 pixel = int2(input.position.xy);
     const float4 albedo = gAlbedo.Load(int3(pixel, 0));
@@ -300,6 +316,9 @@ float4 compositeMain(VSOutput input) : SV_Target0
 
     float3 diffuse = gDiffuseCurrent.Load(int3(pixel, 0)).rgb;
     float weightSum = 1.0;
+    // GI and everything noisy over the same taps since a ratio of single noisy pixels flickers
+    float giSum = luminance(gSceneIndirect.Load(int3(pixel, 0)).rgb);
+    float noisySum = luminance(albedo.rgb * gNoisyDiffuse.Load(int3(pixel, 0)).rgb);
     float s, c;
     sincos(rotation, s, c);
     const float2 turn = float2(c, s) * radius;
@@ -323,9 +342,18 @@ float4 compositeMain(VSOutput input) : SV_Target0
         const float weight = valid ? exp(-plane / planeTolerance) * facing32 : 0.0;
         diffuse += tapDiffuse * weight;
         weightSum += weight;
+        if (weight > 0.0)
+        {
+            giSum += weight * luminance(gSceneIndirect.Load(int3(tap, 0)).rgb);
+            noisySum += weight * luminance(gAlbedo.Load(int3(tap, 0)).rgb * gNoisyDiffuse.Load(int3(tap, 0)).rgb);
+        }
     }
     diffuse /= weightSum;
 
     const float3 specular = gSpecularCurrent.Load(int3(pixel, 0)).rgb;
-    return float4(albedo.rgb * diffuse + specular, 0.0);
+    const float giShare = noisySum > 1e-6 ? saturate(giSum / noisySum) : 0.0;
+    CompositeOutput output;
+    output.color = float4(albedo.rgb * diffuse + specular, 0.0);
+    output.indirect = float4(albedo.rgb * diffuse * giShare, 1.0);
+    return output;
 }

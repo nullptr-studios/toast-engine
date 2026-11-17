@@ -185,8 +185,22 @@ void VoxelGpuSections::recordPending(vk::CommandBuffer cmd, uint64_t up_to, std:
 	barriers.flush(cmd);
 }
 
+namespace {
+
+auto firstRecordOf(const std::vector<uint64_t>& node_rids) -> std::unordered_map<uint64_t, uint32_t> {
+	std::unordered_map<uint64_t, uint32_t> records;
+	records.reserve(node_rids.size());
+	for (uint32_t record = 0; record < node_rids.size(); ++record) {
+		records.try_emplace(node_rids[record], record);
+	}
+	return records;
+}
+
+}
+
 VoxelGpuStorage::VoxelGpuStorage(std::vector<uint64_t> node_rids, std::vector<glm::uvec3> brick_dims)
     : m_node_rids(std::move(node_rids)),
+      m_record_of(firstRecordOf(m_node_rids)),
       m_brick_dims(std::move(brick_dims)),
       m_sections(std::make_shared<VoxelGpuSections>()),
       m_generation(g_voxel_storage_generation.fetch_add(1, std::memory_order_relaxed) + 1) { }
@@ -195,6 +209,7 @@ VoxelGpuStorage::VoxelGpuStorage(
     std::vector<uint64_t> node_rids, std::vector<glm::uvec3> brick_dims, const VoxelGpuStorage& previous, uint64_t patch_sequence
 )
     : m_node_rids(std::move(node_rids)),
+      m_record_of(firstRecordOf(m_node_rids)),
       m_brick_dims(std::move(brick_dims)),
       m_sections(previous.m_sections),
       m_patch_sequence(patch_sequence),
@@ -244,11 +259,11 @@ void writeVoxelStorageDescriptors(const vk::raii::Device& device, vk::Descriptor
 }
 
 auto VoxelGpuStorage::recordIndexOf(uint64_t node_rid) const -> std::optional<uint32_t> {
-	const auto found = std::ranges::find(m_node_rids, node_rid);
-	if (found == m_node_rids.end()) {
+	const auto found = m_record_of.find(node_rid);
+	if (found == m_record_of.end()) {
 		return std::nullopt;
 	}
-	return static_cast<uint32_t>(found - m_node_rids.begin());
+	return found->second;
 }
 
 auto VoxelGpuStorage::buffer(Section section) const -> vk::Buffer {

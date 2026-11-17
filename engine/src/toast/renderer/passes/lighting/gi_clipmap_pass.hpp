@@ -7,6 +7,8 @@
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
+#include "toast/renderer/gpu_types.hpp"
+#include "toast/renderer/lighting/gi_clip_math.hpp"
 #include "toast/renderer/lighting/gi_dirty_boxes.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
@@ -17,6 +19,7 @@
 #include <array>
 #include <glm/glm.hpp>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <unordered_map>
 #include <vector>
@@ -33,6 +36,27 @@ public:
 	static constexpr uint32_t k_max_tail = 5;
 	/// Mirrors gi_clip_common kGiClipFaces
 	static constexpr uint32_t k_faces = 6;
+
+#if defined(TOAST_DEV_TOOLS)
+	/// What the last fill refilled and why
+	struct Stats {
+		uint32_t levels = 0;
+		uint32_t edits = 0;
+		/// Of GiDirtyBoxes::k_max_boxes where a full list merges the rest into its last box
+		uint32_t edit_boxes = 0;
+		uint32_t body_boxes = 0;
+		bool history_lost = false;
+		std::array<uint32_t, k_max_levels> boxes {};
+		std::array<uint64_t, k_max_levels> cells {};
+		std::array<uint64_t, k_max_levels> largest {};
+		/// Cells left over for later frames
+		std::array<uint64_t, k_max_levels> queued {};
+		std::array<bool, k_max_levels> whole {};
+	};
+
+	[[nodiscard]]
+	auto stats() const -> Stats;
+#endif
 
 	GiClipmapPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
 
@@ -103,7 +127,12 @@ private:
 		std::array<Face, k_faces> ambient;
 		glm::ivec3 origin {0};
 		bool needs_full = true;
+		/// Dirty cells past the fill budget that later frames refill first
+		std::vector<gi_clip::Box> pending;
 	};
+
+	/// Dirty cells refilled per level each frame on top of the scroll so a blast spreads over frames
+	static constexpr int64_t k_fill_budget_cells = 16384;
 
 	auto createPipelines(const VulkanCore& core) -> bool;
 	/// Waits for the device so no frame in flight still reads the old images
@@ -111,6 +140,9 @@ private:
 	void markFull();
 	void unpublish(vk::CommandBuffer cmd);
 	void gatherBodies(const RenderFrame& frame);
+	/// Range boxes of local lights that changed as low then high into @p boxes
+	/// @returns true when a sun changed or too many lights did so the near levels relight whole
+	auto gatherLightChanges(const RenderFrame& frame, std::vector<glm::vec3>& boxes) -> bool;
 	auto recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, uint32_t level, uint32_t mode)
 	    -> vk::ImageView;
 
@@ -176,10 +208,35 @@ private:
 		glm::vec4 bounds {0.0f};
 	};
 
+	struct TrackedBody {
+		/// Where the clipmap last saw it
+		Body filled;
+		/// Where it was last frame
+		Body seen;
+		/// Frames it has moved since the last fill
+		uint32_t flying = 0;
+		/// Last gather that saw it so leavers are found without rebuilding the map
+		uint64_t gather = 0;
+	};
+
 	static constexpr size_t k_max_body_boxes = 256;
-	std::unordered_map<uint64_t, Body> m_bodies;
-	std::unordered_map<uint64_t, Body> m_bodies_next;
+	static constexpr uint32_t k_flying_refill_frames = 8;
+	std::unordered_map<uint64_t, TrackedBody> m_bodies;
+	uint64_t m_body_gather = 0;
 	std::vector<glm::vec3> m_body_boxes;
+
+	/// Levels a sun change relights at once and coarser ones follow the round robin and the downsample
+	static constexpr uint32_t k_relight_levels = 2;
+	static constexpr size_t k_inject_lights = 64;
+	static constexpr size_t k_max_light_boxes = 16;
+	std::array<DirectionalLightData, k_max_directional_lights> m_last_suns {};
+	uint32_t m_last_sun_count = 0;
+	std::vector<GpuLight> m_last_lights;
+
+#if defined(TOAST_DEV_TOOLS)
+	mutable std::mutex m_stats_mutex;
+	Stats m_stats;
+#endif
 };
 
 }

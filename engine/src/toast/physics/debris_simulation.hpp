@@ -36,11 +36,12 @@ public:
 		glm::vec4 rotation {0.0f, 0.0f, 0.0f, 1.0f};
 		glm::vec3 velocity {0.0f};
 		uint32_t albedo_roughness = 0;
-		/// Base scale times the spawn and death fades
+		/// Base scale times the death fade
 		float scale = 0.0f;
 		/// Alpha and ior byte << 8 and only read with k_flag_glass in packed
 		uint32_t glass = 0;
-		std::array<uint32_t, 2> pad {};
+		float emissive = 0.0f;
+		uint32_t pad = 0;
 	};
 
 	struct GpuMotion {
@@ -63,7 +64,7 @@ public:
 		float lifetime = 0.0f;
 		float scale = 1.0f;
 		uint32_t glass = 0;
-		uint32_t pad = 0;
+		float emissive = 0.0f;
 	};
 
 	struct GpuVolume {
@@ -81,12 +82,23 @@ public:
 	static_assert(sizeof(GpuSpawn) == 80, "GpuSpawn is mirrored by debris.slang");
 	static_assert(sizeof(GpuVolume) == 128, "GpuVolume is mirrored by debris.slang");
 
+	/// Mirrors gShadowBounds in debris.slang, the box is in ordered uints and empty while min is above max
+	struct ShadowBounds {
+		std::array<uint32_t, 3> min {};
+		std::array<uint32_t, 3> max {};
+		/// Opaque pieces whose shadow moved in this step
+		uint32_t changing = 0;
+		/// Float bits of the fastest opaque piece
+		uint32_t max_speed = 0;
+	};
+
+	static_assert(sizeof(ShadowBounds) == 32, "ShadowBounds is mirrored by debris.slang");
+
 	static constexpr uint32_t k_max_spawns_per_step = 4096;
 	static constexpr uint32_t k_max_volumes = 512;
 	static constexpr uint32_t k_voxels_per_particle = 8;
 	/// Mirrors debris.slang where bits 0 to 7 are the voxel mask
 	static constexpr uint32_t k_flag_glass = 1u << 25;
-	static constexpr float k_fade_in_seconds = 0.12f;
 	static constexpr float k_fade_out_seconds = 0.6f;
 	/// Slots past the cap so pieces shrinking away still have room
 	static constexpr uint32_t k_cap_headroom_divisor = 4;
@@ -137,11 +149,15 @@ public:
 		return m_draw_args;
 	}
 
+	[[nodiscard]]
+	auto shadowBoundsId() const -> BufferId {
+		return m_shadow_bounds;
+	}
+
 private:
 	struct Params {
 		glm::vec3 gravity {0.0f};
 		float dt = 0.0f;
-		float fade_in = 0.0f;
 		float restitution = 0.0f;
 		float friction = 0.0f;
 		float voxel_size = 0.0f;
@@ -154,7 +170,7 @@ private:
 		float fade_out = 0.0f;
 		float max_speed = 0.0f;
 		float max_spin = 0.0f;
-		std::array<uint32_t, 3> pad {};
+		std::array<uint32_t, 4> pad {};
 	};
 
 	static_assert(sizeof(Params) == 80, "Params is mirrored by debris.slang");
@@ -188,6 +204,7 @@ private:
 	BufferId m_volumes = 0;
 	BufferId m_retires = 0;
 	BufferId m_grid = 0;
+	BufferId m_shadow_bounds = 0;
 
 	std::deque<GpuSpawn> m_pending;
 	bool m_clear_pending = false;

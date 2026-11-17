@@ -186,6 +186,8 @@ static const float kGiClipConeBias = 0.0;
 /// Cells of level 0 the cones start off the surface so its own cells do not shade it
 static const float kGiClipConeLift = 1.5;
 static const float kGiClipFaceWeight = 1e-4;
+/// Highest level the cones read through the B-spline filter
+static const uint kGiClipSmoothLevels = 1u;
 
 /// Premultiplied face radiance toward the ray and opacity along it where @p lod above 0 reads last level mips
 float4 giClipSample(GiClipFrame frame, uint level, float lod, float3 world, float3 direction)
@@ -227,10 +229,10 @@ float4 giClipSmoothTap(float3 cell, float3 f, float cells, uint tap)
 }
 
 /// Rounds the creases trilinear leaves at 8 reads per texture and recomputes taps per read to save registers
-float4 giClipSampleSmooth(GiClipFrame frame, float3 world, float3 direction)
+float4 giClipSampleSmooth(GiClipFrame frame, uint level, float3 world, float3 direction)
 {
     const float cells = float(frame.size.x);
-    const float3 p = world / frame.levels[0].w;
+    const float3 p = world / frame.levels[level].w;
     const float3 cell = floor(p);
     // Offset from the centre of the cell holding the point in -0.5 to 0.5
     const float3 f = p - cell - 0.5;
@@ -239,7 +241,7 @@ float4 giClipSampleSmooth(GiClipFrame frame, float3 world, float3 direction)
     for (uint tap = 0u; tap < 8u; ++tap)
     {
         const float4 read = giClipSmoothTap(cell, f, cells, tap);
-        blocked += read.w * gGiClipOpacity[0].SampleLevel(read.xyz, 0.0).xyz;
+        blocked += read.w * gGiClipOpacity[NonUniformResourceIndex(level)].SampleLevel(read.xyz, 0.0).xyz;
     }
     const float3 weight = direction * direction;
     const float opacity = dot(weight, blocked);
@@ -247,7 +249,8 @@ float4 giClipSampleSmooth(GiClipFrame frame, float3 world, float3 direction)
     {
         return float4(0.0, 0.0, 0.0, 0.0);
     }
-    const uint3 face = uint3(direction.x > 0.0 ? 1u : 0u, direction.y > 0.0 ? 3u : 2u, direction.z > 0.0 ? 5u : 4u);
+    const uint3 face =
+        level * kGiClipFaces + uint3(direction.x > 0.0 ? 1u : 0u, direction.y > 0.0 ? 3u : 2u, direction.z > 0.0 ? 5u : 4u);
     float3 radiance = float3(0.0, 0.0, 0.0);
     for (uint tap = 0u; tap < 8u; ++tap)
     {
@@ -299,13 +302,14 @@ float4 giClipCone<let Smooth : int>(GiClipFrame frame, float3 origin, float3 dir
             const uint fine = uint(floor(wanted));
             const uint coarse = min(fine + 1u, uint(last));
             const float blend = wanted - float(fine);
-            if (Smooth > 0 && fine == 0u && coarse != fine)
+            // Levels 0 and 1 since the mid distance blocks show at level 1 and coarser ones are far enough to blur
+            if (Smooth > 0 && fine <= kGiClipSmoothLevels && coarse != fine)
             {
-                // Level 1 reaches past the 27 cells so where it holds nothing they are empty and one read settles it
+                // The coarser level reaches past the 27 cells so where it holds nothing they are empty and one read settles it
                 sample = float4(0.0, 0.0, 0.0, 0.0);
                 if (giClipSolidShare(frame, coarse, point) > 0.0)
                 {
-                    sample = giClipSampleSmooth(frame, point, direction);
+                    sample = giClipSampleSmooth(frame, fine, point, direction);
                     if (blend > 0.0)
                     {
                         sample = lerp(sample, giClipSample(frame, coarse, 0.0, point, direction), blend);
@@ -339,7 +343,8 @@ float giClipCellAt(GiClipFrame frame, float3 worldPosition)
 }
 
 /// xyz irradiance over pi and w the share of the hemisphere the cones left open
-float4 giClipGather(GiClipFrame frame, float3 worldPosition, float3 normal, float turn, float base)
+/// @p jitter in 0 to 1 starts the cones that share of a cell further out so a history averages away where steps land
+float4 giClipGather(GiClipFrame frame, float3 worldPosition, float3 normal, float turn, float base, float jitter)
 {
     // Coarser levels thicken every surface so the cones start further off it there
     const float cell = frame.levels[0].w * exp2(base);
@@ -350,20 +355,21 @@ float4 giClipGather(GiClipFrame frame, float3 worldPosition, float3 normal, floa
     const float3 tangent = float3(1.0 + side * normal.x * normal.x * a, side * b, -side * normal.x);
     const float3 bitangent = float3(b, side + normal.y * normal.y * a, -normal.y);
 
-    float4 cone = giClipCone<1>(frame, origin, normal, 0.0, base);
+    const float start = jitter * cell;
+    float4 cone = giClipCone<1>(frame, origin, normal, start, base);
     float4 gathered = 0.25 * float4(cone.rgb, 1.0 - cone.a);
     for (uint i = 0u; i < 5u; ++i)
     {
         const float angle = (float(i) + turn) * 1.25663706;
         const float3 direction = normal * 0.5 + (tangent * cos(angle) + bitangent * sin(angle)) * 0.8660254;
-        cone = giClipCone<1>(frame, origin, direction, 0.0, base);
+        cone = giClipCone<1>(frame, origin, direction, start, base);
         gathered += 0.15 * float4(cone.rgb, 1.0 - cone.a);
     }
     return gathered;
 }
 
 /// @p turn spins the side cones up to a fifth of a turn and lit pixels pass 0 since per frame noise flickers
-bool sampleGiClipmap(float3 worldPosition, float3 normal, float turn, out float3 irradiance, out float sky)
+bool sampleGiClipmap(float3 worldPosition, float3 normal, float turn, out float3 irradiance, out float sky, float jitter = 0.0)
 {
     irradiance = float3(0.0, 0.0, 0.0);
     sky = 0.0;
@@ -379,12 +385,12 @@ bool sampleGiClipmap(float3 worldPosition, float3 normal, float turn, out float3
     }
     const float last = float(frame.size.y - 1u);
     const float base = floor(min(soft, last));
-    float4 gathered = giClipGather(frame, worldPosition, normal, turn, base);
+    float4 gathered = giClipGather(frame, worldPosition, normal, turn, base, jitter);
     // Near a level edge two gathers cross fade since sliding one start between levels draws strips
     const float fade = min(soft, last) - base;
     if (fade > 0.0)
     {
-        gathered = lerp(gathered, giClipGather(frame, worldPosition, normal, turn, base + 1.0), fade);
+        gathered = lerp(gathered, giClipGather(frame, worldPosition, normal, turn, base + 1.0, jitter), fade);
     }
     irradiance = gathered.rgb;
     sky = gathered.a;
@@ -489,6 +495,13 @@ bool giHitIrradiance(float3 worldPosition, float3 normal, out float3 irradiance)
         return true;
     }
     return sampleRadianceCascades(worldPosition, normal, irradiance);
+}
+
+/// Bounce intensity for lit surfaces only since gi_clip_bounce feeds sampleGiClipmap back into itself
+float giIntensity()
+{
+    const GiClipFrame clip = gGiClipFrame[0];
+    return clip.size.z != 0u ? clip.camera.w : gGiFrame[0].limits.w;
 }
 
 bool giClipCovers(float3 worldPosition)

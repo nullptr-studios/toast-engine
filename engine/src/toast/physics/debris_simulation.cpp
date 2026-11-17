@@ -55,6 +55,7 @@ DebrisSimulation::DebrisSimulation(uint32_t max_particles)
 	m_volumes = addHostBuffer(sizeof(GpuVolume) * k_max_volumes);
 	m_retires = addHostBuffer(sizeof(uint32_t) * k_max_spawns_per_step);
 	m_grid = addPersistentBuffer(sizeof(uint32_t) * k_grid_cells * k_grid_stride);
+	m_shadow_bounds = addRingBuffer(sizeof(ShadowBounds), true);
 	setAcquireUsage(m_draw_args, renderer::sync::Usage::indirect_read);
 
 	bind(0, m_particles, Copy::previous);
@@ -66,6 +67,7 @@ DebrisSimulation::DebrisSimulation(uint32_t max_particles)
 	bind(6, m_volumes);
 	bind(7, m_retires);
 	bind(8, m_grid);
+	bind(9, m_shadow_bounds);
 
 	const auto section = [this](renderer::VoxelGpuStorage::Section which) {
 		return [this, which]() -> vk::Buffer {
@@ -118,6 +120,7 @@ void DebrisSimulation::spawn(std::span<const DebrisSpawn> spawns) {
 		      .lifetime = std::max(lifetime, k_debris_min_lifetime),
 		      .scale = std::clamp(spawn.scale, 0.05f, 1.0f),
 		      .glass = static_cast<uint32_t>(spawn.alpha) | (static_cast<uint32_t>(spawn.ior) << 8u),
+		      .emissive = spawn.emissive,
 		}
 		);
 	}
@@ -143,7 +146,6 @@ void DebrisSimulation::step(uint32_t steps, double fixed_delta, std::shared_ptr<
 	Params params {
 	  .gravity = settings.gravity,
 	  .dt = static_cast<float>(total / static_cast<double>(substeps)),
-	  .fade_in = k_fade_in_seconds,
 	  .restitution = settings.debris_restitution,
 	  .friction = settings.debris_friction,
 	  .voxel_size = voxel::k_voxel_size,

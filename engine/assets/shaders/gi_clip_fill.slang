@@ -112,6 +112,49 @@ void clipSample(uint v, float3 world, float gap, uint index, inout ClipCell cell
     cell.emission += palette.albedo * palette.emissive;
 }
 
+/// False when no solid coarse block of the volume touches the cell so all its samples would miss
+bool clipCellReaches(uint v, float3 low, float cellSize)
+{
+    const VoxelInstance volume = gTraceVolumes[v];
+    const VolumeRecord record = gVolumeRecords[volume.recordIndex];
+    float3 lo = float3(kFloatMax, kFloatMax, kFloatMax);
+    float3 hi = -lo;
+    for (uint corner = 0u; corner < 8u; ++corner)
+    {
+        const float3 world = low + float3(corner & 1u, (corner >> 1) & 1u, corner >> 2) * cellSize;
+        const float3 voxel = mul(volume.worldToVoxel, float4(world, 1.0)).xyz;
+        lo = min(lo, voxel);
+        hi = max(hi, voxel);
+    }
+    const int3 dims = int3(record.brickDimsX, record.brickDimsY, record.brickDimsZ) * int(kBrickDim);
+    const int3 first = max(int3(floor(lo)), int3(0, 0, 0)) >> 5;
+    const int3 last = min(int3(floor(hi)), dims - 1) >> 5;
+    if (any(first > last))
+    {
+        return false;
+    }
+    // A cell spanning many blocks is cheaper to just sample
+    const int3 count = last - first + 1;
+    if (count.x * count.y * count.z > 8)
+    {
+        return true;
+    }
+    for (int z = first.z; z <= last.z; ++z)
+    {
+        for (int y = first.y; y <= last.y; ++y)
+        {
+            for (int x = first.x; x <= last.x; ++x)
+            {
+                if (coarseSolid(record, int3(x, y, z)))
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 /// 16 bits of one z layer at x + 4 y
 uint clipLayer(ClipCell cell, uint z)
 {
@@ -169,7 +212,7 @@ void fillMain(uint3 id : SV_DispatchThreadID)
     {
         const uint v = gTraceGrid[farBase + f];
         const float4 bounds = gTraceBounds[v];
-        if (distance(centre, bounds.xyz) > bounds.w + cellSize * 0.8661)
+        if (distance(centre, bounds.xyz) > bounds.w + cellSize * 0.8661 || !clipCellReaches(v, low, cellSize))
         {
             continue;
         }

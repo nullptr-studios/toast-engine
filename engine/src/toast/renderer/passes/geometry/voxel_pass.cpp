@@ -3,11 +3,14 @@
 #include "toast/renderer/core/depth_convention.hpp"
 #include "toast/renderer/core/descriptor_writer.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
+#include "toast/renderer/core/gpu_timer.hpp"
+#include "toast/renderer/lighting/frustum.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/voxel/voxel_gpu_storage.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
+#include <numbers>
 #include <toast/voxel/gpu_layout.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 
@@ -70,6 +73,27 @@ constexpr uint32_t k_ambient_grid_capacity = 65536;
 /// More cells than this goes to the global list
 constexpr uint64_t k_ambient_grid_max_cells = 125;
 
+/// scene_trace.slang buffers of frame @p frame_index
+void writeTraceSceneBuffers(DescriptorWriter& writer, vk::DescriptorSet set, uint32_t frame_index) {
+	const VoxelTraceScene* trace = VulkanRenderer::instance->voxelTraceScene();
+	if (trace == nullptr) {
+		return;
+	}
+	writer.buffer(set, k_trace_volumes_binding, vk::DescriptorType::eStorageBuffer, trace->volumeBuffer(frame_index));
+	writer.buffer(set, k_trace_bounds_binding, vk::DescriptorType::eStorageBuffer, trace->boundsBuffer(frame_index));
+	writer.buffer(set, k_trace_grid_binding, vk::DescriptorType::eStorageBuffer, trace->gridBuffer(frame_index));
+	if (ShaderCompiler::isRayQueryAvailable()) {
+		const VoxelBlasCache* bricks = VulkanRenderer::instance->voxelBlasCache();
+		writer.buffer(set, k_trace_brick_bases_binding, vk::DescriptorType::eStorageBuffer, trace->brickBaseBuffer(frame_index));
+		writer.buffer(
+		    set,
+		    k_trace_bricks_binding,
+		    vk::DescriptorType::eStorageBuffer,
+		    bricks != nullptr ? bricks->poolBuffer() : trace->brickBaseBuffer(frame_index)
+		);
+	}
+}
+
 auto ambientGridHash(const glm::ivec3& cell) -> uint32_t {
 	const glm::uvec3 u(cell);
 	return ((u.x * 73856093u) ^ (u.y * 19349663u) ^ (u.z * 83492791u)) & (k_ambient_grid_buckets - 1u);
@@ -94,6 +118,8 @@ constexpr uint32_t k_traced_specular = 16;
 constexpr uint32_t k_gi_gather = 32;
 /// Mirrors voxel_lighting.slang kGiClipmap
 constexpr uint32_t k_gi_clipmap = 64;
+/// Mirrors voxel_lighting.slang kGiDenoise
+constexpr uint32_t k_gi_denoise = 128;
 
 /// ReSTIR reuse of last frame's reservoir at the reprojected pixel and two around it
 constexpr uint32_t k_reused_reservoirs = 3;
@@ -105,6 +131,13 @@ constexpr uint32_t k_glass_bricks_binding = 7;
 /// voxel_glass.slang gBackdrop and gBackdropDepth
 constexpr uint32_t k_backdrop_binding = 8;
 constexpr uint32_t k_backdrop_depth_binding = 9;
+/// voxel_glass.slang gNearestGlassDepth
+constexpr uint32_t k_nearest_glass_depth_binding = 16;
+constexpr uint32_t k_nearest_glass_normal_binding = 17;
+constexpr uint32_t k_nearest_glass_motion_binding = 18;
+constexpr uint32_t k_glass_mask_binding = 19;
+/// voxel_glass.slang kGlassInsideBit
+constexpr uint32_t k_glass_inside_bit = 0x80000000u;
 
 /// Turns the denoiser pattern each frame for TAA to average
 constexpr float k_golden_ratio_conjugate = 0.61803398875f;
@@ -545,32 +578,7 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 		writer.buffer(
 		    *m_lighting_storage_sets.back(), k_ambient_grid_binding, vk::DescriptorType::eStorageBuffer, *m_ambient_grids.back()
 		);
-		if (const VoxelTraceScene* trace = VulkanRenderer::instance->voxelTraceScene(); trace != nullptr) {
-			writer.buffer(
-			    *m_lighting_storage_sets.back(), k_trace_volumes_binding, vk::DescriptorType::eStorageBuffer, trace->volumeBuffer(i)
-			);
-			writer.buffer(
-			    *m_lighting_storage_sets.back(), k_trace_bounds_binding, vk::DescriptorType::eStorageBuffer, trace->boundsBuffer(i)
-			);
-			writer.buffer(
-			    *m_lighting_storage_sets.back(), k_trace_grid_binding, vk::DescriptorType::eStorageBuffer, trace->gridBuffer(i)
-			);
-			if (ShaderCompiler::isRayQueryAvailable()) {
-				const VoxelBlasCache* bricks = VulkanRenderer::instance->voxelBlasCache();
-				writer.buffer(
-				    *m_lighting_storage_sets.back(),
-				    k_trace_brick_bases_binding,
-				    vk::DescriptorType::eStorageBuffer,
-				    trace->brickBaseBuffer(i)
-				);
-				writer.buffer(
-				    *m_lighting_storage_sets.back(),
-				    k_trace_bricks_binding,
-				    vk::DescriptorType::eStorageBuffer,
-				    bricks != nullptr ? bricks->poolBuffer() : trace->brickBaseBuffer(i)
-				);
-			}
-		}
+		writeTraceSceneBuffers(writer, *m_lighting_storage_sets.back(), i);
 		writer.flush(core.getDevice());
 	}
 
@@ -606,7 +614,6 @@ void VoxelPass::createGlass(const VulkanCore& core, vk::Format scene_format, vk:
 	}
 
 	const bool dual_source = core.isDualSourceBlendSupported();
-	m_glass_dual_source = dual_source;
 	m_backdrop_sampler = vk::raii::Sampler(core.getDevice(), linearClampSamplerInfo());
 	setDebugName(core, *m_backdrop_sampler, "VoxelGlass BackdropSampler");
 	m_backdrop_depth_sampler = vk::raii::Sampler(core.getDevice(), nearestClampSamplerInfo());
@@ -624,34 +631,62 @@ void VoxelPass::createGlass(const VulkanCore& core, vk::Format scene_format, vk:
 	config.pipeline_layout = *m_glass_layout.getPipelineLayout();
 	config.vertex_bindings = {};
 	config.vertex_attributes = {};
-	config.fragment_entry = dual_source ? "fragmentMain" : "fragmentPremultiplied";
-	// Back faces so a camera inside a brick still draws it
-	config.cull_mode = vk::CullModeFlagBits::eFront;
 	config.depth_test = true;
 	config.depth_write = false;
 	config.depth_compare = depth::k_closer;
 	config.blend_preset = dual_source ? VulkanPipeline::BlendPreset::dual_source : VulkanPipeline::BlendPreset::premultiplied;
-	m_glass_pipeline.rebuild(core, config);
+	// Outside bricks draw front faces so their conservative depth keeps early testing, a brick holding the camera draws back faces
+	const auto build_pair = [&](std::array<VulkanPipeline, 2>& pipelines, const std::string& name, const std::string& entry) {
+		config.debug_name = name + " Outside";
+		config.fragment_entry = entry + "Outside";
+		config.cull_mode = vk::CullModeFlagBits::eBack;
+		pipelines[0].rebuild(core, config);
+		config.debug_name = name + " Inside";
+		config.fragment_entry = entry;
+		config.cull_mode = vk::CullModeFlagBits::eFront;
+		pipelines[1].rebuild(core, config);
+	};
+	// The driver drops the reflection paths and debug views a variant never takes so the shader keeps fewer registers
+	constexpr std::array<std::string_view, glass_variant_count> k_variant_names {"", " Traced", " Screen", " Debug"};
+	for (uint32_t variant = 0; variant < glass_variant_count; ++variant) {
+		const bool debug = variant == glass_variant_debug;
+		config.specialization_constants = {debug ? 0u : variant, debug ? 1u : 0u};
+		build_pair(
+		    m_glass_pipelines[variant],
+		    std::format("VoxelGlass{}", k_variant_names[variant]),
+		    dual_source ? "fragmentMain" : "fragmentPremultiplied"
+		);
+		if (!debug && core.isFragmentShadingRateSupported()) {
+			config.debug_name = std::format("VoxelGlass Far{}", k_variant_names[variant]);
+			config.fragment_entry = dual_source ? "fragmentMainFar" : "fragmentPremultipliedFar";
+			config.cull_mode = vk::CullModeFlagBits::eBack;
+			config.fragment_shading_rate = vk::Extent2D {2, 2};
+			m_glass_far_pipelines[variant].rebuild(core, config);
+			config.fragment_shading_rate = vk::Extent2D {1, 1};
+		}
+	}
+	// The passes below never light glass
+	config.specialization_constants.clear();
 
-	config.debug_name = "VoxelGlass Surface";
-	config.fragment_entry = "fragmentSurface";
 	config.blend_preset = VulkanPipeline::BlendPreset::none;
 	config.write_color = false;
 	config.write_extra_color = true;
 	config.depth_write = true;
-	m_glass_surface_pipeline.rebuild(core, config);
+	build_pair(m_glass_surface_pipelines, "VoxelGlass Surface", "fragmentSurface");
 
-	config.debug_name = "VoxelGlass Mask";
-	config.fragment_entry = "fragmentMask";
-	config.color_format = vk::Format::eR8Unorm;
-	config.extra_color_formats.clear();
+	config.debug_name = "VoxelGlass Surface Copy";
+	config.vertex_entry = "vertexFullscreen";
+	config.fragment_entry = "fragmentSurfaceCopy";
+	config.cull_mode = vk::CullModeFlagBits::eNone;
+	m_glass_surface_copy_pipeline.rebuild(core, config);
+	config.vertex_entry = "vertexMain";
+
+	// Own depth over a copy of the opaque depth so blended draws still test against the opaque depth
+	config.color_format = vk::Format::eR8G8Unorm;
+	config.extra_color_formats = {k_scene_normal_format, k_scene_motion_format};
 	config.write_color = true;
-	config.write_extra_color = false;
-	config.depth_test = true;
-	config.depth_write = false;
-	config.depth_compare = depth::k_closer_or_equal;
-	config.blend_preset = VulkanPipeline::BlendPreset::none;
-	m_glass_mask_pipeline.rebuild(core, config);
+	config.write_extra_color = true;
+	build_pair(m_glass_nearest_pipelines, "VoxelGlass Nearest", "fragmentNearest");
 
 	if (!dual_source) {
 		TOAST_WARN("Render", "dualSrcBlend unsupported so voxel glass fades the background without tinting it");
@@ -682,6 +717,8 @@ void VoxelPass::createGlass(const VulkanCore& core, vk::Format scene_format, vk:
 		DescriptorWriter writer;
 		writer.buffer(*m_glass_sets.back(), k_instance_binding, vk::DescriptorType::eStorageBuffer, *m_instance_buffers[i]);
 		writer.buffer(*m_glass_sets.back(), k_glass_bricks_binding, vk::DescriptorType::eStorageBuffer, *m_glass_buffers.back());
+		// Glass traces its own reflections
+		writeTraceSceneBuffers(writer, *m_glass_sets.back(), i);
 		writer.flush(core.getDevice());
 	}
 }
@@ -951,7 +988,8 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	    gi.enabled.load(std::memory_order_relaxed) && gi.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_clipmap;
 	// The gather target is sized for the main view so captures take the one cone path
 	m_gi_gather = m_gi_clipmap && !capture && m_gi_gather_pipeline.isReady();
-	m_denoise_active = (m_marched_lights || m_ambient_rays) && frame->render_mode == 0 && !capture &&
+	// Clipmap GI goes through it too since its rotating cones only settle over frames
+	m_denoise_active = (m_marched_lights || m_ambient_rays || m_gi_clipmap) && frame->render_mode == 0 && !capture &&
 	                   m_denoise_temporal_pipeline.isReady() && m_denoise_composite_pipeline.isReady() &&
 	                   (frame_index * 2) + 1 < m_denoise_sets.size() && m_denoise_history[1][1].isReady();
 	if (!m_denoise_active) {
@@ -995,11 +1033,16 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	prepareGlass(frame_index, *frame->voxel_storage, std::span<const VoxelInstanceGpu>(m_instance_scratch.data(), m_draws.size()));
 
 	// Before any scope of this frame binds the glass set
-	const std::array<vk::ImageView, 2> backdrop {
-	  VulkanRenderer::instance->getGlassBackdropView(), VulkanRenderer::instance->getGlassBackdropDepthView()
+	const std::array<vk::ImageView, 6> backdrop {
+	  VulkanRenderer::instance->getGlassBackdropView(),
+	  VulkanRenderer::instance->getGlassBackdropDepthView(),
+	  VulkanRenderer::instance->getGlassNearestDepthView(),
+	  VulkanRenderer::instance->getGlassNearestNormalView(),
+	  VulkanRenderer::instance->getGlassNearestMotionView(),
+	  VulkanRenderer::instance->getGlassMaskView()
 	};
-	if (frame_index < m_glass_sets.size() && frame_index < m_bound_backdrop.size() && backdrop[0] && backdrop[1] &&
-	    m_bound_backdrop.update(frame_index, backdrop)) {
+	if (frame_index < m_glass_sets.size() && frame_index < m_bound_backdrop.size() &&
+	    std::ranges::all_of(backdrop, std::identity {}) && m_bound_backdrop.update(frame_index, backdrop)) {
 		DescriptorWriter writer;
 		writer.image(
 		    *m_glass_sets[frame_index],
@@ -1016,6 +1059,38 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		    *m_backdrop_depth_sampler,
 		    backdrop[1],
 		    vk::ImageLayout::eDepthReadOnlyOptimal
+		);
+		writer.image(
+		    *m_glass_sets[frame_index],
+		    k_nearest_glass_depth_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    *m_backdrop_depth_sampler,
+		    backdrop[2],
+		    vk::ImageLayout::eDepthReadOnlyOptimal
+		);
+		writer.image(
+		    *m_glass_sets[frame_index],
+		    k_nearest_glass_normal_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    *m_backdrop_depth_sampler,
+		    backdrop[3],
+		    vk::ImageLayout::eShaderReadOnlyOptimal
+		);
+		writer.image(
+		    *m_glass_sets[frame_index],
+		    k_nearest_glass_motion_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    *m_backdrop_depth_sampler,
+		    backdrop[4],
+		    vk::ImageLayout::eShaderReadOnlyOptimal
+		);
+		writer.image(
+		    *m_glass_sets[frame_index],
+		    k_glass_mask_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    *m_backdrop_depth_sampler,
+		    backdrop[5],
+		    vk::ImageLayout::eShaderReadOnlyOptimal
 		);
 		writer.flush(m_core->getDevice());
 	}
@@ -1051,18 +1126,19 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 				}
 			}
 
-			// Late survivors go after every other list and are at most the retest cells
-			m_occlusion_active = wanted && m_occlusion_mode == OcclusionMode::engaged;
+			// A probe face is one frame whose pyramid would come from another face, so captures draw every cell
+			m_occlusion_active = wanted && m_occlusion_mode == OcclusionMode::engaged && !capture;
 			ensureCellCapacity(frame_index, m_occlusion_active ? 2 * m_total_cells : m_total_cells);
 			m_cells_active = true;
 
 			// A voxel covers at least this many pixels closer than near_voxels voxels whatever the volume scale
+			// Captures skip the quads since their buffer grows from the last frame and a probe face has no next frame to catch up
 			const float raster_pixels = VulkanRenderer::instance->voxelRasterPixels();
 			const float height = static_cast<float>(VulkanRenderer::instance->renderExtent().height);
-			m_near_voxels =
-			    raster_pixels > 0.0f && m_mesh_pipeline.isReady() && m_quad_pipeline.isReady() && m_quad_depth_pipeline.isReady()
-			        ? std::abs(frame->frame_data.projection[1][1]) * height / (2.0f * raster_pixels)
-			        : 0.0f;
+			m_near_voxels = !capture && raster_pixels > 0.0f && m_mesh_pipeline.isReady() && m_quad_pipeline.isReady() &&
+			                        m_quad_depth_pipeline.isReady()
+			                    ? std::abs(frame->frame_data.projection[1][1]) * height / (2.0f * raster_pixels)
+			                    : 0.0f;
 			m_mesh_shading = m_near_voxels > 0.0f && VulkanRenderer::instance->voxelMeshShaders() &&
 			                 m_draw_mesh_tasks_indirect != nullptr && m_mesh_quad_pipeline.isReady();
 		} else if (const auto now = std::chrono::steady_clock::now(); now - m_last_limit_warning > std::chrono::seconds(5)) {
@@ -1462,7 +1538,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 		  .reuse = glm::uvec4(
 		      (instance->voxelReservoirHistory() ? k_reuse_history : 0u) | (m_spatial_active ? k_reuse_spatial : 0u) |
 		          (m_scene_glass ? k_scene_glass : 0u) | (instance->voxelAmbientRayQuery() ? k_ambient_ray_query : 0u) |
-		          (m_gi_gather ? k_gi_gather : 0u) | (m_gi_clipmap ? k_gi_clipmap : 0u) | traced_specular |
+		          (m_gi_gather ? k_gi_gather : 0u) | (m_gi_clipmap ? k_gi_clipmap | k_gi_denoise : 0u) | traced_specular |
 		          (std::min(instance->voxelGlassShadowReach(), 0xFFFFu) << 16),
 		      k_reservoir_m_cap * instance->voxelLightCandidates(),
 		      k_reused_reservoirs,
@@ -1508,83 +1584,173 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 
 void VoxelPass::prepareGlass(uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> instances) {
 	ZoneScoped;
-	m_glass_draws.clear();
 	const auto* frame = VulkanRenderer::instance->renderingFrame();
-	if (!m_glass_pipeline.isReady() || frame_index >= m_glass_buffers.size() || frame == nullptr) {
+	if (!m_glass_pipelines[glass_variant_plain][0].isReady() || frame_index >= m_glass_buffers.size() || frame == nullptr) {
+		m_glass_draws.clear();
+		m_glass_count = 0;
+		m_glass_key.reset();
+		m_glass_screen_bounds.reset();
 		return;
 	}
 
-	const glm::vec3 camera = frame->frame_data.camera_position;
-	const float half_brick = 0.5f * static_cast<float>(voxel::k_brick_dim);
-	for (uint32_t i = 0; i < instances.size(); ++i) {
-		const VoxelInstanceGpu& instance = instances[i];
+	// Same view, instances and glass bricks as last frame so its culled and sorted list stands
+	uint64_t key = 0xCBF29CE484222325ull;
+	const auto mix = [&key](std::span<const uint32_t> words) {
+		for (const uint32_t word : words) {
+			key = (key ^ word) * 0x100000001B3ull;
+		}
+	};
+	const auto mix_bytes = [&mix](const auto& value) {
+		std::array<uint32_t, sizeof(value) / sizeof(uint32_t)> words {};
+		std::memcpy(words.data(), &value, sizeof(value));
+		mix(words);
+	};
+	mix_bytes(frame->frame_data.view_projection);
+	mix_bytes(frame->near_plane);
+	for (const VoxelInstanceGpu& instance : instances) {
 		const std::span<const uint32_t> bricks = storage.glassBricks(instance.record_index);
-		if (bricks.empty()) {
-			continue;
-		}
-		const glm::uvec3 dims = storage.recordBrickDims(instance.record_index);
-		for (const uint32_t brick : bricks) {
-			const glm::uvec3 coord(brick % dims.x, (brick / dims.x) % dims.y, brick / (dims.x * dims.y));
-			const glm::vec3 local = (glm::vec3(coord) * static_cast<float>(voxel::k_brick_dim)) + half_brick;
-			const glm::vec3 delta = glm::vec3(instance.voxel_to_world * glm::vec4(local, 1.0f)) - camera;
-			m_glass_draws.push_back({.distance_squared = glm::dot(delta, delta), .instance = i, .brick = brick});
-		}
-	}
-	if (m_glass_draws.empty()) {
-		return;
+		mix_bytes(instance.voxel_to_world);
+		mix(std::array {instance.record_index, static_cast<uint32_t>(bricks.size())});
+		mix(bricks);
 	}
 
-	// Far to near and the nearest kept when over the limit
-	std::ranges::sort(m_glass_draws, [](const GlassDraw& a, const GlassDraw& b) {
-		return a.distance_squared > b.distance_squared;
-	});
-	size_t first = 0;
-	if (m_glass_draws.size() > k_max_glass_bricks) {
-		first = m_glass_draws.size() - k_max_glass_bricks;
-		if (const auto now = std::chrono::steady_clock::now(); now - m_last_glass_warning > std::chrono::seconds(5)) {
-			m_last_glass_warning = now;
-			TOAST_WARN("Render", "VoxelPass: {} glass bricks, only the nearest {} are drawn", m_glass_draws.size(), k_max_glass_bricks);
+	if (key != m_glass_key) {
+		m_glass_key = key;
+		m_glass_draws.clear();
+		// Sphere rects in NDC so the backdrop copy can skip what no glass covers
+		glm::vec4 bounds(
+		    std::numeric_limits<float>::max(),
+		    std::numeric_limits<float>::max(),
+		    -std::numeric_limits<float>::max(),
+		    -std::numeric_limits<float>::max()
+		);
+		bool bounded = true;
+		const glm::mat4& view_projection = frame->frame_data.view_projection;
+		const float lens = std::max(std::abs(frame->frame_data.projection[0][0]), std::abs(frame->frame_data.projection[1][1]));
+		const glm::vec3 camera = frame->frame_data.camera_position;
+		const auto planes = extractFrustumPlanes(frame->frame_data.view_projection, depth::k_reversed_z);
+		const float half_brick = 0.5f * static_cast<float>(voxel::k_brick_dim);
+		const auto largest_axis = [](const glm::mat4& m) {
+			return std::max({glm::length(glm::vec3(m[0])), glm::length(glm::vec3(m[1])), glm::length(glm::vec3(m[2]))});
+		};
+		for (uint32_t i = 0; i < instances.size(); ++i) {
+			const VoxelInstanceGpu& instance = instances[i];
+			const std::span<const uint32_t> bricks = storage.glassBricks(instance.record_index);
+			if (bricks.empty()) {
+				continue;
+			}
+			const glm::uvec3 dims = storage.recordBrickDims(instance.record_index);
+			const float radius = half_brick * std::numbers::sqrt3_v<float> * largest_axis(instance.voxel_to_world);
+			// Near plane in voxels as voxel::containsPoint pads it so a front face the near plane clips counts as inside
+			const glm::vec3 voxel_camera = glm::vec3(instance.world_to_voxel * glm::vec4(camera, 1.0f));
+			const float guard = frame->near_plane * largest_axis(instance.world_to_voxel);
+			for (const uint32_t brick : bricks) {
+				const glm::uvec3 coord(brick % dims.x, (brick / dims.x) % dims.y, brick / (dims.x * dims.y));
+				const glm::vec3 low = glm::vec3(coord) * static_cast<float>(voxel::k_brick_dim);
+				const glm::vec3 centre = glm::vec3(instance.voxel_to_world * glm::vec4(low + half_brick, 1.0f));
+				const bool inside = glm::all(glm::greaterThanEqual(voxel_camera, low - guard)) &&
+				                    glm::all(glm::lessThanEqual(voxel_camera, low + static_cast<float>(voxel::k_brick_dim) + guard));
+				if (!inside && !sphereInFrustum(planes, centre, radius)) {
+					continue;
+				}
+				const glm::vec3 delta = centre - camera;
+				m_glass_draws.push_back({.distance_squared = glm::dot(delta, delta), .instance = i, .brick = brick, .inside = inside});
+				const glm::vec4 clip = view_projection * glm::vec4(centre, 1.0f);
+				if (clip.w - radius <= frame->near_plane) {
+					bounded = false;
+				} else if (bounded) {
+					const glm::vec2 ndc = glm::vec2(clip) / clip.w;
+					const float reach = radius * lens / (clip.w - radius);
+					bounds = glm::vec4(glm::min(glm::vec2(bounds), ndc - reach), glm::max(glm::vec2(bounds.z, bounds.w), ndc + reach));
+				}
+			}
 		}
+
+		// Far to near and the nearest kept when over the limit
+		std::ranges::sort(m_glass_draws, [](const GlassDraw& a, const GlassDraw& b) {
+			return a.distance_squared > b.distance_squared;
+		});
+		if (m_glass_draws.size() > k_max_glass_bricks) {
+			const size_t first = m_glass_draws.size() - k_max_glass_bricks;
+			if (const auto now = std::chrono::steady_clock::now(); now - m_last_glass_warning > std::chrono::seconds(5)) {
+				m_last_glass_warning = now;
+				TOAST_WARN(
+				    "Render", "VoxelPass: {} glass bricks, only the nearest {} are drawn", m_glass_draws.size(), k_max_glass_bricks
+				);
+			}
+			m_glass_draws.erase(m_glass_draws.begin(), m_glass_draws.begin() + static_cast<std::ptrdiff_t>(first));
+		}
+		m_glass_screen_bounds = bounded && !m_glass_draws.empty() ? std::optional<glm::vec4>(bounds) : std::nullopt;
 	}
 
+	m_glass_count = 0;
 	const auto& allocation = m_glass_buffers[frame_index].getAllocation();
 	auto* mapped = static_cast<glm::uvec2*>(allocation.getInfo().pMappedData);
-	if (mapped == nullptr) {
+	if (mapped == nullptr || m_glass_draws.empty()) {
 		return;
 	}
-	m_glass_draws.erase(m_glass_draws.begin(), m_glass_draws.begin() + static_cast<std::ptrdiff_t>(first));
+	// Each frame slot has its own buffer so a reused list is still written
 	m_glass_count = static_cast<uint32_t>(m_glass_draws.size());
 	for (uint32_t i = 0; i < m_glass_count; ++i) {
-		mapped[i] = glm::uvec2(m_glass_draws[i].instance, m_glass_draws[i].brick);
+		mapped[i] =
+		    glm::uvec2(m_glass_draws[i].instance | (m_glass_draws[i].inside ? k_glass_inside_bit : 0u), m_glass_draws[i].brick);
 	}
 	allocation.flush(0, sizeof(glm::uvec2) * m_glass_count);
 }
 
 void VoxelPass::recordGlass(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t first, uint32_t count) {
 	ZoneScoped;
-	recordGlassBricks(cmd, frame_index, m_glass_pipeline, first, count);
+	// One name for every run so the timer sums the blended glass between the meshes
+	const GpuScope scope(VulkanRenderer::instance->gpuTimer(), frame_index, cmd, "Voxel glass blend");
+	recordGlassBricks(cmd, frame_index, GlassStage::blend, first, count);
 }
 
 void VoxelPass::recordGlassSurfaces(vk::CommandBuffer cmd, uint32_t frame_index) {
 	ZoneScoped;
-	recordGlassBricks(cmd, frame_index, m_glass_surface_pipeline, 0, m_glass_count);
+	// The pre-pass already walked the bricks for the nearest surface so a fullscreen copy writes it
+	if (m_nearest_glass_valid && m_glass_count > 0 && m_glass_surface_copy_pipeline.isReady() &&
+	    frame_index < m_glass_sets.size() && m_glass_scene_sets.get(frame_index)) {
+		const vk::PipelineLayout layout = *m_glass_layout.getPipelineLayout();
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_glass_surface_copy_pipeline.getPipeline());
+		cmd.bindDescriptorSets(
+		    vk::PipelineBindPoint::eGraphics,
+		    layout,
+		    k_scene_set,
+		    std::array<vk::DescriptorSet, 2> {m_glass_scene_sets.get(frame_index), *m_glass_sets[frame_index]},
+		    {}
+		);
+		cmd.draw(3, 1, 0, 0);
+		return;
+	}
+	recordGlassBricks(cmd, frame_index, GlassStage::surface, 0, m_glass_count);
 }
 
-void VoxelPass::recordGlassMask(vk::CommandBuffer cmd, uint32_t frame_index) {
+void VoxelPass::recordGlassNearest(vk::CommandBuffer cmd, uint32_t frame_index) {
 	ZoneScoped;
-	recordGlassBricks(cmd, frame_index, m_glass_mask_pipeline, 0, m_glass_count);
+	recordGlassBricks(cmd, frame_index, GlassStage::nearest, 0, m_glass_count);
 }
 
-void VoxelPass::recordGlassBricks(
-    vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline, uint32_t first, uint32_t count
-) {
-	if (count == 0 || first + count > m_glass_count || !pipeline.isReady() || frame_index >= m_glass_sets.size() ||
-	    !m_glass_scene_sets.get(frame_index)) {
+void VoxelPass::recordGlassBricks(vk::CommandBuffer cmd, uint32_t frame_index, GlassStage stage, uint32_t first, uint32_t count) {
+	const auto* renderer = VulkanRenderer::instance;
+	const bool lit = stage == GlassStage::blend;
+	// The SSR and traced specular post passes read the opaque surface behind glass so glass reflects in its own shading
+	const bool traced = lit && renderer->tracedSpecularFrame();
+	const bool screen = lit && !traced && renderer->ssrFrame();
+	const auto* rendering = renderer->renderingFrame();
+	const bool debug_views = rendering != nullptr && rendering->render_mode != 0;
+	const GlassVariant variant = debug_views ? glass_variant_debug
+	                             : traced    ? glass_variant_traced
+	                             : screen    ? glass_variant_screen
+	                                         : glass_variant_plain;
+	const std::array<VulkanPipeline, 2>& pipelines = lit                            ? m_glass_pipelines[variant]
+	                                                 : stage == GlassStage::surface ? m_glass_surface_pipelines
+	                                                                                : m_glass_nearest_pipelines;
+	if (count == 0 || first + count > m_glass_count || !pipelines[0].isReady() || !pipelines[1].isReady() ||
+	    frame_index >= m_glass_sets.size() || !m_glass_scene_sets.get(frame_index)) {
 		return;
 	}
 
 	const vk::PipelineLayout layout = *m_glass_layout.getPipelineLayout();
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
 	cmd.bindDescriptorSets(
 	    vk::PipelineBindPoint::eGraphics,
 	    layout,
@@ -1593,29 +1759,60 @@ void VoxelPass::recordGlassBricks(
 	    {}
 	);
 	// SV_InstanceID leaves out firstInstance so the run start is pushed
-	const auto* renderer = VulkanRenderer::instance;
-	const GlassPush push {
+	const auto ssr = renderer->glassSsrSettings();
+	GlassPush push {
 	  .first = first,
-	  .refraction = m_backdrop_captured && &pipeline == &m_glass_pipeline ? renderer->voxelGlassRefraction() : 0.0f,
-	  .refraction_distance = renderer->voxelGlassRefractionDistance(),
-	  .refraction_voxels = renderer->voxelGlassRefractionVoxels(),
 	  .lit_surfaces = renderer->voxelGlassLitSurfaces(),
 	  // Only the blended pass lights glass and it tests closer than the opaque depth
-	  .depth_test = m_backdrop_depth_valid && &pipeline == &m_glass_pipeline ? 1u : 0u,
+	  .depth_test = m_backdrop_depth_valid && lit ? 1u : 0u,
+	  .reflection_reach = traced ? std::min(renderer->voxelSpecularReach(), renderer->voxelGlassReflectionReach())
+		                           : ssr.stride * static_cast<float>(ssr.max_steps),
+	  .reflection_roughness = traced ? renderer->voxelSpecularRoughness() : ssr.max_roughness,
+	  .reflection_steps = ssr.max_steps,
+	  .reflection_thickness = ssr.thickness,
+	  .sun_reach = static_cast<float>(renderer->voxelSunReach()),
+	  // Blending needs far to near and the depth writing passes reject the most early near to far
+	  .reverse = lit ? 0u : 1u,
+	  .count = count,
+	  .nearest_valid = m_nearest_glass_valid ? 1u : 0u,
+	  .cost_view = renderer->glassCostView() ? 1u : 0u,
 	};
-	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(GlassPush), &push);
-	cmd.draw(36, count, 0, 0);
-}
+	auto run = std::span<const GlassDraw>(m_glass_draws).subspan(first, count);
 
-auto VoxelPass::refractsGlass() const -> bool {
-	const auto* renderer = VulkanRenderer::instance;
-	if (m_glass_count == 0 || !m_glass_dual_source || renderer->voxelGlassRefraction() <= 0.0f || !m_bound_backdrop.allCurrent()) {
-		return false;
+	// Far to near so the far outside bricks are the front of the run, and only with the opaque depth the shader rejects against
+	const float coarse = renderer->voxelGlassCoarseDistance();
+	const VulkanPipeline* far = variant < glass_variant_debug ? &m_glass_far_pipelines[variant] : nullptr;
+	if (lit && coarse > 0.0f && m_backdrop_depth_valid && far != nullptr && far->isReady()) {
+		const auto near = std::ranges::find_if(run, [coarse](const GlassDraw& draw) {
+			return draw.inside || draw.distance_squared < coarse * coarse;
+		});
+		const auto far_count = static_cast<uint32_t>(near - run.begin());
+		if (far_count > 0) {
+			push.inside = 0;
+			push.count = far_count;
+			cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, far->getPipeline());
+			cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(GlassPush), &push);
+			cmd.draw(36, far_count, 0, 0);
+			push.first += far_count;
+			push.count = count - far_count;
+			run = run.subspan(far_count);
+		}
 	}
-	// Draws are far to near and a brick centre sits up to a diagonal past its voxels
-	constexpr float k_brick_reach = 2.0f;
-	const float reach = renderer->voxelGlassRefractionDistance() + k_brick_reach;
-	return m_glass_draws.back().distance_squared <= reach * reach;
+	if (run.empty()) {
+		return;
+	}
+
+	const bool any_inside = std::ranges::any_of(run, &GlassDraw::inside);
+	// Inside bricks hold the camera so they are the nearest of the run and blend last
+	for (uint32_t inside = 0; inside < 2; ++inside) {
+		if (inside == 1u && !any_inside) {
+			break;
+		}
+		push.inside = inside;
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipelines[inside].getPipeline());
+		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(GlassPush), &push);
+		cmd.draw(36, static_cast<uint32_t>(run.size()), 0, 0);
+	}
 }
 
 void VoxelPass::writeFreshRegions(uint32_t frame_index, const VoxelGpuStorage& storage) {
@@ -1693,6 +1890,10 @@ void VoxelPass::createDenoise(const VulkanCore& core, vk::Format scene_format, v
 	config.write_color_alpha = false;
 	config.fragment_entry = "compositeMain";
 	config.blend_preset = VulkanPipeline::BlendPreset::additive;
+	// Denoised clipmap GI for SSAO written over the cleared target and not blended
+	config.extra_color_formats = {k_voxel_denoised_indirect_format};
+	config.write_extra_color = true;
+	config.extra_blend_mask = 0u;
 	m_denoise_composite_pipeline.rebuild(core, config);
 
 	m_linear_sampler = vk::raii::Sampler(core.getDevice(), linearClampSamplerInfo());
@@ -1739,6 +1940,7 @@ void VoxelPass::bindDenoise(vk::CommandBuffer cmd, uint32_t frame_index, const V
 	  m_denoise_history[1][read].view(),
 	  m_denoise_history[0][m_denoise_parity].view(),
 	  m_denoise_history[1][m_denoise_parity].view(),
+	  renderer->getSceneIndirectView(),
 	};
 
 	// Safe since the fence of this slot was waited on
@@ -1910,6 +2112,7 @@ void VoxelPass::recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	const LightingPushConstants push {
 	  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
 	  .viewport = glm::vec4(static_cast<float>(viewport.width), static_cast<float>(viewport.height), 0.0f, 0.0f),
+	  .reuse = glm::uvec4(m_denoise_active ? k_gi_denoise : 0u, 0u, 0u, 0u),
 	};
 	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
 	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_gi_gather_pipeline.getPipeline());

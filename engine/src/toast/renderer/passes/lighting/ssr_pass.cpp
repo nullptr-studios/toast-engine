@@ -6,6 +6,8 @@
 
 #include "toast/renderer/passes/lighting/ssr_pass.hpp"
 
+#include "toast/renderer/core/gpu_sync.hpp"
+#include "toast/renderer/core/gpu_timer.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
@@ -17,7 +19,7 @@ SsrPass::SsrPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D e
     : m_core(&core),
       m_scene_format(scene_format) {
 	ZoneScoped;
-	// Vulkan guarantees 128 bytes and this block is 176
+	// Vulkan guarantees 128 bytes and this block is 192
 	const uint32_t push_constant_limit = core.getPhysicalDevice().getProperties().limits.maxPushConstantsSize;
 	if (push_constant_limit < sizeof(Params)) {
 		TOAST_ERROR(
@@ -115,6 +117,9 @@ void SsrPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 void SsrPass::onResize(vk::Extent2D extent) {
 	if (m_core != nullptr) {
 		createTargets(*m_core, extent);
+		for (HiZPyramid& hiz : m_hiz) {
+			hiz.create(*m_core, nullptr, {});
+		}
 	}
 }
 
@@ -142,13 +147,25 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		return m_target.view();
 	}
 
+	// Views only change on a resize after a wait for idle so recreating here never frees a pyramid in flight
+	HiZPyramid& hiz = m_hiz[depth_view == VulkanRenderer::instance->getDepthView() ? 0 : 1];
+	const vk::Extent2D depth_extent = VulkanRenderer::instance->renderExtent();
+	if (hiz.source() != depth_view) {
+		hiz.create(*m_core, depth_view, depth_extent, HiZPyramid::Reduction::closest);
+	}
+	if (!hiz.isReady()) {
+		return source_view;
+	}
+
 	const PostProcessTarget& history_write = m_history[m_parity];
 	const PostProcessTarget& history_read = m_history[1 - m_parity];
 	const uint32_t set_index = (frame_index * 2) + m_parity;
 	const vk::DescriptorSet set = *m_descriptor_sets[set_index];
 
 	const vk::ImageView previous_view = VulkanRenderer::instance->previousResolvedColour();
-	const std::array<vk::ImageView, 4> wanted {source_view, previous_view ? previous_view : source_view, depth_view, normal_view};
+	const std::array<vk::ImageView, 5> wanted {
+	  source_view, previous_view ? previous_view : source_view, depth_view, normal_view, hiz.view()
+	};
 	if (m_bound_views.update(set_index, wanted)) {
 		// Point sampled except the colours since interpolated depth or normals invent surfaces
 		const std::array<vk::DescriptorImageInfo, k_binding_count> image_infos {
@@ -163,6 +180,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		  // Point sampled since the upsample picks its own texels
 		  vk::DescriptorImageInfo(*m_point_sampler, history_write.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
 		  vk::DescriptorImageInfo(*m_sampler, wanted[1], vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(hiz.sampler(), hiz.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
 		};
 
 		std::array<vk::WriteDescriptorSet, k_binding_count> writes {};
@@ -177,15 +195,18 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	if (!history_valid) {
 		history_read.makeSampleable(cmd);
 	}
-	auto settings = frame != nullptr ? frame->post_process.ssr : PostProcessSettings::Ssr {};
-	// Non RT presets override the volume reach
-	if (const uint32_t steps = VulkanRenderer::instance->ssrOverrideSteps(); steps > 0) {
-		settings.max_steps = steps;
-		settings.stride = std::max(VulkanRenderer::instance->ssrOverrideReach(), 1.0f) / static_cast<float>(steps);
-	}
+	const auto settings = VulkanRenderer::instance->ssrSettings();
 
 	// Jittered since depth was rasterized with it
 	const glm::mat4 view_projection = frame != nullptr ? frame->frame_data.jittered_view_projection : glm::mat4(1.0f);
+
+	{
+		const GpuScope scope(VulkanRenderer::instance->gpuTimer(), frame_index, cmd, "SSR depth pyramid");
+		hiz.record(cmd, depth_extent, view_projection);
+		sync::BarrierBatch barriers;
+		hiz.beforeFragmentRead(barriers);
+		barriers.flush(cmd);
+	}
 
 	Params params {};
 	params.view_projection = view_projection;
@@ -199,6 +220,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	    history_valid ? 1.0f : 0.0f,
 	    previous_view ? 1.0f : 0.0f
 	);
+	params.pyramid = glm::vec4(static_cast<float>(hiz.builtLevels()), 0.0f, 0.0f, 0.0f);
 
 	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {
 		target.beginScope(cmd);

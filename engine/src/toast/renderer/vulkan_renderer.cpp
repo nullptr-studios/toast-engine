@@ -164,6 +164,17 @@ auto VulkanRenderer::setPostProcessPassEnabled(std::string_view name, bool enabl
 	return false;
 }
 
+auto VulkanRenderer::ssrSettings() const -> PostProcessSettings::Ssr {
+	const auto* frame = renderingFrame();
+	auto settings = frame != nullptr ? frame->post_process.ssr : PostProcessSettings::Ssr {};
+	// Non RT presets override the volume reach
+	if (const uint32_t steps = ssrOverrideSteps(); steps > 0) {
+		settings.max_steps = steps;
+		settings.stride = std::max(ssrOverrideReach(), 1.0f) / static_cast<float>(steps);
+	}
+	return settings;
+}
+
 auto VulkanRenderer::isPostProcessPassEnabled(std::string_view name) const -> bool {
 	std::lock_guard lock(m_pass_mutex);
 	for (const auto& pass : m_post_process_passes) {
@@ -671,7 +682,18 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 }
 
 void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
+	std::lock_guard lock(m_pass_mutex);
 	m_render_passes.push_back(std::move(pass));
+}
+
+void VulkanRenderer::removeRenderPass(const IRenderPass* pass) {
+	std::lock_guard lock(m_pass_mutex);
+	const auto it = std::ranges::find(m_render_passes, pass, &std::unique_ptr<IRenderPass>::get);
+	if (it == m_render_passes.end()) {
+		return;
+	}
+	m_retiring_passes.emplace_back(it->release());
+	m_render_passes.erase(it);
 }
 
 void VulkanRenderer::addPostProcessPass(std::unique_ptr<IPostProcessPass> pass) {

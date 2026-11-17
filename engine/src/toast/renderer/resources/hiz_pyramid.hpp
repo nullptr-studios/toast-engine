@@ -15,11 +15,17 @@
 namespace renderer {
 class VulkanCore;
 
-/// Farthest depth pyramid where level k texel t covers pixels t << (k + 1) to ((t + 1) << (k + 1)) - 1
+/// Farthest or closest depth pyramid where level k texel t covers pixels t << (k + 1) to ((t + 1) << (k + 1)) - 1
 class HiZPyramid {
 public:
+	/// Farthest for occlusion culling and closest for ray marching
+	enum class Reduction : uint8_t {
+		farthest,
+		closest
+	};
+
 	/// After a wait for idle since an in flight frame may still read the previous pyramid
-	void create(const VulkanCore& core, vk::ImageView depth, vk::Extent2D depth_extent);
+	void create(const VulkanCore& core, vk::ImageView depth, vk::Extent2D depth_extent, Reduction reduction = Reduction::farthest);
 
 	/// Depth in depth_sampled and only its top left @p scene_extent is reduced
 	void record(vk::CommandBuffer cmd, vk::Extent2D scene_extent, const glm::mat4& view_projection);
@@ -29,6 +35,14 @@ public:
 
 	/// Earlier writes land before a task or mesh shader samples view()
 	void beforeTaskRead(sync::BarrierBatch& barriers);
+
+	/// Earlier writes land before a fragment shader samples view()
+	void beforeFragmentRead(sync::BarrierBatch& barriers);
+
+	[[nodiscard]]
+	auto source() const -> vk::ImageView {
+		return m_source;
+	}
 
 	/// view() can be bound without it but only a ready pyramid is ever built
 	[[nodiscard]]
@@ -78,6 +92,7 @@ private:
 		glm::uvec2 source_size {0};
 		uint32_t level_count = 0;
 		uint32_t group_count = 0;
+		uint32_t closest = 0;
 	};
 
 	ShaderLayout m_layout;
@@ -93,6 +108,8 @@ private:
 	bool m_counter_cleared = false;
 	sync::ImageState m_state;
 	uint32_t m_levels = 0;
+	Reduction m_reduction = Reduction::farthest;
+	vk::ImageView m_source = nullptr;
 
 	vk::Extent2D m_built_extent {0, 0};
 	uint32_t m_built_levels = 0;

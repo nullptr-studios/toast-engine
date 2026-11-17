@@ -16,23 +16,40 @@
 
 namespace renderer {
 
-void GiDirtyBoxes::gather(const RenderFrame& frame, float motion_threshold) {
-	ZoneScoped;
-	const auto add = [&](glm::vec3 low, glm::vec3 high) {
-		if (m_boxes.size() < 2 * k_max_boxes) {
-			m_boxes.push_back(low);
-			m_boxes.push_back(high);
-			return;
-		}
-		auto last = m_boxes.end() - 2;
-		last[0] = glm::min(last[0], low);
-		last[1] = glm::max(last[1], high);
+void addDirtyBox(std::vector<glm::vec3>& boxes, size_t max_boxes, glm::vec3 low, glm::vec3 high) {
+	if (boxes.size() < 2 * max_boxes) {
+		boxes.push_back(low);
+		boxes.push_back(high);
+		return;
+	}
+	const auto volume = [](glm::vec3 a, glm::vec3 b) {
+		const glm::vec3 size = glm::max(b - a, glm::vec3(0.0f));
+		return size.x * size.y * size.z;
 	};
+	size_t best = 0;
+	float best_growth = std::numeric_limits<float>::max();
+	for (size_t i = 0; i + 1 < boxes.size(); i += 2) {
+		const float growth = volume(glm::min(boxes[i], low), glm::max(boxes[i + 1], high)) - volume(boxes[i], boxes[i + 1]);
+		if (growth < best_growth) {
+			best_growth = growth;
+			best = i;
+		}
+	}
+	boxes[best] = glm::min(boxes[best], low);
+	boxes[best + 1] = glm::max(boxes[best + 1], high);
+}
+
+void GiDirtyBoxes::gather(const RenderFrame& frame, std::optional<float> motion_threshold) {
+	ZoneScoped;
+	const auto add = [&](glm::vec3 low, glm::vec3 high) { addDirtyBox(m_boxes, k_max_boxes, low, high); };
 
 	Counts& counts = m_counts;
-	const float threshold = std::max(motion_threshold, 0.0f);
+	const float threshold = std::max(motion_threshold.value_or(0.0f), 0.0f);
 
 	for (const auto& proxy : frame.voxel_instances) {
+		if (!motion_threshold.has_value()) {
+			break;
+		}
 		if (proxy.has_previous && proxy.model == proxy.previous_model) {
 			continue;
 		}

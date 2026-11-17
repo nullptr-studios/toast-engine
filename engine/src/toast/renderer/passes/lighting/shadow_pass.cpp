@@ -8,6 +8,7 @@
 
 #include "toast/renderer/core/descriptor_writer.hpp"
 #include "toast/renderer/lighting/frustum.hpp"
+#include "toast/renderer/passes/geometry/debris_pass.hpp"
 #include "toast/renderer/resources/vulkan_mesh.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/voxel/voxel_gpu_storage.hpp"
@@ -35,6 +36,9 @@ auto cornerDrift(const glm::mat4& from, const glm::mat4& to, const glm::vec3& ex
 	}
 	return drift;
 }
+
+/// Mesh shader multiview limits the highest view bit so the second half gets its own view at mask 0x7
+constexpr uint32_t k_half_cube_faces = shadows::k_cube_faces / 2;
 
 /// Mirrors kTaskGroupsPerCell in voxel_dda.slang
 constexpr uint32_t k_task_groups_per_cell = 2;
@@ -146,6 +150,7 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 	constexpr std::array view_masks {
 	  1u,
 	  (1u << shadows::k_cube_faces) - 1u,
+	  (1u << k_half_cube_faces) - 1u,
 	};
 
 	static_assert(view_masks.size() == std::tuple_size_v<decltype(m_pipeline_sets)>, "one pipeline set per mask");
@@ -165,6 +170,7 @@ ShadowPass::ShadowPass(const VulkanCore& core) : m_core(&core) {
 
 	createResources(core);
 	createVoxelResources(core);
+	createDebrisResources(core);
 
 	TOAST_INFO(
 	    "Render",
@@ -249,6 +255,15 @@ void ShadowPass::createShadowMap(
 		view_ci.subresourceRange = shadowLayerRange(base_layer, count);
 		group.view.emplace(device, view_ci);
 		setDebugName(core, **group.view, std::format("{} GroupView[{}..{}]", debug_name, base_layer, base_layer + count - 1));
+
+		const uint32_t mesh_views = core.meshMultiviewViews();
+		if (count == shadows::k_cube_faces && mesh_views >= k_half_cube_faces && mesh_views < count) {
+			for (uint32_t half = 0; half < group.halves.size(); ++half) {
+				view_ci.subresourceRange = shadowLayerRange(base_layer + (half * k_half_cube_faces), k_half_cube_faces);
+				group.halves[half].emplace(device, view_ci);
+				setDebugName(core, **group.halves[half], std::format("{} GroupView[{}] Half[{}]", debug_name, base_layer, half));
+			}
+		}
 
 		map.groups.push_back(std::move(group));
 		base_layer += count;
@@ -552,6 +567,47 @@ void ShadowPass::createVoxelMeshResources(const VulkanCore& core) {
 	);
 }
 
+void ShadowPass::createDebrisResources(const VulkanCore& core) {
+	ZoneScoped;
+	static_assert(sizeof(DebrisShadowPush) == 16, "DebrisShadowPush is mirrored by debris_shadow.slang");
+	if (m_voxel_shadow_sets.empty()) {
+		return;
+	}
+
+	const auto uid = assets::resolveURI("core://shaders/debris_shadow.slang");
+	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
+	if (!shader) {
+		TOAST_WARN("Render", "ShadowPass shader core://shaders/debris_shadow.slang unavailable, debris will not cast shadows");
+		return;
+	}
+	m_debris_layout.rebuild(core, shader->reflection, "ShadowPass Debris");
+
+	VulkanPipeline::Config config;
+	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+	config.depth_only = true;
+	config.depth_format = m_format;
+	config.extent = vk::Extent2D {shadows::cascadeResolution(), shadows::cascadeResolution()};
+	config.shader_spirv = shader->spirv;
+	config.pipeline_layout = *m_debris_layout.getPipelineLayout();
+	config.vertex_bindings = {};
+	config.vertex_attributes = {};
+	config.topology = vk::PrimitiveTopology::eTriangleList;
+	config.depth_test = true;
+	config.depth_write = true;
+	config.depth_compare = vk::CompareOp::eLess;
+	config.depth_bias_constant = k_caster_bias_constant;
+	config.depth_bias_slope = k_caster_bias_slope;
+	config.depth_clamp = core.isDepthClampSupported();
+	config.cull_mode = vk::CullModeFlagBits::eNone;
+
+	for (size_t mask_index = 0; mask_index < m_debris_pipelines.size(); ++mask_index) {
+		VulkanPipeline::Config variant = config;
+		variant.view_mask = m_pipeline_sets[mask_index].view_mask;
+		variant.debug_name = std::format("ShadowPass Debris [viewMask {:#x}]", variant.view_mask);
+		m_debris_pipelines[mask_index].rebuild(core, variant);
+	}
+}
+
 auto ShadowPass::voxelMeshPipelineFor(uint32_t view_mask) const -> const VulkanPipeline* {
 	for (size_t mask_index = 0; mask_index < m_voxel_mesh_pipelines.size(); ++mask_index) {
 		if (m_voxel_pipeline_sets[mask_index].view_mask == view_mask && m_voxel_mesh_pipelines[mask_index].isReady()) {
@@ -598,7 +654,6 @@ auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
 			);
 		}
 	}
-	++m_caster_frame;
 	const float tolerance = shadows::casterTolerance();
 	m_caster_models.resize(count);
 	m_caster_moving.resize(count);
@@ -627,6 +682,49 @@ auto ShadowPass::prepareVoxels(uint32_t frame_index) -> uint32_t {
 		});
 	}
 	return count;
+}
+
+void ShadowPass::prepareMeshes(uint32_t frame_index) {
+	ZoneScoped;
+	const auto* frame = VulkanRenderer::instance->renderingFrame();
+	const auto& proxies = frame->mesh_instances;
+	const size_t count = std::min(proxies.size(), frame->shadow_instance_data.size());
+	const float tolerance = shadows::casterTolerance();
+	const bool posed_buffer = VulkanRenderer::instance->getPosedVertexBuffer(frame_index) != nullptr;
+	m_mesh_models.resize(count);
+	m_mesh_moving.resize(count);
+	for (size_t i = 0; i < count; ++i) {
+		const auto& proxy = proxies[i];
+		const uint64_t key =
+		    proxy.node_rid ^ (static_cast<uint64_t>(reinterpret_cast<std::uintptr_t>(proxy.mesh)) * 0x9E3779B97F4A7C15ull);
+		auto [it, inserted] = m_settled_meshes.try_emplace(key);
+		SettledMesh& settled = it->second;
+
+		// Center travel plus how far the basis change swings the bounds edge
+		float drift = glm::distance(settled.bounds_center, proxy.bounds_center);
+		for (int column = 0; column < 3; ++column) {
+			const float length = glm::length(glm::vec3(proxy.model[column]));
+			drift += length > 0.0f ? proxy.bounds_radius * glm::length(glm::vec3(proxy.model[column] - settled.model[column])) / length
+			                       : 0.0f;
+		}
+		if (inserted || drift > tolerance) {
+			settled.model = proxy.model;
+			settled.bounds_center = proxy.bounds_center;
+			settled.moved_frame = m_caster_frame;
+		}
+		settled.seen_frame = m_caster_frame;
+		m_mesh_models[i] = settled.model;
+
+		// A posed mesh changes shape without moving
+		const bool posed = posed_buffer && proxy.posed_vertex_offset != MeshInstanceProxy::k_no_posed_vertices;
+		m_mesh_moving[i] = posed || m_caster_frame - settled.moved_frame < k_caster_settle_frames ? 1u : 0u;
+	}
+
+	if (m_caster_frame % k_caster_settle_frames == 0) {
+		std::erase_if(m_settled_meshes, [&](const auto& entry) {
+			return m_caster_frame - entry.second.seen_frame > k_caster_settle_frames;
+		});
+	}
 }
 
 auto ShadowPass::voxelPipelineSetFor(uint32_t view_mask) const -> const VoxelPipelineSet* {
@@ -736,6 +834,25 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 	// Without the cache every voxel caster draws with the moving ones into each slot
 	const bool static_cache = shadows::staticCasterCache();
 	const auto voxel_moving = [&](size_t index) { return !static_cache || m_caster_moving[index] != 0; };
+	const auto mesh_moving = [&](size_t index) {
+		return !static_cache || index >= m_mesh_moving.size() || m_mesh_moving[index] != 0;
+	};
+
+	/// Resting meshes reaching the group, summed like voxel_signature
+	const auto resting_mesh_signature = [&](const LayerGroup& group) -> uint64_t {
+		uint64_t sum = 0;
+		for (size_t index = 0; index < proxies.size() && index < instance_count; ++index) {
+			if (mesh_moving(index) || !eligible(group, index)) {
+				continue;
+			}
+			ShadowSignature caster;
+			caster.add(proxies[index].node_rid);
+			caster.add(static_cast<uint64_t>(reinterpret_cast<std::uintptr_t>(proxies[index].mesh)));
+			caster.add(m_mesh_models[index]);
+			sum += caster.value;
+		}
+		return sum;
+	};
 
 	// Summed since voxel proxies are sorted by camera distance and a static light must not re-render as the camera moves
 	const auto voxel_signature = [&](const LayerGroup& group, bool moving, std::vector<VoxelCaster>* casters) -> uint64_t {
@@ -765,14 +882,29 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		return signature.value;
 	};
 
+	const auto* debris_pass = VulkanRenderer::instance->getDebrisPass();
+	const DebrisPass::ShadowDraw debris =
+	    debris_pass != nullptr && !m_voxel_shadow_sets.empty() ? debris_pass->shadowDraw(frame_index) : DebrisPass::ShadowDraw {};
+	const auto debris_reaches = [&](const LayerGroup& group) {
+		return debris.args && debris.bounds_radius >= 0.0f && reaches(group, debris.bounds_center, debris.bounds_radius);
+	};
+
 	/// Empty while a posed mesh is eligible since its pose changes without its transform
 	const auto moving_signature_of = [&](const LayerGroup& group, const LayerGroup& static_group) -> std::optional<uint64_t> {
 		ShadowSignature signature;
+		// Leaving or entering the reach changes the signature too so the old debris shadow clears once
+		if (debris_reaches(group)) {
+			if (!debris.signature.has_value()) {
+				return std::nullopt;
+			}
+			signature.add(*debris.signature);
+		}
 		signature.add(*static_group.signature);
 		signature.add(*static_group.caster_signature);
 		signature.add(static_group.revision);
+		// Resting meshes are in the static copy which the caster signature already covers
 		for (size_t index = 0; index < proxies.size() && index < instance_count; ++index) {
-			if (!eligible(group, index)) {
+			if (!mesh_moving(index) || !eligible(group, index)) {
 				continue;
 			}
 			const auto& proxy = proxies[index];
@@ -784,6 +916,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		}
 
 		uint64_t voxel_casters = 0;
+		m_voxel_eligible.clear();
 		for (size_t index = 0; index < m_voxel_instance_count; ++index) {
 			if (!voxel_eligible(group, index)) {
 				continue;
@@ -847,7 +980,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 
 		m_voxel_eligible.clear();
 		const uint64_t view_signature = view_signature_of(group);
-		const uint64_t caster_signature = voxel_signature(group, false, &m_voxel_eligible);
+		const uint64_t caster_signature = voxel_signature(group, false, &m_voxel_eligible) + resting_mesh_signature(group);
 		const bool has_voxels = !m_voxel_eligible.empty();
 		if (static_group.signature != view_signature) {
 			++m_stats.static_views;
@@ -894,9 +1027,30 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, vk::Extent2D {view_resolution, view_resolution})});
 	};
 
-	const auto begin_group = [&](const ShadowMap& target, const LayerGroup& group, vk::AttachmentLoadOp load) {
+	/// A rendering scope over all or part of a group with views offset from the group base
+	struct Scope {
+		vk::ImageView view;
+		uint32_t view_mask = 1;
+		uint32_t view_offset = 0;
+		uint32_t view_count = 1;
+	};
+
+	// Halves only pay off when voxels mesh, otherwise the meshes would draw twice for nothing
+	const bool split_cubes = m_draw_mesh_tasks != nullptr && shadows::voxelMeshShadows();
+	const auto scopes_of = [&](const LayerGroup& group) -> std::pair<std::array<Scope, 2>, uint32_t> {
+		if (split_cubes && group.halves[0].has_value() && group.halves[1].has_value()) {
+			return {
+			  {Scope {**group.halves[0], (1u << k_half_cube_faces) - 1u, 0, k_half_cube_faces},
+				 Scope {**group.halves[1], (1u << k_half_cube_faces) - 1u, k_half_cube_faces, k_half_cube_faces}},
+			  2
+			};
+		}
+		return {{Scope {**group.view, group.view_mask, 0, group.layer_count}}, 1};
+	};
+
+	const auto begin_scope = [&](const ShadowMap& target, const Scope& scope, vk::AttachmentLoadOp load) {
 		vk::RenderingAttachmentInfo depth_attachment {};
-		depth_attachment.imageView = **group.view;
+		depth_attachment.imageView = scope.view;
 		depth_attachment.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
 		depth_attachment.loadOp = load;
 		depth_attachment.storeOp = vk::AttachmentStoreOp::eStore;
@@ -906,17 +1060,18 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		rendering_info.renderArea = vk::Rect2D({0, 0}, vk::Extent2D {target.resolution, target.resolution});
 		// Ignored when viewMask is non zero
 		rendering_info.layerCount = 1;
-		rendering_info.viewMask = group.view_mask;
+		rendering_info.viewMask = scope.view_mask;
 		rendering_info.pDepthAttachment = &depth_attachment;
 		cmd.beginRendering(rendering_info);
 		++m_stats.scopes;
 	};
 
-	const auto draw_meshes = [&](const LayerGroup& group, uint32_t view_index) {
-		const PipelineSet* pipelines = pipelineSetFor(group.view_mask);
+	const auto draw_meshes = [&](const LayerGroup& group, const Scope& scope, uint32_t view_index, bool moving) {
+		const PipelineSet* pipelines = pipelineSetFor(scope.view_mask);
 		if (pipelines == nullptr || !pipelines->pipeline.isReady()) {
 			return;
 		}
+		const auto drawn = [&](size_t index) { return mesh_moving(index) == moving && eligible(group, index); };
 		cmd.bindDescriptorSets(
 		    vk::PipelineBindPoint::eGraphics,
 		    *m_shader_layout.getPipelineLayout(),
@@ -928,7 +1083,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 
 		constexpr uint32_t k_push_size = 2 * sizeof(uint32_t);
 		for (size_t i = 0; i < proxies.size() && i < instance_count;) {
-			if (!eligible(group, i)) {
+			if (!drawn(i)) {
 				++i;
 				continue;
 			}
@@ -938,7 +1093,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 
 			size_t run = 1;
 			if (!posed) {
-				while (i + run < proxies.size() && i + run < instance_count && eligible(group, i + run) &&
+				while (i + run < proxies.size() && i + run < instance_count && drawn(i + run) &&
 				       proxies[i + run].mesh == proxies[i].mesh &&
 				       posed_offset_of(proxies[i + run]) == MeshInstanceProxy::k_no_posed_vertices) {
 					++run;
@@ -947,7 +1102,7 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 
 			const ShadowPushConstants push {
 			  .instance_base = static_cast<uint32_t>(i),
-			  .view_index = view_index,
+			  .view_index = view_index + scope.view_offset,
 			};
 			cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, k_push_size, &push);
 
@@ -971,104 +1126,137 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		       groups_x * coarse.y * coarse.z <= m_max_task_group_total;
 	};
 
-	const auto draw_voxels = [&](const LayerGroup& group, const ShadowView& view, uint32_t view_index, bool moving) {
-		const VoxelPipelineSet* voxel_pipelines = voxelPipelineSetFor(group.view_mask);
-		if (voxel_pipelines == nullptr || m_voxel_instance_count == 0) {
+	const auto draw_voxels =
+	    [&](const LayerGroup& group, const Scope& scope, const ShadowView& view, uint32_t group_view_index, bool moving) {
+		    const uint32_t view_index = group_view_index + scope.view_offset;
+		    const VoxelPipelineSet* voxel_pipelines = voxelPipelineSetFor(scope.view_mask);
+		    if (voxel_pipelines == nullptr || m_voxel_instance_count == 0) {
+			    return;
+		    }
+		    const vk::PipelineLayout voxel_layout = *m_voxel_layout.getPipelineLayout();
+		    const vk::PipelineLayout mesh_layout = *m_voxel_mesh_layout.getPipelineLayout();
+		    const VulkanPipeline* mesh_pipeline =
+		        m_draw_mesh_tasks != nullptr && shadows::voxelMeshShadows() ? voxelMeshPipelineFor(scope.view_mask) : nullptr;
+
+		    const auto sets =
+		        std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]};
+
+		    // Meshed first since their quads keep early depth for the marched volumes behind them
+		    m_voxel_draw_order.clear();
+		    bool meshes_bound = false;
+		    for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
+			    if (voxel_moving(index) != moving || !voxel_eligible(group, index)) {
+				    continue;
+			    }
+			    const auto& proxy = voxel_proxies[index];
+			    if (mesh_pipeline == nullptr || !meshes_volume(proxy)) {
+				    m_voxel_draw_order.push_back(index);
+				    continue;
+			    }
+
+			    if (!meshes_bound) {
+				    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, mesh_pipeline->getPipeline());
+				    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mesh_layout, 0, sets, {});
+				    meshes_bound = true;
+			    }
+			    const VoxelMeshShadowPush push {
+			      .instance_index = index,
+			      .view_index = view_index,
+			      .view_count = scope.view_count,
+			      .directional = directional ? 1u : 0u,
+			    };
+			    cmd.pushConstants(mesh_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelMeshShadowPush), &push);
+			    const glm::uvec3 coarse = voxel::gpu::coarseDims(proxy.brick_dims);
+			    m_draw_mesh_tasks(static_cast<VkCommandBuffer>(cmd), coarse.x * k_task_groups_per_cell, coarse.y, coarse.z);
+			    ++m_stats.draws;
+			    ++m_stats.meshed_volumes;
+		    }
+		    if (m_voxel_draw_order.empty()) {
+			    return;
+		    }
+
+		    // Nearest to the light first by clip z which grows with distance under both projections
+		    // Keys first so the sort does no matrix work per comparison
+		    m_voxel_draw_keys.resize(m_voxel_instance_count);
+		    for (const uint32_t index : m_voxel_draw_order) {
+			    m_voxel_draw_keys[index] = (view.view_projection * glm::vec4(voxel_proxies[index].bounds_center, 1.0f)).z;
+		    }
+		    std::ranges::sort(m_voxel_draw_order, {}, [&](uint32_t index) { return m_voxel_draw_keys[index]; });
+
+		    // A perspective near plane clips front faces so only exact back faces are safe and cascades clamp
+		    const auto crosses_near_plane = [&](uint32_t index) {
+			    if (directional && m_core->isDepthClampSupported()) {
+				    return false;
+			    }
+			    const glm::vec3 extent = glm::vec3(voxel_proxies[index].brick_dims) * voxel::k_brick_size;
+			    for (uint32_t i = 0; i < group.layer_count; ++i) {
+				    const auto* member = layer_views[group.base_layer + i];
+				    if (member == nullptr) {
+					    continue;
+				    }
+				    const glm::mat4 to_clip = member->view_projection * m_caster_models[index];
+				    for (uint32_t corner = 0; corner < 8; ++corner) {
+					    const glm::vec3 local(
+					        (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f
+					    );
+					    if ((to_clip * glm::vec4(local, 1.0f)).z < 0.0f) {
+						    return true;
+					    }
+				    }
+			    }
+			    return false;
+		    };
+
+		    cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, voxel_layout, 0, sets, {});
+		    const VulkanPipeline* bound = nullptr;
+		    for (const uint32_t index : m_voxel_draw_order) {
+			    const auto& proxy = voxel_proxies[index];
+			    const bool inside = crosses_near_plane(index);
+			    const bool cull_front = inside != proxy.mirrored;
+			    const VulkanPipeline& pipeline = voxel_pipelines->pipelines[cull_front ? 1 : 0][inside ? 1 : 0];
+			    if (bound != &pipeline) {
+				    cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+				    bound = &pipeline;
+			    }
+
+			    const VoxelShadowPush push {
+			      .instance_index = index,
+			      .view_index = view_index,
+			      .constant_bias = m_voxel_constant_bias,
+			      .directional = directional ? 1u : 0u,
+			    };
+			    cmd.pushConstants(voxel_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelShadowPush), &push);
+			    cmd.draw(36, 1, 0, 0);
+			    ++m_stats.draws;
+			    ++m_stats.marched_volumes;
+		    }
+	    };
+
+	const auto draw_debris = [&](const LayerGroup& group, const Scope& scope, uint32_t view_index) {
+		const VulkanPipeline* pipeline = nullptr;
+		for (size_t mask_index = 0; mask_index < m_debris_pipelines.size(); ++mask_index) {
+			if (m_pipeline_sets[mask_index].view_mask == scope.view_mask && m_debris_pipelines[mask_index].isReady()) {
+				pipeline = &m_debris_pipelines[mask_index];
+			}
+		}
+		if (!debris_reaches(group) || pipeline == nullptr) {
 			return;
 		}
-		const vk::PipelineLayout voxel_layout = *m_voxel_layout.getPipelineLayout();
-		const vk::PipelineLayout mesh_layout = *m_voxel_mesh_layout.getPipelineLayout();
-		const VulkanPipeline* mesh_pipeline =
-		    m_draw_mesh_tasks != nullptr && shadows::voxelMeshShadows() ? voxelMeshPipelineFor(group.view_mask) : nullptr;
-
-		const auto sets = std::array<vk::DescriptorSet, 2> {*m_voxel_shadow_sets[frame_index], *m_voxel_storage_sets[frame_index]};
-
-		// Meshed first since their quads keep early depth for the marched volumes behind them
-		m_voxel_draw_order.clear();
-		bool meshes_bound = false;
-		for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
-			if (voxel_moving(index) != moving || !voxel_eligible(group, index)) {
-				continue;
-			}
-			const auto& proxy = voxel_proxies[index];
-			if (mesh_pipeline == nullptr || !meshes_volume(proxy)) {
-				m_voxel_draw_order.push_back(index);
-				continue;
-			}
-
-			if (!meshes_bound) {
-				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, mesh_pipeline->getPipeline());
-				cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mesh_layout, 0, sets, {});
-				meshes_bound = true;
-			}
-			const VoxelMeshShadowPush push {
-			  .instance_index = index,
-			  .view_index = view_index,
-			  .view_count = group.layer_count,
-			  .directional = directional ? 1u : 0u,
-			};
-			cmd.pushConstants(mesh_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelMeshShadowPush), &push);
-			const glm::uvec3 coarse = voxel::gpu::coarseDims(proxy.brick_dims);
-			m_draw_mesh_tasks(static_cast<VkCommandBuffer>(cmd), coarse.x * k_task_groups_per_cell, coarse.y, coarse.z);
-			++m_stats.draws;
-			++m_stats.meshed_volumes;
-		}
-		if (m_voxel_draw_order.empty()) {
-			return;
-		}
-
-		// Nearest to the light first by clip z which grows with distance under both projections
-		std::ranges::sort(m_voxel_draw_order, {}, [&](uint32_t index) {
-			return (view.view_projection * glm::vec4(voxel_proxies[index].bounds_center, 1.0f)).z;
-		});
-
-		// A perspective near plane clips front faces so only exact back faces are safe and cascades clamp
-		const auto crosses_near_plane = [&](uint32_t index) {
-			if (directional && m_core->isDepthClampSupported()) {
-				return false;
-			}
-			const glm::vec3 extent = glm::vec3(voxel_proxies[index].brick_dims) * voxel::k_brick_size;
-			for (uint32_t i = 0; i < group.layer_count; ++i) {
-				const auto* member = layer_views[group.base_layer + i];
-				if (member == nullptr) {
-					continue;
-				}
-				const glm::mat4 to_clip = member->view_projection * m_caster_models[index];
-				for (uint32_t corner = 0; corner < 8; ++corner) {
-					const glm::vec3 local(
-					    (corner & 1u) != 0 ? extent.x : 0.0f, (corner & 2u) != 0 ? extent.y : 0.0f, (corner & 4u) != 0 ? extent.z : 0.0f
-					);
-					if ((to_clip * glm::vec4(local, 1.0f)).z < 0.0f) {
-						return true;
-					}
-				}
-			}
-			return false;
+		const vk::PipelineLayout layout = *m_debris_layout.getPipelineLayout();
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline->getPipeline());
+		cmd.bindDescriptorSets(
+		    vk::PipelineBindPoint::eGraphics, layout, 0, std::array {*m_voxel_shadow_sets[frame_index], debris.set}, {}
+		);
+		const DebrisShadowPush push {
+		  .extrapolation = debris.extrapolation,
+		  .voxel_size = debris.voxel_size,
+		  .list_capacity = debris.list_capacity,
+		  .view_index = view_index + scope.view_offset,
 		};
-
-		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, voxel_layout, 0, sets, {});
-		const VulkanPipeline* bound = nullptr;
-		for (const uint32_t index : m_voxel_draw_order) {
-			const auto& proxy = voxel_proxies[index];
-			const bool inside = crosses_near_plane(index);
-			const bool cull_front = inside != proxy.mirrored;
-			const VulkanPipeline& pipeline = voxel_pipelines->pipelines[cull_front ? 1 : 0][inside ? 1 : 0];
-			if (bound != &pipeline) {
-				cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
-				bound = &pipeline;
-			}
-
-			const VoxelShadowPush push {
-			  .instance_index = index,
-			  .view_index = view_index,
-			  .constant_bias = m_voxel_constant_bias,
-			  .directional = directional ? 1u : 0u,
-			};
-			cmd.pushConstants(voxel_layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(VoxelShadowPush), &push);
-			cmd.draw(36, 1, 0, 0);
-			++m_stats.draws;
-			++m_stats.marched_volumes;
-		}
+		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(DebrisShadowPush), &push);
+		// First command is the opaque run so glass debris casts no shadow
+		cmd.drawIndirect(debris.args, 0, 1, sizeof(vk::DrawIndirectCommand));
+		++m_stats.draws;
 	};
 
 	if (any_static_render) {
@@ -1079,10 +1267,15 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 			}
 			const auto& group = static_map.groups[g];
 			const auto& view = *layer_views[group.base_layer];
-			begin_group(static_map, group, vk::AttachmentLoadOp::eClear);
-			bind_viewport(view, static_map.resolution);
-			draw_voxels(group, view, layer_view_indices[group.base_layer], false);
-			cmd.endRendering();
+			const uint32_t view_index = layer_view_indices[group.base_layer];
+			const auto [scopes, scope_count] = scopes_of(group);
+			for (uint32_t s = 0; s < scope_count; ++s) {
+				begin_scope(static_map, scopes[s], vk::AttachmentLoadOp::eClear);
+				bind_viewport(view, static_map.resolution);
+				draw_meshes(group, scopes[s], view_index, false);
+				draw_voxels(group, scopes[s], view, view_index, false);
+				cmd.endRendering();
+			}
 		}
 	}
 
@@ -1128,15 +1321,22 @@ void ShadowPass::recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& sta
 		group.dirty = compose;
 		group.signature = compose ? group_signatures[g] : std::nullopt;
 
-		begin_group(map, group, compose ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eClear);
-		if (compose) {
-			const auto& view = *layer_views[group.base_layer];
-			const uint32_t view_index = layer_view_indices[group.base_layer];
-			bind_viewport(view, map.resolution);
-			draw_meshes(group, view_index);
-			draw_voxels(group, view, view_index, true);
+		if (!compose) {
+			begin_scope(map, Scope {**group.view, group.view_mask, 0, group.layer_count}, vk::AttachmentLoadOp::eClear);
+			cmd.endRendering();
+			continue;
 		}
-		cmd.endRendering();
+		const auto& view = *layer_views[group.base_layer];
+		const uint32_t view_index = layer_view_indices[group.base_layer];
+		const auto [scopes, scope_count] = scopes_of(group);
+		for (uint32_t s = 0; s < scope_count; ++s) {
+			begin_scope(map, scopes[s], vk::AttachmentLoadOp::eLoad);
+			bind_viewport(view, map.resolution);
+			draw_meshes(group, scopes[s], view_index, true);
+			draw_voxels(group, scopes[s], view, view_index, true);
+			draw_debris(group, scopes[s], view_index);
+			cmd.endRendering();
+		}
 	}
 
 	// Bound in eShaderReadOnlyOptimal by the lighting descriptors
@@ -1178,6 +1378,9 @@ void ShadowPass::recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t
 		}
 	}
 
+	// Advances even without voxels so meshes settle
+	++m_caster_frame;
+	prepareMeshes(frame_index);
 	m_voxel_instance_count = prepareVoxels(frame_index);
 	for (uint32_t index = 0; index < m_voxel_instance_count; ++index) {
 		m_stats.moving_volumes += m_caster_moving[index];

@@ -37,6 +37,8 @@ public:
 
 	void onResize(vk::Extent2D extent) override;
 
+	void setGlassSources(vk::ImageView backdrop, vk::ImageView mask) override;
+
 private:
 	/// Mirrors lens_flare.slang LensFlareParams
 	struct Params {
@@ -79,6 +81,8 @@ private:
 		std::vector<vk::raii::DescriptorSet> sets;
 		vk::ImageView bound_scene = nullptr;
 		vk::ImageView bound_dirt = nullptr;
+		vk::ImageView bound_backdrop = nullptr;
+		vk::ImageView bound_mask = nullptr;
 	};
 
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -96,6 +100,8 @@ private:
 
 	const VulkanCore* m_core = nullptr;
 	vk::Format m_format = vk::Format::eUndefined;
+	vk::ImageView m_glass_backdrop = nullptr;
+	vk::ImageView m_glass_mask = nullptr;
 
 	ShaderLayout m_shader_layout;
 	VulkanPipeline m_threshold_pipeline;
