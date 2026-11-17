@@ -270,6 +270,9 @@ public:
 
 	void addRenderPass(std::unique_ptr<IRenderPass> pass);
 
+	/// Thread safe and frees the pass once no frame in flight still uses it
+	void removeRenderPass(const IRenderPass* pass);
+
 	void addComputePass(std::unique_ptr<IComputePass> pass);
 
 	/// Runs in registration order
@@ -1438,6 +1441,7 @@ private:
 
 	std::unique_ptr<IOutputTarget> m_output_target;
 	std::vector<std::unique_ptr<IRenderPass>> m_render_passes;
+	std::vector<std::shared_ptr<IRenderPass>> m_retiring_passes;
 	std::vector<std::unique_ptr<IComputePass>> m_compute_passes;
 	std::vector<std::unique_ptr<IPostProcessPass>> m_post_process_passes;
 

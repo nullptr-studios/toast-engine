@@ -671,7 +671,18 @@ auto VulkanRenderer::applyResizeInternal(vk::Extent2D extent) -> void {
 }
 
 void VulkanRenderer::addRenderPass(std::unique_ptr<IRenderPass> pass) {
+	std::lock_guard lock(m_pass_mutex);
 	m_render_passes.push_back(std::move(pass));
+}
+
+void VulkanRenderer::removeRenderPass(const IRenderPass* pass) {
+	std::lock_guard lock(m_pass_mutex);
+	const auto it = std::ranges::find(m_render_passes, pass, &std::unique_ptr<IRenderPass>::get);
+	if (it == m_render_passes.end()) {
+		return;
+	}
+	m_retiring_passes.emplace_back(it->release());
+	m_render_passes.erase(it);
 }
 
 void VulkanRenderer::addPostProcessPass(std::unique_ptr<IPostProcessPass> pass) {

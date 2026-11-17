@@ -1224,7 +1224,7 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	}
 	extension_score -= static_cast<int>(required_missing_names.size()) * 100;
 
-	const std::vector<const char*> optional_extensions = {
+	const std::vector optional_extensions = {
 	  VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
 	  VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 	  VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,

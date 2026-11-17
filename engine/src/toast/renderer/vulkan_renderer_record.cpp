@@ -934,6 +934,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	{
 		const GpuScope offscreen_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Off-screen");
+		std::lock_guard lock(m_pass_mutex);
 		for (auto& pass : m_render_passes) {
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
@@ -1608,6 +1609,11 @@ auto VulkanRenderer::drawFrame(RenderFrame& frame_data) -> bool {
 			pass->update(m_current_frame, Time::renderDelta());
 			any_unbuilt_material = any_unbuilt_material || !pass->isValid();
 		}
+		// After this frame's fence wait so the frames still in flight finish before the pass is freed
+		for (auto& pass : m_retiring_passes) {
+			retire(std::move(pass));
+		}
+		m_retiring_passes.clear();
 		for (auto& pass : m_render_passes) {
 			pass->update(m_current_frame, Time::renderDelta());
 		}

@@ -702,8 +702,6 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addProperty("r", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
 	    .addProperty("g", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
 	    .addProperty("b", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
-	    // Lua looks up operator metamethods raw on the object's own metatable, so deriveClass doesn't inherit them from vec3
-	    // LuaBridge needs the first parameter to be the exact class; the base glm::vec3 is kept in sync by commit()
 	    .addFunction("__add", [](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 { return glm::vec3(a) + b; })
 	    .addFunction("__sub", [](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 { return glm::vec3(a) - b; })
 	    .addFunction(
