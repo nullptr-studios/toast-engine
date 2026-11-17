@@ -516,11 +516,7 @@ auto anyVectorToLuaRef(lua_State* l, const std::any& value) -> luabridge::LuaRef
 		lua_createtable(l, static_cast<int>(boxes->size()), 0);
 		for (size_t i = 0; i < boxes->size(); ++i) {
 			lua_pushinteger(l, static_cast<lua_Integer>(i + 1));
-			if ((*boxes)[i].exists()) {
-				if (auto r = luabridge::Stack<NodeProxy>::push(l, NodeProxy((*boxes)[i])); !r) {
-					lua_pushnil(l);
-				}
-			} else {
+			if (auto r = luabridge::Stack<NodeProxy>::push(l, NodeProxy((*boxes)[i])); !r) {
 				lua_pushnil(l);
 			}
 			lua_settable(l, -3);
@@ -917,10 +913,16 @@ auto luaArrayTableToAny(lua_State* l, const luabridge::LuaRef& table) -> std::an
 		    [](const luabridge::LuaRef& e) { return e.isInstance<Color4>(); }
 		);
 	}
+	if (first.isInstance<TypeMarker>()) {
+		if (first.unsafe_cast<TypeMarker>().kind == TypeMarker::Kind::node) {
+			return std::vector<toast::Box<toast::Node>> {};
+		}
+		return std::vector<AssetProxy> {};
+	}
 	if (first.isInstance<NodeProxy>()) {
 		return collect.template operator()<toast::Box<toast::Node>>(
 		    [](const luabridge::LuaRef& e) { return toast::Box<toast::Node>(e.unsafe_cast<NodeProxy>().box()); },
-		    [](const luabridge::LuaRef& e) { return e.isInstance<NodeProxy>() && e.unsafe_cast<NodeProxy>().exists(); }
+		    [](const luabridge::LuaRef& e) { return e.isInstance<NodeProxy>(); }
 		);
 	}
 	if (first.isInstance<AssetProxy>()) {
