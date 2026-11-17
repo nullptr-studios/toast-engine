@@ -640,7 +640,8 @@
 		        IsVisible="{Binding ShowHeader}">
 			<StackPanel Spacing="4">
 				<Grid ColumnDefinitions="Auto,*,Auto"
-				      ColumnSpacing="4">
+				      ColumnSpacing="4"
+				      IsEnabled="{Binding !IsReadOnly}">
 					<Border Grid.Column="0"
 					        Width="26"
 					        Height="26"
@@ -732,6 +733,7 @@
 			              HorizontalScrollBarVisibility="Disabled"
 			              IsVisible="{Binding HasSelection}">
 				<ItemsControl ItemsSource="{Binding Cards}"
+				              IsEnabled="{Binding !IsReadOnly}"
 				              ItemsPanel="{StaticResource Spaced8}" />
 			</ScrollViewer>
 			<StackPanel Spacing="4"
