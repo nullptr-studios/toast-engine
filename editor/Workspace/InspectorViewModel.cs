@@ -42,6 +42,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	private ulong m_editTransaction;
 	private ulong m_editWorkspaceHandle;
 	[ObservableProperty] private bool m_enabled = true;
+	[ObservableProperty] private bool m_isReadOnly;
 
 	[ObservableProperty] private string m_filterText = "";
 	[ObservableProperty] private bool m_hasMessages;
@@ -349,7 +350,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	}
 
 	partial void OnEnabledChanged(bool value) {
-		if (m_suppressEnabled || m_uid is null) return;
+		if (m_suppressEnabled || m_uid is null || IsReadOnly) return;
 		Events.Send(new NodeEnabled { Node = m_uid, Enabled = value });
 	}
 
@@ -385,11 +386,13 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 				m_builtType = null;
 				m_uid = null;
 				m_selected = null;
+				IsReadOnly = false;
 				return;
 			}
 
 			m_uid = node.Uid;
 			m_selected = node;
+			IsReadOnly = node.IsInsidePrefab;
 			Name = node.Name;
 			TypeDisplay = node.Type;
 			IconColorKey = ReflectionDatabase.ResolveColor(node.Type);
@@ -555,7 +558,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	}
 
 	private void OnFieldEdited(FieldVM field, string value) {
-		if (m_uid is null) return;
+		if (m_uid is null || IsReadOnly) return;
 		if (!m_isPasteBatch) BeginFieldEdit(field);
 		if (field.IsLua)
 			Events.Send(new NodeChangeLuaParam { Node = m_uid, Path = field.ParameterName, Value = value });
@@ -602,7 +605,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	}
 
 	private void OnButtonInvoked(string function) {
-		if (m_uid is not null) Events.Send(new NodeCallFunction { Node = m_uid, Function = function });
+		if (m_uid is not null && !IsReadOnly) Events.Send(new NodeCallFunction { Node = m_uid, Function = function });
 	}
 
 	private void OnEditorActionInvoked(string action) {
@@ -883,7 +886,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 	// header rename
 	[RelayCommand]
 	private void BeginRename() {
-		if (!HasSelection) return;
+		if (!HasSelection || IsReadOnly) return;
 		NameDraft = Name;
 		IsEditingName = true;
 	}
