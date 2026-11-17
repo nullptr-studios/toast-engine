@@ -80,7 +80,7 @@ auto stringifyLuaValue(const LuaVarDesc& desc, const std::any& value) -> std::st
 			});
 		}
 		if (const auto* v = std::any_cast<std::vector<toast::Box<toast::Node>>>(&value)) {
-			return join(*v, [](const toast::Box<toast::Node>& e) { return e.exists() ? e->uid().get() : std::string {}; });
+			return join(*v, [](const toast::Box<toast::Node>& e) { return e.exists() ? e->uid().get() : std::string {"-"}; });
 		}
 		if (const auto* v = std::any_cast<std::vector<scripting::AssetProxy>>(&value)) {
 			return join(*v, [](const scripting::AssetProxy& e) { return e.uid().data() != 0 ? e.uid().get() : std::string {}; });
@@ -234,7 +234,7 @@ auto parseLuaValue(const LuaVarDesc& desc, std::string_view text, const NodeReso
 			case LuaVarKind::node_ref: {
 				std::vector<toast::Box<toast::Node>> out;
 				for (const auto& t : tokens(' ')) {
-					out.push_back(find_node(t));
+					out.push_back(t == "-" ? toast::Box<toast::Node> {} : find_node(t));
 				}
 				return out;
 			}
