@@ -1519,7 +1519,7 @@ float4 evaluateDebugView(Surface surface, ClusterCell cluster)
                 (gCamera.environmentParams.x >= 0.5 ? gIrradianceMap.SampleLevel(N, 0.0).rgb : float3(0.0, 0.0, 0.0));
             if (giSurfaceIrradiance(cascadeIrradiance, cascadeSky))
             {
-                return float4(cascadeIrradiance + cascadeSky * ambientIrradiance, 1.0);
+                return float4(cascadeIrradiance * giIntensity() + cascadeSky * ambientIrradiance, 1.0);
             }
             return float4(ambientIrradiance, 1.0);
         }
@@ -1934,7 +1934,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     if (hasCascades)
     {
         // The clipmap leaves the open share of the hemisphere to the ambient above and the cascades leave none
-        irradiance = cascadeIrradiance + cascadeSky * irradiance;
+        irradiance = cascadeIrradiance * giIntensity() + cascadeSky * irradiance;
         result.contactReach = giContactReach(surface.worldPosition);
     }
 

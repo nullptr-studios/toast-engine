@@ -1,5 +1,6 @@
 #include "toast/renderer/passes/geometry/debris_pass.hpp"
 
+#include "toast/renderer/core/descriptor_writer.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/shaders/shader_cache.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
@@ -15,6 +16,9 @@ constexpr uint32_t k_debris_scene_set = 0;
 constexpr uint32_t k_debris_set = 1;
 constexpr uint32_t k_debris_particles_binding = 0;
 constexpr uint32_t k_debris_list_binding = 1;
+constexpr uint32_t k_debris_backdrop_set = 2;
+constexpr uint32_t k_debris_backdrop_binding = 0;
+constexpr uint32_t k_debris_backdrop_depth_binding = 1;
 
 /// Bounds and cache signature only, the rest comes from the push constants
 auto shadowBoundsOf(const physics::DebrisSimulation& simulation, const AsyncComputeTask::FrameView& view, float extrapolation)
@@ -29,7 +33,7 @@ DebrisPass::DebrisPass(
     : m_core(&core),
       m_simulation(std::move(simulation)) {
 	ZoneScoped;
-	static_assert(sizeof(PushConstants) == 16, "PushConstants is mirrored by debris_draw.slang");
+	static_assert(sizeof(PushConstants) == 32, "PushConstants is mirrored by debris_draw.slang");
 
 	const auto uid = assets::resolveURI("core://shaders/debris_draw.slang");
 	const auto shader = uid.has_value() ? ShaderCache::get().acquire(*uid) : nullptr;
@@ -89,6 +93,21 @@ DebrisPass::DebrisPass(
 		setDebugName(core, *m_sets.back(), std::format("DebrisPass Set[{}]", i));
 	}
 	m_bound.resize(VulkanRenderer::k_frames_in_flight);
+
+	// Own set so the shadow pass can keep binding set 1 with its own layout
+	if (layouts.size() > k_debris_backdrop_set) {
+		m_backdrop_sampler = vk::raii::Sampler(core.getDevice(), linearClampSamplerInfo());
+		setDebugName(core, *m_backdrop_sampler, "DebrisPass BackdropSampler");
+		m_backdrop_depth_sampler = vk::raii::Sampler(core.getDevice(), nearestClampSamplerInfo());
+		setDebugName(core, *m_backdrop_depth_sampler, "DebrisPass BackdropDepthSampler");
+		const vk::DescriptorSetLayout backdrop_layout = *layouts[k_debris_backdrop_set];
+		for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
+			auto sets = core.getDevice().allocateDescriptorSets(vk::DescriptorSetAllocateInfo(pool, 1, &backdrop_layout));
+			m_backdrop_sets.push_back(std::move(sets[0]));
+			setDebugName(core, *m_backdrop_sets.back(), std::format("DebrisPass BackdropSet[{}]", i));
+		}
+		m_bound_backdrop.resize(VulkanRenderer::k_frames_in_flight);
+	}
 }
 
 auto DebrisPass::prepare(vk::CommandBuffer cmd, uint32_t frame_index) -> bool {
@@ -203,8 +222,44 @@ void DebrisPass::recordGlass(vk::CommandBuffer cmd, uint32_t frame_index) {
 	ZoneScoped;
 	// Cleared here since prepare only runs on frames with a voxel scope
 	const vk::Buffer args = std::exchange(m_args, nullptr);
-	if (!args || !m_glass_pipeline.isReady() || frame_index >= m_sets.size()) {
+	if (!args || !m_glass_pipeline.isReady() || frame_index >= m_sets.size() || frame_index >= m_backdrop_sets.size()) {
 		return;
+	}
+
+	auto* renderer = VulkanRenderer::instance;
+	const std::array<vk::ImageView, 2> backdrop {renderer->getGlassBackdropView(), renderer->getGlassBackdropDepthView()};
+	if (!backdrop[0] || !backdrop[1]) {
+		return;
+	}
+	// The set is first bound below so updating it here is safe
+	if (m_bound_backdrop.update(frame_index, backdrop)) {
+		DescriptorWriter writer;
+		writer.image(
+		    *m_backdrop_sets[frame_index],
+		    k_debris_backdrop_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    *m_backdrop_sampler,
+		    backdrop[0],
+		    vk::ImageLayout::eShaderReadOnlyOptimal
+		);
+		writer.image(
+		    *m_backdrop_sets[frame_index],
+		    k_debris_backdrop_depth_binding,
+		    vk::DescriptorType::eCombinedImageSampler,
+		    *m_backdrop_depth_sampler,
+		    backdrop[1],
+		    vk::ImageLayout::eDepthReadOnlyOptimal
+		);
+		writer.flush(m_core->getDevice());
+	}
+
+	PushConstants push = m_push;
+	if (renderer->ssrFrame() && renderer->glassBackdropCaptured()) {
+		const auto ssr = renderer->glassSsrSettings();
+		push.reflection_reach = ssr.stride * static_cast<float>(ssr.max_steps);
+		push.reflection_steps = ssr.max_steps;
+		push.reflection_thickness = ssr.thickness;
+		push.reflection_roughness = ssr.max_roughness;
 	}
 
 	const vk::PipelineLayout layout = *m_layout.getPipelineLayout();
@@ -213,10 +268,10 @@ void DebrisPass::recordGlass(vk::CommandBuffer cmd, uint32_t frame_index) {
 	    vk::PipelineBindPoint::eGraphics,
 	    layout,
 	    k_debris_scene_set,
-	    std::array<vk::DescriptorSet, 2> {m_scene_sets.get(frame_index), *m_sets[frame_index]},
+	    std::array<vk::DescriptorSet, 3> {m_scene_sets.get(frame_index), *m_sets[frame_index], *m_backdrop_sets[frame_index]},
 	    {}
 	);
-	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &m_push);
+	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(PushConstants), &push);
 	cmd.drawIndirect(args, sizeof(vk::DrawIndirectCommand), 1, sizeof(vk::DrawIndirectCommand));
 }
 

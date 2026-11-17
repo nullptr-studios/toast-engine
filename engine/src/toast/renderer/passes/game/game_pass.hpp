@@ -12,32 +12,10 @@
  * @brief Custom render passes from game code
  *
  * The engine owns the pipeline, descriptors and buffers. The game only gives a shader, a few plain settings and
- * an array of instance structs each frame, so no Vulkan or STL type crosses the DLL boundary and a game module
- * built in Debug works against a Release engine.
+ * an array of instance structs each frame
  *
  * Each instance draws vertices_per_instance vertices with no vertex buffer, the vertex shader builds the geometry
- * from SV_InstanceID and SV_VertexID.
- *
- * Shader contract:
- * @code
- * struct CameraUBO                     // Prefix of the engine FrameUBO, keep the field order
- * {
- *     float4x4 view;
- *     float4x4 projection;
- *     float4x4 viewProjection;
- *     float3 cameraPosition;
- *     float time;
- *     float4x4 jitteredViewProjection; // World stage uses this one so it matches the scene depth under TAA
- * };
- * [[vk::binding(0, 0)]] ConstantBuffer<CameraUBO> gCamera;
- *
- * struct Instance { ... };             // Same layout as the C++ struct, mind float3 + float packing
- * [[vk::binding(1, 0)]] StructuredBuffer<Instance> gInstances;
- *
- * [shader("vertex")]   VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID);
- * [shader("fragment")] float4 fragmentMain(VSOutput input) : SV_Target0;
- * // With reactive the fragment returns SV_Target0 color, SV_Target1 normal, SV_Target2 indirect, SV_Target3 motion
- * @endcode
+ * from SV_InstanceID and SV_VertexID
  *
  * Usage:
  * @code
@@ -57,17 +35,14 @@
  * // end(), also before the game module unloads
  * renderer::destroyGamePass(std::exchange(m_pass, nullptr));
  * @endcode
- *
- * Instances belong to the pass, not to a node, so whoever stops updating them leaves them frozen on screen.
- * See the shared TracerSystem in JhonMafia weapon_manager.cpp for one pass fed by many nodes.
  */
 
 namespace renderer {
 
 enum class GamePassStage : uint8_t {
-	/// HDR scene before TAA, bloom and tonemap, depth tested against the scene
+	/// HDR scene before TAA, bloom and tonemap
 	world,
-	/// After the tonemap at output resolution, use viewProjection and LDR colors
+	/// After the tonemap at output resolution, use viewProjection
 	overlay,
 };
 
@@ -81,7 +56,6 @@ enum class GamePassBlend : uint8_t {
 
 struct GamePassDesc {
 	const char* name = "Game pass";
-	/// Game assets use assets://, engine ones core://
 	const char* shader_uri = nullptr;
 	GamePassStage stage = GamePassStage::world;
 	GamePassBlend blend = GamePassBlend::additive;
@@ -101,13 +75,12 @@ struct GamePassDesc {
 
 class GamePass;
 
-/// Main thread. Null when the renderer is missing, the shader is unavailable or instance_stride is 0
 auto TOAST_API createGamePass(const GamePassDesc& desc) -> GamePass*;
 
-/// Any thread. Copies the data, a count of 0 draws nothing
+/// Any thread Copies the data. A count of 0 draws nothing
 void TOAST_API setGamePassInstances(GamePass* pass, const void* data, uint32_t count);
 
-/// Any thread and null safe. The GPU objects are freed once no frame in flight uses them
+/// The GPU objects are freed once no frame in flight uses them
 void TOAST_API destroyGamePass(GamePass* pass);
 
 }

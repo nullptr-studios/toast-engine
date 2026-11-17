@@ -82,6 +82,10 @@ private:
 		float frame_delta = 0.0f;
 		float voxel_size = 0.0f;
 		uint32_t list_capacity = 0;
+		float reflection_reach = 0.0f;
+		uint32_t reflection_steps = 0;
+		float reflection_thickness = 0.0f;
+		float reflection_roughness = 0.0f;
 	};
 
 	const VulkanCore* m_core = nullptr;
@@ -95,6 +99,11 @@ private:
 	DescriptorCache<std::array<vk::Buffer, 2>> m_bound;
 	vk::Buffer m_args = nullptr;
 	PushConstants m_push;
+	/// Glass backdrop colour and depth the SSR march of glass pieces reads
+	std::vector<vk::raii::DescriptorSet> m_backdrop_sets;
+	DescriptorCache<std::array<vk::ImageView, 2>> m_bound_backdrop;
+	vk::raii::Sampler m_backdrop_sampler = nullptr;
+	vk::raii::Sampler m_backdrop_depth_sampler = nullptr;
 	/// Without the set and args which come per frame
 	ShadowDraw m_shadow;
 };

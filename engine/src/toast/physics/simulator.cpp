@@ -1149,6 +1149,7 @@ void Simulator::emitDebris(
 		      .glass = voxel::isGlass(look),
 		      .alpha = look.alpha,
 		      .ior = look.ior,
+		      .emissive = voxel::emissiveIntensity(data->palette, cluster.material),
 		      .scale = scale,
 		    }
 		);

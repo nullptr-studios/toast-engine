@@ -418,6 +418,8 @@ static const uint kTracedSpecular = 16u;
 static const uint kGiGather = 32u;
 /// Mirrors VoxelPass k_gi_clipmap
 static const uint kGiClipmap = 64u;
+/// Mirrors VoxelPass k_gi_denoise and set when voxel_denoise.slang filters the clipmap GI
+static const uint kGiDenoise = 128u;
 static const float kGiGatherPlane = 0.15;
 
 /// Scene normal roughness of a pixel whose environment specular voxel_specular.slang replaces and SSR skips
@@ -818,7 +820,10 @@ float4 fragmentGiGather(VSOutput input) : SV_Target0
     }
     float3 irradiance;
     float sky;
-    if (!sampleGiClipmap(positionAt(pixel), normal, 0.0, irradiance, sky))
+    // Side cones turn and start further out per pixel and frame and the denoiser history averages both
+    const float turn = (gPush.reuse.x & kGiDenoise) != 0u ? interleavedGradientNoise(float2(pixel)) : 0.0;
+    const float jitter = (gPush.reuse.x & kGiDenoise) != 0u ? interleavedGradientNoise(float2(pixel) + 17.0) : 0.0;
+    if (!sampleGiClipmap(positionAt(pixel), normal, turn, irradiance, sky, jitter))
     {
         return none;
     }
@@ -940,12 +945,14 @@ FSOutput fragmentMain(VSOutput input)
         output.color.rgb -= lit.ambientSpecular;
     }
 
-    // Traced AO replaces SSAO so ambient diffuse moves into the filtered term
-    if (gPush.lighting.z != 0u && gPush.reuse.w != 0u)
+    // Ambient diffuse moves into the filtered term when traced AO occludes it or clipmap GI needs the history
+    const bool tracedAo = gPush.lighting.z != 0u && gPush.reuse.w != 0u;
+    if (tracedAo || (gPush.reuse.x & kGiDenoise) != 0u)
     {
         output.color.rgb -= lit.indirectDiffuse;
         output.noisyDiffuse = float4(select(albedo.rgb > 1e-3, lit.indirectDiffuse / max(albedo.rgb, 1e-3), float3(0.0, 0.0, 0.0)), 0.0);
-        output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
+        // Traced AO replaces SSAO and otherwise SSAO takes back its share of the filtered GI the denoiser adds to the colour
+        output.indirectDiffuse = float4(tracedAo ? float3(0.0, 0.0, 0.0) : lit.indirectDiffuse, 1.0);
     }
     return output;
 }

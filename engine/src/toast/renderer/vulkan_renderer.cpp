@@ -164,6 +164,17 @@ auto VulkanRenderer::setPostProcessPassEnabled(std::string_view name, bool enabl
 	return false;
 }
 
+auto VulkanRenderer::ssrSettings() const -> PostProcessSettings::Ssr {
+	const auto* frame = renderingFrame();
+	auto settings = frame != nullptr ? frame->post_process.ssr : PostProcessSettings::Ssr {};
+	// Non RT presets override the volume reach
+	if (const uint32_t steps = ssrOverrideSteps(); steps > 0) {
+		settings.max_steps = steps;
+		settings.stride = std::max(ssrOverrideReach(), 1.0f) / static_cast<float>(steps);
+	}
+	return settings;
+}
+
 auto VulkanRenderer::isPostProcessPassEnabled(std::string_view name) const -> bool {
 	std::lock_guard lock(m_pass_mutex);
 	for (const auto& pass : m_post_process_passes) {

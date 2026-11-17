@@ -39,6 +39,8 @@ struct GiSettings {
 	/// Meters a body has to move in a frame before GI treats it as a change and not physics jitter
 	std::atomic<float> motion_threshold {0.01f};
 	std::atomic<float> max_ray_radiance {16.0f};
+	/// Scales bounced light where surfaces are lit and not where GI feeds its own bounces so it cannot run away
+	std::atomic<float> intensity {2.0f};
 	/// 0 off and otherwise 1 + the cascade drawn
 	std::atomic<uint32_t> debug_view {0};
 	/// Mirrors gi_debug.slang kGiDebug with 0 cells 1 interval radiance 2 coverage 3 irradiance 4 history depth 5 change

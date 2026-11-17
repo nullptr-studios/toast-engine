@@ -15,7 +15,7 @@ struct LensFlareParams
     float4 tint;
     // x anamorphic intensity y anamorphic tint amount z dirt intensity w 1 with a dirt texture
     float4 streak;
-    // x halo thickness y halo dispersion
+    // x halo thickness y halo dispersion z scale on the light behind glass
     float4 haloStyle;
     // rgb halo tint
     float4 haloTint;
@@ -38,6 +38,21 @@ Sampler2D gStreak;
 
 [[vk::binding(4, 0)]]
 Sampler2D gDirtTexture;
+
+/// Scene before anything blended and where glass covers it, only the threshold step reads them
+[[vk::binding(5, 0)]]
+Sampler2D gGlassBackdrop;
+
+[[vk::binding(6, 0)]]
+Sampler2D gGlassMask;
+
+/// Where glass covers a pixel the brighter of the glass composite and the scaled light behind it so emissives the glass dims still flare
+float3 flareSource(float2 uv)
+{
+    const float3 source = gSource.Sample(uv).rgb;
+    const float m = gGlassMask.Sample(uv).r;
+    return lerp(source, max(source, gGlassBackdrop.Sample(uv).rgb * gParams.haloStyle.z), m);
+}
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -76,17 +91,17 @@ float4 fragmentThreshold(VSOutput input) : SV_Target0
     const float2 uv = input.uv;
 
     float3 corners = float3(0.0, 0.0, 0.0);
-    corners += gSource.Sample(uv + float2(-1.0, 1.0) * texel).rgb;
-    corners += gSource.Sample(uv + float2(1.0, 1.0) * texel).rgb;
-    corners += gSource.Sample(uv + float2(-1.0, -1.0) * texel).rgb;
-    corners += gSource.Sample(uv + float2(1.0, -1.0) * texel).rgb;
+    corners += flareSource(uv + float2(-1.0, 1.0) * texel);
+    corners += flareSource(uv + float2(1.0, 1.0) * texel);
+    corners += flareSource(uv + float2(-1.0, -1.0) * texel);
+    corners += flareSource(uv + float2(1.0, -1.0) * texel);
 
     float3 grid = float3(0.0, 0.0, 0.0);
     for (int y = -1; y <= 1; ++y)
     {
         for (int x = -1; x <= 1; ++x)
         {
-            grid += gSource.Sample(uv + float2(float(x), float(y)) * 2.0 * texel).rgb;
+            grid += flareSource(uv + float2(float(x), float(y)) * 2.0 * texel);
         }
     }
 

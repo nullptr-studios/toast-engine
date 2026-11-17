@@ -37,6 +37,9 @@ struct PresetKnobs {
 	float ssr_reach = 0.0f;
 	uint32_t ssr_steps = 0;
 	bool motion_blur = false;
+	uint32_t glass_lit_surfaces = 4;
+	/// Meters glass reflections reach, below the SSR and traced specular reach since only the front layer reflects
+	float glass_reflection_reach = 32.0f;
 };
 
 /// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT
@@ -58,7 +61,9 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 		 .shadow_distance = 60.0f,
 		 .spot_budget = 4,
 		 .point_budget = 2,
-		 .shadow_maps_only = true},
+		 .shadow_maps_only = true,
+		 .glass_lit_surfaces = 1,
+		 .glass_reflection_reach = 8.0f},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = false,
@@ -75,8 +80,10 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .spot_budget = 6,
 	   .point_budget = 3,
 	   .shadow_maps_only = true,
-	   .ssr_reach = 12.0f,
-	   .ssr_steps = 48},
+	   .ssr_reach = 50.0f,
+	   .ssr_steps = 48,
+	   .glass_lit_surfaces = 2,
+	   .glass_reflection_reach = 12.0f},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = false,
@@ -93,9 +100,11 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .spot_budget = 10,
 	   .point_budget = 5,
 	   .shadow_maps_only = true,
-	   .ssr_reach = 20.0f,
+	   .ssr_reach = 100.0f,
 	   .ssr_steps = 64,
-	   .motion_blur = true},
+	   .motion_blur = true,
+	   .glass_lit_surfaces = 3,
+	   .glass_reflection_reach = 16.0f},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = false,
@@ -112,9 +121,11 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .spot_budget = 16,
 	   .point_budget = 8,
 	   .shadow_maps_only = true,
-	   .ssr_reach = 32.0f,
+	   .ssr_reach = 200.0f,
 	   .ssr_steps = 96,
-	   .motion_blur = true},
+	   .motion_blur = true,
+	   .glass_lit_surfaces = 4,
+	   .glass_reflection_reach = 24.0f},
    // With ray tracing
     {.ssr = false,
 		 .ssao = false,
@@ -128,7 +139,9 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 		 .gi_quality = 0,
 		 .shadow_distance = 60.0f,
 		 .spot_budget = 4,
-		 .point_budget = 2},
+		 .point_budget = 2,
+		 .glass_lit_surfaces = 1,
+		 .glass_reflection_reach = 8.0f},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = false,
@@ -141,7 +154,11 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .gi_quality = 1,
 	   .shadow_distance = 100.0f,
 	   .spot_budget = 8,
-	   .point_budget = 4},
+	   .point_budget = 4,
+	   .ssr_reach = 50.0f,
+	   .ssr_steps = 48,
+	   .glass_lit_surfaces = 2,
+	   .glass_reflection_reach = 16.0f},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = true,
@@ -155,7 +172,11 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .shadow_distance = 150.0f,
 	   .spot_budget = 16,
 	   .point_budget = 8,
-	   .motion_blur = true},
+	   .ssr_reach = 100.0f,
+	   .ssr_steps = 64,
+	   .motion_blur = true,
+	   .glass_lit_surfaces = 3,
+	   .glass_reflection_reach = 24.0f},
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = true,
@@ -169,7 +190,11 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .shadow_distance = 250.0f,
 	   .spot_budget = shadows::k_max_spot_shadows,
 	   .point_budget = shadows::k_max_point_shadows,
-	   .motion_blur = true},
+	   .ssr_reach = 200.0f,
+	   .ssr_steps = 96,
+	   .motion_blur = true,
+	   .glass_lit_surfaces = 4,
+	   .glass_reflection_reach = 32.0f},
    }
 };
 
@@ -216,6 +241,8 @@ void applyPreset() {
 	renderer.setVoxelLightCandidates(knobs.light_candidates);
 	renderer.setVoxelAmbientRays(knobs.ambient_rays);
 	renderer.setVoxelGlassShadows(knobs.glass_shadows);
+	renderer.setVoxelGlassLitSurfaces(knobs.glass_lit_surfaces);
+	renderer.setVoxelGlassReflectionReach(knobs.glass_reflection_reach);
 	renderer.setVolumetricQuality(knobs.volumetric_quality);
 	renderer.giSettings().quality.store(knobs.gi_quality, std::memory_order_relaxed);
 	shadows::setShadowDistance(knobs.shadow_distance);
@@ -230,7 +257,7 @@ struct DrivenSetting {
 	Value (*get)(const PresetKnobs&);
 };
 
-const std::array<DrivenSetting, 19> k_driven {
+const std::array<DrivenSetting, 21> k_driven {
   {
    {"renderer.voxels.shadow_maps_only", [](const PresetKnobs& k) { return Value {k.shadow_maps_only}; }},
    {"renderer.quality.ssr_reach", [](const PresetKnobs& k) { return Value {static_cast<double>(k.ssr_reach)}; }},
@@ -246,6 +273,10 @@ const std::array<DrivenSetting, 19> k_driven {
    {"renderer.voxels.light_candidates", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.light_candidates)}; }},
    {"renderer.voxels.ambient_rays", [](const PresetKnobs& k) { return Value {k.ambient_rays}; }},
    {"renderer.voxels.glass_shadows", [](const PresetKnobs& k) { return Value {k.glass_shadows}; }},
+   {"renderer.voxels.glass_lit_surfaces",
+	   [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.glass_lit_surfaces)}; }},
+   {"renderer.voxels.glass_reflection_reach",
+	   [](const PresetKnobs& k) { return Value {static_cast<double>(k.glass_reflection_reach)}; }},
    {"renderer.volumetrics.quality", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.volumetric_quality)}; }},
    {"renderer.gi.enabled", [](const PresetKnobs& k) { return Value {k.gi_enabled}; }},
    {"renderer.gi.quality", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.gi_quality)}; }},
@@ -421,6 +452,19 @@ void registerQuality(VulkanRenderer& renderer) {
 	    true,
 	    "Ghosts, halo and glare streaks from the brightest pixels. Tuned on the post process volume."
 	);
+	toast::settings::declareFloat(
+	    "renderer.quality.glass_glow_scale",
+	    1.0,
+	    {.label = "Emissive behind glass",
+			 .category = "Quality",
+			 .description = "Scale on the light behind glass that bloom and lens flares see, so emissives the glass dims "
+			                "still glow and flare. 0 lets glass dim them like everything else, 1 sees them as if the glass "
+			                "were not there and higher boosts them. Lit surfaces behind glass are scaled too",
+			 .min = 0.0,
+			 .max = 16.0,
+			 .step = 0.1}
+	)
+	    .onChange([&renderer](double v) { renderer.setGlassGlowScale(static_cast<float>(v)); });
 	toast::settings::declareBool(
 	    "renderer.quality.ssr",
 	    true,
@@ -485,9 +529,10 @@ void registerQuality(VulkanRenderer& renderer) {
 	    0.0,
 	    {.label = "SSR reach",
 			 .category = "Quality",
-			 .description = "Meters an SSR ray travels, with the steps below in place of the post process volume. Preset Custom only",
+			 .description = "Most meters an SSR ray travels before the screen edge stops it, with the steps below in place of the "
+			                "post process volume. Preset Custom only",
 			 .min = 0.0,
-			 .max = 100.0,
+			 .max = 500.0,
 			 .step = 1.0}
 	)
 	    .onChange(presetKnob<float, double>(&PresetKnobs::ssr_reach, k_to_float));
@@ -497,7 +542,7 @@ void registerQuality(VulkanRenderer& renderer) {
 	    0,
 	    {.label = "SSR steps",
 			 .category = "Quality",
-			 .description = "Samples along each SSR ray. 0 keeps the post process volume values. Preset Custom only",
+			 .description = "Most depth pyramid steps an SSR ray takes. 0 keeps the post process volume values. Preset Custom only",
 			 .min = 0.0,
 			 .max = 256.0}
 	)
@@ -841,55 +886,6 @@ void registerVoxels(VulkanRenderer& renderer) {
 	)
 	    .onChange(presetKnob<float, double>(&PresetKnobs::specular_reach, k_to_float));
 
-	toast::settings::declareBool(
-	    "renderer.voxels.glass_refraction_enabled",
-	    true,
-	    {.label = "Glass refraction",
-			 .category = "Voxels",
-			 .description = "Glass bends what is behind it by its IOR. Costs a copy of the scene colour and depth plus a "
-			                "march through the volume for every glass pixel. Off draws glass straight through"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelGlassRefractionEnabled(enabled); });
-
-	toast::settings::declareFloat(
-	    "renderer.voxels.glass_refraction",
-	    1.0,
-	    {.label = "Glass refraction strength",
-			 .category = "Voxels",
-			 .description = "How far glass bends what is behind it. 1 follows the IOR and higher exaggerates it",
-			 .min = 0.0,
-			 .max = 4.0,
-			 .step = 0.05}
-	)
-	    .onChange([&renderer](double v) { renderer.setVoxelGlassRefraction(static_cast<float>(v)); });
-
-	toast::settings::declareFloat(
-	    "renderer.voxels.glass_refraction_distance",
-	    60.0,
-	    {.label = "Glass refraction distance",
-			 .category = "Voxels",
-			 .description = "Meters from the camera past which glass draws straight through. Far glass bends too little to "
-			                "see and the scene copy is skipped when every glass brick is past it",
-			 .min = 1.0,
-			 .max = 500.0,
-			 .step = 1.0}
-	)
-	    .onChange([&renderer](double v) { renderer.setVoxelGlassRefractionDistance(static_cast<float>(v)); });
-
-	toast::settings::declareInt(
-	    "renderer.voxels.glass_refraction_depth",
-	    32,
-	    {.label = "Glass refraction depth",
-			 .category = "Voxels",
-			 .description = "Voxels refraction follows through thick glass to find its far side. Past it the far side "
-			                "counts as parallel to the near one",
-			 .min = 1.0,
-			 .max = 96.0}
-	)
-	    .onChange([&renderer](int64_t v) {
-		    renderer.setVoxelGlassRefractionVoxels(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 96)));
-	    });
-
 	toast::settings::declareInt(
 	    "renderer.voxels.glass_lit_surfaces",
 	    4,
@@ -900,9 +896,34 @@ void registerVoxels(VulkanRenderer& renderer) {
 			 .min = 1.0,
 			 .max = 4.0}
 	)
-	    .onChange([&renderer](int64_t v) {
-		    renderer.setVoxelGlassLitSurfaces(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4)));
-	    });
+	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::glass_lit_surfaces, [](int64_t v) {
+		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4));
+	    }));
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.glass_reflection_reach",
+	    32.0,
+	    {.label = "Glass reflection reach",
+			 .category = "Voxels",
+			 .description = "Meters the SSR or traced reflection of the front glass layer reaches. Shorter is cheaper and "
+			                "misses fall back to the environment",
+			 .min = 0.0,
+			 .max = 128.0}
+	)
+	    .onChange(presetKnob<float, double>(&PresetKnobs::glass_reflection_reach, k_to_float));
+
+	toast::settings::declareFloat(
+	    "renderer.voxels.glass_coarse_distance",
+	    30.0,
+	    {.label = "Glass coarse shading distance",
+			 .category = "Voxels",
+			 .description = "Meters past which glass shades one lighting sample per 2x2 pixels on GPUs with variable rate "
+			                "shading. 0 shades every pixel",
+			 .min = 0.0,
+			 .max = 500.0,
+			 .step = 1.0}
+	)
+	    .onChange([&renderer](double v) { renderer.setVoxelGlassCoarseDistance(static_cast<float>(v)); });
 
 	toast::settings::declareBool(
 	    "renderer.voxels.glass_shadows",
@@ -1183,6 +1204,16 @@ void registerDebug(VulkanRenderer& renderer) {
 			                "Off hides them in game and brings them back as they were in the editor. F3 in game flips it."}
 	)
 	    .onChange([&renderer](bool visible) { renderer.setDebugOverlayInGame(visible); });
+
+	toast::settings::declareBool(
+	    "renderer.debug.glass_cost_view",
+	    false,
+	    {.label = "Glass cost view",
+			 .category = "Debug",
+			 .description = "Glass adds a colour for what each pixel cost instead of drawing itself. Green builds up per glass "
+			                "brick drawn, red per lit glass surface and blue per reflection traced or marched"}
+	)
+	    .onChange([&renderer](bool enabled) { renderer.setGlassCostView(enabled); });
 }
 #endif
 
@@ -1421,6 +1452,19 @@ void registerGi(VulkanRenderer& renderer) {
 			 .step = 0.5}
 	)
 	    .onChange([&gi](double v) { gi.max_ray_radiance.store(static_cast<float>(v), std::memory_order_relaxed); });
+
+	toast::settings::declareFloat(
+	    "renderer.gi.intensity",
+	    2.0,
+	    {.label = "Bounce intensity",
+			 .category = "Global illumination",
+			 .description = "Multiplies the light GI bounces onto surfaces. 1 is physically based and higher makes colour bleed "
+			                "and bounce stand out more",
+			 .min = 0.0,
+			 .max = 8.0,
+			 .step = 0.1}
+	)
+	    .onChange([&gi](double v) { gi.intensity.store(static_cast<float>(v), std::memory_order_relaxed); });
 
 	toast::settings::declareInt(
 	    "renderer.gi.debug_view",

@@ -34,7 +34,8 @@ struct DebrisParticle {
     uint albedo;
     float scale;
     uint glass;
-    uint pad0;
+    /// Palette emissive intensity
+    float emissive;
     uint pad1;
 };
 
@@ -58,7 +59,7 @@ struct DebrisSpawn {
     float lifetime;
     float scale;
     uint glass;
-    uint pad0;
+    float emissive;
 };
 
 struct DebrisVolume {
@@ -758,7 +759,7 @@ void spawnMain(uint3 id : SV_DispatchThreadID) {
     particle.velocity = spawn.velocity;
     particle.albedo = spawn.albedo;
     particle.glass = spawn.glass;
-    particle.pad0 = 0u;
+    particle.emissive = spawn.emissive;
     particle.pad1 = 0u;
 
     DebrisMotion motion;

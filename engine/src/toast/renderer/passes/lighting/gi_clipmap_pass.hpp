@@ -7,6 +7,7 @@
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/gpu_sync.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
+#include "toast/renderer/gpu_types.hpp"
 #include "toast/renderer/lighting/gi_clip_math.hpp"
 #include "toast/renderer/lighting/gi_dirty_boxes.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
@@ -139,6 +140,9 @@ private:
 	void markFull();
 	void unpublish(vk::CommandBuffer cmd);
 	void gatherBodies(const RenderFrame& frame);
+	/// Range boxes of local lights that changed as low then high into @p boxes
+	/// @returns true when a sun changed or too many lights did so the near levels relight whole
+	auto gatherLightChanges(const RenderFrame& frame, std::vector<glm::vec3>& boxes) -> bool;
 	auto recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, uint32_t level, uint32_t mode)
 	    -> vk::ImageView;
 
@@ -220,6 +224,14 @@ private:
 	std::unordered_map<uint64_t, TrackedBody> m_bodies;
 	uint64_t m_body_gather = 0;
 	std::vector<glm::vec3> m_body_boxes;
+
+	/// Levels a sun change relights at once and coarser ones follow the round robin and the downsample
+	static constexpr uint32_t k_relight_levels = 2;
+	static constexpr size_t k_inject_lights = 64;
+	static constexpr size_t k_max_light_boxes = 16;
+	std::array<DirectionalLightData, k_max_directional_lights> m_last_suns {};
+	uint32_t m_last_sun_count = 0;
+	std::vector<GpuLight> m_last_lights;
 
 #if defined(TOAST_DEV_TOOLS)
 	mutable std::mutex m_stats_mutex;

@@ -234,6 +234,7 @@ auto BloomPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageVie
 	params.knee = settings.knee;
 	params.filter_radius = settings.filter_radius;
 	params.strength = settings.strength;
+	params.glass_scale = VulkanRenderer::instance->glassGlowScale();
 
 	for (size_t i = 0; i < m_mips.size(); ++i) {
 		const vk::Extent2D source_size =

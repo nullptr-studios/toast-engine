@@ -12,7 +12,10 @@ struct BloomParams
 
     float strength;
 
-    float2 _pad0;
+    /// Scale on the light behind glass so emissives the glass dims still bloom
+    float glassScale;
+
+    float _pad0;
 };
 
 [[vk::push_constant]]
@@ -30,10 +33,12 @@ Sampler2D gGlassBackdrop;
 [[vk::binding(3,0)]]
 Sampler2D gGlassMask;
 
+/// Where glass covers a pixel the brighter of the glass composite and the scaled light behind it
 float3 bloomSource(float2 uv)
 {
-    float m = gGlassMask.Sample(uv).r;
-    return lerp(gSource.Sample(uv).rgb, gGlassBackdrop.Sample(uv).rgb, m);
+    const float3 source = gSource.Sample(uv).rgb;
+    const float m = gGlassMask.Sample(uv).r;
+    return lerp(source, max(source, gGlassBackdrop.Sample(uv).rgb * gParams.glassScale), m);
 }
 
 typedef FullscreenVSOutput VSOutput;

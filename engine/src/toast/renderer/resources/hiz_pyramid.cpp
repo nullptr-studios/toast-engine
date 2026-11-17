@@ -53,8 +53,10 @@ auto HiZPyramid::levelCount(vk::Extent2D extent) -> uint32_t {
 	return std::min(1u + static_cast<uint32_t>(std::bit_width(std::max({first.width, first.height, 1u}) - 1u)), k_max_levels);
 }
 
-void HiZPyramid::create(const VulkanCore& core, vk::ImageView depth, vk::Extent2D depth_extent) {
+void HiZPyramid::create(const VulkanCore& core, vk::ImageView depth, vk::Extent2D depth_extent, Reduction reduction) {
 	ZoneScoped;
+	m_reduction = reduction;
+	m_source = depth;
 	m_set.reset();
 	m_level_views.clear();
 	m_view.reset();
@@ -160,6 +162,10 @@ void HiZPyramid::beforeTaskRead(sync::BarrierBatch& barriers) {
 	barriers.image(m_state, sync::Usage::task_sampled);
 }
 
+void HiZPyramid::beforeFragmentRead(sync::BarrierBatch& barriers) {
+	barriers.image(m_state, sync::Usage::fragment_sampled);
+}
+
 void HiZPyramid::record(vk::CommandBuffer cmd, vk::Extent2D scene_extent, const glm::mat4& view_projection) {
 	ZoneScoped;
 	if (!isReady()) {
@@ -184,6 +190,7 @@ void HiZPyramid::record(vk::CommandBuffer cmd, vk::Extent2D scene_extent, const 
 	  .source_size = {scene_extent.width, scene_extent.height},
 	  .level_count = levels,
 	  .group_count = groups_x * groups_y,
+	  .closest = m_reduction == Reduction::closest ? 1u : 0u,
 	};
 
 	const vk::PipelineLayout layout = *m_layout.getPipelineLayout();

@@ -52,6 +52,7 @@ struct DebrisSpawn {
 	bool glass = false;
 	uint8_t alpha = 255;
 	uint8_t ior = 0;
+	float emissive = 0.0f;
 	float scale = 1.0f;
 };
 

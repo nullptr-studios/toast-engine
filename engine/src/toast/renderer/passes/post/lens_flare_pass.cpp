@@ -150,14 +150,18 @@ void LensFlarePass::writeDescriptor(
     vk::DescriptorSet set, vk::ImageView source, vk::ImageView scene, vk::ImageView glare, vk::ImageView streak,
     vk::ImageView dirt
 ) {
-	const std::array<vk::DescriptorImageInfo, 5> image_infos {
+	// Every set holds valid glass views since they share one layout, the source stands in when glass views are missing
+	const bool glass = m_glass_backdrop && m_glass_mask;
+	const std::array<vk::DescriptorImageInfo, 7> image_infos {
 	  vk::DescriptorImageInfo(*m_sampler, source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	  vk::DescriptorImageInfo(*m_sampler, scene ? scene : source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	  vk::DescriptorImageInfo(*m_sampler, glare ? glare : source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	  vk::DescriptorImageInfo(*m_sampler, streak ? streak : source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	  vk::DescriptorImageInfo(*m_sampler, dirt ? dirt : source, vk::ImageLayout::eShaderReadOnlyOptimal),
+	  vk::DescriptorImageInfo(*m_sampler, glass ? m_glass_backdrop : source, vk::ImageLayout::eShaderReadOnlyOptimal),
+	  vk::DescriptorImageInfo(*m_sampler, glass ? m_glass_mask : source, vk::ImageLayout::eShaderReadOnlyOptimal),
 	};
-	std::array<vk::WriteDescriptorSet, 5> writes {};
+	std::array<vk::WriteDescriptorSet, 7> writes {};
 	for (uint32_t binding = 0; binding < writes.size(); ++binding) {
 		writes[binding] =
 		    vk::WriteDescriptorSet(set, binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]);
@@ -233,7 +237,8 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 		}
 	}
 
-	if (sets.bound_scene != source_view || sets.bound_dirt != dirt_view) {
+	if (sets.bound_scene != source_view || sets.bound_dirt != dirt_view || sets.bound_backdrop != m_glass_backdrop ||
+	    sets.bound_mask != m_glass_mask) {
 		const auto set = [&sets](Step step) { return *sets.sets[step]; };
 		writeDescriptor(set(step_threshold), source_view, source_view, source_view);
 		writeDescriptor(set(step_glare), quarter_a, quarter_a, quarter_a);
@@ -253,6 +258,8 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 		writeDescriptor(set(step_mix), **m_flares.view, source_view, **m_glare_target.view, **m_streak[0].view, dirt_view);
 		sets.bound_scene = source_view;
 		sets.bound_dirt = dirt_view;
+		sets.bound_backdrop = m_glass_backdrop;
+		sets.bound_mask = m_glass_mask;
 	}
 
 	const auto inverse = [](vk::Extent2D size) {
@@ -267,7 +274,9 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 	    settings.glare_intensity, settings.glare_divider, static_cast<float>(output.width) / static_cast<float>(output.height), 0.0f
 	);
 	params.tint = glm::vec4(1.0f, 1.0f, 1.0f, settings.intensity);
-	params.halo_style = glm::vec4(settings.halo_thickness, settings.halo_dispersion, 0.0f, 0.0f);
+	// Without glass views the mask stands in as the source so the scale must not apply
+	const float glass_scale = m_glass_backdrop && m_glass_mask ? VulkanRenderer::instance->glassGlowScale() : 0.0f;
+	params.halo_style = glm::vec4(settings.halo_thickness, settings.halo_dispersion, glass_scale, 0.0f);
 	params.halo_tint = glm::vec4(settings.halo_tint_r, settings.halo_tint_g, settings.halo_tint_b, 1.0f);
 	params.streak =
 	    glm::vec4(settings.anamorphic_intensity, settings.anamorphic_tint, settings.dirt_intensity, dirt_view ? 1.0f : 0.0f);
@@ -319,6 +328,11 @@ void LensFlarePass::onResize(vk::Extent2D extent) {
 			sets.bound_scene = nullptr;
 		}
 	}
+}
+
+void LensFlarePass::setGlassSources(vk::ImageView backdrop, vk::ImageView mask) {
+	m_glass_backdrop = backdrop;
+	m_glass_mask = mask;
 }
 
 }

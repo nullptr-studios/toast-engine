@@ -422,15 +422,18 @@ void VulkanRenderer::recordMeshScene(
 
 	// Before anything blended so the backdrop holds only opaque and sky
 	const bool has_glass = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() && capture_backdrop;
-	const bool refract = has_glass && m_voxel_pass->refractsGlass();
-	m_glass_backdrop_captured = has_glass;
-	if (refract || m_glass_backdrop_captured) {
+	// shortcut: copies whenever debris draws with SSR on since glass pieces are only known on the GPU, track live glass spawns if
+	// the copy shows up in captures
+	const bool debris_reflects = m_debris_prepared && m_ssr_frame && capture_backdrop;
+	m_glass_backdrop_captured = has_glass || debris_reflects;
+	m_glass_nearest_valid = false;
+	if (m_glass_backdrop_captured) {
 		const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass backdrop");
 		capture_backdrop();
 	}
 	if (m_voxel_pass != nullptr) {
-		m_voxel_pass->setBackdropCaptured(refract);
 		m_voxel_pass->setBackdropDepthValid(m_glass_backdrop_captured);
+		m_voxel_pass->setNearestGlassValid(m_glass_nearest_valid);
 	}
 
 	{
@@ -497,6 +500,7 @@ void VulkanRenderer::recordMeshScene(
 
 			// Last so the glass depth it writes never rejects a blended draw behind the glass
 			if (!glass.empty()) {
+				const GpuScope surfaces_scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass surfaces");
 				m_voxel_pass->recordGlassSurfaces(cmd, m_current_frame);
 			}
 		}
@@ -508,13 +512,15 @@ auto VulkanRenderer::recordVoxelScopes(
 ) -> bool {
 	ZoneScoped;
 	m_traced_specular_frame = false;
-	const bool targets_ready = m_depth_resources.view.has_value() && m_voxel_albedo.view.has_value() &&
-	                           m_voxel_material.view.has_value() && m_voxel_face_normal.view.has_value() &&
-	                           m_voxel_detail_normal.view.has_value() && m_scene_color.view.has_value() &&
-	                           m_scene_normal.view.has_value() && m_scene_indirect.view.has_value() &&
-	                           m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() &&
-	                           m_voxel_noisy_specular.view.has_value() && m_voxel_reservoirs[0].view.has_value() &&
-	                           m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
+	m_ssr_frame = false;
+	m_voxel_denoised_indirect_frame = false;
+	const bool targets_ready =
+	    m_depth_resources.view.has_value() && m_voxel_denoised_indirect.view.has_value() && m_voxel_albedo.view.has_value() &&
+	    m_voxel_material.view.has_value() && m_voxel_face_normal.view.has_value() && m_voxel_detail_normal.view.has_value() &&
+	    m_scene_color.view.has_value() && m_scene_normal.view.has_value() && m_scene_indirect.view.has_value() &&
+	    m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() && m_voxel_noisy_specular.view.has_value() &&
+	    m_voxel_reservoirs[0].view.has_value() && m_voxel_reservoirs[1].view.has_value() &&
+	    m_voxel_candidate_reservoirs.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
 		return false;
@@ -525,6 +531,9 @@ auto VulkanRenderer::recordVoxelScopes(
 	                          m_traced_specular_pass->isReady() && voxelTracedSpecular() && specular_frame != nullptr &&
 	                          specular_frame->render_mode == 0 && specular_frame->probe_capture_index < 0 &&
 	                          specular_frame->irradiance_capture_index < 0;
+	// Read here since glass records under m_pass_mutex
+	m_ssr_frame = specular_frame != nullptr && specular_frame->render_mode == 0 && specular_frame->probe_capture_index < 0 &&
+	              specular_frame->irradiance_capture_index < 0 && isPostProcessPassEnabled("SSR");
 
 	const vk::CommandBuffer cmd = *frame.command_buffer;
 	{
@@ -834,8 +843,14 @@ auto VulkanRenderer::recordVoxelScopes(
 		}
 
 		barriers.image(m_scene_color.state, sync::Usage::color_attachment);
+		barriers.image(m_scene_indirect.state, sync::Usage::fragment_sampled);
+		barriers.image(m_voxel_denoised_indirect.state, sync::Usage::color_attachment);
 		barriers.flush(cmd);
-		const std::array composite_attachments {attachment(m_scene_color, vk::AttachmentLoadOp::eLoad, clear_scene)};
+		// Cleared so SSAO keeps the scene indirect wherever no lit voxel wrote the denoised one
+		const std::array composite_attachments {
+		  attachment(m_scene_color, vk::AttachmentLoadOp::eLoad, clear_scene),
+		  attachment(m_voxel_denoised_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
+		};
 		vk::RenderingInfo composite_info {};
 		composite_info.renderArea = scissor;
 		composite_info.layerCount = 1;
@@ -851,6 +866,9 @@ auto VulkanRenderer::recordVoxelScopes(
 			m_voxel_pass->recordDenoiseComposite(cmd, m_current_frame);
 		}
 		cmd.endRendering();
+		barriers.image(m_voxel_denoised_indirect.state, sync::Usage::fragment_sampled);
+		barriers.flush(cmd);
+		m_voxel_denoised_indirect_frame = true;
 	} else if (m_voxel_pass->marchedCompositeActive()) {
 		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::fragment_sampled);
 		barriers.image(m_voxel_noisy_specular.state, sync::Usage::fragment_sampled);
@@ -873,6 +891,9 @@ auto VulkanRenderer::recordVoxelScopes(
 		}
 		cmd.endRendering();
 	}
+
+	// SSAO binds it every frame and only reads it when the denoise composite wrote it
+	barriers.image(m_voxel_denoised_indirect.state, sync::Usage::fragment_sampled);
 
 	// The world scope loads all of these so writes above must land first
 	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
@@ -970,6 +991,14 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	if (m_glass_backdrop.image && m_glass_backdrop_depth.image) {
 		barriers.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
 		barriers.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
+	}
+	if (m_glass_nearest_depth.image && m_glass_nearest_normal.image && m_glass_nearest_motion.image) {
+		barriers.image(m_glass_nearest_depth.state, sync::Usage::depth_sampled);
+		barriers.image(m_glass_nearest_normal.state, sync::Usage::fragment_sampled);
+		barriers.image(m_glass_nearest_motion.state, sync::Usage::fragment_sampled);
+	}
+	if (m_glass_mask.image) {
+		barriers.image(m_glass_mask.state, sync::Usage::fragment_sampled);
 	}
 	barriers.flush(*frame.command_buffer);
 
@@ -1074,6 +1103,9 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		}
 		const vk::CommandBuffer cmd = *frame.command_buffer;
 		cmd.endRendering();
+		const bool nearest = m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() && m_glass_nearest_depth.image &&
+		                     m_glass_mask.view.has_value() && m_glass_nearest_normal.view.has_value() &&
+		                     m_glass_nearest_motion.view.has_value();
 
 		sync::BarrierBatch to_copy;
 		to_copy.image(m_scene_color.state, sync::Usage::transfer_src);
@@ -1082,17 +1114,45 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		to_copy.image(m_glass_backdrop_depth.state, sync::Usage::transfer_dst);
 		to_copy.image(m_scene_normal.state, sync::Usage::transfer_src);
 		to_copy.image(m_glass_backdrop_normal.state, sync::Usage::transfer_dst);
+		if (nearest) {
+			to_copy.image(m_glass_nearest_depth.state, sync::Usage::transfer_dst);
+		}
 		to_copy.flush(cmd);
 
 		const vk::Extent3D copy_extent {render_extent.width, render_extent.height, 1};
 		const vk::ImageSubresourceLayers color_layers(vk::ImageAspectFlagBits::eColor, 0, 0, 1);
 		const vk::ImageSubresourceLayers depth_layers(vk::ImageAspectFlagBits::eDepth, 0, 0, 1);
+
+		// What glass covers with a margin for the TAA jitter, the whole image when it is unbounded
+		vk::Offset3D glass_offset {0, 0, 0};
+		vk::Extent3D glass_extent = copy_extent;
+		if (const auto bounds = m_voxel_pass != nullptr ? m_voxel_pass->glassScreenBounds() : std::nullopt; bounds.has_value()) {
+			constexpr int32_t k_margin = 2;
+			const auto to_pixel = [](float ndc, uint32_t size) {
+				return static_cast<int32_t>(std::floor((ndc * 0.5f + 0.5f) * static_cast<float>(size)));
+			};
+			const int32_t x0 =
+			    std::clamp(to_pixel(bounds->x, scene_extent.width) - k_margin, 0, static_cast<int32_t>(scene_extent.width));
+			const int32_t y0 =
+			    std::clamp(to_pixel(bounds->y, scene_extent.height) - k_margin, 0, static_cast<int32_t>(scene_extent.height));
+			const int32_t x1 =
+			    std::clamp(to_pixel(bounds->z, scene_extent.width) + k_margin + 1, 0, static_cast<int32_t>(scene_extent.width));
+			const int32_t y1 =
+			    std::clamp(to_pixel(bounds->w, scene_extent.height) + k_margin + 1, 0, static_cast<int32_t>(scene_extent.height));
+			if (x1 > x0 && y1 > y0) {
+				glass_offset = vk::Offset3D {x0, y0, 0};
+				glass_extent = vk::Extent3D {static_cast<uint32_t>(x1 - x0), static_cast<uint32_t>(y1 - y0), 1};
+			}
+		}
+		// Glass reflections, voxel or debris, read the backdrop colour anywhere on screen
+		const bool whole_color = m_traced_specular_frame || m_ssr_frame;
 		cmd.copyImage(
 		    scene_image,
 		    vk::ImageLayout::eTransferSrcOptimal,
 		    **m_glass_backdrop.image,
 		    vk::ImageLayout::eTransferDstOptimal,
-		    vk::ImageCopy(color_layers, {}, color_layers, {}, copy_extent)
+		    whole_color ? vk::ImageCopy(color_layers, {}, color_layers, {}, copy_extent)
+				            : vk::ImageCopy(color_layers, glass_offset, color_layers, glass_offset, glass_extent)
 		);
 		cmd.copyImage(
 		    **m_depth_resources.image,
@@ -1109,6 +1169,64 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		    vk::ImageLayout::eTransferDstOptimal,
 		    vk::ImageCopy(color_layers, {}, color_layers, {}, copy_extent)
 		);
+		if (nearest) {
+			// Only glass pixels read it and the surface copy keys off the mask cleared everywhere
+			cmd.copyImage(
+			    **m_depth_resources.image,
+			    vk::ImageLayout::eTransferSrcOptimal,
+			    **m_glass_nearest_depth.image,
+			    vk::ImageLayout::eTransferDstOptimal,
+			    vk::ImageCopy(depth_layers, glass_offset, depth_layers, glass_offset, glass_extent)
+			);
+
+			// Nearest glass over the opaque depth, near to far with early depth testing, and the mask bloom reads
+			sync::BarrierBatch to_nearest;
+			to_nearest.image(m_glass_nearest_depth.state, sync::Usage::depth_attachment);
+			to_nearest.image(m_glass_mask.state, sync::Usage::color_attachment);
+			to_nearest.image(m_glass_nearest_normal.state, sync::Usage::color_attachment);
+			to_nearest.image(m_glass_nearest_motion.state, sync::Usage::color_attachment);
+			to_nearest.flush(cmd);
+
+			vk::RenderingAttachmentInfo nearest_mask {};
+			nearest_mask.imageView = **m_glass_mask.view;
+			nearest_mask.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			nearest_mask.loadOp = vk::AttachmentLoadOp::eClear;
+			nearest_mask.storeOp = vk::AttachmentStoreOp::eStore;
+			nearest_mask.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
+			// Zero where no glass so the copy only reads what the pre-pass wrote
+			vk::RenderingAttachmentInfo nearest_normal = nearest_mask;
+			nearest_normal.imageView = **m_glass_nearest_normal.view;
+			vk::RenderingAttachmentInfo nearest_motion = nearest_mask;
+			nearest_motion.imageView = **m_glass_nearest_motion.view;
+			const std::array nearest_colors {nearest_mask, nearest_normal, nearest_motion};
+			vk::RenderingAttachmentInfo nearest_depth {};
+			nearest_depth.imageView = **m_glass_nearest_depth.view;
+			nearest_depth.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
+			nearest_depth.loadOp = vk::AttachmentLoadOp::eLoad;
+			nearest_depth.storeOp = vk::AttachmentStoreOp::eStore;
+			vk::RenderingInfo nearest_info {};
+			nearest_info.renderArea = scene_scissor;
+			nearest_info.layerCount = 1;
+			nearest_info.colorAttachmentCount = static_cast<uint32_t>(nearest_colors.size());
+			nearest_info.pColorAttachments = nearest_colors.data();
+			nearest_info.pDepthAttachment = &nearest_depth;
+			{
+				const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Glass nearest");
+				cmd.beginRendering(nearest_info);
+				cmd.setViewport(0, std::array {scene_viewport});
+				cmd.setScissor(0, std::array {scene_scissor});
+				m_voxel_pass->recordGlassNearest(cmd, m_current_frame);
+				cmd.endRendering();
+			}
+
+			sync::BarrierBatch after_nearest;
+			after_nearest.image(m_glass_nearest_depth.state, sync::Usage::depth_sampled);
+			after_nearest.image(m_glass_mask.state, sync::Usage::fragment_sampled);
+			after_nearest.image(m_glass_nearest_normal.state, sync::Usage::fragment_sampled);
+			after_nearest.image(m_glass_nearest_motion.state, sync::Usage::fragment_sampled);
+			after_nearest.flush(cmd);
+			m_glass_nearest_valid = true;
+		}
 
 		sync::BarrierBatch resume;
 		resume.image(m_scene_color.state, sync::Usage::color_attachment);
@@ -1158,43 +1276,24 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	frame.command_buffer.endRendering();
 
-	// Glass mask
-	sync::BarrierBatch to_mask;
-	to_mask.image(m_glass_mask.state, sync::Usage::color_attachment);
-	to_mask.image(m_depth_resources.state, sync::Usage::depth_attachment);
-	to_mask.flush(*frame.command_buffer);
-
-	vk::RenderingAttachmentInfo mask_color {};
-	mask_color.imageView = **m_glass_mask.view;
-	mask_color.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
-	mask_color.loadOp = vk::AttachmentLoadOp::eClear;
-	mask_color.storeOp = vk::AttachmentStoreOp::eStore;
-	mask_color.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
-
-	vk::RenderingAttachmentInfo mask_depth {};
-	mask_depth.imageView = **m_depth_resources.view;
-	mask_depth.imageLayout = vk::ImageLayout::eDepthAttachmentOptimal;
-	mask_depth.loadOp = vk::AttachmentLoadOp::eLoad;       // keep the glass depth from the scene
-	mask_depth.storeOp = vk::AttachmentStoreOp::eStore;    // must be store
-
-	vk::RenderingInfo mask_info {};
-	mask_info.renderArea = scene_scissor;
-	mask_info.layerCount = 1;
-	mask_info.colorAttachmentCount = 1;
-	mask_info.pColorAttachments = &mask_color;
-	mask_info.pDepthAttachment = &mask_depth;
-
-	frame.command_buffer.beginRendering(mask_info);
-	frame.command_buffer.setViewport(0, std::array {scene_viewport});
-	frame.command_buffer.setScissor(0, std::array {scene_scissor});
-	if (m_voxel_pass != nullptr) {
-		m_voxel_pass->recordGlassMask(*frame.command_buffer, m_current_frame);
+	// Glass mask, cleared here when the glass pre-pass did not write it
+	if (!m_glass_nearest_valid) {
+		sync::transition(*frame.command_buffer, m_glass_mask.state, sync::Usage::color_attachment);
+		vk::RenderingAttachmentInfo mask_color {};
+		mask_color.imageView = **m_glass_mask.view;
+		mask_color.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		mask_color.loadOp = vk::AttachmentLoadOp::eClear;
+		mask_color.storeOp = vk::AttachmentStoreOp::eStore;
+		mask_color.clearValue = vk::ClearValue(vk::ClearColorValue(std::array {0.0f, 0.0f, 0.0f, 0.0f}));
+		vk::RenderingInfo mask_info {};
+		mask_info.renderArea = scene_scissor;
+		mask_info.layerCount = 1;
+		mask_info.colorAttachmentCount = 1;
+		mask_info.pColorAttachments = &mask_color;
+		frame.command_buffer.beginRendering(mask_info);
+		frame.command_buffer.endRendering();
+		sync::transition(*frame.command_buffer, m_glass_mask.state, sync::Usage::fragment_sampled);
 	}
-	frame.command_buffer.endRendering();
-
-	sync::BarrierBatch after_mask;
-	after_mask.image(m_glass_mask.state, sync::Usage::fragment_sampled);
-	after_mask.flush(*frame.command_buffer);
 
 	// PROBE and Iradiance capture
 

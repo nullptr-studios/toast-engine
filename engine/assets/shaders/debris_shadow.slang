@@ -21,7 +21,7 @@ struct DebrisParticle {
     uint albedo;
     float scale;
     uint glass;
-    uint pad0;
+    float emissive;
     uint pad1;
 };
 

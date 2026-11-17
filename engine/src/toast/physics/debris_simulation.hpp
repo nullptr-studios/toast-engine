@@ -40,7 +40,8 @@ public:
 		float scale = 0.0f;
 		/// Alpha and ior byte << 8 and only read with k_flag_glass in packed
 		uint32_t glass = 0;
-		std::array<uint32_t, 2> pad {};
+		float emissive = 0.0f;
+		uint32_t pad = 0;
 	};
 
 	struct GpuMotion {
@@ -63,7 +64,7 @@ public:
 		float lifetime = 0.0f;
 		float scale = 1.0f;
 		uint32_t glass = 0;
-		uint32_t pad = 0;
+		float emissive = 0.0f;
 	};
 
 	struct GpuVolume {

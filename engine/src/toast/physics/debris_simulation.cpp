@@ -120,6 +120,7 @@ void DebrisSimulation::spawn(std::span<const DebrisSpawn> spawns) {
 		      .lifetime = std::max(lifetime, k_debris_min_lifetime),
 		      .scale = std::clamp(spawn.scale, 0.05f, 1.0f),
 		      .glass = static_cast<uint32_t>(spawn.alpha) | (static_cast<uint32_t>(spawn.ior) << 8u),
+		      .emissive = spawn.emissive,
 		}
 		);
 	}

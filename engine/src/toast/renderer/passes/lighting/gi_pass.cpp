@@ -1095,7 +1095,7 @@ auto GiPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView s
 	      std::max(settings.max_ray_radiance.load(std::memory_order_relaxed), 0.01f),
 	      history >= 1.0f ? 0.0f : 2.0f / history,
 	      history_known ? 1.0f - (history / 8.0f) : 0.0f,
-	      0.0f
+	      std::max(settings.intensity.load(std::memory_order_relaxed), 0.0f)
 	  ),
 	};
 	for (uint32_t i = 0; i < k_max_cascades; ++i) {

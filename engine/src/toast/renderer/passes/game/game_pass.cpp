@@ -66,7 +66,7 @@ public:
 			count = m_count;
 			const size_t bytes = static_cast<size_t>(count) * m_desc.instance_stride;
 			if (bytes > 0) {
-				auto& allocation = m_instance_buffers[frame_index].getAllocation();
+				const auto& allocation = m_instance_buffers[frame_index].getAllocation();
 				std::memcpy(allocation.getInfo().pMappedData, m_pending.data(), bytes);
 				allocation.flush(0, bytes);
 			}
@@ -112,9 +112,12 @@ private:
 		config.depth_test = m_desc.depth_test;
 		config.depth_write = m_desc.depth_write;
 		config.blend_enable = m_desc.blend != GamePassBlend::opaque;
-		config.blend_preset = m_desc.blend == GamePassBlend::additive ? VulkanPipeline::BlendPreset::additive
-		                      : m_desc.blend == GamePassBlend::alpha  ? VulkanPipeline::BlendPreset::alpha
-		                                                              : VulkanPipeline::BlendPreset::none;
+		config.blend_preset = VulkanPipeline::BlendPreset::none;
+		if (m_desc.blend == GamePassBlend::additive) {
+			config.blend_preset = VulkanPipeline::BlendPreset::additive;
+		} else if (m_desc.blend == GamePassBlend::alpha) {
+			config.blend_preset = VulkanPipeline::BlendPreset::alpha;
+		}
 		m_pipeline.rebuild(core, config);
 		if (!m_pipeline.isReady()) {
 			TOAST_ERROR("Render", "Game pass '{}' pipeline failed to build", m_name);

@@ -283,6 +283,10 @@ public:
 	[[nodiscard]]
 	auto isPostProcessPassEnabled(std::string_view name) const -> bool;
 
+	/// Render thread SSR settings of the frame being rendered with the preset reach override applied
+	[[nodiscard]]
+	auto ssrSettings() const -> PostProcessSettings::Ssr;
+
 	[[nodiscard]]
 	auto getSceneColorFormat() const noexcept -> vk::Format {
 		return m_scene_color_format;
@@ -360,6 +364,18 @@ public:
 	[[nodiscard]]
 	auto getVoxelNoisyDiffuseView() const noexcept -> vk::ImageView {
 		return m_voxel_noisy_diffuse.view.has_value() ? **m_voxel_noisy_diffuse.view : vk::ImageView {};
+	}
+
+	/// Denoised clipmap GI the voxel composite wrote with alpha 1 and 0 where SSAO keeps reading the scene indirect
+	[[nodiscard]]
+	auto getVoxelDenoisedIndirectView() const noexcept -> vk::ImageView {
+		return m_voxel_denoised_indirect.view.has_value() ? **m_voxel_denoised_indirect.view : vk::ImageView {};
+	}
+
+	/// Whether this frame's voxel denoise composite wrote getVoxelDenoisedIndirectView
+	[[nodiscard]]
+	auto voxelDenoisedIndirectFrame() const noexcept -> bool {
+		return m_voxel_denoised_indirect_frame;
 	}
 
 	[[nodiscard]]
@@ -550,41 +566,6 @@ public:
 		return m_voxel_specular_reach.load(std::memory_order_relaxed);
 	}
 
-	/// 1 is Snell and 0 turns refraction off
-	void setVoxelGlassRefraction(float strength) noexcept {
-		m_voxel_glass_refraction.store(std::max(strength, 0.0f), std::memory_order_relaxed);
-	}
-
-	[[nodiscard]]
-	auto voxelGlassRefraction() const noexcept -> float {
-		return m_voxel_glass_refraction_enabled.load(std::memory_order_relaxed)
-		           ? m_voxel_glass_refraction.load(std::memory_order_relaxed)
-							 : 0.0f;
-	}
-
-	/// Off skips the backdrop copy and the volume march of every glass pixel
-	void setVoxelGlassRefractionEnabled(bool enabled) noexcept {
-		m_voxel_glass_refraction_enabled.store(enabled, std::memory_order_relaxed);
-	}
-
-	void setVoxelGlassRefractionDistance(float meters) noexcept {
-		m_voxel_glass_refraction_distance.store(std::max(meters, 0.0f), std::memory_order_relaxed);
-	}
-
-	[[nodiscard]]
-	auto voxelGlassRefractionDistance() const noexcept -> float {
-		return m_voxel_glass_refraction_distance.load(std::memory_order_relaxed);
-	}
-
-	void setVoxelGlassRefractionVoxels(uint32_t voxels) noexcept {
-		m_voxel_glass_refraction_voxels.store(std::max(voxels, 1u), std::memory_order_relaxed);
-	}
-
-	[[nodiscard]]
-	auto voxelGlassRefractionVoxels() const noexcept -> uint32_t {
-		return m_voxel_glass_refraction_voxels.load(std::memory_order_relaxed);
-	}
-
 	void setVoxelGlassLitSurfaces(uint32_t surfaces) noexcept {
 		m_voxel_glass_lit_surfaces.store(surfaces, std::memory_order_relaxed);
 	}
@@ -592,6 +573,51 @@ public:
 	[[nodiscard]]
 	auto voxelGlassLitSurfaces() const noexcept -> uint32_t {
 		return m_voxel_glass_lit_surfaces.load(std::memory_order_relaxed);
+	}
+
+	/// Scale bloom and lens flares put on the light behind glass so emissives the glass dims still glow
+	void setGlassGlowScale(float scale) noexcept { m_glass_glow_scale.store(std::max(scale, 0.0f), std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto glassGlowScale() const noexcept -> float {
+		return m_glass_glow_scale.load(std::memory_order_relaxed);
+	}
+
+	/// Meters past which outside glass bricks shade at 2x2 where the device supports a pipeline shading rate, 0 never
+	void setVoxelGlassCoarseDistance(float meters) noexcept {
+		m_voxel_glass_coarse_distance.store(std::max(meters, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassCoarseDistance() const noexcept -> float {
+		return m_voxel_glass_coarse_distance.load(std::memory_order_relaxed);
+	}
+
+	/// Glass adds a heat colour per pixel for what it cost instead of drawing itself
+	void setGlassCostView(bool enabled) noexcept { m_glass_cost_view.store(enabled, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto glassCostView() const noexcept -> bool {
+		return m_glass_cost_view.load(std::memory_order_relaxed);
+	}
+
+	/// Meters glass SSR and traced reflections reach at most
+	void setVoxelGlassReflectionReach(float meters) noexcept {
+		m_voxel_glass_reflection_reach.store(std::max(meters, 0.0f), std::memory_order_relaxed);
+	}
+
+	[[nodiscard]]
+	auto voxelGlassReflectionReach() const noexcept -> float {
+		return m_voxel_glass_reflection_reach.load(std::memory_order_relaxed);
+	}
+
+	/// SSR settings for the linear glass march with the reach capped at voxelGlassReflectionReach and the steps spread over it
+	[[nodiscard]]
+	auto glassSsrSettings() const -> PostProcessSettings::Ssr {
+		auto settings = ssrSettings();
+		const float reach = std::min(settings.stride * static_cast<float>(settings.max_steps), voxelGlassReflectionReach());
+		settings.stride = settings.max_steps > 0 ? reach / static_cast<float>(settings.max_steps) : settings.stride;
+		return settings;
 	}
 
 	[[nodiscard]]
@@ -696,7 +722,7 @@ public:
 		return m_voxel_glass_shadow_reach.load(std::memory_order_relaxed);
 	}
 
-	/// Scene colour and depth copied after the sky for glass to refract
+	/// Scene colour copied after the sky that glass reflections and bloom read behind glass
 	[[nodiscard]]
 	auto getGlassBackdropView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop.view ? **m_glass_backdrop.view : vk::ImageView {};
@@ -710,6 +736,22 @@ public:
 	[[nodiscard]]
 	auto getGlassBackdropDepthView() const noexcept -> vk::ImageView {
 		return m_glass_backdrop_depth.view ? **m_glass_backdrop_depth.view : vk::ImageView {};
+	}
+
+	/// Nearest voxel glass surface over the opaque depth, valid on frames the glass pre-pass ran
+	[[nodiscard]]
+	auto getGlassNearestDepthView() const noexcept -> vk::ImageView {
+		return m_glass_nearest_depth.view ? **m_glass_nearest_depth.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getGlassNearestNormalView() const noexcept -> vk::ImageView {
+		return m_glass_nearest_normal.view ? **m_glass_nearest_normal.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getGlassNearestMotionView() const noexcept -> vk::ImageView {
+		return m_glass_nearest_motion.view ? **m_glass_nearest_motion.view : vk::ImageView {};
 	}
 
 	/// Depth before glass so GI and reflections see behind a pane and the final depth when no backdrop was copied
@@ -924,6 +966,16 @@ public:
 	[[nodiscard]]
 	auto tracedSpecularFrame() const noexcept -> bool {
 		return m_traced_specular_frame;
+	}
+
+	[[nodiscard]]
+	auto ssrFrame() const noexcept -> bool {
+		return m_ssr_frame;
+	}
+
+	[[nodiscard]]
+	auto glassBackdropCaptured() const noexcept -> bool {
+		return m_glass_backdrop_captured;
 	}
 
 	[[nodiscard]]
@@ -1343,7 +1395,7 @@ private:
 
 	/// @note Expects an open rendering scope with m_pass_mutex held
 	/// Opaque meshes then the sky then blended meshes and voxel glass far to near
-	/// @p capture_backdrop ends the world scope copies the scene for refracting glass and resumes it
+	/// @p capture_backdrop ends the world scope copies the scene behind glass and resumes it
 	void recordMeshScene(
 	    vk::CommandBuffer cmd, uint32_t image_index, bool voxel_glass, const std::function<void()>& capture_backdrop
 	);
@@ -1484,6 +1536,7 @@ private:
 	GiPass* m_gi_pass = nullptr;
 	GiClipmapPass* m_gi_clipmap_pass = nullptr;
 	bool m_glass_backdrop_captured = false;
+	bool m_glass_nearest_valid = false;
 
 	mutable std::mutex m_detail_mutex;
 	assets::Handle<assets::DetailTexture> m_voxel_detail_project;
@@ -1500,6 +1553,7 @@ private:
 	TracedSpecularPass* m_traced_specular_pass = nullptr;
 	TaaPass* m_taa_pass = nullptr;
 	bool m_traced_specular_frame = false;
+	bool m_ssr_frame = false;
 	/// DebrisPass::prepare result, run before the shadow pass so both draw the same step
 	bool m_debris_prepared = false;
 
@@ -1513,11 +1567,14 @@ private:
 	/// Only below render scale 1
 	DepthResources m_output_depth;
 	DepthResources m_glass_backdrop_depth;
+	DepthResources m_glass_nearest_depth;
 
 	static constexpr vk::Format m_scene_color_format = vk::Format::eR16G16B16A16Sfloat;
 	SceneColorResources m_scene_color;
 	SceneColorResources m_glass_backdrop;
 	SceneColorResources m_glass_mask;
+	SceneColorResources m_glass_nearest_normal;
+	SceneColorResources m_glass_nearest_motion;
 	SceneColorResources m_glass_backdrop_normal;
 
 	static constexpr vk::Format m_scene_normal_format = renderer::k_scene_normal_format;
@@ -1534,6 +1591,8 @@ private:
 	SceneColorResources m_voxel_face_normal;
 	SceneColorResources m_voxel_detail_normal;
 	SceneColorResources m_voxel_noisy_diffuse;
+	SceneColorResources m_voxel_denoised_indirect;
+	bool m_voxel_denoised_indirect_frame = false;
 	/// Half the render extent
 	SceneColorResources m_voxel_gi;
 	SceneColorResources m_voxel_noisy_specular;
@@ -1565,11 +1624,11 @@ private:
 	std::atomic<float> m_volumetric_distance {100.0f};
 	std::atomic<float> m_voxel_specular_roughness {0.6f};
 	std::atomic<float> m_voxel_specular_reach {32.0f};
-	std::atomic<float> m_voxel_glass_refraction {1.0f};
-	std::atomic_bool m_voxel_glass_refraction_enabled {true};
-	std::atomic<float> m_voxel_glass_refraction_distance {60.0f};
-	std::atomic<uint32_t> m_voxel_glass_refraction_voxels {32};
 	std::atomic<uint32_t> m_voxel_glass_lit_surfaces {4};
+	std::atomic<float> m_voxel_glass_reflection_reach {32.0f};
+	std::atomic<float> m_glass_glow_scale {1.0f};
+	std::atomic<float> m_voxel_glass_coarse_distance {30.0f};
+	std::atomic_bool m_glass_cost_view {false};
 	std::atomic_bool m_voxel_glass_shadows {true};
 	std::atomic<float> m_display_sdr_white {2.5375f};
 	std::atomic<float> m_display_hdr_headroom {1.0f};

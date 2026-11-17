@@ -933,6 +933,26 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	}
 
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const bool extension_present = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME;
+		});
+		if (extension_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDeviceFragmentShadingRateFeaturesKHR rate_probe {};
+			probe.pNext = &rate_probe;
+			(*m_physical_device).getFeatures2(&probe);
+			m_fragment_shading_rate_supported = rate_probe.pipelineFragmentShadingRate == VK_TRUE;
+		}
+		if (m_fragment_shading_rate_supported) {
+			device_extensions.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+			TOAST_INFO("Render", "VK_KHR_fragment_shading_rate available; far glass shades at 2x2");
+		} else {
+			TOAST_INFO("Render", "Pipeline fragment shading rate unavailable; far glass shades every pixel");
+		}
+	}
+
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 
 	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
@@ -944,6 +964,9 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	acceleration_structure_features.accelerationStructure = VK_TRUE;
 	vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
 	ray_query_features.rayQuery = VK_TRUE;
+
+	vk::PhysicalDeviceFragmentShadingRateFeaturesKHR shading_rate_features {};
+	shading_rate_features.pipelineFragmentShadingRate = VK_TRUE;
 
 	vk::PhysicalDeviceFrameBoundaryFeaturesEXT frame_boundary_features {};
 	frame_boundary_features.frameBoundary = VK_TRUE;
@@ -975,6 +998,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	if (m_mesh_shader_supported) {
 		*chain_tail = &mesh_shader_features;
 		chain_tail = &mesh_shader_features.pNext;
+	}
+	if (m_fragment_shading_rate_supported) {
+		*chain_tail = &shading_rate_features;
+		chain_tail = &shading_rate_features.pNext;
 	}
 	if (m_ray_tracing_supported) {
 		*chain_tail = &acceleration_structure_features;

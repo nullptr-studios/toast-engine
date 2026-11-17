@@ -63,6 +63,26 @@ void clipAddLight(inout ClipFaces faces, uint exposed, float3 L, float3 radiance
     }
 }
 
+/// Centre of the open neighbour on the face most turned to the light and half a cell toward it
+/// Starting off the face and not along the light keeps grazing rays out of the cells beside it which would shadow the
+/// whole ring past some angle and make it jump a cell as the light moves
+float3 clipLightOrigin(uint exposed, float3 centre, float3 L, float cellSize)
+{
+    float best = -2.0;
+    float3 normal = L;
+    for (uint face = 0u; face < kGiClipFaces; ++face)
+    {
+        const float3 direction = float3(giClipFace(face));
+        const float facing = dot(direction, L);
+        if ((exposed & (1u << face)) != 0u && facing > best)
+        {
+            best = facing;
+            normal = direction;
+        }
+    }
+    return centre + normal * cellSize + L * (0.5 * cellSize);
+}
+
 [shader("compute")]
 [numthreads(4, 4, 4)]
 void injectMain(uint3 id : SV_DispatchThreadID)
@@ -110,7 +130,7 @@ void injectMain(uint3 id : SV_DispatchThreadID)
 
     const float3 emission = gEmission.Load(int4(texel, 0)).rgb;
     const float3 centre = giClipCellCentre(frame, level, global);
-    // Past the cell and its direct neighbours so they never shadow it
+    // Kept clear of the lamp end so the cells holding it do not block it
     const float lift = 1.5 * cellSize;
     const float sunReach = 0.5 * float(resolution) * frame.levels[frame.size.y - 1u].w;
     ClipFaces faces;
@@ -127,7 +147,7 @@ void injectMain(uint3 id : SV_DispatchThreadID)
         {
             continue;
         }
-        const float visibility = giClipVisibility(frame, centre + L * lift, L * sunReach);
+        const float visibility = giClipVisibility(frame, clipLightOrigin(exposed, centre, L, cellSize), L * sunReach);
         clipAddLight(faces, exposed, L, light.colorIntensity.rgb * (light.colorIntensity.a * visibility));
     }
 
@@ -137,13 +157,20 @@ void injectMain(uint3 id : SV_DispatchThreadID)
         const GpuLight light = gLights[li];
         float3 L;
         float distance;
-        const float3 radiance = lightSampleRadiance(light, centre, light.worldPosRange.xyz, L, distance);
+        float3 radiance = lightSampleRadiance(light, centre, light.worldPosRange.xyz, L, distance);
         if (all(radiance <= 0.0) || clipFaceCosines(exposed, L) <= 0.0)
         {
             continue;
         }
+        // The cell stands for a whole cell of surface so the inverse square stops at a cell or cells next to the lamp
+        // swing by orders of magnitude with where it sits inside its cell and the bounce flares with them
+        const float nearest = max(distance, cellSize);
+        radiance *= (distance * distance) / (nearest * nearest);
         // Stops short of the lamp so the cells holding it do not block it
-        const float visibility = giClipVisibility(frame, centre + L * lift, L * max(distance - 2.0 * lift, 0.0));
+        const float3 origin = clipLightOrigin(exposed, centre, L, cellSize);
+        const float3 toLight = light.worldPosRange.xyz - origin;
+        const float reach = max(length(toLight) - 2.0 * lift, 0.0);
+        const float visibility = reach > 0.0 ? giClipVisibility(frame, origin, normalize(toLight) * reach) : 1.0;
         clipAddLight(faces, exposed, L, radiance * visibility);
     }
 

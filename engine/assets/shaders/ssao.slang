@@ -5,7 +5,7 @@ struct SsaoParams
 {
     float4x4 viewProjection;
     float4x4 inverseViewProjection;
-    // xy target size z frame index for the noise
+    // xy target size z frame index for the noise w 1 when gDenoisedIndirect holds this frame's voxel GI
     float4 screenSize;
     // x sample radius y strength z depth cutoff w sample count
     float4 tuning;
@@ -32,7 +32,17 @@ Sampler2D gIndirectDiffuse;
 [[vk::binding(4, 0)]]
 Sampler2D gOcclusion;
 
+/// Denoised voxel GI with alpha 1 where the voxel denoise composite wrote it
+[[vk::binding(5, 0)]]
+Sampler2D gDenoisedIndirect;
+
 static const float kNoSurfaceDistance = 60000.0;
+
+/// Share of the radius the closest samples sit at
+static const float kNearestSample = 0.1;
+
+/// Cosine an occluder has to rise above the tangent plane so depth steps on flat or sloped ground do not occlude
+static const float kAngleBias = 0.15;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -56,7 +66,8 @@ float rotationNoise(float2 pixel)
     return frac(52.9829189 * frac(dot(shifted, float2(0.06711056, 0.00583715))));
 }
 
-float3 hemisphereSample(uint index, uint count, float rotation)
+/// Cosine weighted direction scaled so samples crowd near the surface where contact shadows are
+float3 hemisphereSample(uint index, uint count, float rotation, float shift)
 {
     float golden = 2.39996323;
     float angle = float(index) * golden + rotation;
@@ -66,7 +77,9 @@ float3 hemisphereSample(uint index, uint count, float rotation)
     sincos(angle, s, c);
     float2 disk = float2(c, s) * radius;
     float height = sqrt(max(1.0 - dot(disk, disk), 0.0));
-    return float3(disk, height);
+    // A unit direction alone puts every sample a full radius out and misses creases closer than that
+    const float along = frac((float(index) + shift) / float(count) * 7.0 + shift);
+    return float3(disk, height) * lerp(kNearestSample, 1.0, along * along);
 }
 
 [shader("fragment")]
@@ -97,14 +110,15 @@ float4 aoMain(VSOutput input) : SV_Target0
     float3 T = normalize(cross(helper, N));
     float3 B = cross(N, T);
 
-    float rotation = rotationNoise(input.position.xy) * 6.2831853;
+    const float noise = rotationNoise(input.position.xy);
+    float rotation = noise * 6.2831853;
 
     float occlusion = 0.0;
     float validSamples = 0.0;
 
     for (uint i = 0; i < sampleCount; ++i)
     {
-        float3 hemisphere = hemisphereSample(i, sampleCount, rotation);
+        float3 hemisphere = hemisphereSample(i, sampleCount, rotation, noise);
         float3 offset = (T * hemisphere.x + B * hemisphere.y + N * hemisphere.z) * radius;
 
         float3 samplePosition = worldPosition + offset;
@@ -134,12 +148,14 @@ float4 aoMain(VSOutput input) : SV_Target0
         float3 toSample = scenePosition - worldPosition;
         float distanceToScene = length(toSample);
 
-        float rangeWeight = saturate(1.0 - distanceToScene / max(rangeCutoff, 1e-4));
+        // Smooth so an occluder near the cutoff fades instead of popping and close ones weigh most
+        const float range = distanceToScene / max(rangeCutoff, 1e-4);
+        float rangeWeight = saturate(1.0 - range * range);
 
         if (distanceToScene > 1e-5)
         {
             float3 direction = toSample / distanceToScene;
-            float facing = saturate(dot(N, direction));
+            float facing = saturate((dot(N, direction) - kAngleBias) / (1.0 - kAngleBias));
             occlusion += facing * rangeWeight;
         }
 
@@ -230,5 +246,11 @@ float4 compositeMain(VSOutput input) : SV_Target0
     float3 sceneColor = gSceneColor.Sample(input.uv).rgb;
     // Clamped since blended surfaces scaled the opaque term by 1 - alpha
     float3 indirect = gIndirectDiffuse.Sample(input.uv).rgb;
+    // The colour holds the denoised voxel GI so the share taken back must be that one and not this frame's noisy one
+    if (gParams.screenSize.w > 0.5)
+    {
+        const float4 denoised = gDenoisedIndirect.Sample(input.uv);
+        indirect = denoised.a > 0.5 ? denoised.rgb : indirect;
+    }
     return float4(max(sceneColor - indirect + indirect * ao, float3(0.0, 0.0, 0.0)), 1.0);
 }
