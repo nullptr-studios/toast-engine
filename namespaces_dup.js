@@ -1,6 +1,7 @@
 var namespaces_dup =
 [
     [ "editor", "namespaceeditor.html", "namespaceeditor" ],
+    [ "renderer", "namespacerenderer.html", "namespacerenderer" ],
     [ "toast", null, [
       [ "_detail", "namespacetoast_1_1__detail.html", "namespacetoast_1_1__detail" ],
       [ "AmbienceVolume", "classtoast_1_1AmbienceVolume.html", "classtoast_1_1AmbienceVolume" ],

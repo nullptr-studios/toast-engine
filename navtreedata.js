@@ -156,6 +156,7 @@ var NAVTREE =
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
         [ "Functions", "namespacemembers_func.html", null ],
+        [ "Variables", "namespacemembers_vars.html", null ],
         [ "Typedefs", "namespacemembers_type.html", null ],
         [ "Enumerations", "namespacemembers_enum.html", null ]
       ] ]
@@ -193,20 +194,22 @@ var NAVTREEINDEX =
 "classeditor_1_1Git_1_1CommitView.html",
 "classeditor_1_1Workspace_1_1HierarchyElement.html",
 "classphysics_1_1Simulator.html#a722e5c202b888caef369974d5a2ee12b",
-"classrenderer_1_1VulkanRenderer.html#a475b98fb320ebb76f5b96ee1e67df8d5",
-"classtoast_1_1CarveVolume.html",
-"classtoast_1_1ProceduralVoxel.html#a73af3d521ae43079ea28c8aad3a77baf",
-"classtoast_1_1VoxelNode.html#a89686336a85691eac3e80e3460c9b9c4",
-"classui_1_1UISystem.html#aa7975241ddc1d8be3fe47b573b6dfeb2",
-"functions_u.html",
-"md_docs_2event__system.html",
-"proto__event_8hpp.html#a2bbcfed34845458456f06d4b69ed9cc2",
-"structevent_1_1EditorCameraFlyMode.html",
-"structevent_1_1WorkspaceHistoryTransaction.html",
-"structrenderer_1_1GiSettings.html#ae18a944eb28bda2a9d35951a877c19f9",
-"structtoast_1_1LuaVarDesc.html",
-"structvoxel_1_1MassMoments.html#a4c0ed4a22957a11116b56d3e1296bf51",
-"vulkan__renderer__voxel_8cpp.html"
+"classrenderer_1_1SceneDescriptorSets.html",
+"classrenderer_1_1VulkanRenderer.html#a322b99046a09baf3ddb3615e11c12507",
+"classtoast_1_1AudioEmitter.html#a827623b22f672cd18696866b3c30480c",
+"classtoast_1_1Node.html#ae3dadca9033e3c323a1d33e8b564ea9d",
+"classtoast_1_1VoxelNode.html#a04dcaa3be9b4a7438e3459ed32b7fb4f",
+"classtoast_1_1Workspace.html#a65c8cc735bb7a849d113b77e3932827e",
+"event_8inl_source.html",
+"lens__flare__pass_8cpp.html",
+"namespacerenderer.html#ab65c84e475dbd99a20a638a4f8cc65c7",
+"structassets_1_1AnimationClip.html#afaa98081e96a585d4c2ad1bf1e06d67d",
+"structevent_1_1ProtoTraits_3_01WorkspaceApplyHistorySnapshot_01_4.html",
+"structphysics_1_1RemovedVoxels.html",
+"structrenderer_1_1Meta.html#a95012a506797f5f863d116e0ae041fff",
+"structrenderer_1_1sync_1_1QueueHandoff.html#a8198a753847bcd19ea1ab762db52968a",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4a34be958a921e43d813a2075297d8e862",
+"vox__intermediates_8hpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

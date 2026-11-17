@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__pipeli
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;string&gt;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> {</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
@@ -209,42 +209,47 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__pipeli
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    <span class="keywordtype">float</span> depth_bias_slope = 0.0f;</div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    <span class="keywordtype">bool</span> blend_enable = <span class="keyword">false</span>;</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    BlendPreset blend_preset = BlendPreset::none;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  };</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span></div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno"><a class="line" href="structrenderer_1_1VulkanPipeline_1_1Config.html#a8f488c4cb4f59cf2ef4484e151bda228">  108</a></span>    vk::Extent2D <a class="code hl_variable" href="structrenderer_1_1VulkanPipeline_1_1Config.html#a8f488c4cb4f59cf2ef4484e151bda228">fragment_shading_rate</a> {1, 1};</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span></div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno"><a class="line" href="structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884">  111</a></span>    std::vector&lt;uint32_t&gt; <a class="code hl_variable" href="structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884">specialization_constants</a>;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  };</div>
 </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  VulkanPipeline() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keyword">explicit</span> VulkanPipeline(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanPipeline_1_1Config.html">Config</a>&amp; config);</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  ~VulkanPipeline() = <span class="keywordflow">default</span>;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  VulkanPipeline(<span class="keyword">const</span> VulkanPipeline&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> VulkanPipeline&amp;) -&gt; VulkanPipeline&amp; = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  VulkanPipeline(VulkanPipeline&amp;&amp;) = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keyword">auto</span> operator=(VulkanPipeline&amp;&amp;) -&gt; VulkanPipeline&amp; = <span class="keyword">delete</span>;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">auto</span> rebuild(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanPipeline_1_1Config.html">Config</a>&amp; config) -&gt; void;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keyword">auto</span> reset() -&gt; void;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span> </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">auto</span> isReady() const -&gt; <span class="keywordtype">bool</span> {</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    <span class="keywordflow">return</span> m_pipeline != <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  }</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  <span class="keyword">auto</span> getPipeline() const -&gt; const vk::raii::Pipeline&amp; {</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    <span class="keywordflow">return</span> m_pipeline;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  }</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  std::optional&lt;vk::raii::ShaderModule&gt; m_shader_module;</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  std::optional&lt;vk::raii::ShaderModule&gt; m_task_module;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  std::optional&lt;vk::raii::ShaderModule&gt; m_fragment_module;</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  vk::raii::Pipeline m_pipeline = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>};</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  VulkanPipeline() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  <span class="keyword">explicit</span> VulkanPipeline(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanPipeline_1_1Config.html">Config</a>&amp; config);</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  ~VulkanPipeline() = <span class="keywordflow">default</span>;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  VulkanPipeline(<span class="keyword">const</span> VulkanPipeline&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <span class="keyword">auto</span> operator=(<span class="keyword">const</span> VulkanPipeline&amp;) -&gt; VulkanPipeline&amp; = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  VulkanPipeline(VulkanPipeline&amp;&amp;) = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <span class="keyword">auto</span> operator=(VulkanPipeline&amp;&amp;) -&gt; VulkanPipeline&amp; = <span class="keyword">delete</span>;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keyword">auto</span> rebuild(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, <span class="keyword">const</span> <a class="code hl_struct" href="structrenderer_1_1VulkanPipeline_1_1Config.html">Config</a>&amp; config) -&gt; void;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keyword">auto</span> reset() -&gt; void;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keyword">auto</span> isReady() const -&gt; <span class="keywordtype">bool</span> {</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    <span class="keywordflow">return</span> m_pipeline != <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  }</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keyword">auto</span> getPipeline() const -&gt; const vk::raii::Pipeline&amp; {</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="keywordflow">return</span> m_pipeline;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  }</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  std::optional&lt;vk::raii::ShaderModule&gt; m_shader_module;</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  std::optional&lt;vk::raii::ShaderModule&gt; m_task_module;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  std::optional&lt;vk::raii::ShaderModule&gt; m_fragment_module;</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  vk::raii::Pipeline m_pipeline = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>};</div>
 </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>}    <span class="comment">// namespace renderer</span></div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>}    <span class="comment">// namespace renderer</span></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="adepth__convention_8hpp_html"><div class="ttname"><a href="depth__convention_8hpp.html">depth_convention.hpp</a></div></div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html">renderer::VulkanPipeline::Config</a></div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:35</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a0a2d15caf54acc529b7becd04939c4f5"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a0a2d15caf54acc529b7becd04939c4f5">renderer::VulkanPipeline::Config::stencil_replace</a></div><div class="ttdeci">bool stencil_replace</div><div class="ttdoc">Every surviving fragment writes the dynamic stencil reference through the dynamic write mask.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:97</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a103d6fb26672a92e19a048a441740f80"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a103d6fb26672a92e19a048a441740f80">renderer::VulkanPipeline::Config::task_entry</a></div><div class="ttdeci">std::string task_entry</div><div class="ttdoc">Only with mesh_entry.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:72</div></div>
@@ -255,7 +260,9 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('vulkan__pipeli
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a82bdb7e2e3f176dd43ef9f669aad6078"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a82bdb7e2e3f176dd43ef9f669aad6078">renderer::VulkanPipeline::Config::stencil_format</a></div><div class="ttdeci">std::optional&lt; vk::Format &gt; stencil_format</div><div class="ttdoc">Without depth_format the depth aspect is left out of the rendering.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:42</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a834f961d3cd092d07db7058627b6281f"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a834f961d3cd092d07db7058627b6281f">renderer::VulkanPipeline::Config::fragment_spirv</a></div><div class="ttdeci">std::vector&lt; std::byte &gt; fragment_spirv</div><div class="ttdoc">Fragment stage module when it must not share one with the mesh stage.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:77</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a885cd3ffc0e9a9bf141f4ff62f9533a4"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a885cd3ffc0e9a9bf141f4ff62f9533a4">renderer::VulkanPipeline::Config::mesh_entry</a></div><div class="ttdeci">std::string mesh_entry</div><div class="ttdoc">Set for a task and mesh pipeline which has no vertex stage or vertex input.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:70</div></div>
+<div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a8f488c4cb4f59cf2ef4484e151bda228"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a8f488c4cb4f59cf2ef4484e151bda228">renderer::VulkanPipeline::Config::fragment_shading_rate</a></div><div class="ttdeci">vk::Extent2D fragment_shading_rate</div><div class="ttdoc">Pixels one fragment shades, only applied with VulkanCore::isFragmentShadingRateSupported.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:108</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_a953b43f580b56bbcff1d55ce5a5e3801"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#a953b43f580b56bbcff1d55ce5a5e3801">renderer::VulkanPipeline::Config::depth_clamp</a></div><div class="ttdeci">bool depth_clamp</div><div class="ttdoc">Clamps depth instead of clipping so casters in front of a shadow view still occlude.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:100</div></div>
+<div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_aa068bbca5868f984f1a7e1b9455c5884"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884">renderer::VulkanPipeline::Config::specialization_constants</a></div><div class="ttdeci">std::vector&lt; uint32_t &gt; specialization_constants</div><div class="ttdoc">Value of [[vk::constant_id(i)]] at index i for every stage so the driver strips the branches they tur...</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:111</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_aa1857fb19dd53b400d2ba9b729fc1e04"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#aa1857fb19dd53b400d2ba9b729fc1e04">renderer::VulkanPipeline::Config::depth_fragment</a></div><div class="ttdeci">bool depth_fragment</div><div class="ttdoc">With depth_only keeps the fragment stage for shaders that write SV_Depth.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:61</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_aa7a6f1fb7e799b910e4faab4602e791c"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#aa7a6f1fb7e799b910e4faab4602e791c">renderer::VulkanPipeline::Config::depth_compare</a></div><div class="ttdeci">vk::CompareOp depth_compare</div><div class="ttdoc">Scene convention. Shadow maps set eLess and far plane draws need depth::k_closer_or_equal.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:94</div></div>
 <div class="ttc" id="astructrenderer_1_1VulkanPipeline_1_1Config_html_aca046076f9f5cb9c34a6bf74706abc93"><div class="ttname"><a href="structrenderer_1_1VulkanPipeline_1_1Config.html#aca046076f9f5cb9c34a6bf74706abc93">renderer::VulkanPipeline::Config::extra_blend_mask</a></div><div class="ttdeci">uint32_t extra_blend_mask</div><div class="ttdoc">Bit i blends extra attachment i with blend_preset and never for an integer format.</div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:50</div></div>

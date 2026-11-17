@@ -8,12 +8,14 @@ var searchData=
   ['viewporttarget_5',['viewportTarget',['../classtoast_1_1Engine.html#adf6ad6837641effe8705546361eeddbf',1,'toast::Engine']]],
   ['volume_6',['volume',['../classtoast_1_1AudioEmitter.html#a827623b22f672cd18696866b3c30480c',1,'toast::AudioEmitter']]],
   ['voxelblascache_7',['voxelBlasCache',['../classrenderer_1_1VulkanRenderer.html#acd8a7513d51730eda08a02485b5290f6',1,'renderer::VulkanRenderer']]],
-  ['voxeldetailview_8',['voxelDetailView',['../classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b',1,'renderer::VulkanRenderer']]],
-  ['voxelgpustorage_9',['VoxelGpuStorage',['../classrenderer_1_1VoxelGpuStorage.html#af1b9c9628b0877276ed3ea99f18434a3',1,'renderer::VoxelGpuStorage::VoxelGpuStorage(std::vector&lt; uint64_t &gt; node_rids, std::vector&lt; glm::uvec3 &gt; brick_dims)'],['../classrenderer_1_1VoxelGpuStorage.html#a5257ac809613ddb0053f66eb91c9e0b0',1,'renderer::VoxelGpuStorage::VoxelGpuStorage(std::vector&lt; uint64_t &gt; node_rids, std::vector&lt; glm::uvec3 &gt; brick_dims, const VoxelGpuStorage &amp;previous, uint64_t patch_sequence)']]],
-  ['voxelmodel_10',['VoxelModel',['../classassets_1_1VoxelModel.html#a2ee01b58121d32d1836ddd80581f4271',1,'assets::VoxelModel']]],
-  ['voxelnode_11',['VoxelNode',['../classtoast_1_1VoxelNode.html#a164ceb5621ed99155feac96fd1d6823f',1,'toast::VoxelNode::VoxelNode()=default'],['../classtoast_1_1VoxelNode.html#a9c6dcfcd84104f2bfa98b707154c51a4',1,'toast::VoxelNode::VoxelNode(assets::Handle&lt; assets::VoxelModel &gt; model)']]],
-  ['voxelpalettetip_12',['VoxelPaletteTip',['../namespaceeditor_1_1Assets.html#a3a0e444f62cea4a39d6194a655f56012',1,'editor::Assets']]],
-  ['voxelreservoirhistory_13',['voxelReservoirHistory',['../classrenderer_1_1VulkanRenderer.html#a74519c2d77ad01e06245680fa9991388',1,'renderer::VulkanRenderer']]],
-  ['voxeltoworld_14',['voxelToWorld',['../classtoast_1_1VoxelNode.html#a66d0b4fac31fa4d55eca774c7c1d0aeb',1,'toast::VoxelNode']]],
-  ['vulkanswapchain_15',['VulkanSwapchain',['../classrenderer_1_1VulkanSwapchain.html#a3cdb869c5837e756265b4f9f915ff2ba',1,'renderer::VulkanSwapchain']]]
+  ['voxeldenoisedindirectframe_8',['voxelDenoisedIndirectFrame',['../classrenderer_1_1VulkanRenderer.html#a895f928084bfd8e763d336f47d2993df',1,'renderer::VulkanRenderer']]],
+  ['voxeldetailview_9',['voxelDetailView',['../classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b',1,'renderer::VulkanRenderer']]],
+  ['voxelgbufferextracolorformats_10',['voxelGbufferExtraColorFormats',['../namespacerenderer.html#ad8692c8c0de2031cb7d5e49ffa29f91d',1,'renderer']]],
+  ['voxelgpustorage_11',['VoxelGpuStorage',['../classrenderer_1_1VoxelGpuStorage.html#af1b9c9628b0877276ed3ea99f18434a3',1,'renderer::VoxelGpuStorage::VoxelGpuStorage(std::vector&lt; uint64_t &gt; node_rids, std::vector&lt; glm::uvec3 &gt; brick_dims)'],['../classrenderer_1_1VoxelGpuStorage.html#a5257ac809613ddb0053f66eb91c9e0b0',1,'renderer::VoxelGpuStorage::VoxelGpuStorage(std::vector&lt; uint64_t &gt; node_rids, std::vector&lt; glm::uvec3 &gt; brick_dims, const VoxelGpuStorage &amp;previous, uint64_t patch_sequence)']]],
+  ['voxelmodel_12',['VoxelModel',['../classassets_1_1VoxelModel.html#a2ee01b58121d32d1836ddd80581f4271',1,'assets::VoxelModel']]],
+  ['voxelnode_13',['VoxelNode',['../classtoast_1_1VoxelNode.html#a164ceb5621ed99155feac96fd1d6823f',1,'toast::VoxelNode::VoxelNode()=default'],['../classtoast_1_1VoxelNode.html#a9c6dcfcd84104f2bfa98b707154c51a4',1,'toast::VoxelNode::VoxelNode(assets::Handle&lt; assets::VoxelModel &gt; model)']]],
+  ['voxelpalettetip_14',['VoxelPaletteTip',['../namespaceeditor_1_1Assets.html#a3a0e444f62cea4a39d6194a655f56012',1,'editor::Assets']]],
+  ['voxelreservoirhistory_15',['voxelReservoirHistory',['../classrenderer_1_1VulkanRenderer.html#a74519c2d77ad01e06245680fa9991388',1,'renderer::VulkanRenderer']]],
+  ['voxeltoworld_16',['voxelToWorld',['../classtoast_1_1VoxelNode.html#a66d0b4fac31fa4d55eca774c7c1d0aeb',1,'toast::VoxelNode']]],
+  ['vulkanswapchain_17',['VulkanSwapchain',['../classrenderer_1_1VulkanSwapchain.html#a3cdb869c5837e756265b4f9f915ff2ba',1,'renderer::VulkanSwapchain']]]
 ];

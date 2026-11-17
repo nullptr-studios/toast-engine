@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__trace__
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;span&gt;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> {</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1RayTracingScene.html">RayTracingScene</a>;</div>
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelBlasCache.html">VoxelBlasCache</a>;</div>
@@ -201,38 +201,42 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__trace__
 <div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    vma::raii::Buffer bounds = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>    vma::raii::Buffer grid = <span class="keyword">nullptr</span>;</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    vma::raii::Buffer brick_bases = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  };</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span> </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <span class="keywordtype">void</span> writeGrid(FrameResources&amp; frame, glm::vec3 camera_position, <span class="keywordtype">float</span> cell_size);</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <span class="keywordtype">void</span> createUnitBox();</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  std::vector&lt;FrameResources&gt; m_frames;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  std::vector&lt;Volume&gt; m_volumes;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  std::vector&lt;uint32_t&gt; m_cell_counts;</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  std::vector&lt;uint32_t&gt; m_cell_cursor;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  std::optional&lt;vma::raii::Buffer&gt; m_box_aabb;</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>  std::optional&lt;vma::raii::Buffer&gt; m_box_storage;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  std::optional&lt;vma::raii::Buffer&gt; m_box_scratch;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  vk::raii::AccelerationStructureKHR m_box = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>  vk::DeviceAddress m_box_address = 0;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keywordtype">bool</span> m_box_built = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>};</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    std::optional&lt;uint64_t&gt; grid_signature;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  };</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span> </div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <span class="keywordtype">void</span> writeGrid(FrameResources&amp; frame, glm::vec3 camera_position, <span class="keywordtype">float</span> cell_size);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordtype">void</span> createUnitBox();</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  std::vector&lt;FrameResources&gt; m_frames;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  std::vector&lt;Volume&gt; m_volumes;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  std::vector&lt;uint32_t&gt; m_cell_counts;</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  std::vector&lt;uint32_t&gt; m_cell_cursor;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  std::vector&lt;uint32_t&gt; m_far;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  std::vector&lt;uint32_t&gt; m_glass;</div>
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  std::optional&lt;vma::raii::Buffer&gt; m_box_aabb;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  std::optional&lt;vma::raii::Buffer&gt; m_box_storage;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  std::optional&lt;vma::raii::Buffer&gt; m_box_scratch;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  vk::raii::AccelerationStructureKHR m_box = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  vk::DeviceAddress m_box_address = 0;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <span class="keywordtype">bool</span> m_box_built = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>};</div>
 </div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>}</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1RayTracingScene_html"><div class="ttname"><a href="classrenderer_1_1RayTracingScene.html">renderer::RayTracingScene</a></div><div class="ttdef"><b>Definition</b> ray_tracing_scene.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelBlasCache_html"><div class="ttname"><a href="classrenderer_1_1VoxelBlasCache.html">renderer::VoxelBlasCache</a></div><div class="ttdoc">Render thread only apart from stats().</div><div class="ttdef"><b>Definition</b> voxel_blas_cache.hpp:23</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:67</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:68</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a0681d51224a6ed80171a8351ef4c88b6"><div class="ttname"><a href="classrenderer_1_1VoxelTraceScene.html#a0681d51224a6ed80171a8351ef4c88b6">renderer::VoxelTraceScene::k_header_words</a></div><div class="ttdeci">static constexpr uint32_t k_header_words</div><div class="ttdoc">Mirrors scene_trace.slang kTraceHeaderWords.</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:37</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a3594f0f42856418e9d7b8909f9fc4bf1"><div class="ttname"><a href="classrenderer_1_1VoxelTraceScene.html#a3594f0f42856418e9d7b8909f9fc4bf1">renderer::VoxelTraceScene::brickBaseBuffer</a></div><div class="ttdeci">auto brickBaseBuffer(uint32_t frame_index) const -&gt; vk::Buffer</div><div class="ttdoc">Mirrors scene_trace.slang gTraceBrickBases.</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:73</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a5c3da6b1188b9bf8c8959ebccb91313c"><div class="ttname"><a href="classrenderer_1_1VoxelTraceScene.html#a5c3da6b1188b9bf8c8959ebccb91313c">renderer::VoxelTraceScene::update</a></div><div class="ttdeci">void update(uint32_t frame_index, std::span&lt; const Volume &gt; volumes, glm::vec3 camera_position, float cell_size)</div><div class="ttdoc">Render thread before the acceleration structure builds and every pass that marches voxels.</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.cpp:87</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a765154af62b1f1ee15bee628dfd042fb"><div class="ttname"><a href="classrenderer_1_1VoxelTraceScene.html#a765154af62b1f1ee15bee628dfd042fb">renderer::VoxelTraceScene::addRayQueryInstances</a></div><div class="ttdeci">auto addRayQueryInstances(vk::CommandBuffer cmd, uint32_t frame_index, RayTracingScene &amp;scene, const VoxelBlasCache *bricks, const VoxelGpuStorage *storage) -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.cpp:256</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a765154af62b1f1ee15bee628dfd042fb"><div class="ttname"><a href="classrenderer_1_1VoxelTraceScene.html#a765154af62b1f1ee15bee628dfd042fb">renderer::VoxelTraceScene::addRayQueryInstances</a></div><div class="ttdeci">auto addRayQueryInstances(vk::CommandBuffer cmd, uint32_t frame_index, RayTracingScene &amp;scene, const VoxelBlasCache *bricks, const VoxelGpuStorage *storage) -&gt; bool</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.cpp:276</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelTraceScene_html_a78a8b8f3c923a8a76f4eb2a7ffa9ec99"><div class="ttname"><a href="classrenderer_1_1VoxelTraceScene.html#a78a8b8f3c923a8a76f4eb2a7ffa9ec99">renderer::VoxelTraceScene::k_mask_volume</a></div><div class="ttdeci">static constexpr uint8_t k_mask_volume</div><div class="ttdoc">Mirrors scene_trace.slang kTraceMask while mesh instances use 0x01.</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:42</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
 <div class="ttc" id="astructFrameResources_html"><div class="ttname"><a href="structFrameResources.html">FrameResources</a></div><div class="ttdef"><b>Definition</b> vulkan_common.hpp:13</div></div>
-<div class="ttc" id="astructrenderer_1_1VoxelInstanceGpu_html"><div class="ttname"><a href="structrenderer_1_1VoxelInstanceGpu.html">renderer::VoxelInstanceGpu</a></div><div class="ttdoc">Mirrors voxel_dda.slang VoxelInstance.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:197</div></div>
+<div class="ttc" id="astructrenderer_1_1VoxelInstanceGpu_html"><div class="ttname"><a href="structrenderer_1_1VoxelInstanceGpu.html">renderer::VoxelInstanceGpu</a></div><div class="ttdoc">Mirrors voxel_dda.slang VoxelInstance.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:200</div></div>
 <div class="ttc" id="astructrenderer_1_1VoxelTraceScene_1_1Volume_html"><div class="ttname"><a href="structrenderer_1_1VoxelTraceScene_1_1Volume.html">renderer::VoxelTraceScene::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:24</div></div>
 <div class="ttc" id="astructrenderer_1_1VoxelTraceScene_1_1Volume_html_ac169871debd0885175a0692f0a80511e"><div class="ttname"><a href="structrenderer_1_1VoxelTraceScene_1_1Volume.html#ac169871debd0885175a0692f0a80511e">renderer::VoxelTraceScene::Volume::voxel_dims</a></div><div class="ttdeci">glm::uvec3 voxel_dims</div><div class="ttdoc">Voxel space box is [0 dims).</div><div class="ttdef"><b>Definition</b> voxel_trace_scene.hpp:29</div></div>
 <div class="ttc" id="avoxel__gpu__storage_8hpp_html"><div class="ttname"><a href="voxel__gpu__storage_8hpp.html">voxel_gpu_storage.hpp</a></div></div>

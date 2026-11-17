@@ -1,0 +1,12 @@
+<map id="renderer::writeVoxelStorageDescriptors" name="renderer::writeVoxelStorageDescriptors">
+<area shape="rect" id="Node000001" title=" " alt="" coords="237,123,439,167"/>
+<area shape="rect" id="Node000002" href="$classrenderer_1_1GiClipmapPass.html#ab47152a56353a24aaa06919702f3fe99" title=" " alt="" coords="6,29,188,74"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="262,117,188,89,159,77,158,72,190,84,267,115"/>
+<area shape="rect" id="Node000003" href="$classrenderer_1_1TracedSpecularPass.html#a056148685d7f477289787c92a340c3d9" title=" " alt="" coords="6,123,188,167"/>
+<area shape="poly" id="edge3_Node000001_Node000003" title=" " alt="" coords="218,146,189,148,188,142,223,144"/>
+<area shape="rect" id="Node000004" href="$classrenderer_1_1VolumetricPass.html#a4d06ec09f2597fec199edfcc061b96f9" title=" " alt="" coords="5,216,189,261"/>
+<area shape="poly" id="edge5_Node000001_Node000004" title=" " alt="" coords="267,173,158,218,156,213,262,174"/>
+<area shape="poly" id="edge2_Node000002_Node000002" title=" " alt="" coords="135,15,122,10,97,8,74,10,60,15,55,21,56,29,51,29,50,19,58,10,73,5,97,3,123,5,140,13"/>
+<area shape="poly" id="edge4_Node000003_Node000003" title=" " alt="" coords="135,108,122,104,97,101,74,103,60,108,55,114,56,122,51,122,50,113,58,104,73,98,97,96,123,99,140,107"/>
+<area shape="poly" id="edge6_Node000004_Node000004" title=" " alt="" coords="135,201,122,197,97,195,74,197,60,201,55,207,56,216,51,215,50,206,58,197,73,191,97,189,123,192,140,201"/>
+</map>

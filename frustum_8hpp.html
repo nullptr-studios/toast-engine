@@ -296,6 +296,11 @@ This graph shows which files directly or indirectly include this file:</div>
 Classes</h2></td></tr>
 <tr class="memitem:renderer_3A_3ABox" id="r_renderer_3A_3ABox"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1Box.html">renderer::Box</a></td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:renderer" id="r_renderer"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacerenderer.html">renderer</a></td></tr>
+<tr class="memdesc:namespacerenderer"><td class="mdescLeft">&#160;</td><td class="mdescRight">Custom render passes from game code. <br /></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
 Typedefs</h2></td></tr>
 <tr class="memitem:a41638920281ece9c8769b8215ab586a0" id="r_a41638920281ece9c8769b8215ab586a0"><td class="memItemLeft"><a id="a41638920281ece9c8769b8215ab586a0" name="a41638920281ece9c8769b8215ab586a0"></a>
@@ -303,7 +308,7 @@ using&#160;</td><td class="memItemRight"><b>renderer::FrustumPlanes</b> = std::a
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ae7245d18ea027857716d5c9b6e6f9ead" id="r_ae7245d18ea027857716d5c9b6e6f9ead"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ae7245d18ea027857716d5c9b6e6f9ead">renderer::extractFrustumPlanes</a> (const glm::mat4 &amp;view_projection, bool reversed_depth=false) -&gt; FrustumPlanes</td></tr>
+<tr class="memitem:ae7245d18ea027857716d5c9b6e6f9ead" id="r_ae7245d18ea027857716d5c9b6e6f9ead"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="namespacerenderer.html#ae7245d18ea027857716d5c9b6e6f9ead">renderer::extractFrustumPlanes</a> (const glm::mat4 &amp;view_projection, bool reversed_depth=false) -&gt; FrustumPlanes</td></tr>
 <tr class="memitem:a4e6850405425c7d267b37acd8489f24c" id="r_a4e6850405425c7d267b37acd8489f24c"><td class="memItemLeft"><a id="a4e6850405425c7d267b37acd8489f24c" name="a4e6850405425c7d267b37acd8489f24c"></a>
 auto&#160;</td><td class="memItemRight"><b>renderer::sphereInFrustum</b> (const FrustumPlanes &amp;planes, const glm::vec3 &amp;center, float radius) -&gt; bool</td></tr>
 <tr class="memitem:a5e47b990ea02d05556b9e90fb536f79d" id="r_a5e47b990ea02d05556b9e90fb536f79d"><td class="memItemLeft"><a id="a5e47b990ea02d05556b9e90fb536f79d" name="a5e47b990ea02d05556b9e90fb536f79d"></a>
@@ -316,38 +321,7 @@ auto&#160;</td><td class="memItemRight"><b>renderer::boxTouchesLateralFrustum</b
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>dario </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>21/09/2026 </dd></dl>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="ae7245d18ea027857716d5c9b6e6f9ead" name="ae7245d18ea027857716d5c9b6e6f9ead"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae7245d18ea027857716d5c9b6e6f9ead">&#9670;&#160;</a></span>extractFrustumPlanes()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">auto renderer::extractFrustumPlanes </td>
-          <td>(</td>
-          <td class="paramtype">const glm::mat4 &amp;</td>          <td class="paramname"><span class="paramname"><em>view_projection</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>reversed_depth</em></span><span class="paramdefsep"> = </span><span class="paramdefval">false</span>&#160;) -&gt; FrustumPlanes</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Inward normalized planes ordered left right bottom top near far <code class="param">reversed_depth</code> is depth::k_reversed_z for a scene camera and false for shadow views </p>
-
-</div>
-</div>
-</div><!-- contents -->
+</div></div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">
 <div id="page-nav-resize-handle"></div>

@@ -246,6 +246,9 @@ auto&#160;</td><td class="memItemRight"><b>renderingPaused</b> () const noexcept
 void&#160;</td><td class="memItemRight"><b>stop</b> ()</td></tr>
 <tr class="memitem:ae41093db14fb694294d72d8e5397298e" id="r_ae41093db14fb694294d72d8e5397298e"><td class="memItemLeft"><a id="ae41093db14fb694294d72d8e5397298e" name="ae41093db14fb694294d72d8e5397298e"></a>
 void&#160;</td><td class="memItemRight"><b>addRenderPass</b> (std::unique_ptr&lt; <a class="el" href="classIRenderPass.html">IRenderPass</a> &gt; pass)</td></tr>
+<tr class="memitem:ae73a48b883974c945a749cf9ce03b67f" id="r_ae73a48b883974c945a749cf9ce03b67f"><td class="memItemLeft"><a id="ae73a48b883974c945a749cf9ce03b67f" name="ae73a48b883974c945a749cf9ce03b67f"></a>
+void&#160;</td><td class="memItemRight"><b>removeRenderPass</b> (const <a class="el" href="classIRenderPass.html">IRenderPass</a> *pass)</td></tr>
+<tr class="memdesc:ae73a48b883974c945a749cf9ce03b67f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Thread safe and frees the pass once no frame in flight still uses it. <br /></td></tr>
 <tr class="memitem:a235c2d8e64399fb94bd2f81ba43c5236" id="r_a235c2d8e64399fb94bd2f81ba43c5236"><td class="memItemLeft"><a id="a235c2d8e64399fb94bd2f81ba43c5236" name="a235c2d8e64399fb94bd2f81ba43c5236"></a>
 void&#160;</td><td class="memItemRight"><b>addComputePass</b> (std::unique_ptr&lt; <a class="el" href="classIComputePass.html">IComputePass</a> &gt; pass)</td></tr>
 <tr class="memitem:abb888b7f0d33fd8f18e2e67c0cb9333b" id="r_abb888b7f0d33fd8f18e2e67c0cb9333b"><td class="memItemLeft"><a id="abb888b7f0d33fd8f18e2e67c0cb9333b" name="abb888b7f0d33fd8f18e2e67c0cb9333b"></a>
@@ -255,6 +258,9 @@ void&#160;</td><td class="memItemRight"><b>addPostProcessPass</b> (std::unique_p
 auto&#160;</td><td class="memItemRight"><b>setPostProcessPassEnabled</b> (std::string_view name, bool enabled) -&gt; bool</td></tr>
 <tr class="memitem:ab541cba83f76f1cc3f9565bc6978018f" id="r_ab541cba83f76f1cc3f9565bc6978018f"><td class="memItemLeft"><a id="ab541cba83f76f1cc3f9565bc6978018f" name="ab541cba83f76f1cc3f9565bc6978018f"></a>
 auto&#160;</td><td class="memItemRight"><b>isPostProcessPassEnabled</b> (std::string_view name) const -&gt; bool</td></tr>
+<tr class="memitem:ae2d4fe22686bdbd73c9547db9901b0ce" id="r_ae2d4fe22686bdbd73c9547db9901b0ce"><td class="memItemLeft"><a id="ae2d4fe22686bdbd73c9547db9901b0ce" name="ae2d4fe22686bdbd73c9547db9901b0ce"></a>
+auto&#160;</td><td class="memItemRight"><b>ssrSettings</b> () const -&gt; <a class="el" href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">PostProcessSettings::Ssr</a></td></tr>
+<tr class="memdesc:ae2d4fe22686bdbd73c9547db9901b0ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render thread SSR settings of the frame being rendered with the preset reach override applied. <br /></td></tr>
 <tr class="memitem:aa6d478608c21a29263679ccbe5a57a6d" id="r_aa6d478608c21a29263679ccbe5a57a6d"><td class="memItemLeft"><a id="aa6d478608c21a29263679ccbe5a57a6d" name="aa6d478608c21a29263679ccbe5a57a6d"></a>
 auto&#160;</td><td class="memItemRight"><b>getSceneColorFormat</b> () const noexcept -&gt; vk::Format</td></tr>
 <tr class="memitem:aab5c6ded1804aba6be1598bf57f47739" id="r_aab5c6ded1804aba6be1598bf57f47739"><td class="memItemLeft"><a id="aab5c6ded1804aba6be1598bf57f47739" name="aab5c6ded1804aba6be1598bf57f47739"></a>
@@ -295,6 +301,12 @@ auto&#160;</td><td class="memItemRight"><b>getVoxelGiView</b> () const noexcept 
 <tr class="memitem:aabd24286646ac34b96155ec903c0c6fc" id="r_aabd24286646ac34b96155ec903c0c6fc"><td class="memItemLeft"><a id="aabd24286646ac34b96155ec903c0c6fc" name="aabd24286646ac34b96155ec903c0c6fc"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelNoisyDiffuseView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:aabd24286646ac34b96155ec903c0c6fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Marched and sampled diffuse over albedo before denoising. <br /></td></tr>
+<tr class="memitem:a93c8b3c64cdece394bdd4146b44532b3" id="r_a93c8b3c64cdece394bdd4146b44532b3"><td class="memItemLeft"><a id="a93c8b3c64cdece394bdd4146b44532b3" name="a93c8b3c64cdece394bdd4146b44532b3"></a>
+auto&#160;</td><td class="memItemRight"><b>getVoxelDenoisedIndirectView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memdesc:a93c8b3c64cdece394bdd4146b44532b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Denoised clipmap GI the voxel composite wrote with alpha 1 and 0 where SSAO keeps reading the scene indirect. <br /></td></tr>
+<tr class="memitem:a895f928084bfd8e763d336f47d2993df" id="r_a895f928084bfd8e763d336f47d2993df"><td class="memItemLeft"><a id="a895f928084bfd8e763d336f47d2993df" name="a895f928084bfd8e763d336f47d2993df"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelDenoisedIndirectFrame</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a895f928084bfd8e763d336f47d2993df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether this frame's voxel denoise composite wrote getVoxelDenoisedIndirectView. <br /></td></tr>
 <tr class="memitem:a3cd4523f99cd66ada699a2aec571a5ed" id="r_a3cd4523f99cd66ada699a2aec571a5ed"><td class="memItemLeft"><a id="a3cd4523f99cd66ada699a2aec571a5ed" name="a3cd4523f99cd66ada699a2aec571a5ed"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelNoisySpecularView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:a71bf214f1275f1f943ae9bb3c09a07b0" id="r_a71bf214f1275f1f943ae9bb3c09a07b0"><td class="memItemLeft"><a id="a71bf214f1275f1f943ae9bb3c09a07b0" name="a71bf214f1275f1f943ae9bb3c09a07b0"></a>
@@ -394,26 +406,33 @@ auto&#160;</td><td class="memItemRight"><b>voxelSpecularRoughness</b> () const n
 void&#160;</td><td class="memItemRight"><b>setVoxelSpecularReach</b> (float meters) noexcept</td></tr>
 <tr class="memitem:a5e7b5ec05b1019d25c67ebed28e52906" id="r_a5e7b5ec05b1019d25c67ebed28e52906"><td class="memItemLeft"><a id="a5e7b5ec05b1019d25c67ebed28e52906" name="a5e7b5ec05b1019d25c67ebed28e52906"></a>
 auto&#160;</td><td class="memItemRight"><b>voxelSpecularReach</b> () const noexcept -&gt; float</td></tr>
-<tr class="memitem:ad7e4a1822be26b7d83e5c9b47fc183f2" id="r_ad7e4a1822be26b7d83e5c9b47fc183f2"><td class="memItemLeft"><a id="ad7e4a1822be26b7d83e5c9b47fc183f2" name="ad7e4a1822be26b7d83e5c9b47fc183f2"></a>
-void&#160;</td><td class="memItemRight"><b>setVoxelGlassRefraction</b> (float strength) noexcept</td></tr>
-<tr class="memdesc:ad7e4a1822be26b7d83e5c9b47fc183f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">1 is Snell and 0 turns refraction off <br /></td></tr>
-<tr class="memitem:ae1113933b7edae69bdf476a3e0553640" id="r_ae1113933b7edae69bdf476a3e0553640"><td class="memItemLeft"><a id="ae1113933b7edae69bdf476a3e0553640" name="ae1113933b7edae69bdf476a3e0553640"></a>
-auto&#160;</td><td class="memItemRight"><b>voxelGlassRefraction</b> () const noexcept -&gt; float</td></tr>
-<tr class="memitem:a55e469472018093c5ed96d44fd32af7f" id="r_a55e469472018093c5ed96d44fd32af7f"><td class="memItemLeft"><a id="a55e469472018093c5ed96d44fd32af7f" name="a55e469472018093c5ed96d44fd32af7f"></a>
-void&#160;</td><td class="memItemRight"><b>setVoxelGlassRefractionEnabled</b> (bool enabled) noexcept</td></tr>
-<tr class="memdesc:a55e469472018093c5ed96d44fd32af7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Off skips the backdrop copy and the volume march of every glass pixel. <br /></td></tr>
-<tr class="memitem:a584ae68b73eb5010134c24f24b01dac0" id="r_a584ae68b73eb5010134c24f24b01dac0"><td class="memItemLeft"><a id="a584ae68b73eb5010134c24f24b01dac0" name="a584ae68b73eb5010134c24f24b01dac0"></a>
-void&#160;</td><td class="memItemRight"><b>setVoxelGlassRefractionDistance</b> (float meters) noexcept</td></tr>
-<tr class="memitem:a2dbd88e310d6537f99f3ea9d28343bea" id="r_a2dbd88e310d6537f99f3ea9d28343bea"><td class="memItemLeft"><a id="a2dbd88e310d6537f99f3ea9d28343bea" name="a2dbd88e310d6537f99f3ea9d28343bea"></a>
-auto&#160;</td><td class="memItemRight"><b>voxelGlassRefractionDistance</b> () const noexcept -&gt; float</td></tr>
-<tr class="memitem:ac19ec7d85d2716051e10c1214c51b3f0" id="r_ac19ec7d85d2716051e10c1214c51b3f0"><td class="memItemLeft"><a id="ac19ec7d85d2716051e10c1214c51b3f0" name="ac19ec7d85d2716051e10c1214c51b3f0"></a>
-void&#160;</td><td class="memItemRight"><b>setVoxelGlassRefractionVoxels</b> (uint32_t voxels) noexcept</td></tr>
-<tr class="memitem:ab4af0a999e68c6d75f8dec9df13a0f00" id="r_ab4af0a999e68c6d75f8dec9df13a0f00"><td class="memItemLeft"><a id="ab4af0a999e68c6d75f8dec9df13a0f00" name="ab4af0a999e68c6d75f8dec9df13a0f00"></a>
-auto&#160;</td><td class="memItemRight"><b>voxelGlassRefractionVoxels</b> () const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:a56cd4b8f8232323b0cd5b6a2d27c957f" id="r_a56cd4b8f8232323b0cd5b6a2d27c957f"><td class="memItemLeft"><a id="a56cd4b8f8232323b0cd5b6a2d27c957f" name="a56cd4b8f8232323b0cd5b6a2d27c957f"></a>
 void&#160;</td><td class="memItemRight"><b>setVoxelGlassLitSurfaces</b> (uint32_t surfaces) noexcept</td></tr>
 <tr class="memitem:a403901b2ee5a7b208f8e72f2dd5c246f" id="r_a403901b2ee5a7b208f8e72f2dd5c246f"><td class="memItemLeft"><a id="a403901b2ee5a7b208f8e72f2dd5c246f" name="a403901b2ee5a7b208f8e72f2dd5c246f"></a>
 auto&#160;</td><td class="memItemRight"><b>voxelGlassLitSurfaces</b> () const noexcept -&gt; uint32_t</td></tr>
+<tr class="memitem:a04e1b0178ef3a3102de2b2508a373a18" id="r_a04e1b0178ef3a3102de2b2508a373a18"><td class="memItemLeft"><a id="a04e1b0178ef3a3102de2b2508a373a18" name="a04e1b0178ef3a3102de2b2508a373a18"></a>
+void&#160;</td><td class="memItemRight"><b>setGlassGlowScale</b> (float scale) noexcept</td></tr>
+<tr class="memdesc:a04e1b0178ef3a3102de2b2508a373a18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scale bloom and lens flares put on the light behind glass so emissives the glass dims still glow. <br /></td></tr>
+<tr class="memitem:a736ff71c2470c91d79635775cdbddff3" id="r_a736ff71c2470c91d79635775cdbddff3"><td class="memItemLeft"><a id="a736ff71c2470c91d79635775cdbddff3" name="a736ff71c2470c91d79635775cdbddff3"></a>
+auto&#160;</td><td class="memItemRight"><b>glassGlowScale</b> () const noexcept -&gt; float</td></tr>
+<tr class="memitem:a26cb7de3a368dfa110788daba1ba7aea" id="r_a26cb7de3a368dfa110788daba1ba7aea"><td class="memItemLeft"><a id="a26cb7de3a368dfa110788daba1ba7aea" name="a26cb7de3a368dfa110788daba1ba7aea"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelGlassCoarseDistance</b> (float meters) noexcept</td></tr>
+<tr class="memdesc:a26cb7de3a368dfa110788daba1ba7aea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Meters past which outside glass bricks shade at 2x2 where the device supports a pipeline shading rate, 0 never. <br /></td></tr>
+<tr class="memitem:a218eb66c9ad2e0ccce114fd88db1a3be" id="r_a218eb66c9ad2e0ccce114fd88db1a3be"><td class="memItemLeft"><a id="a218eb66c9ad2e0ccce114fd88db1a3be" name="a218eb66c9ad2e0ccce114fd88db1a3be"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelGlassCoarseDistance</b> () const noexcept -&gt; float</td></tr>
+<tr class="memitem:a36ed735402fb96147ebf754e02aa9b0c" id="r_a36ed735402fb96147ebf754e02aa9b0c"><td class="memItemLeft"><a id="a36ed735402fb96147ebf754e02aa9b0c" name="a36ed735402fb96147ebf754e02aa9b0c"></a>
+void&#160;</td><td class="memItemRight"><b>setGlassCostView</b> (bool enabled) noexcept</td></tr>
+<tr class="memdesc:a36ed735402fb96147ebf754e02aa9b0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Glass adds a heat colour per pixel for what it cost instead of drawing itself. <br /></td></tr>
+<tr class="memitem:a70e1c2ebf6710fb4827f3f62207d6dda" id="r_a70e1c2ebf6710fb4827f3f62207d6dda"><td class="memItemLeft"><a id="a70e1c2ebf6710fb4827f3f62207d6dda" name="a70e1c2ebf6710fb4827f3f62207d6dda"></a>
+auto&#160;</td><td class="memItemRight"><b>glassCostView</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a1a3dfdfec4e97886e890fe4a303c78e6" id="r_a1a3dfdfec4e97886e890fe4a303c78e6"><td class="memItemLeft"><a id="a1a3dfdfec4e97886e890fe4a303c78e6" name="a1a3dfdfec4e97886e890fe4a303c78e6"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelGlassReflectionReach</b> (float meters) noexcept</td></tr>
+<tr class="memdesc:a1a3dfdfec4e97886e890fe4a303c78e6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Meters glass SSR and traced reflections reach at most. <br /></td></tr>
+<tr class="memitem:ac7aed9469cb4c87f4ff3609b680ea9d8" id="r_ac7aed9469cb4c87f4ff3609b680ea9d8"><td class="memItemLeft"><a id="ac7aed9469cb4c87f4ff3609b680ea9d8" name="ac7aed9469cb4c87f4ff3609b680ea9d8"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelGlassReflectionReach</b> () const noexcept -&gt; float</td></tr>
+<tr class="memitem:ab216fedc75e6737d3e408a6372f2aa3b" id="r_ab216fedc75e6737d3e408a6372f2aa3b"><td class="memItemLeft"><a id="ab216fedc75e6737d3e408a6372f2aa3b" name="ab216fedc75e6737d3e408a6372f2aa3b"></a>
+auto&#160;</td><td class="memItemRight"><b>glassSsrSettings</b> () const -&gt; <a class="el" href="structrenderer_1_1PostProcessSettings_1_1Ssr.html">PostProcessSettings::Ssr</a></td></tr>
+<tr class="memdesc:ab216fedc75e6737d3e408a6372f2aa3b"><td class="mdescLeft">&#160;</td><td class="mdescRight">SSR settings for the linear glass march with the reach capped at voxelGlassReflectionReach and the steps spread over it. <br /></td></tr>
 <tr class="memitem:aec563625c9422a6a3d83be71f4f68034" id="r_aec563625c9422a6a3d83be71f4f68034"><td class="memItemLeft"><a id="aec563625c9422a6a3d83be71f4f68034" name="aec563625c9422a6a3d83be71f4f68034"></a>
 auto&#160;</td><td class="memItemRight"><b>hdrOutput</b> () const -&gt; bool</td></tr>
 <tr class="memitem:ac15ace584b9ba24d4f9c8d91003cfec3" id="r_ac15ace584b9ba24d4f9c8d91003cfec3"><td class="memItemLeft"><a id="ac15ace584b9ba24d4f9c8d91003cfec3" name="ac15ace584b9ba24d4f9c8d91003cfec3"></a>
@@ -463,11 +482,18 @@ void&#160;</td><td class="memItemRight"><b>setVoxelGlassShadowReach</b> (uint32_
 auto&#160;</td><td class="memItemRight"><b>voxelGlassShadowReach</b> () const noexcept -&gt; uint32_t</td></tr>
 <tr class="memitem:a88b09dfccee5ce475af778fcfd33495a" id="r_a88b09dfccee5ce475af778fcfd33495a"><td class="memItemLeft"><a id="a88b09dfccee5ce475af778fcfd33495a" name="a88b09dfccee5ce475af778fcfd33495a"></a>
 auto&#160;</td><td class="memItemRight"><b>getGlassBackdropView</b> () const noexcept -&gt; vk::ImageView</td></tr>
-<tr class="memdesc:a88b09dfccee5ce475af778fcfd33495a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scene colour and depth copied after the sky for glass to refract. <br /></td></tr>
+<tr class="memdesc:a88b09dfccee5ce475af778fcfd33495a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scene colour copied after the sky that glass reflections and bloom read behind glass. <br /></td></tr>
 <tr class="memitem:a8781262bbaf5e69cb2a62a84eb6190f7" id="r_a8781262bbaf5e69cb2a62a84eb6190f7"><td class="memItemLeft"><a id="a8781262bbaf5e69cb2a62a84eb6190f7" name="a8781262bbaf5e69cb2a62a84eb6190f7"></a>
 auto&#160;</td><td class="memItemRight"><b>getGlassMaskView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:a613c2c2984d9a9edb1c579d5bc4c378b" id="r_a613c2c2984d9a9edb1c579d5bc4c378b"><td class="memItemLeft"><a id="a613c2c2984d9a9edb1c579d5bc4c378b" name="a613c2c2984d9a9edb1c579d5bc4c378b"></a>
 auto&#160;</td><td class="memItemRight"><b>getGlassBackdropDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memitem:a7bc97af9a04ebaa5d287c14da1fc3f3a" id="r_a7bc97af9a04ebaa5d287c14da1fc3f3a"><td class="memItemLeft"><a id="a7bc97af9a04ebaa5d287c14da1fc3f3a" name="a7bc97af9a04ebaa5d287c14da1fc3f3a"></a>
+auto&#160;</td><td class="memItemRight"><b>getGlassNearestDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memdesc:a7bc97af9a04ebaa5d287c14da1fc3f3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nearest voxel glass surface over the opaque depth, valid on frames the glass pre-pass ran. <br /></td></tr>
+<tr class="memitem:ac5fae941f77c530c905e01e81bdb7738" id="r_ac5fae941f77c530c905e01e81bdb7738"><td class="memItemLeft"><a id="ac5fae941f77c530c905e01e81bdb7738" name="ac5fae941f77c530c905e01e81bdb7738"></a>
+auto&#160;</td><td class="memItemRight"><b>getGlassNearestNormalView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memitem:a041b1a169eabf2fe12a0fdbd059aaa0c" id="r_a041b1a169eabf2fe12a0fdbd059aaa0c"><td class="memItemLeft"><a id="a041b1a169eabf2fe12a0fdbd059aaa0c" name="a041b1a169eabf2fe12a0fdbd059aaa0c"></a>
+auto&#160;</td><td class="memItemRight"><b>getGlassNearestMotionView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:ac4e830174fd44438eb6cc4e24f431075" id="r_ac4e830174fd44438eb6cc4e24f431075"><td class="memItemLeft"><a id="ac4e830174fd44438eb6cc4e24f431075" name="ac4e830174fd44438eb6cc4e24f431075"></a>
 auto&#160;</td><td class="memItemRight"><b>getOpaqueDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:ac4e830174fd44438eb6cc4e24f431075"><td class="mdescLeft">&#160;</td><td class="mdescRight">Depth before glass so GI and reflections see behind a pane and the final depth when no backdrop was copied. <br /></td></tr>
@@ -559,6 +585,8 @@ void&#160;</td><td class="memItemRight"><b>setVoxelPass</b> (<a class="el" href=
 <tr class="memdesc:af99a4f011583d98972c29370251f71a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Still registered with addRenderPass so it lists and toggles like any pass. <br /></td></tr>
 <tr class="memitem:aa688b4a6c5eb38f3efb0da44cd71aa2b" id="r_aa688b4a6c5eb38f3efb0da44cd71aa2b"><td class="memItemLeft"><a id="aa688b4a6c5eb38f3efb0da44cd71aa2b" name="aa688b4a6c5eb38f3efb0da44cd71aa2b"></a>
 void&#160;</td><td class="memItemRight"><b>setDebrisPass</b> (<a class="el" href="classrenderer_1_1DebrisPass.html">DebrisPass</a> *pass) noexcept</td></tr>
+<tr class="memitem:a87e91aea589ca71e08da380f28721093" id="r_a87e91aea589ca71e08da380f28721093"><td class="memItemLeft"><a id="a87e91aea589ca71e08da380f28721093" name="a87e91aea589ca71e08da380f28721093"></a>
+auto&#160;</td><td class="memItemRight"><b>getDebrisPass</b> () const noexcept -&gt; const <a class="el" href="classrenderer_1_1DebrisPass.html">DebrisPass</a> *</td></tr>
 <tr class="memitem:a989c7d3cae8d609b03f1b122a8053913" id="r_a989c7d3cae8d609b03f1b122a8053913"><td class="memItemLeft"><a id="a989c7d3cae8d609b03f1b122a8053913" name="a989c7d3cae8d609b03f1b122a8053913"></a>
 void&#160;</td><td class="memItemRight"><b>setGiPass</b> (<a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> *pass) noexcept</td></tr>
 <tr class="memitem:a7f8133754e2d8d3583babfc92c4cded4" id="r_a7f8133754e2d8d3583babfc92c4cded4"><td class="memItemLeft"><a id="a7f8133754e2d8d3583babfc92c4cded4" name="a7f8133754e2d8d3583babfc92c4cded4"></a>
@@ -576,6 +604,10 @@ auto&#160;</td><td class="memItemRight"><b>previousResolvedColour</b> () const n
 <tr class="memitem:a471bd0da8b6acb1a93072ab6c4187f54" id="r_a471bd0da8b6acb1a93072ab6c4187f54"><td class="memItemLeft"><a id="a471bd0da8b6acb1a93072ab6c4187f54" name="a471bd0da8b6acb1a93072ab6c4187f54"></a>
 auto&#160;</td><td class="memItemRight"><b>tracedSpecularFrame</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a471bd0da8b6acb1a93072ab6c4187f54"><td class="mdescLeft">&#160;</td><td class="mdescRight">Render thread whether voxel lighting left the environment specular of traced pixels to the traced specular pass. <br /></td></tr>
+<tr class="memitem:ae4f25d31832302443032c6893fc93a43" id="r_ae4f25d31832302443032c6893fc93a43"><td class="memItemLeft"><a id="ae4f25d31832302443032c6893fc93a43" name="ae4f25d31832302443032c6893fc93a43"></a>
+auto&#160;</td><td class="memItemRight"><b>ssrFrame</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a6815b574a2553faef9c50cb8675282bc" id="r_a6815b574a2553faef9c50cb8675282bc"><td class="memItemLeft"><a id="a6815b574a2553faef9c50cb8675282bc" name="a6815b574a2553faef9c50cb8675282bc"></a>
+auto&#160;</td><td class="memItemRight"><b>glassBackdropCaptured</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a645b190083dd9a546db8232081768d2e" id="r_a645b190083dd9a546db8232081768d2e"><td class="memItemLeft"><a id="a645b190083dd9a546db8232081768d2e" name="a645b190083dd9a546db8232081768d2e"></a>
 auto&#160;</td><td class="memItemRight"><b>giPass</b> () const noexcept -&gt; <a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> *</td></tr>
 <tr class="memitem:a31fa5b678c6e654cb8aeb105d843e2e3" id="r_a31fa5b678c6e654cb8aeb105d843e2e3"><td class="memItemLeft"><a id="a31fa5b678c6e654cb8aeb105d843e2e3" name="a31fa5b678c6e654cb8aeb105d843e2e3"></a>
@@ -888,7 +920,7 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>renderer</b></li><li class="navelem"><a href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a></li>
+    <li class="navelem"><a href="namespacerenderer.html">renderer</a></li><li class="navelem"><a href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

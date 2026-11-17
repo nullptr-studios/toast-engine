@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('cube__face__ba
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> {</div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
 <div class="foldopen" id="foldopen00014" data-start="{" data-end="};">
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno"><a class="line" href="structrenderer_1_1CubeFaceBasis.html">   14</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1CubeFaceBasis.html">CubeFaceBasis</a> {</div>
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('cube__face__ba
 <div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span></div>
 <div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span>[[nodiscard]]</div>
 <div class="foldopen" id="foldopen00022" data-start="{" data-end="}">
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="cube__face__basis_8hpp.html#abdcfe4b8871d719e86707772b2484cf4">   22</a></span><span class="keyword">inline</span> <span class="keyword">auto</span> <a class="code hl_function" href="cube__face__basis_8hpp.html#abdcfe4b8871d719e86707772b2484cf4">cubeFaceBasis</a>(uint32_t face) -&gt; <a class="code hl_struct" href="structrenderer_1_1CubeFaceBasis.html">CubeFaceBasis</a> {</div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno"><a class="line" href="namespacerenderer.html#abdcfe4b8871d719e86707772b2484cf4">   22</a></span><span class="keyword">inline</span> <span class="keyword">auto</span> <a class="code hl_function" href="namespacerenderer.html#abdcfe4b8871d719e86707772b2484cf4">cubeFaceBasis</a>(uint32_t face) -&gt; <a class="code hl_struct" href="structrenderer_1_1CubeFaceBasis.html">CubeFaceBasis</a> {</div>
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>  <span class="keywordflow">switch</span> (face) {</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span>    <span class="keywordflow">case</span> 0:</div>
 <div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span>      <span class="keywordflow">return</span> {</div>
@@ -180,7 +180,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('cube__face__ba
 </div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
 <div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>}</div>
-<div class="ttc" id="acube__face__basis_8hpp_html_abdcfe4b8871d719e86707772b2484cf4"><div class="ttname"><a href="cube__face__basis_8hpp.html#abdcfe4b8871d719e86707772b2484cf4">renderer::cubeFaceBasis</a></div><div class="ttdeci">auto cubeFaceBasis(uint32_t face) -&gt; CubeFaceBasis</div><div class="ttdoc">+X -X +Y -Y +Z -Z order. Must agree with directionForFace() in environment.slang</div><div class="ttdef"><b>Definition</b> cube_face_basis.hpp:22</div></div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
+<div class="ttc" id="anamespacerenderer_html_abdcfe4b8871d719e86707772b2484cf4"><div class="ttname"><a href="namespacerenderer.html#abdcfe4b8871d719e86707772b2484cf4">renderer::cubeFaceBasis</a></div><div class="ttdeci">auto cubeFaceBasis(uint32_t face) -&gt; CubeFaceBasis</div><div class="ttdoc">+X -X +Y -Y +Z -Z order. Must agree with directionForFace() in environment.slang</div><div class="ttdef"><b>Definition</b> cube_face_basis.hpp:22</div></div>
 <div class="ttc" id="astructrenderer_1_1CubeFaceBasis_html"><div class="ttname"><a href="structrenderer_1_1CubeFaceBasis.html">renderer::CubeFaceBasis</a></div><div class="ttdef"><b>Definition</b> cube_face_basis.hpp:14</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->

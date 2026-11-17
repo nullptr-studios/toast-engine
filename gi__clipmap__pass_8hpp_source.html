@@ -125,184 +125,233 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('gi__clipmap__p
 <div class="line"><a id="l00007" name="l00007"></a><span class="lineno">    7</span><span class="preprocessor">#include &quot;<a class="code" href="descriptor__cache_8hpp.html">toast/renderer/core/descriptor_cache.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00008" name="l00008"></a><span class="lineno">    8</span><span class="preprocessor">#include &quot;<a class="code" href="gpu__sync_8hpp.html">toast/renderer/core/gpu_sync.hpp</a>&quot;</span></div>
 <div class="line"><a id="l00009" name="l00009"></a><span class="lineno">    9</span><span class="preprocessor">#include &quot;toast/renderer/core/vulkan_common.hpp&quot;</span></div>
-<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="gi__dirty__boxes_8hpp.html">toast/renderer/lighting/gi_dirty_boxes.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__pass__base_8hpp.html">toast/renderer/passes/post_process_pass_base.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__target_8hpp.html">toast/renderer/resources/post_process_target.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="scene__descriptor__set_8hpp.html">toast/renderer/resources/scene_descriptor_set.hpp</a>&quot;</span></div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;toast/renderer/shaders/shader_layout.hpp&quot;</span></div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;toast/renderer/shaders/vulkan_pipeline.hpp&quot;</span></div>
-<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
-<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &lt;array&gt;</span></div>
-<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
-<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
-<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
-<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;unordered_map&gt;</span></div>
-<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
-<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span> </div>
-<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="keyword">namespace </span>renderer {</div>
-<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>;</div>
-<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a>;</div>
-<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span> </div>
-<div class="foldopen" id="foldopen00029" data-start="{" data-end="};">
-<div class="line"><a id="l00029" name="l00029"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html">   29</a></span><span class="keyword">class </span>GiClipmapPass : <span class="keyword">public</span> <a class="code hl_class" href="classrenderer_1_1IPostProcessPass.html">IPostProcessPass</a> {</div>
-<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">public</span>:</div>
-<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">   32</a></span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a> = 6;</div>
-<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_tail = 5;</div>
-<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">   35</a></span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">k_faces</a> = 6;</div>
-<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span> </div>
-<div class="line"><a id="l00037" name="l00037"></a><span class="lineno">   37</span>  GiClipmapPass(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format scene_format, vk::Extent2D extent);</div>
-<div class="line"><a id="l00038" name="l00038"></a><span class="lineno">   38</span> </div>
-<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span>  <span class="keyword">auto</span> name() const -&gt; std::string_view<span class="keyword"> override </span>{</div>
-<div class="line"><a id="l00041" name="l00041"></a><span class="lineno">   41</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Radiance clipmap&quot;</span>;</div>
-<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  }</div>
-<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span> </div>
-<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#ab47152a56353a24aaa06919702f3fe99">record</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00045" name="l00045"></a><span class="lineno">   45</span> </div>
-<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>  <span class="keywordtype">void</span> onResize(vk::Extent2D extent) <span class="keyword">override</span>;</div>
-<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span></div>
-<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>  [[nodiscard]]</div>
-<div class="foldopen" id="foldopen00050" data-start="{" data-end="}">
-<div class="line"><a id="l00050" name="l00050"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613">   50</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613">publishedFrame</a>() const -&gt; vk::Buffer {</div>
-<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    <span class="keywordflow">return</span> m_published.has_value() ? **m_published : vk::Buffer {};</div>
-<div class="line"><a id="l00052" name="l00052"></a><span class="lineno">   52</span>  }</div>
-</div>
-<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span></div>
-<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#ae81c17ef605faa0d3e93b6a5d0dfd1b6">radianceViews</a>() const -&gt; std::array&lt;vk::ImageView, <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a> * <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">k_faces</a>&gt;;</div>
-<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span> </div>
-<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span>  auto ambientViews() const -&gt; std::array&lt;vk::ImageView, <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a> * <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">k_faces</a>&gt;;</div>
+<div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &quot;<a class="code" href="gpu__types_8hpp.html">toast/renderer/gpu_types.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &quot;<a class="code" href="gi__clip__math_8hpp.html">toast/renderer/lighting/gi_clip_math.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &quot;<a class="code" href="gi__dirty__boxes_8hpp.html">toast/renderer/lighting/gi_dirty_boxes.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__pass__base_8hpp.html">toast/renderer/passes/post_process_pass_base.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="preprocessor">#include &quot;<a class="code" href="post__process__target_8hpp.html">toast/renderer/resources/post_process_target.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="preprocessor">#include &quot;<a class="code" href="scene__descriptor__set_8hpp.html">toast/renderer/resources/scene_descriptor_set.hpp</a>&quot;</span></div>
+<div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="preprocessor">#include &quot;toast/renderer/shaders/shader_layout.hpp&quot;</span></div>
+<div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="preprocessor">#include &quot;toast/renderer/shaders/vulkan_pipeline.hpp&quot;</span></div>
+<div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
+<div class="line"><a id="l00019" name="l00019"></a><span class="lineno">   19</span><span class="preprocessor">#include &lt;array&gt;</span></div>
+<div class="line"><a id="l00020" name="l00020"></a><span class="lineno">   20</span><span class="preprocessor">#include &lt;glm/glm.hpp&gt;</span></div>
+<div class="line"><a id="l00021" name="l00021"></a><span class="lineno">   21</span><span class="preprocessor">#include &lt;memory&gt;</span></div>
+<div class="line"><a id="l00022" name="l00022"></a><span class="lineno">   22</span><span class="preprocessor">#include &lt;mutex&gt;</span></div>
+<div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span><span class="preprocessor">#include &lt;optional&gt;</span></div>
+<div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span><span class="preprocessor">#include &lt;unordered_map&gt;</span></div>
+<div class="line"><a id="l00025" name="l00025"></a><span class="lineno">   25</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno">   26</span> </div>
+<div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> {</div>
+<div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>;</div>
+<div class="line"><a id="l00029" name="l00029"></a><span class="lineno">   29</span><span class="keyword">class </span><a class="code hl_class" href="classrenderer_1_1VoxelGpuStorage.html">VoxelGpuStorage</a>;</div>
+<div class="line"><a id="l00030" name="l00030"></a><span class="lineno">   30</span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a>;</div>
+<div class="line"><a id="l00031" name="l00031"></a><span class="lineno">   31</span> </div>
+<div class="foldopen" id="foldopen00032" data-start="{" data-end="};">
+<div class="line"><a id="l00032" name="l00032"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html">   32</a></span><span class="keyword">class </span>GiClipmapPass : <span class="keyword">public</span> <a class="code hl_class" href="classrenderer_1_1IPostProcessPass.html">IPostProcessPass</a> {</div>
+<div class="line"><a id="l00033" name="l00033"></a><span class="lineno">   33</span><span class="keyword">public</span>:</div>
+<div class="line"><a id="l00035" name="l00035"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">   35</a></span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a> = 6;</div>
+<div class="line"><a id="l00036" name="l00036"></a><span class="lineno">   36</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_max_tail = 5;</div>
+<div class="line"><a id="l00038" name="l00038"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">   38</a></span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">k_faces</a> = 6;</div>
+<div class="line"><a id="l00039" name="l00039"></a><span class="lineno">   39</span> </div>
+<div class="line"><a id="l00040" name="l00040"></a><span class="lineno">   40</span><span class="preprocessor">#if defined(TOAST_DEV_TOOLS)</span></div>
+<div class="line"><a id="l00042" name="l00042"></a><span class="lineno">   42</span>  <span class="keyword">struct </span>Stats {</div>
+<div class="line"><a id="l00043" name="l00043"></a><span class="lineno">   43</span>    uint32_t levels = 0;</div>
+<div class="line"><a id="l00044" name="l00044"></a><span class="lineno">   44</span>    uint32_t edits = 0;</div>
+<div class="line"><a id="l00046" name="l00046"></a><span class="lineno">   46</span>    uint32_t edit_boxes = 0;</div>
+<div class="line"><a id="l00047" name="l00047"></a><span class="lineno">   47</span>    uint32_t body_boxes = 0;</div>
+<div class="line"><a id="l00048" name="l00048"></a><span class="lineno">   48</span>    <span class="keywordtype">bool</span> history_lost = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00049" name="l00049"></a><span class="lineno">   49</span>    std::array&lt;uint32_t, k_max_levels&gt; boxes {};</div>
+<div class="line"><a id="l00050" name="l00050"></a><span class="lineno">   50</span>    std::array&lt;uint64_t, k_max_levels&gt; cells {};</div>
+<div class="line"><a id="l00051" name="l00051"></a><span class="lineno">   51</span>    std::array&lt;uint64_t, k_max_levels&gt; largest {};</div>
+<div class="line"><a id="l00053" name="l00053"></a><span class="lineno">   53</span>    std::array&lt;uint64_t, k_max_levels&gt; queued {};</div>
+<div class="line"><a id="l00054" name="l00054"></a><span class="lineno">   54</span>    std::array&lt;bool, k_max_levels&gt; whole {};</div>
+<div class="line"><a id="l00055" name="l00055"></a><span class="lineno">   55</span>  };</div>
+<div class="line"><a id="l00056" name="l00056"></a><span class="lineno">   56</span> </div>
+<div class="line"><a id="l00057" name="l00057"></a><span class="lineno">   57</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00058" name="l00058"></a><span class="lineno">   58</span>  <span class="keyword">auto</span> stats() const -&gt; Stats;</div>
+<div class="line"><a id="l00059" name="l00059"></a><span class="lineno">   59</span><span class="preprocessor">#endif</span></div>
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span> </div>
-<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  auto opacityViews() const -&gt; std::array&lt;vk::ImageView, <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a>&gt;;</div>
-<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span></div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>  [[nodiscard]]</div>
-<div class="foldopen" id="foldopen00066" data-start="{" data-end="}">
-<div class="line"><a id="l00066" name="l00066"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#a6032db3c4792993ddea67e00bf494826">   66</a></span>  auto <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#a6032db3c4792993ddea67e00bf494826">radianceSampler</a>() const -&gt; vk::Sampler {</div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>    <span class="keywordflow">return</span> *m_linear_sampler;</div>
-<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  }</div>
-</div>
+<div class="line"><a id="l00061" name="l00061"></a><span class="lineno">   61</span>  <a class="code hl_class" href="classrenderer_1_1GiClipmapPass.html">GiClipmapPass</a>(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Format scene_format, vk::Extent2D extent);</div>
+<div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span> </div>
+<div class="line"><a id="l00063" name="l00063"></a><span class="lineno">   63</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">auto</span> name() const -&gt; std::string_view<span class="keyword"> override </span>{</div>
+<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span>    <span class="keywordflow">return</span> <span class="stringliteral">&quot;Radiance clipmap&quot;</span>;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  }</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span> </div>
+<div class="line"><a id="l00068" name="l00068"></a><span class="lineno">   68</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#ab47152a56353a24aaa06919702f3fe99">record</a>(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView <span class="keyword">override</span>;</div>
 <div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span> </div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>  <span class="keyword">struct </span>FrameData {</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>    glm::mat4 inverse_view_projection {1.0f};</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>    glm::vec4 camera {0.0f};</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    std::array&lt;glm::vec4, k_max_levels&gt; levels {};</div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>    glm::uvec4 size {0u};</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  };</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span></div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">struct </span>Face {</div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>    std::optional&lt;vma::raii::Image&gt; image;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>    std::optional&lt;vk::raii::ImageView&gt; storage_view;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    std::optional&lt;vk::raii::ImageView&gt; sampled_view;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    std::vector&lt;vk::raii::ImageView&gt; mip_views;</div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>    sync::ImageState state;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  };</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">struct </span>Level {</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    std::optional&lt;vma::raii::Image&gt; material;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    std::optional&lt;vk::raii::ImageView&gt; material_view;</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    sync::ImageState material_state;</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>    std::optional&lt;vma::raii::Image&gt; emission;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>    std::optional&lt;vk::raii::ImageView&gt; emission_view;</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>    sync::ImageState emission_state;</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>    std::optional&lt;vma::raii::Image&gt; opacity;</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    std::optional&lt;vk::raii::ImageView&gt; opacity_view;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    std::optional&lt;vk::raii::ImageView&gt; opacity_all_view;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    std::vector&lt;vk::raii::ImageView&gt; opacity_mip_views;</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    sync::ImageState opacity_state;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    std::array&lt;Face, k_faces&gt; faces;</div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span>    std::array&lt;Face, k_faces&gt; ambient;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>    glm::ivec3 origin {0};</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    <span class="keywordtype">bool</span> needs_full = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  };</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span> </div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <span class="keyword">auto</span> createPipelines(<span class="keyword">const</span> VulkanCore&amp; core) -&gt; bool;</div>
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <span class="keywordtype">void</span> createLevels(uint32_t resolution, uint32_t levels);</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <span class="keywordtype">void</span> markFull();</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keywordtype">void</span> unpublish(vk::CommandBuffer cmd);</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <span class="keywordtype">void</span> gatherBodies(<span class="keyword">const</span> RenderFrame&amp; frame);</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <span class="keyword">auto</span> recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, uint32_t level, uint32_t mode)</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>      -&gt; vk::ImageView;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  vk::Format m_scene_format = vk::Format::eUndefined;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  vk::Extent2D m_extent {};</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span></div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  ShaderLayout m_fill_layout;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  VulkanPipeline m_fill_pipeline;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_fill_sets;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_storage_sets;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  DescriptorCache&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;&gt; m_storage_bound;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span></div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  ShaderLayout m_inject_layout;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  VulkanPipeline m_inject_pipeline;</div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  SceneDescriptorSets m_inject_scene_sets;</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_inject_sets;</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span></div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  ShaderLayout m_bounce_layout;</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  VulkanPipeline m_bounce_pipeline;</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  SceneDescriptorSets m_bounce_scene_sets;</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_bounce_sets;</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  VulkanPipeline m_bounce_list_pipeline;</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  std::optional&lt;vma::raii::Buffer&gt; m_bounce_list;</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span> </div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  ShaderLayout m_down_layout;</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>  VulkanPipeline m_down_pipeline;</div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_down_sets;</div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  VulkanPipeline m_mip_pipeline;</div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_mip_sets;</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  uint32_t m_tail = 0;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  uint32_t m_frame = 0;</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  ShaderLayout m_debug_layout;</div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  VulkanPipeline m_debug_pipeline;</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  PostProcessTarget m_debug_target;</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_debug_sets;</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  DescriptorCache&lt;std::array&lt;vk::ImageView, 4&gt;&gt; m_debug_bound;</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span> </div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  vk::raii::Sampler m_point_sampler = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  vk::raii::Sampler m_linear_sampler = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>  std::optional&lt;vma::raii::Buffer&gt; m_published;</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>  <span class="keywordtype">bool</span> m_published_valid = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  std::optional&lt;vma::raii::Image&gt; m_dummy;</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  std::optional&lt;vk::raii::ImageView&gt; m_dummy_view;</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  std::vector&lt;vma::raii::Buffer&gt; m_frame_data;</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span> </div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  std::array&lt;Level, k_max_levels&gt; m_levels;</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  uint32_t m_resolution = 0;</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  uint32_t m_level_count = 0;</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  <span class="keywordtype">float</span> m_cell = 0.0f;</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span></div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  GiDirtyBoxes m_dirty_boxes;</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  <span class="keyword">struct </span>Body {</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>    glm::mat4 model {1.0f};</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    glm::vec4 bounds {0.0f};</div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  };</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span> </div>
-<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_max_body_boxes = 256;</div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  std::unordered_map&lt;uint64_t, Body&gt; m_bodies;</div>
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  std::unordered_map&lt;uint64_t, Body&gt; m_bodies_next;</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  std::vector&lt;glm::vec3&gt; m_body_boxes;</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>};</div>
+<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span>  <span class="keywordtype">void</span> onResize(vk::Extent2D extent) <span class="keyword">override</span>;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span></div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00074" data-start="{" data-end="}">
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613">   74</a></span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613">publishedFrame</a>() const -&gt; vk::Buffer {</div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>    <span class="keywordflow">return</span> m_published.has_value() ? **m_published : vk::Buffer {};</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  }</div>
 </div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span> </div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>}</div>
-<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_a180064544993794c926c645b162ae344"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">renderer::GiClipmapPass::k_faces</a></div><div class="ttdeci">static constexpr uint32_t k_faces</div><div class="ttdoc">Mirrors gi_clip_common kGiClipFaces.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:35</div></div>
-<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_a6032db3c4792993ddea67e00bf494826"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#a6032db3c4792993ddea67e00bf494826">renderer::GiClipmapPass::radianceSampler</a></div><div class="ttdeci">auto radianceSampler() const -&gt; vk::Sampler</div><div class="ttdoc">Linear and repeat so the toroidal wrap filters across the texture edge.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:66</div></div>
-<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_a9084439c10c181d2026b0035cee28613"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613">renderer::GiClipmapPass::publishedFrame</a></div><div class="ttdeci">auto publishedFrame() const -&gt; vk::Buffer</div><div class="ttdoc">Copy of the last recorded frame with size.z 1 and zero while the clipmap holds nothing.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:50</div></div>
-<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_aa1d09bd12fe3fb9d300c572ea7a84065"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">renderer::GiClipmapPass::k_max_levels</a></div><div class="ttdeci">static constexpr uint32_t k_max_levels</div><div class="ttdoc">Mirrors gi_clip_common kGiClipMaxLevels.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:32</div></div>
-<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_ab47152a56353a24aaa06919702f3fe99"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#ab47152a56353a24aaa06919702f3fe99">renderer::GiClipmapPass::record</a></div><div class="ttdeci">auto record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.cpp:690</div></div>
-<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_ae81c17ef605faa0d3e93b6a5d0dfd1b6"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#ae81c17ef605faa0d3e93b6a5d0dfd1b6">renderer::GiClipmapPass::radianceViews</a></div><div class="ttdeci">auto radianceViews() const -&gt; std::array&lt; vk::ImageView, k_max_levels *k_faces &gt;</div><div class="ttdoc">Sampled face view at level * k_faces + face where unused levels repeat level 0 and a dummy stands in ...</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.cpp:635</div></div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span></div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>  <span class="keyword">auto</span> <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#ae81c17ef605faa0d3e93b6a5d0dfd1b6">radianceViews</a>() const -&gt; std::array&lt;vk::ImageView, <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a> * <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">k_faces</a>&gt;;</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span> </div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  auto ambientViews() const -&gt; std::array&lt;vk::ImageView, <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a> * <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">k_faces</a>&gt;;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  auto opacityViews() const -&gt; std::array&lt;vk::ImageView, <a class="code hl_variable" href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">k_max_levels</a>&gt;;</div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span></div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  [[nodiscard]]</div>
+<div class="foldopen" id="foldopen00090" data-start="{" data-end="}">
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno"><a class="line" href="classrenderer_1_1GiClipmapPass.html#a6032db3c4792993ddea67e00bf494826">   90</a></span>  auto <a class="code hl_function" href="classrenderer_1_1GiClipmapPass.html#a6032db3c4792993ddea67e00bf494826">radianceSampler</a>() const -&gt; vk::Sampler {</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    <span class="keywordflow">return</span> *m_linear_sampler;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  }</div>
+</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keyword">struct </span>FrameData {</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>    glm::mat4 inverse_view_projection {1.0f};</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>    glm::vec4 camera {0.0f};</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>    std::array&lt;glm::vec4, k_max_levels&gt; levels {};</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>    glm::uvec4 size {0u};</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  };</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  <span class="keyword">struct </span>Face {</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>    std::optional&lt;vma::raii::Image&gt; image;</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>    std::optional&lt;vk::raii::ImageView&gt; storage_view;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>    std::optional&lt;vk::raii::ImageView&gt; sampled_view;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>    std::vector&lt;vk::raii::ImageView&gt; mip_views;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>    sync::ImageState state;</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  };</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span> </div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <span class="keyword">struct </span>Level {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>    std::optional&lt;vma::raii::Image&gt; material;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>    std::optional&lt;vk::raii::ImageView&gt; material_view;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>    sync::ImageState material_state;</div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>    std::optional&lt;vma::raii::Image&gt; emission;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>    std::optional&lt;vk::raii::ImageView&gt; emission_view;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>    sync::ImageState emission_state;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>    std::optional&lt;vma::raii::Image&gt; opacity;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>    std::optional&lt;vk::raii::ImageView&gt; opacity_view;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>    std::optional&lt;vk::raii::ImageView&gt; opacity_all_view;</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>    std::vector&lt;vk::raii::ImageView&gt; opacity_mip_views;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>    sync::ImageState opacity_state;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>    std::array&lt;Face, k_faces&gt; faces;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>    std::array&lt;Face, k_faces&gt; ambient;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>    glm::ivec3 origin {0};</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>    <span class="keywordtype">bool</span> needs_full = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>    std::vector&lt;gi_clip::Box&gt; pending;</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  };</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span></div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> int64_t k_fill_budget_cells = 16384;</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span> </div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keyword">auto</span> createPipelines(<span class="keyword">const</span> VulkanCore&amp; core) -&gt; bool;</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordtype">void</span> createLevels(uint32_t resolution, uint32_t levels);</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  <span class="keywordtype">void</span> markFull();</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <span class="keywordtype">void</span> unpublish(vk::CommandBuffer cmd);</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <span class="keywordtype">void</span> gatherBodies(<span class="keyword">const</span> RenderFrame&amp; frame);</div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span>  <span class="keyword">auto</span> gatherLightChanges(<span class="keyword">const</span> RenderFrame&amp; frame, std::vector&lt;glm::vec3&gt;&amp; boxes) -&gt; bool;</div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>  <span class="keyword">auto</span> recordDebug(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view, uint32_t level, uint32_t mode)</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>      -&gt; vk::ImageView;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span> </div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="keyword">const</span> VulkanCore* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  vk::Format m_scene_format = vk::Format::eUndefined;</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  vk::Extent2D m_extent {};</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span></div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  ShaderLayout m_fill_layout;</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  VulkanPipeline m_fill_pipeline;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_fill_sets;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_storage_sets;</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  DescriptorCache&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;&gt; m_storage_bound;</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span></div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>  ShaderLayout m_inject_layout;</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  VulkanPipeline m_inject_pipeline;</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  SceneDescriptorSets m_inject_scene_sets;</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_inject_sets;</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span></div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  ShaderLayout m_bounce_layout;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>  VulkanPipeline m_bounce_pipeline;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  SceneDescriptorSets m_bounce_scene_sets;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_bounce_sets;</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  VulkanPipeline m_bounce_list_pipeline;</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>  std::optional&lt;vma::raii::Buffer&gt; m_bounce_list;</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span> </div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  ShaderLayout m_down_layout;</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  VulkanPipeline m_down_pipeline;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_down_sets;</div>
+<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span>  VulkanPipeline m_mip_pipeline;</div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno">  179</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_mip_sets;</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  uint32_t m_tail = 0;</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>  uint32_t m_frame = 0;</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span> </div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>  ShaderLayout m_debug_layout;</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>  VulkanPipeline m_debug_pipeline;</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>  PostProcessTarget m_debug_target;</div>
+<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_debug_sets;</div>
+<div class="line"><a id="l00187" name="l00187"></a><span class="lineno">  187</span>  DescriptorCache&lt;std::array&lt;vk::ImageView, 4&gt;&gt; m_debug_bound;</div>
+<div class="line"><a id="l00188" name="l00188"></a><span class="lineno">  188</span> </div>
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno">  189</span>  vk::raii::Sampler m_point_sampler = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno">  190</span>  vk::raii::Sampler m_linear_sampler = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span>  std::optional&lt;vma::raii::Buffer&gt; m_published;</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno">  192</span>  <span class="keywordtype">bool</span> m_published_valid = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno">  193</span>  std::optional&lt;vma::raii::Image&gt; m_dummy;</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno">  194</span>  std::optional&lt;vk::raii::ImageView&gt; m_dummy_view;</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>  std::vector&lt;vma::raii::Buffer&gt; m_frame_data;</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span>  std::array&lt;Level, k_max_levels&gt; m_levels;</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>  uint32_t m_resolution = 0;</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>  uint32_t m_level_count = 0;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>  <span class="keywordtype">float</span> m_cell = 0.0f;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span></div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>  GiDirtyBoxes m_dirty_boxes;</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span> </div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>  <span class="keyword">struct </span>Body {</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    glm::mat4 model {1.0f};</div>
+<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>    glm::vec4 bounds {0.0f};</div>
+<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>  };</div>
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>  <span class="keyword">struct </span>TrackedBody {</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    Body filled;</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>    Body seen;</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    uint32_t flying = 0;</div>
+<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>    uint64_t gather = 0;</div>
+<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>  };</div>
+<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_max_body_boxes = 256;</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_flying_refill_frames = 8;</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  std::unordered_map&lt;uint64_t, TrackedBody&gt; m_bodies;</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>  uint64_t m_body_gather = 0;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  std::vector&lt;glm::vec3&gt; m_body_boxes;</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span></div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_relight_levels = 2;</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_inject_lights = 64;</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_max_light_boxes = 16;</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>  std::array&lt;DirectionalLightData, k_max_directional_lights&gt; m_last_suns {};</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>  uint32_t m_last_sun_count = 0;</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>  std::vector&lt;GpuLight&gt; m_last_lights;</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span><span class="preprocessor">#if defined(TOAST_DEV_TOOLS)</span></div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>  <span class="keyword">mutable</span> std::mutex m_stats_mutex;</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>  Stats m_stats;</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>};</div>
+</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span> </div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>}</div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html">renderer::GiClipmapPass</a></div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:32</div></div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_a180064544993794c926c645b162ae344"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#a180064544993794c926c645b162ae344">renderer::GiClipmapPass::k_faces</a></div><div class="ttdeci">static constexpr uint32_t k_faces</div><div class="ttdoc">Mirrors gi_clip_common kGiClipFaces.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:38</div></div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_a6032db3c4792993ddea67e00bf494826"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#a6032db3c4792993ddea67e00bf494826">renderer::GiClipmapPass::radianceSampler</a></div><div class="ttdeci">auto radianceSampler() const -&gt; vk::Sampler</div><div class="ttdoc">Linear and repeat so the toroidal wrap filters across the texture edge.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:90</div></div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_a9084439c10c181d2026b0035cee28613"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#a9084439c10c181d2026b0035cee28613">renderer::GiClipmapPass::publishedFrame</a></div><div class="ttdeci">auto publishedFrame() const -&gt; vk::Buffer</div><div class="ttdoc">Copy of the last recorded frame with size.z 1 and zero while the clipmap holds nothing.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:74</div></div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_aa1d09bd12fe3fb9d300c572ea7a84065"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#aa1d09bd12fe3fb9d300c572ea7a84065">renderer::GiClipmapPass::k_max_levels</a></div><div class="ttdeci">static constexpr uint32_t k_max_levels</div><div class="ttdoc">Mirrors gi_clip_common kGiClipMaxLevels.</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.hpp:35</div></div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_ab47152a56353a24aaa06919702f3fe99"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#ab47152a56353a24aaa06919702f3fe99">renderer::GiClipmapPass::record</a></div><div class="ttdeci">auto record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.cpp:816</div></div>
+<div class="ttc" id="aclassrenderer_1_1GiClipmapPass_html_ae81c17ef605faa0d3e93b6a5d0dfd1b6"><div class="ttname"><a href="classrenderer_1_1GiClipmapPass.html#ae81c17ef605faa0d3e93b6a5d0dfd1b6">renderer::GiClipmapPass::radianceViews</a></div><div class="ttdeci">auto radianceViews() const -&gt; std::array&lt; vk::ImageView, k_max_levels *k_faces &gt;</div><div class="ttdoc">Sampled face view at level * k_faces + face where unused levels repeat level 0 and a dummy stands in ...</div><div class="ttdef"><b>Definition</b> gi_clipmap_pass.cpp:754</div></div>
 <div class="ttc" id="aclassrenderer_1_1IPostProcessPass_html"><div class="ttname"><a href="classrenderer_1_1IPostProcessPass.html">renderer::IPostProcessPass</a></div><div class="ttdef"><b>Definition</b> post_process_pass_base.hpp:14</div></div>
-<div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:67</div></div>
+<div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:68</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="adescriptor__cache_8hpp_html"><div class="ttname"><a href="descriptor__cache_8hpp.html">descriptor_cache.hpp</a></div></div>
+<div class="ttc" id="agi__clip__math_8hpp_html"><div class="ttname"><a href="gi__clip__math_8hpp.html">gi_clip_math.hpp</a></div></div>
 <div class="ttc" id="agi__dirty__boxes_8hpp_html"><div class="ttname"><a href="gi__dirty__boxes_8hpp.html">gi_dirty_boxes.hpp</a></div></div>
 <div class="ttc" id="agpu__sync_8hpp_html"><div class="ttname"><a href="gpu__sync_8hpp.html">gpu_sync.hpp</a></div></div>
+<div class="ttc" id="agpu__types_8hpp_html"><div class="ttname"><a href="gpu__types_8hpp.html">gpu_types.hpp</a></div></div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
 <div class="ttc" id="apost__process__pass__base_8hpp_html"><div class="ttname"><a href="post__process__pass__base_8hpp.html">post_process_pass_base.hpp</a></div></div>
 <div class="ttc" id="apost__process__target_8hpp_html"><div class="ttname"><a href="post__process__target_8hpp.html">post_process_target.hpp</a></div></div>
 <div class="ttc" id="ascene__descriptor__set_8hpp_html"><div class="ttname"><a href="scene__descriptor__set_8hpp.html">scene_descriptor_set.hpp</a></div></div>

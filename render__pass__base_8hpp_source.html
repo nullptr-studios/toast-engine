@@ -128,8 +128,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('render__pass__
 <div class="line"><a id="l00010" name="l00010"></a><span class="lineno">   10</span><span class="preprocessor">#include &lt;string_view&gt;</span></div>
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span> </div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="keyword">enum class</span> RenderStage : uint8_t {</div>
-<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>  world,</div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>  overlay,</div>
+<div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span>  <a class="code hl_enumvalue" href="namespacerenderer.html#ae9bb563c3061694add431731831277c0a7d793037a0760186574b0282f2f435e7">world</a>,</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span>  <a class="code hl_enumvalue" href="namespacerenderer.html#ae9bb563c3061694add431731831277c0a380e537acdaedd487ca1adb49d020f7e">overlay</a>,</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span>  voxel_gbuffer,</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span>};</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span> </div>
@@ -167,6 +167,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('render__pass__
 </div>
 <div class="ttc" id="aclassIRenderPass_html"><div class="ttname"><a href="classIRenderPass.html">IRenderPass</a></div><div class="ttdef"><b>Definition</b> render_pass_base.hpp:19</div></div>
 <div class="ttc" id="aclassIRenderPass_html_a04a8a53572c6ad42934b6cdd9a30839a"><div class="ttname"><a href="classIRenderPass.html#a04a8a53572c6ad42934b6cdd9a30839a">IRenderPass::recordPre</a></div><div class="ttdeci">virtual void recordPre(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t image_index)</div><div class="ttdoc">Records outside any rendering scope before the main scope opens.</div><div class="ttdef"><b>Definition</b> render_pass_base.hpp:31</div></div>
+<div class="ttc" id="anamespacerenderer_html_ae9bb563c3061694add431731831277c0a380e537acdaedd487ca1adb49d020f7e"><div class="ttname"><a href="namespacerenderer.html#ae9bb563c3061694add431731831277c0a380e537acdaedd487ca1adb49d020f7e">renderer::GamePassStage::overlay</a></div><div class="ttdeci">@ overlay</div><div class="ttdoc">After the tonemap at output resolution, use viewProjection.</div><div class="ttdef"><b>Definition</b> game_pass.hpp:46</div></div>
+<div class="ttc" id="anamespacerenderer_html_ae9bb563c3061694add431731831277c0a7d793037a0760186574b0282f2f435e7"><div class="ttname"><a href="namespacerenderer.html#ae9bb563c3061694add431731831277c0a7d793037a0760186574b0282f2f435e7">renderer::GamePassStage::world</a></div><div class="ttdeci">@ world</div><div class="ttdoc">HDR scene before TAA, bloom and tonemap.</div><div class="ttdef"><b>Definition</b> game_pass.hpp:44</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shader__reflec
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;<a class="code" href="export_8hpp.html">toast/export.hpp</a>&gt;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span> </div>
-<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> {</div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span> </div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">enum class</span> ShaderMemberType : uint8_t {</div>
 <div class="line"><a id="l00018" name="l00018"></a><span class="lineno">   18</span>  unknown,</div>
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shader__reflec
 <div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
 <div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span><span class="keyword">auto</span> extractReflection(slang::ProgramLayout* layout) -&gt; <a class="code hl_struct" href="structrenderer_1_1ShaderReflection.html">ShaderReflection</a>;</div>
 <div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span></div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="keywordtype">void</span> <a class="code hl_function" href="shader__reflection_8cpp.html#a7b108ce4057289713583070a0a6acd72">extractModuleEntryPoints</a>(slang::IModule* module, <a class="code hl_struct" href="structrenderer_1_1ShaderReflection.html">ShaderReflection</a>&amp; reflection);</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span><span class="keywordtype">void</span> <a class="code hl_function" href="namespacerenderer.html#a7b108ce4057289713583070a0a6acd72">extractModuleEntryPoints</a>(slang::IModule* module, <a class="code hl_struct" href="structrenderer_1_1ShaderReflection.html">ShaderReflection</a>&amp; reflection);</div>
 <div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
 <div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span><span class="keyword">auto</span> toString(ShaderMemberType type) -&gt; std::string_view;</div>
 <div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span><span class="keyword">auto</span> toString(ShaderBindingKind kind) -&gt; std::string_view;</div>
@@ -237,7 +237,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('shader__reflec
 <div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
 <div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
-<div class="ttc" id="ashader__reflection_8cpp_html_a7b108ce4057289713583070a0a6acd72"><div class="ttname"><a href="shader__reflection_8cpp.html#a7b108ce4057289713583070a0a6acd72">renderer::extractModuleEntryPoints</a></div><div class="ttdeci">void extractModuleEntryPoints(slang::IModule *module, ShaderReflection &amp;reflection)</div><div class="ttdoc">Must come from the IModule since ProgramLayout reports 0 entry points for a module only composite.</div><div class="ttdef"><b>Definition</b> shader_reflection.cpp:221</div></div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
+<div class="ttc" id="anamespacerenderer_html_a7b108ce4057289713583070a0a6acd72"><div class="ttname"><a href="namespacerenderer.html#a7b108ce4057289713583070a0a6acd72">renderer::extractModuleEntryPoints</a></div><div class="ttdeci">void extractModuleEntryPoints(slang::IModule *module, ShaderReflection &amp;reflection)</div><div class="ttdoc">Must come from the IModule since ProgramLayout reports 0 entry points for a module only composite.</div><div class="ttdef"><b>Definition</b> shader_reflection.cpp:221</div></div>
 <div class="ttc" id="astructrenderer_1_1ShaderBinding_html"><div class="ttname"><a href="structrenderer_1_1ShaderBinding.html">renderer::ShaderBinding</a></div><div class="ttdef"><b>Definition</b> shader_reflection.hpp:64</div></div>
 <div class="ttc" id="astructrenderer_1_1ShaderBlockMember_html"><div class="ttname"><a href="structrenderer_1_1ShaderBlockMember.html">renderer::ShaderBlockMember</a></div><div class="ttdef"><b>Definition</b> shader_reflection.hpp:53</div></div>
 <div class="ttc" id="astructrenderer_1_1ShaderEntryPoint_html"><div class="ttname"><a href="structrenderer_1_1ShaderEntryPoint.html">renderer::ShaderEntryPoint</a></div><div class="ttdef"><b>Definition</b> shader_reflection.hpp:82</div></div>

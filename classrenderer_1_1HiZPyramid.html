@@ -119,16 +119,23 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classrenderer_
 </div><!--header-->
 <div class="contents">
 
-<p>Farthest depth pyramid where level k texel t covers pixels t &lt;&lt; (k + 1) to ((t + 1) &lt;&lt; (k + 1)) - 1.  
+<p>Farthest or closest depth pyramid where level k texel t covers pixels t &lt;&lt; (k + 1) to ((t + 1) &lt;&lt; (k + 1)) - 1.  
  <a href="#details">More...</a></p>
 
 <p><code>#include &lt;<a class="el" href="hiz__pyramid_8hpp_source.html">hiz_pyramid.hpp</a>&gt;</code></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-types" class="groupheader"><a id="pub-types" name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a6e2db7acc999d57e1939bae164c3144b" id="r_a6e2db7acc999d57e1939bae164c3144b"><td class="memItemLeft"><a id="a6e2db7acc999d57e1939bae164c3144b" name="a6e2db7acc999d57e1939bae164c3144b"></a>enum class &#160;</td><td class="memItemRight"><a class="el" href="#a6e2db7acc999d57e1939bae164c3144b">Reduction</a> : uint8_t { <b>farthest</b>
+, <b>closest</b>
+ }</td></tr>
+<tr class="memdesc:a6e2db7acc999d57e1939bae164c3144b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Farthest for occlusion culling and closest for ray marching. <br /></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a9edb1a289007c1006bdaca95acad2255" id="r_a9edb1a289007c1006bdaca95acad2255"><td class="memItemLeft"><a id="a9edb1a289007c1006bdaca95acad2255" name="a9edb1a289007c1006bdaca95acad2255"></a>
-void&#160;</td><td class="memItemRight"><b>create</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::ImageView depth, vk::Extent2D depth_extent)</td></tr>
-<tr class="memdesc:a9edb1a289007c1006bdaca95acad2255"><td class="mdescLeft">&#160;</td><td class="mdescRight">After a wait for idle since an in flight frame may still read the previous pyramid. <br /></td></tr>
+<tr class="memitem:a8b22c43de583bf061efd16aac1b1f911" id="r_a8b22c43de583bf061efd16aac1b1f911"><td class="memItemLeft"><a id="a8b22c43de583bf061efd16aac1b1f911" name="a8b22c43de583bf061efd16aac1b1f911"></a>
+void&#160;</td><td class="memItemRight"><b>create</b> (const <a class="el" href="classrenderer_1_1VulkanCore.html">VulkanCore</a> &amp;core, vk::ImageView depth, vk::Extent2D depth_extent, <a class="el" href="#a6e2db7acc999d57e1939bae164c3144b">Reduction</a> reduction=Reduction::farthest)</td></tr>
+<tr class="memdesc:a8b22c43de583bf061efd16aac1b1f911"><td class="mdescLeft">&#160;</td><td class="mdescRight">After a wait for idle since an in flight frame may still read the previous pyramid. <br /></td></tr>
 <tr class="memitem:a63d29e8751c88565f5e0c7775ebfaff5" id="r_a63d29e8751c88565f5e0c7775ebfaff5"><td class="memItemLeft"><a id="a63d29e8751c88565f5e0c7775ebfaff5" name="a63d29e8751c88565f5e0c7775ebfaff5"></a>
 void&#160;</td><td class="memItemRight"><b>record</b> (vk::CommandBuffer cmd, vk::Extent2D scene_extent, const glm::mat4 &amp;view_projection)</td></tr>
 <tr class="memdesc:a63d29e8751c88565f5e0c7775ebfaff5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Depth in depth_sampled and only its top left <code class="param">scene_extent</code> is reduced. <br /></td></tr>
@@ -138,6 +145,11 @@ void&#160;</td><td class="memItemRight"><b>beforeRead</b> (<a class="el" href="c
 <tr class="memitem:a7175c2fc15222a79c5ab31d571f9ce59" id="r_a7175c2fc15222a79c5ab31d571f9ce59"><td class="memItemLeft"><a id="a7175c2fc15222a79c5ab31d571f9ce59" name="a7175c2fc15222a79c5ab31d571f9ce59"></a>
 void&#160;</td><td class="memItemRight"><b>beforeTaskRead</b> (<a class="el" href="classrenderer_1_1sync_1_1BarrierBatch.html">sync::BarrierBatch</a> &amp;barriers)</td></tr>
 <tr class="memdesc:a7175c2fc15222a79c5ab31d571f9ce59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Earlier writes land before a task or mesh shader samples <a class="el" href="#a6a950a36ada2a2d77982a78e91e1bc41" title="Every level in eShaderReadOnlyOptimal once recorded.">view()</a>. <br /></td></tr>
+<tr class="memitem:aff5aef2efb6c69cc9b7296b60885c789" id="r_aff5aef2efb6c69cc9b7296b60885c789"><td class="memItemLeft"><a id="aff5aef2efb6c69cc9b7296b60885c789" name="aff5aef2efb6c69cc9b7296b60885c789"></a>
+void&#160;</td><td class="memItemRight"><b>beforeFragmentRead</b> (<a class="el" href="classrenderer_1_1sync_1_1BarrierBatch.html">sync::BarrierBatch</a> &amp;barriers)</td></tr>
+<tr class="memdesc:aff5aef2efb6c69cc9b7296b60885c789"><td class="mdescLeft">&#160;</td><td class="mdescRight">Earlier writes land before a fragment shader samples <a class="el" href="#a6a950a36ada2a2d77982a78e91e1bc41" title="Every level in eShaderReadOnlyOptimal once recorded.">view()</a>. <br /></td></tr>
+<tr class="memitem:af94ff9ff6568cfba3411fd86582e12b7" id="r_af94ff9ff6568cfba3411fd86582e12b7"><td class="memItemLeft"><a id="af94ff9ff6568cfba3411fd86582e12b7" name="af94ff9ff6568cfba3411fd86582e12b7"></a>
+auto&#160;</td><td class="memItemRight"><b>source</b> () const -&gt; vk::ImageView</td></tr>
 <tr class="memitem:af3a667e1e1d00a7e4d161786d618de09" id="r_af3a667e1e1d00a7e4d161786d618de09"><td class="memItemLeft"><a id="af3a667e1e1d00a7e4d161786d618de09" name="af3a667e1e1d00a7e4d161786d618de09"></a>
 auto&#160;</td><td class="memItemRight"><b>isReady</b> () const -&gt; bool</td></tr>
 <tr class="memdesc:af3a667e1e1d00a7e4d161786d618de09"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="#a6a950a36ada2a2d77982a78e91e1bc41" title="Every level in eShaderReadOnlyOptimal once recorded.">view()</a> can be bound without it but only a ready pyramid is ever built <br /></td></tr>
@@ -167,7 +179,7 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_levels</b>
 <tr class="memdesc:aaab7fdef56a39d3d0a580e608e76452d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors hiz_reduce.slang kMaxLevels so level 0 reaches 4096 texels. <br /></td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Farthest depth pyramid where level k texel t covers pixels t &lt;&lt; (k + 1) to ((t + 1) &lt;&lt; (k + 1)) - 1. </p>
+<div class="textblock"><p>Farthest or closest depth pyramid where level k texel t covers pixels t &lt;&lt; (k + 1) to ((t + 1) &lt;&lt; (k + 1)) - 1. </p>
 </div><hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/renderer/resources/<a class="el" href="hiz__pyramid_8hpp_source.html">hiz_pyramid.hpp</a></li>
 <li>engine/src/toast/renderer/resources/<b>hiz_pyramid.cpp</b></li>
@@ -185,7 +197,7 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_levels</b>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>renderer</b></li><li class="navelem"><a href="classrenderer_1_1HiZPyramid.html">HiZPyramid</a></li>
+    <li class="navelem"><a href="namespacerenderer.html">renderer</a></li><li class="navelem"><a href="classrenderer_1_1HiZPyramid.html">HiZPyramid</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

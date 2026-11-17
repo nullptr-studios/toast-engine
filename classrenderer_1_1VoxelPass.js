@@ -1,9 +1,10 @@
 var classrenderer_1_1VoxelPass =
 [
-    [ "GlassDraw", "structrenderer_1_1VoxelPass_1_1GlassDraw.html", null ],
+    [ "GlassDraw", "structrenderer_1_1VoxelPass_1_1GlassDraw.html", "structrenderer_1_1VoxelPass_1_1GlassDraw" ],
     [ "ambientRaysActive", "classrenderer_1_1VoxelPass.html#a236cbd3049cf0bbc93e8e107adde3b86", null ],
     [ "denoiseActive", "classrenderer_1_1VoxelPass.html#aabf852a97c975abca57d33b1ce497f79", null ],
     [ "glassDraws", "classrenderer_1_1VoxelPass.html#adb4ca96742622156fd42dd59d25a23eb", null ],
+    [ "glassScreenBounds", "classrenderer_1_1VoxelPass.html#ab98067e7fbd73400cebad015b9bc974e", null ],
     [ "marchedCompositeActive", "classrenderer_1_1VoxelPass.html#a07c3183651aa6e8a2afce235fe4f8c5b", null ],
     [ "nearQuadDepthPass", "classrenderer_1_1VoxelPass.html#a162084a9ddffcd5c6f9394aed579bcb4", null ],
     [ "occlusionActive", "classrenderer_1_1VoxelPass.html#a9c87ad8986736b4b204cff7aaf00eb29", null ],
@@ -16,6 +17,7 @@ var classrenderer_1_1VoxelPass =
     [ "recordDenoiseTemporal", "classrenderer_1_1VoxelPass.html#a9beab196d01d75c0a41036b1c646763e", null ],
     [ "recordGiGather", "classrenderer_1_1VoxelPass.html#a4f5cfcc4c5e715da28d909032889e299", null ],
     [ "recordGlass", "classrenderer_1_1VoxelPass.html#af09bfe6c7c2eea1d3d9cbf251dcaaf2e", null ],
+    [ "recordGlassNearest", "classrenderer_1_1VoxelPass.html#a8ace5d615aa22793e601a200df366744", null ],
     [ "recordGlassSurfaces", "classrenderer_1_1VoxelPass.html#a24f2c9ba12ba266c1c25bcb5d6fd948a", null ],
     [ "recordLate", "classrenderer_1_1VoxelPass.html#ab15c0b117d48dd90b296066c9a4798e5", null ],
     [ "recordLighting", "classrenderer_1_1VoxelPass.html#aea5a161a0a8f33026be60c85428e3b53", null ],
@@ -24,6 +26,6 @@ var classrenderer_1_1VoxelPass =
     [ "recordOcclusion", "classrenderer_1_1VoxelPass.html#ad2f1969c323e30dea17c0c2e4f866d1c", null ],
     [ "recordQuadDepth", "classrenderer_1_1VoxelPass.html#acf15185b20303261cf938694283ac3cf", null ],
     [ "recordSpatial", "classrenderer_1_1VoxelPass.html#a0ee8b75134b7db0ec2d618e41a40637b", null ],
-    [ "refractsGlass", "classrenderer_1_1VoxelPass.html#a56b5af37ed73efff85d04b6ce443494b", null ],
+    [ "setNearestGlassValid", "classrenderer_1_1VoxelPass.html#af216363ce59b896d2f1847611673d5e0", null ],
     [ "spatialActive", "classrenderer_1_1VoxelPass.html#a14be3f339a0f0f4733d5e9b476e72a75", null ]
 ];

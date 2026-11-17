@@ -8,6 +8,7 @@ var structrenderer_1_1GiSettings =
     [ "history_blend", "structrenderer_1_1GiSettings.html#a3839ff5faaccbc3761f2588fea90dcee", null ],
     [ "history_per_frame", "structrenderer_1_1GiSettings.html#a5b921b3f11fdefd4b301b3ac109ef779", null ],
     [ "history_seconds", "structrenderer_1_1GiSettings.html#addc29fbdb0069125b2c3c628b7573ce3", null ],
+    [ "intensity", "structrenderer_1_1GiSettings.html#af2b4725f59edeaa318c5b2851e615708", null ],
     [ "lod_distance", "structrenderer_1_1GiSettings.html#a3b600db5ab8cbc5c68e00f96076ca683", null ],
     [ "motion_threshold", "structrenderer_1_1GiSettings.html#adbfadc268ddb375adc19a35b1dba9692", null ],
     [ "multibounce", "structrenderer_1_1GiSettings.html#a2e4e464a6d98c57253bb931fc809623d", null ],

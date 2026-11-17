@@ -971,7 +971,7 @@ var annotated_dup =
       [ "VoxelVoxelPairView", "structphysics_1_1VoxelVoxelPairView.html", null ],
       [ "VoxelVoxelSplitInfo", "structphysics_1_1VoxelVoxelSplitInfo.html", "structphysics_1_1VoxelVoxelSplitInfo" ]
     ] ],
-    [ "renderer", null, [
+    [ "renderer", "namespacerenderer.html", [
       [ "gi_clip", null, [
         [ "Box", "structrenderer_1_1gi__clip_1_1Box.html", "structrenderer_1_1gi__clip_1_1Box" ]
       ] ],
@@ -1022,6 +1022,8 @@ var annotated_dup =
       [ "FogVolumeGpu", "structrenderer_1_1FogVolumeGpu.html", "structrenderer_1_1FogVolumeGpu" ],
       [ "FrameUBO", "structrenderer_1_1FrameUBO.html", "structrenderer_1_1FrameUBO" ],
       [ "FxaaPass", "classrenderer_1_1FxaaPass.html", "classrenderer_1_1FxaaPass" ],
+      [ "GamePass", "classrenderer_1_1GamePass.html", null ],
+      [ "GamePassDesc", "structrenderer_1_1GamePassDesc.html", "structrenderer_1_1GamePassDesc" ],
       [ "GiClipmapPass", "classrenderer_1_1GiClipmapPass.html", "classrenderer_1_1GiClipmapPass" ],
       [ "GiDirtyBoxes", "classrenderer_1_1GiDirtyBoxes.html", "classrenderer_1_1GiDirtyBoxes" ],
       [ "GiPass", "classrenderer_1_1GiPass.html", "classrenderer_1_1GiPass" ],

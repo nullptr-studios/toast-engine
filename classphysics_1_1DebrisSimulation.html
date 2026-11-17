@@ -145,6 +145,8 @@ Classes</h2></td></tr>
 <tr class="memitem:GpuMotion" id="r_GpuMotion"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1DebrisSimulation_1_1GpuMotion.html">GpuMotion</a></td></tr>
 <tr class="memitem:GpuSpawn" id="r_GpuSpawn"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1DebrisSimulation_1_1GpuSpawn.html">GpuSpawn</a></td></tr>
 <tr class="memitem:GpuVolume" id="r_GpuVolume"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1DebrisSimulation_1_1GpuVolume.html">GpuVolume</a></td></tr>
+<tr class="memitem:ShadowBounds" id="r_ShadowBounds"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1DebrisSimulation_1_1ShadowBounds.html">ShadowBounds</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors gShadowBounds in debris.slang, the box is in ordered uints and empty while min is above max.  <a href="structphysics_1_1DebrisSimulation_1_1ShadowBounds.html#details">More...</a><br /></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-pub-methods" class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
@@ -180,6 +182,8 @@ auto&#160;</td><td class="memItemRight"><b>particlesId</b> () const -&gt; Buffer
 auto&#160;</td><td class="memItemRight"><b>drawListId</b> () const -&gt; BufferId</td></tr>
 <tr class="memitem:aee2abbdcc74a1b19eb8d2a832596c3d9" id="r_aee2abbdcc74a1b19eb8d2a832596c3d9"><td class="memItemLeft"><a id="aee2abbdcc74a1b19eb8d2a832596c3d9" name="aee2abbdcc74a1b19eb8d2a832596c3d9"></a>
 auto&#160;</td><td class="memItemRight"><b>drawArgsId</b> () const -&gt; BufferId</td></tr>
+<tr class="memitem:a52ede1eae48b1a861e5c2e7c6bcbada1" id="r_a52ede1eae48b1a861e5c2e7c6bcbada1"><td class="memItemLeft"><a id="a52ede1eae48b1a861e5c2e7c6bcbada1" name="a52ede1eae48b1a861e5c2e7c6bcbada1"></a>
+auto&#160;</td><td class="memItemRight"><b>shadowBoundsId</b> () const -&gt; BufferId</td></tr>
 <tr class="inherit_header pub_methods_classrenderer_1_1AsyncComputeTask"><td colspan="2">Public Member Functions inherited from <a class="el" href="classrenderer_1_1AsyncComputeTask.html">renderer::AsyncComputeTask</a></td></tr>
 <tr class="memitem:ac0ba701ce5a8197c1c19e7a92ce0a0ec pub_methods_classrenderer_1_1AsyncComputeTask" id="r_ac0ba701ce5a8197c1c19e7a92ce0a0ec"><td class="memItemLeft">
 &#160;</td><td class="memItemRight"><b>AsyncComputeTask</b> (const AsyncComputeTask &amp;)=delete</td></tr>
@@ -218,8 +222,6 @@ static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_voxels_per_par
 <tr class="memitem:a706a55d5f2ab657234ebd05fd388de36" id="r_a706a55d5f2ab657234ebd05fd388de36"><td class="memItemLeft"><a id="a706a55d5f2ab657234ebd05fd388de36" name="a706a55d5f2ab657234ebd05fd388de36"></a>
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_flag_glass</b> = 1u &lt;&lt; 25</td></tr>
 <tr class="memdesc:a706a55d5f2ab657234ebd05fd388de36"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors debris.slang where bits 0 to 7 are the voxel mask. <br /></td></tr>
-<tr class="memitem:a989ce76dba06883295a2fc99da63e8a1" id="r_a989ce76dba06883295a2fc99da63e8a1"><td class="memItemLeft"><a id="a989ce76dba06883295a2fc99da63e8a1" name="a989ce76dba06883295a2fc99da63e8a1"></a>
-static constexpr float&#160;</td><td class="memItemRight"><b>k_fade_in_seconds</b> = 0.12f</td></tr>
 <tr class="memitem:a832b40722cea0e95dc3dc9ab7d389a2a" id="r_a832b40722cea0e95dc3dc9ab7d389a2a"><td class="memItemLeft"><a id="a832b40722cea0e95dc3dc9ab7d389a2a" name="a832b40722cea0e95dc3dc9ab7d389a2a"></a>
 static constexpr float&#160;</td><td class="memItemRight"><b>k_fade_out_seconds</b> = 0.6f</td></tr>
 <tr class="memitem:a9a7115e4d8de9d6a447de103112942c2" id="r_a9a7115e4d8de9d6a447de103112942c2"><td class="memItemLeft"><a id="a9a7115e4d8de9d6a447de103112942c2" name="a9a7115e4d8de9d6a447de103112942c2"></a>

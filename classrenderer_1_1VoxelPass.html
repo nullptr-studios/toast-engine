@@ -191,6 +191,9 @@ void&#160;</td><td class="memItemRight"><b>recordAmbient</b> (vk::CommandBuffer 
 <tr class="memitem:a35d422b6a41d6324845d4c0f88c13159" id="r_a35d422b6a41d6324845d4c0f88c13159"><td class="memItemLeft"><a id="a35d422b6a41d6324845d4c0f88c13159" name="a35d422b6a41d6324845d4c0f88c13159"></a>
 void&#160;</td><td class="memItemRight"><b>recordMarched</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
 <tr class="memdesc:a35d422b6a41d6324845d4c0f88c13159"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inside a scope over scene colour noisy terms and reservoirs with the scene normal sampleable. <br /></td></tr>
+<tr class="memitem:ab98067e7fbd73400cebad015b9bc974e" id="r_ab98067e7fbd73400cebad015b9bc974e"><td class="memItemLeft"><a id="ab98067e7fbd73400cebad015b9bc974e" name="ab98067e7fbd73400cebad015b9bc974e"></a>
+auto&#160;</td><td class="memItemRight"><b>glassScreenBounds</b> () const -&gt; std::optional&lt; glm::vec4 &gt;</td></tr>
+<tr class="memdesc:ab98067e7fbd73400cebad015b9bc974e"><td class="mdescLeft">&#160;</td><td class="mdescRight">NDC rect around every glass brick drawn this frame, empty when one crosses the near plane and could cover anything. <br /></td></tr>
 <tr class="memitem:adb4ca96742622156fd42dd59d25a23eb" id="r_adb4ca96742622156fd42dd59d25a23eb"><td class="memItemLeft"><a id="adb4ca96742622156fd42dd59d25a23eb" name="adb4ca96742622156fd42dd59d25a23eb"></a>
 auto&#160;</td><td class="memItemRight"><b>glassDraws</b> () const -&gt; std::span&lt; const <a class="el" href="structrenderer_1_1VoxelPass_1_1GlassDraw.html">GlassDraw</a> &gt;</td></tr>
 <tr class="memdesc:adb4ca96742622156fd42dd59d25a23eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Far to near in the order <a class="el" href="#af09bfe6c7c2eea1d3d9cbf251dcaaf2e" title="Inside the world scope after the sky.">recordGlass()</a> indexes them and empty when no glass draws this frame. <br /></td></tr>
@@ -200,15 +203,14 @@ void&#160;</td><td class="memItemRight"><b>recordGlass</b> (vk::CommandBuffer cm
 <tr class="memitem:a24f2c9ba12ba266c1c25bcb5d6fd948a" id="r_a24f2c9ba12ba266c1c25bcb5d6fd948a"><td class="memItemLeft"><a id="a24f2c9ba12ba266c1c25bcb5d6fd948a" name="a24f2c9ba12ba266c1c25bcb5d6fd948a"></a>
 void&#160;</td><td class="memItemRight"><b>recordGlassSurfaces</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
 <tr class="memdesc:a24f2c9ba12ba266c1c25bcb5d6fd948a"><td class="mdescLeft">&#160;</td><td class="mdescRight">After every blended draw. <br /></td></tr>
-<tr class="memitem:adf65fabf4ba99f38b69ec433976a7a6f" id="r_adf65fabf4ba99f38b69ec433976a7a6f"><td class="memItemLeft"><a id="adf65fabf4ba99f38b69ec433976a7a6f" name="adf65fabf4ba99f38b69ec433976a7a6f"></a>
-void&#160;</td><td class="memItemRight"><b>recordGlassMask</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
-<tr class="memitem:a56b5af37ed73efff85d04b6ce443494b" id="r_a56b5af37ed73efff85d04b6ce443494b"><td class="memItemLeft"><a id="a56b5af37ed73efff85d04b6ce443494b" name="a56b5af37ed73efff85d04b6ce443494b"></a>
-auto&#160;</td><td class="memItemRight"><b>refractsGlass</b> () const -&gt; bool</td></tr>
-<tr class="memdesc:a56b5af37ed73efff85d04b6ce443494b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether the backdrop must be copied before glass draws. <br /></td></tr>
-<tr class="memitem:ac19483abe57a215d145984096cbe9c5f" id="r_ac19483abe57a215d145984096cbe9c5f"><td class="memItemLeft"><a id="ac19483abe57a215d145984096cbe9c5f" name="ac19483abe57a215d145984096cbe9c5f"></a>
-void&#160;</td><td class="memItemRight"><b>setBackdropCaptured</b> (bool captured) noexcept</td></tr>
+<tr class="memitem:a8ace5d615aa22793e601a200df366744" id="r_a8ace5d615aa22793e601a200df366744"><td class="memItemLeft"><a id="a8ace5d615aa22793e601a200df366744" name="a8ace5d615aa22793e601a200df366744"></a>
+void&#160;</td><td class="memItemRight"><b>recordGlassNearest</b> (vk::CommandBuffer cmd, uint32_t frame_index)</td></tr>
+<tr class="memdesc:a8ace5d615aa22793e601a200df366744"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nearest glass surface into its own depth and the glass mask, before any blended draw. <br /></td></tr>
 <tr class="memitem:a187cca1a921a9f9c010cf00e4f9cba6a" id="r_a187cca1a921a9f9c010cf00e4f9cba6a"><td class="memItemLeft"><a id="a187cca1a921a9f9c010cf00e4f9cba6a" name="a187cca1a921a9f9c010cf00e4f9cba6a"></a>
 void&#160;</td><td class="memItemRight"><b>setBackdropDepthValid</b> (bool valid) noexcept</td></tr>
+<tr class="memitem:af216363ce59b896d2f1847611673d5e0" id="r_af216363ce59b896d2f1847611673d5e0"><td class="memItemLeft"><a id="af216363ce59b896d2f1847611673d5e0" name="af216363ce59b896d2f1847611673d5e0"></a>
+void&#160;</td><td class="memItemRight"><b>setNearestGlassValid</b> (bool valid) noexcept</td></tr>
+<tr class="memdesc:af216363ce59b896d2f1847611673d5e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether the nearest glass depth was written this frame so blended glass lights only its front layer fully. <br /></td></tr>
 <tr class="memitem:aabf852a97c975abca57d33b1ce497f79" id="r_aabf852a97c975abca57d33b1ce497f79"><td class="memItemLeft"><a id="aabf852a97c975abca57d33b1ce497f79" name="aabf852a97c975abca57d33b1ce497f79"></a>
 auto&#160;</td><td class="memItemRight"><b>denoiseActive</b> () const -&gt; bool</td></tr>
 <tr class="memdesc:aabf852a97c975abca57d33b1ce497f79"><td class="mdescLeft">&#160;</td><td class="mdescRight">After <a class="el" href="#a4ac25edb357683e5154b03bb0e6e1f1f">prepare()</a> whether the lighting scope writes denoised terms. <br /></td></tr>
@@ -249,7 +251,7 @@ Static Public Attributes</h2></td></tr>
 <tr class="memitem:aea66707e07e91be7217ec08977c2f5b7" id="r_aea66707e07e91be7217ec08977c2f5b7"><td class="memItemLeft"><a id="aea66707e07e91be7217ec08977c2f5b7" name="aea66707e07e91be7217ec08977c2f5b7"></a>
 static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_instances</b> = 4096</td></tr>
 <tr class="memitem:a5e91b06f7016c81849a354992ff2ef80" id="r_a5e91b06f7016c81849a354992ff2ef80"><td class="memItemLeft"><a id="a5e91b06f7016c81849a354992ff2ef80" name="a5e91b06f7016c81849a354992ff2ef80"></a>
-static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_glass_bricks</b> = 16384</td></tr>
+static constexpr uint32_t&#160;</td><td class="memItemRight"><b>k_max_glass_bricks</b> = 65536</td></tr>
 </table>
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Deferred so lighting runs once per visible voxel pixel not once per march. </p>
@@ -407,7 +409,7 @@ Here is the caller graph for this function:</div>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="navelem"><b>renderer</b></li><li class="navelem"><a href="classrenderer_1_1VoxelPass.html">VoxelPass</a></li>
+    <li class="navelem"><a href="namespacerenderer.html">renderer</a></li><li class="navelem"><a href="classrenderer_1_1VoxelPass.html">VoxelPass</a></li>
     <li class="footer">Generated by <a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.17.0 </li>
   </ul>
 </div>

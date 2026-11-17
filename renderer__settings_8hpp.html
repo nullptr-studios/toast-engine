@@ -195,10 +195,15 @@ This graph shows which files directly or indirectly include this file:</div>
 </div>
 <p><a href="renderer__settings_8hpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-namespaces" class="groupheader"><a id="namespaces" name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:renderer" id="r_renderer"><td class="memItemLeft">namespace &#160;</td><td class="memItemRight"><a class="el" href="namespacerenderer.html">renderer</a></td></tr>
+<tr class="memdesc:namespacerenderer"><td class="mdescLeft">&#160;</td><td class="mdescRight">Custom render passes from game code. <br /></td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a4e7d10c862c3e2577571d28ce4319905" id="r_a4e7d10c862c3e2577571d28ce4319905"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="renderer__settings_8cpp.html#a4e7d10c862c3e2577571d28ce4319905">renderer::registerRendererStartupSettings</a> ()</td></tr>
-<tr class="memitem:a9edc6f6486f8dbb9b1ed51ddb3c8e925" id="r_a9edc6f6486f8dbb9b1ed51ddb3c8e925"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="renderer__settings_8cpp.html#a9edc6f6486f8dbb9b1ed51ddb3c8e925">renderer::registerRendererSettings</a> (<a class="el" href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a> &amp;renderer)</td></tr>
+<tr class="memitem:a4e7d10c862c3e2577571d28ce4319905" id="r_a4e7d10c862c3e2577571d28ce4319905"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacerenderer.html#a4e7d10c862c3e2577571d28ce4319905">renderer::registerRendererStartupSettings</a> ()</td></tr>
+<tr class="memitem:a9edc6f6486f8dbb9b1ed51ddb3c8e925" id="r_a9edc6f6486f8dbb9b1ed51ddb3c8e925"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="namespacerenderer.html#a9edc6f6486f8dbb9b1ed51ddb3c8e925">renderer::registerRendererSettings</a> (<a class="el" href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a> &amp;renderer)</td></tr>
 <tr class="memitem:a33a2b4ce281eab29737825137684d052" id="r_a33a2b4ce281eab29737825137684d052"><td class="memItemLeft"><a id="a33a2b4ce281eab29737825137684d052" name="a33a2b4ce281eab29737825137684d052"></a>
 auto&#160;</td><td class="memItemRight"><b>renderer::presetDrivenValue</b> (std::string_view key) -&gt; std::optional&lt; toast::settings::Value &gt;</td></tr>
 <tr class="memdesc:a33a2b4ce281eab29737825137684d052"><td class="mdescLeft">&#160;</td><td class="mdescRight">Nothing under Custom or for a setting no tier drives. <br /></td></tr>
@@ -214,44 +219,7 @@ constexpr std::string_view&#160;</td><td class="memItemRight"><b>renderer::k_deb
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>dario </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>16/08/2026 </dd></dl>
-</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
-<a id="a9edc6f6486f8dbb9b1ed51ddb3c8e925" name="a9edc6f6486f8dbb9b1ed51ddb3c8e925"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9edc6f6486f8dbb9b1ed51ddb3c8e925">&#9670;&#160;</a></span>registerRendererSettings()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">TOAST_API void renderer::registerRendererSettings </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classrenderer_1_1VulkanRenderer.html">VulkanRenderer</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>renderer</em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="section note"><dt>Note</dt><dd>Call after the post process passes exist </dd></dl>
-
-</div>
-</div>
-<a id="a4e7d10c862c3e2577571d28ce4319905" name="a4e7d10c862c3e2577571d28ce4319905"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4e7d10c862c3e2577571d28ce4319905">&#9670;&#160;</a></span>registerRendererStartupSettings()</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">TOAST_API void renderer::registerRendererStartupSettings </td>
-          <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<dl class="section note"><dt>Note</dt><dd>Call after Settings::load() and before the passes exist </dd></dl>
-
-</div>
-</div>
-</div><!-- contents -->
+</div></div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">
 <div id="page-nav-resize-handle"></div>

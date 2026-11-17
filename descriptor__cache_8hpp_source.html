@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('descriptor__ca
 <div class="line"><a id="l00011" name="l00011"></a><span class="lineno">   11</span><span class="preprocessor">#include &lt;cstdint&gt;</span></div>
 <div class="line"><a id="l00012" name="l00012"></a><span class="lineno">   12</span><span class="preprocessor">#include &lt;vector&gt;</span></div>
 <div class="line"><a id="l00013" name="l00013"></a><span class="lineno">   13</span> </div>
-<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">namespace </span>renderer {</div>
+<div class="line"><a id="l00014" name="l00014"></a><span class="lineno">   14</span><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> {</div>
 <div class="line"><a id="l00015" name="l00015"></a><span class="lineno">   15</span> </div>
 <div class="line"><a id="l00016" name="l00016"></a><span class="lineno">   16</span><span class="keyword">namespace </span>descriptor_cache_detail {</div>
 <div class="line"><a id="l00017" name="l00017"></a><span class="lineno">   17</span><span class="keyword">inline</span> std::atomic&lt;uint64_t&gt; target_generation {1};</div>
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('descriptor__ca
 <div class="line"><a id="l00023" name="l00023"></a><span class="lineno">   23</span>}</div>
 <div class="line"><a id="l00024" name="l00024"></a><span class="lineno">   24</span></div>
 <div class="foldopen" id="foldopen00026" data-start="{" data-end="}">
-<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="descriptor__cache_8hpp.html#a1354197c4f5fd460f03a5e8456998069">   26</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="descriptor__cache_8hpp.html#a1354197c4f5fd460f03a5e8456998069">bumpTargetGeneration</a>() noexcept {</div>
+<div class="line"><a id="l00026" name="l00026"></a><span class="lineno"><a class="line" href="namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069">   26</a></span><span class="keyword">inline</span> <span class="keywordtype">void</span> <a class="code hl_function" href="namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069">bumpTargetGeneration</a>() noexcept {</div>
 <div class="line"><a id="l00027" name="l00027"></a><span class="lineno">   27</span>  descriptor_cache_detail::target_generation.fetch_add(1, std::memory_order_acq_rel);</div>
 <div class="line"><a id="l00028" name="l00028"></a><span class="lineno">   28</span>}</div>
 </div>
@@ -205,7 +205,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('descriptor__ca
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1DescriptorCache_html_a213e01bad0f73584cc4a4cc7ad416709"><div class="ttname"><a href="classrenderer_1_1DescriptorCache.html#a213e01bad0f73584cc4a4cc7ad416709">renderer::DescriptorCache::update</a></div><div class="ttdeci">auto update(size_t slot, const Key &amp;key) -&gt; bool</div><div class="ttdoc">True when the slot must be rewritten and from then on counts it as written with key.</div><div class="ttdef"><b>Definition</b> descriptor_cache.hpp:47</div></div>
 <div class="ttc" id="aclassrenderer_1_1DescriptorCache_html_acb538db04587bc4106ef5d045109c965"><div class="ttname"><a href="classrenderer_1_1DescriptorCache.html#acb538db04587bc4106ef5d045109c965">renderer::DescriptorCache::allCurrent</a></div><div class="ttdeci">auto allCurrent() const noexcept -&gt; bool</div><div class="ttdoc">True when every slot was written since the last invalidation or target recreation.</div><div class="ttdef"><b>Definition</b> descriptor_cache.hpp:60</div></div>
-<div class="ttc" id="adescriptor__cache_8hpp_html_a1354197c4f5fd460f03a5e8456998069"><div class="ttname"><a href="descriptor__cache_8hpp.html#a1354197c4f5fd460f03a5e8456998069">renderer::bumpTargetGeneration</a></div><div class="ttdeci">void bumpTargetGeneration() noexcept</div><div class="ttdoc">Call whenever renderer owned targets are recreated since a new view can reuse a destroyed handle valu...</div><div class="ttdef"><b>Definition</b> descriptor_cache.hpp:26</div></div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
+<div class="ttc" id="anamespacerenderer_html_a1354197c4f5fd460f03a5e8456998069"><div class="ttname"><a href="namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069">renderer::bumpTargetGeneration</a></div><div class="ttdeci">void bumpTargetGeneration() noexcept</div><div class="ttdoc">Call whenever renderer owned targets are recreated since a new view can reuse a destroyed handle valu...</div><div class="ttdef"><b>Definition</b> descriptor_cache.hpp:26</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

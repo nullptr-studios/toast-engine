@@ -156,13 +156,14 @@ Uses</h1>
 Creating the renderer</h2>
 <p>Create <span class="tt">VulkanCore</span>, create an <span class="tt">IOutputTarget</span> implementation, then create <span class="tt">VulkanRenderer</span>, add passes, and start:</p>
 <div class="fragment"><div class="line"><span class="keyword">auto</span> output_target = std::make_unique&lt;renderer::SDLOutputTarget&gt;(...); <span class="comment">// or SharedTextureOutputTarget</span></div>
-<div class="line">renderer = std::make_unique&lt;renderer::VulkanRenderer&gt;(*vulkan_core, std::move(output_target));</div>
-<div class="line">renderer-&gt;addRenderPass(std::make_unique&lt;renderer::MeshPass&gt;(...));</div>
-<div class="line">renderer-&gt;start();</div>
+<div class="line"><a class="code hl_namespace" href="namespacerenderer.html">renderer</a> = std::make_unique&lt;renderer::VulkanRenderer&gt;(*vulkan_core, std::move(output_target));</div>
+<div class="line"><a class="code hl_namespace" href="namespacerenderer.html">renderer</a>-&gt;addRenderPass(std::make_unique&lt;renderer::MeshPass&gt;(...));</div>
+<div class="line"><a class="code hl_namespace" href="namespacerenderer.html">renderer</a>-&gt;start();</div>
+<div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
 </div><!-- fragment --><h2 class="doxsection"><a class="anchor" id="autotoc_md54"></a>
 Submitting frames</h2>
 <p>Per engine tick:</p>
-<div class="fragment"><div class="line"><span class="keyword">auto</span>&amp; sem = renderer-&gt;getFreeFramesSemaphore();</div>
+<div class="fragment"><div class="line"><span class="keyword">auto</span>&amp; sem = <a class="code hl_namespace" href="namespacerenderer.html">renderer</a>-&gt;getFreeFramesSemaphore();</div>
 <div class="line"><span class="keywordflow">if</span> (sem.try_acquire()) {</div>
 <div class="line">    <span class="keyword">auto</span>&amp; frame = renderer::beginFrameBuild();</div>
 <div class="line">    frame.mesh_instances.clear();</div>

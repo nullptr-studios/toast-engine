@@ -7,6 +7,6 @@ var voxel__change__history_8hpp =
     [ "renderer::VolumeDelta", "structrenderer_1_1VolumeDelta.html", "structrenderer_1_1VolumeDelta" ],
     [ "renderer::VoxelChangeTracker", "classrenderer_1_1VoxelChangeTracker.html", "classrenderer_1_1VoxelChangeTracker" ],
     [ "renderer::VoxelCaster", "structrenderer_1_1VoxelCaster.html", null ],
-    [ "renderer::PublishedDims", "voxel__change__history_8hpp.html#aafa8f00853f4d026ed771e2d1a5e80f4", null ],
-    [ "renderer::regionsReach", "voxel__change__history_8cpp.html#a88291e91e1022156a16f0e185e82e94d", null ]
+    [ "renderer::PublishedDims", "namespacerenderer.html#aafa8f00853f4d026ed771e2d1a5e80f4", null ],
+    [ "renderer::regionsReach", "namespacerenderer.html#a88291e91e1022156a16f0e185e82e94d", null ]
 ];

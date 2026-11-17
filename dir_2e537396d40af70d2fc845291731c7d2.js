@@ -4,7 +4,7 @@ var dir_2e537396d40af70d2fc845291731c7d2 =
     [ "cube_face_basis.hpp", "cube__face__basis_8hpp.html", "cube__face__basis_8hpp" ],
     [ "frustum.hpp", "frustum_8hpp.html", "frustum_8hpp" ],
     [ "gi_clip_math.hpp", "gi__clip__math_8hpp.html", "gi__clip__math_8hpp" ],
-    [ "gi_dirty_boxes.cpp", "gi__dirty__boxes_8cpp.html", null ],
+    [ "gi_dirty_boxes.cpp", "gi__dirty__boxes_8cpp.html", "gi__dirty__boxes_8cpp" ],
     [ "gi_dirty_boxes.hpp", "gi__dirty__boxes_8hpp.html", "gi__dirty__boxes_8hpp" ],
     [ "light_culling.cpp", "light__culling_8cpp.html", "light__culling_8cpp" ],
     [ "light_culling.hpp", "light__culling_8hpp.html", "light__culling_8hpp" ],
