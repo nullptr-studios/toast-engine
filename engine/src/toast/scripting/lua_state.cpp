@@ -900,6 +900,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addProperty("position", &physics::RayHit::position)
 	    .addProperty("normal", &physics::RayHit::normal)
 	    .addProperty("distance", &physics::RayHit::distance)
+	    .addProperty("palette_index", &physics::RayHit::palette_index)
 	    .addProperty(
 	        "node", +[](const physics::RayHit* hit) { return NodeProxy(hit->node); }
 	    )

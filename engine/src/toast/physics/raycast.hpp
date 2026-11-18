@@ -26,6 +26,8 @@ struct RayHit {
 	float distance;
 	BodyID body;
 	ShapeID shape;
+	/// Palette entry hit by a voxel ray; 0 for other shapes.
+	uint8_t palette_index = 0;
 };
 
 /**
