@@ -218,6 +218,16 @@ void registerPhysicsSettings() {
 	     .step = 0.01},
 	    &Tunables::broadphase_fat_margin);
 
+	flt("physics.broadphase.velocity_multiplier",
+	    2.0,
+	    {.label = "Velocity multiplier", .category = "Broadphase", .min = 0.0, .max = 8.0, .step = 0.25},
+	    &Tunables::broadphase_velocity_multiplier);
+
+	flt("physics.broadphase.rebuild_fraction",
+	    0.25,
+	    {.label = "Rebuild fraction", .category = "Broadphase", .min = 0.0, .max = 2.0, .step = 0.05},
+	    &Tunables::broadphase_rebuild_fraction);
+
 	uint_setting(
 	    "physics.fracture.max_connectivity_jobs_per_tick",
 	    24,

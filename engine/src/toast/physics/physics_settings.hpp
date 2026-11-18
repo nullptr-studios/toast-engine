@@ -26,6 +26,8 @@ struct Tunables {
 	uint32_t max_substeps = 8;
 	double max_burst_seconds = 0.1;
 	float broadphase_fat_margin = 0.1f;
+	float broadphase_velocity_multiplier = 2.0f;
+	float broadphase_rebuild_fraction = 0.25f;
 	uint32_t max_connectivity_jobs_per_tick = 24;
 	uint32_t max_fragment_spawns_per_step = 8;
 	uint32_t max_active_fragments = 96;
