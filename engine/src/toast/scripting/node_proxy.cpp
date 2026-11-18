@@ -1240,6 +1240,12 @@ auto nodeProxyIndex(NodeProxy& proxy, const luabridge::LuaRef& key, lua_State* l
 		return {l, ListenerProxy(proxy.box())};
 	}
 
+	if (key_str == "enabled") {
+		lua_pushstring(l, key_str.c_str());
+		lua_pushcclosure(l, proxyMethodDispatch, 1);
+		return luabridge::LuaRef::fromStack(l);
+	}
+
 	const toast::NodeInfo* info = n->info();
 	if (!info) {
 		return {l};

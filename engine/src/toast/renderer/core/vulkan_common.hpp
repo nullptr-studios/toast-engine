@@ -29,6 +29,9 @@ inline constexpr vk::Format k_scene_normal_format = vk::Format::eR16G16B16A16Sfl
 
 inline constexpr vk::Format k_scene_indirect_format = vk::Format::eB10G11R11UfloatPack32;
 
+/// rgb environment specular voxel lighting added that SSR replaces and a its clip w so SSR skips pixels a mesh covered since
+inline constexpr vk::Format k_scene_ambient_specular_format = vk::Format::eR16G16B16A16Sfloat;
+
 /// xy uv motion current minus previous z reactive w 1 when written
 inline constexpr vk::Format k_scene_motion_format = vk::Format::eR16G16B16A16Sfloat;
 

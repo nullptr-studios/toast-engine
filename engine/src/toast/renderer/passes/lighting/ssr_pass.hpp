@@ -46,7 +46,7 @@ private:
 		glm::vec4 tuning {0.0f};
 		/// x reach in meters y render mode z 1 with a valid history w 1 when binding 8 holds last frame resolve
 		glm::vec4 marching {0.0f};
-		/// x levels of the closest depth pyramid
+		/// x levels of the closest depth pyramid y 1 when binding 10 was written this frame
 		glm::vec4 pyramid {0.0f};
 	};
 
@@ -56,7 +56,7 @@ private:
 	static constexpr vk::Format k_reflection_format = vk::Format::eR16G16B16A16Sfloat;
 
 	/// Bindings of ssr.slang in order
-	static constexpr uint32_t k_binding_count = 10;
+	static constexpr uint32_t k_binding_count = 11;
 
 	void createResources(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -75,8 +75,8 @@ private:
 
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
-	/// Source, previous resolve, depth, normal and pyramid last written into each set
-	DescriptorCache<std::array<vk::ImageView, 5>> m_bound_views;
+	/// Source, previous resolve, depth, normal, pyramid and ambient specular last written into each set
+	DescriptorCache<std::array<vk::ImageView, 6>> m_bound_views;
 
 	/// Closest depth pyramids of the scene depth and of the glass backdrop depth, whichever the frame reflects off
 	std::array<HiZPyramid, 2> m_hiz;

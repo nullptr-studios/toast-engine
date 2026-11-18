@@ -475,7 +475,9 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.pipeline_type = VulkanPipeline::PipelineType::graphics;
 	config.debug_name = "VoxelLighting";
 	config.color_format = scene_format;
-	config.extra_color_formats = {k_scene_indirect_format, k_scene_normal_format, k_voxel_noisy_format};
+	config.extra_color_formats = {
+	  k_scene_indirect_format, k_scene_normal_format, k_voxel_noisy_format, k_scene_ambient_specular_format
+	};
 	config.write_extra_color = true;
 	config.extent = extent;
 	config.shader_spirv = shader->spirv;

@@ -13,7 +13,7 @@ struct SsrParams
     float4 tuning;
     // x reach in meters y render mode z 1 with a valid history w 1 when gPreviousColor holds last frame resolve
     float4 marching;
-    // x levels of gHiz
+    // x levels of gHiz y 1 when gAmbientSpecular was written this frame
     float4 pyramid;
 };
 
@@ -53,6 +53,13 @@ Sampler2D gPreviousColor;
 /// renderer::HiZPyramid of gDepth keeping the closest depth, level k texel t covers pixels t << (k + 1) on
 [[vk::binding(9, 0)]]
 Sampler2D gHiz;
+
+/// rgb environment specular already in gSceneColor and a its clip w so a pixel a mesh later covered is left alone
+[[vk::binding(10, 0)]]
+Sampler2D gAmbientSpecular;
+
+/// Pixels a finest level step scans along the ray so grazing floors reach as far as steep walls
+static const float kScanCell = 8.0;
 
 /// Below this a surface is a mirror and gets one ray with no reuse
 static const float kMirrorRoughness = 0.05;
@@ -243,9 +250,13 @@ bool marchScreen(float3 origin, float3 direction, float jitter, out float2 hitUv
                 --level;
                 continue;
             }
-            // The 2x2 cell holds something at least as close as the ray so test its pixels at full resolution
+            // The 2x2 cell holds something at least as close as the ray so test pixels at full resolution
+            // on to the edge of the 8x8 cell around it since a grazing ray otherwise spends a step every 2 pixels
+            const float2 scanCell = floor(p / kScanCell);
+            const float2 scanExits = ((scanCell + forward) * kScanCell - p0) * inverseD;
+            const float tScan = max(min(min(scanExits.x, scanExits.y) + 0.01 * tPixel, tEnd), tCell);
             float previous = t - tPixel;
-            for (float x = t; x < tCell; x += tPixel)
+            for (float x = t; x < tScan; x += tPixel)
             {
                 bool behind;
                 if (pixelHit(p0, d, z0, dz, x, size, behind))
@@ -273,7 +284,7 @@ bool marchScreen(float3 origin, float3 direction, float jitter, out float2 hitUv
                 }
                 previous = x;
             }
-            t = tCell;
+            t = tScan;
             continue;
         }
 
@@ -293,6 +304,24 @@ bool marchScreen(float3 origin, float3 direction, float jitter, out float2 hitUv
     return false;
 }
 
+/// Stratum fixed to the surface on its dominant axis plane so rough reflections hold still as the camera moves
+/// shortcut: the cell is the view plane footprint so grazing surfaces get stretched strata, upgrade to plane derivatives like voxel_specular
+uint surfaceStratum(SurfaceSample surface, float2 uv)
+{
+    uint width;
+    uint height;
+    gDepth.GetDimensions(width, height);
+    // Two depth pixels since rays are traced at half resolution
+    const float footprint = length(worldPositionFromDepth(uv + float2(2.0 / float(width), 0.0), surface.depth) - surface.position);
+    // Power of two so zooming rescales the pattern only at octaves
+    const float cell = exp2(round(log2(max(footprint, 1e-4))));
+    const float3 axis = abs(surface.normal);
+    const float2 plane = axis.x >= axis.y && axis.x >= axis.z ? surface.position.yz
+                         : axis.y >= axis.z                   ? surface.position.xz
+                                                              : surface.position.xy;
+    return lobeStratumIndex(int2(floor(plane / cell)));
+}
+
 [shader("fragment")]
 float4 traceMain(VSOutput input) : SV_Target0
 {
@@ -305,7 +334,7 @@ float4 traceMain(VSOutput input) : SV_Target0
     const float3 N = surface.normal;
     const float3 V = normalize(gParams.cameraPosition.xyz - surface.position);
     const float NdotV = saturate(dot(N, V));
-    const float2 u = lobeStratum(int2(input.position.xy));
+    const float2 u = lobeStratumSample(surfaceStratum(surface, input.uv));
 
     float3 L = reflect(-V, N);
     float pdf = 1.0;
@@ -573,6 +602,16 @@ float4 compositeMain(VSOutput input) : SV_Target0
     const float fresnel = surface.f0 * split.x + split.y;
     const float roughnessFade = 1.0 - smoothstep(0.6 * maxRoughness, maxRoughness, surface.roughness);
 
-    const float weight = reflection.a * fresnel * roughnessFade * gParams.tuning.x;
-    return float4(sceneColor + reflection.rgb * weight, 1.0);
+    const float coverage = reflection.a * roughnessFade * gParams.tuning.x;
+    // A hit replaces the environment specular lighting added instead of stacking on it
+    float3 replaced = float3(0.0, 0.0, 0.0);
+    if (gParams.pyramid.y > 0.5)
+    {
+        const float4 ambient = gAmbientSpecular.SampleLevel(input.uv, 0.0);
+        if (ambient.a > 0.0 && abs(ambient.a - surface.linearDepth) <= 0.01 * surface.linearDepth)
+        {
+            replaced = ambient.rgb * coverage;
+        }
+    }
+    return float4(max(sceneColor - replaced, float3(0.0, 0.0, 0.0)) + reflection.rgb * fresnel * coverage, 1.0);
 }

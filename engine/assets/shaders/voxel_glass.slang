@@ -244,9 +244,9 @@ bool tracedReflection(float3 position, float3 normal, float3 direction, float2 p
             irradiance += gIrradianceMap.SampleLevel(hitNormal, 0.0).rgb;
         }
     }
-    // shortcut: no local lights on an off screen hit, which voxel_specular samples with a loop over every light and a shadow ray,
-    // since GI already carries their bounce, upgrade if lamp lit walls look too dark in glass
+    uint random = giHash(uint(pixel.x) | (uint(pixel.y) << 16));
     radiance = hitPalette.albedo * (hitPalette.emissive + irradiance) +
+               traceLocalLight(hitPosition, hitNormal, hitPalette.albedo, pixelSlope, random) +
                traceSunLight(hitPosition, hitNormal, hitPalette.albedo, pixelSlope, gGlassPush.sunReach, pixel);
     return true;
 }

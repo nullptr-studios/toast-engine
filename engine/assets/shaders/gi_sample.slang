@@ -344,7 +344,8 @@ float giClipCellAt(GiClipFrame frame, float3 worldPosition)
 
 /// xyz irradiance over pi and w the share of the hemisphere the cones left open
 /// @p jitter in 0 to 1 starts the cones that share of a cell further out so a history averages away where steps land
-float4 giClipGather(GiClipFrame frame, float3 worldPosition, float3 normal, float turn, float base, float jitter)
+/// @p Smooth 0 reads trilinear where a history already averages away the creases the B-spline rounds off
+float4 giClipGather<let Smooth : int>(GiClipFrame frame, float3 worldPosition, float3 normal, float turn, float base, float jitter)
 {
     // Coarser levels thicken every surface so the cones start further off it there
     const float cell = frame.levels[0].w * exp2(base);
@@ -356,20 +357,27 @@ float4 giClipGather(GiClipFrame frame, float3 worldPosition, float3 normal, floa
     const float3 bitangent = float3(b, side + normal.y * normal.y * a, -normal.y);
 
     const float start = jitter * cell;
-    float4 cone = giClipCone<1>(frame, origin, normal, start, base);
+    float4 cone = giClipCone<Smooth>(frame, origin, normal, start, base);
     float4 gathered = 0.25 * float4(cone.rgb, 1.0 - cone.a);
-    for (uint i = 0u; i < 5u; ++i)
+    // The smooth path keeps five side cones and the history one turns three a pixel and frame to cover as many
+    const uint sides = Smooth > 0 ? 5u : 3u;
+    const float spacing = 6.28318531 / float(sides);
+    const float share = 0.75 / float(sides);
+    for (uint i = 0u; i < sides; ++i)
     {
-        const float angle = (float(i) + turn) * 1.25663706;
+        const float angle = (float(i) + turn) * spacing;
         const float3 direction = normal * 0.5 + (tangent * cos(angle) + bitangent * sin(angle)) * 0.8660254;
-        cone = giClipCone<1>(frame, origin, direction, start, base);
-        gathered += 0.15 * float4(cone.rgb, 1.0 - cone.a);
+        cone = giClipCone<Smooth>(frame, origin, direction, start, base);
+        gathered += share * float4(cone.rgb, 1.0 - cone.a);
     }
     return gathered;
 }
 
 /// @p turn spins the side cones up to a fifth of a turn and lit pixels pass 0 since per frame noise flickers
-bool sampleGiClipmap(float3 worldPosition, float3 normal, float turn, out float3 irradiance, out float sky, float jitter = 0.0)
+/// @p denoised when a temporal history follows so one cheaper gather a pixel is enough
+bool sampleGiClipmap(
+    float3 worldPosition, float3 normal, float turn, out float3 irradiance, out float sky, float jitter = 0.0,
+    bool denoised = false)
 {
     irradiance = float3(0.0, 0.0, 0.0);
     sky = 0.0;
@@ -385,12 +393,22 @@ bool sampleGiClipmap(float3 worldPosition, float3 normal, float turn, out float3
     }
     const float last = float(frame.size.y - 1u);
     const float base = floor(min(soft, last));
-    float4 gathered = giClipGather(frame, worldPosition, normal, turn, base, jitter);
-    // Near a level edge two gathers cross fade since sliding one start between levels draws strips
     const float fade = min(soft, last) - base;
-    if (fade > 0.0)
+    float4 gathered;
+    if (denoised)
     {
-        gathered = lerp(gathered, giClipGather(frame, worldPosition, normal, turn, base + 1.0, jitter), fade);
+        // Each pixel picks one level of a fade band with the fade as the odds and the history blends them
+        const float pick = frac(turn + jitter * 0.618034);
+        gathered = giClipGather<0>(frame, worldPosition, normal, turn, fade > pick ? base + 1.0 : base, jitter);
+    }
+    else
+    {
+        gathered = giClipGather<1>(frame, worldPosition, normal, turn, base, jitter);
+        // Near a level edge two gathers cross fade since sliding one start between levels draws strips
+        if (fade > 0.0)
+        {
+            gathered = lerp(gathered, giClipGather<1>(frame, worldPosition, normal, turn, base + 1.0, jitter), fade);
+        }
     }
     irradiance = gathered.rgb;
     sky = gathered.a;
@@ -420,24 +438,28 @@ bool sampleGiClipmapCheap(float3 worldPosition, float3 normal, out float3 irradi
     return true;
 }
 
+/// Sky share the cascades report since they hold the sky in their irradiance so no open share is left to add
+/// and specular cannot tell how much of the sky map they see
+static const float kGiSkyHeld = 2.0;
+
 bool giIrradianceCheap(float3 worldPosition, float3 normal, out float3 irradiance, out float sky)
 {
     if (sampleGiClipmapCheap(worldPosition, normal, irradiance, sky))
     {
         return true;
     }
-    sky = 0.0;
+    sky = kGiSkyHeld;
     return sampleRadianceCascades(worldPosition, normal, irradiance);
 }
 
-/// The clipmap when it is published else the cascades whose @p sky is 0 since they hold the sky
+/// The clipmap when it is published else the cascades whose @p sky is kGiSkyHeld since they hold the sky
 bool giIrradiance(float3 worldPosition, float3 normal, float turn, out float3 irradiance, out float sky)
 {
     if (sampleGiClipmap(worldPosition, normal, turn, irradiance, sky))
     {
         return true;
     }
-    sky = 0.0;
+    sky = kGiSkyHeld;
     return sampleRadianceCascades(worldPosition, normal, irradiance);
 }
 
@@ -543,5 +565,5 @@ float4 giCheap(float3 worldPosition, float3 normal)
 float4 giCascades(float3 worldPosition, float3 normal)
 {
     float3 irradiance;
-    return sampleRadianceCascades(worldPosition, normal, irradiance) ? float4(irradiance, 0.0) : float4(0.0, 0.0, 0.0, -1.0);
+    return sampleRadianceCascades(worldPosition, normal, irradiance) ? float4(irradiance, kGiSkyHeld) : float4(0.0, 0.0, 0.0, -1.0);
 }

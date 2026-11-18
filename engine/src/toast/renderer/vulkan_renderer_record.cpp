@@ -424,7 +424,7 @@ void VulkanRenderer::recordMeshScene(
 	const bool has_glass = voxel_glass && m_voxel_pass != nullptr && !m_voxel_pass->glassDraws().empty() && capture_backdrop;
 	// shortcut: copies whenever debris draws with SSR on since glass pieces are only known on the GPU, track live glass spawns if
 	// the copy shows up in captures
-	const bool debris_reflects = m_debris_prepared && m_ssr_frame && capture_backdrop;
+	const bool debris_reflects = m_debris_prepared && (m_ssr_frame || m_traced_specular_frame) && capture_backdrop;
 	m_glass_backdrop_captured = has_glass || debris_reflects;
 	m_glass_nearest_valid = false;
 	if (m_glass_backdrop_captured) {
@@ -518,9 +518,9 @@ auto VulkanRenderer::recordVoxelScopes(
 	    m_depth_resources.view.has_value() && m_voxel_denoised_indirect.view.has_value() && m_voxel_albedo.view.has_value() &&
 	    m_voxel_material.view.has_value() && m_voxel_face_normal.view.has_value() && m_voxel_detail_normal.view.has_value() &&
 	    m_scene_color.view.has_value() && m_scene_normal.view.has_value() && m_scene_indirect.view.has_value() &&
-	    m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() && m_voxel_noisy_specular.view.has_value() &&
-	    m_voxel_reservoirs[0].view.has_value() && m_voxel_reservoirs[1].view.has_value() &&
-	    m_voxel_candidate_reservoirs.view.has_value();
+	    m_scene_ambient_specular.view.has_value() && m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() &&
+	    m_voxel_noisy_specular.view.has_value() && m_voxel_reservoirs[0].view.has_value() &&
+	    m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
 		return false;
@@ -677,6 +677,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_scene_normal.state, sync::Usage::color_attachment);
 	barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
 	barriers.image(m_voxel_noisy_specular.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_ambient_specular.state, sync::Usage::color_attachment);
 	const bool spatial = m_voxel_pass->spatialActive();
 	SceneColorResources& lighting_reservoirs =
 	    spatial ? m_voxel_candidate_reservoirs : m_voxel_reservoirs[m_voxel_reservoir_parity];
@@ -731,6 +732,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	  attachment(m_scene_indirect, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_scene_normal, vk::AttachmentLoadOp::eClear, clear_zero),
 	  attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eClear, clear_zero),
+	  attachment(m_scene_ambient_specular, vk::AttachmentLoadOp::eClear, clear_zero),
 	};
 
 	vk::RenderingInfo lighting_info {};
@@ -752,6 +754,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(m_scene_normal.state, sync::Usage::fragment_sampled);
 	barriers.image(m_scene_color.state, sync::Usage::color_attachment);
 	barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::color_attachment);
+	barriers.image(m_scene_ambient_specular.state, sync::Usage::fragment_sampled);
 	barriers.flush(cmd);
 
 	// Before the marched scope so occlusion scales only the indirect
@@ -1334,6 +1337,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	barriers.image(m_scene_normal.state, sync::Usage::shader_sampled);
 	barriers.image(m_scene_indirect.state, sync::Usage::shader_sampled);
 	barriers.image(m_scene_motion.state, sync::Usage::shader_sampled);
+	// SSR binds it every frame and only reads it on frames voxel lighting wrote it
+	barriers.image(m_scene_ambient_specular.state, sync::Usage::fragment_sampled);
 	barriers.image(m_depth_resources.state, sync::Usage::depth_sampled);
 	if (m_traced_specular_frame) {
 		barriers.image(m_voxel_albedo.state, sync::Usage::fragment_sampled);
