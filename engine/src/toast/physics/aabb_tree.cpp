@@ -382,7 +382,7 @@ auto AABBTree::buildRange(std::span<TreeNodeID> leaves, std::span<const glm::vec
 	}
 
 	const glm::vec3 extent = centroid_max - centroid_min;
-	const int axis = extent.x > extent.y ? (extent.x > extent.z ? 0 : 2) : (extent.y > extent.z ? 1 : 2);
+	const int axis = extent.x > extent.y ? (extent.x > extent.z ? 0 : 2) : (extent.y > extent.z ? 1 : 2);    // NOLINT
 
 	size_t split = 0;
 	if (extent[axis] > 1.0e-6f && depth < k_max_sah_depth) {
