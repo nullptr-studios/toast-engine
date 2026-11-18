@@ -153,6 +153,7 @@ var namespacerenderer =
     [ "writeVoxelStorageDescriptors", "namespacerenderer.html#a367926a57f113f494bfbc5ebfd89ce96", null ],
     [ "k_brick_coord_bits", "namespacerenderer.html#a73f23ff725c13de04e9a227d99eeaa4b", null ],
     [ "k_debug_overlay_in_game", "namespacerenderer.html#a833def4e32bf9be3dec12e5396d16463", null ],
+    [ "k_scene_ambient_specular_format", "namespacerenderer.html#a5d04e261b29924ae0ee9fa2bf8924759", null ],
     [ "k_scene_motion_format", "namespacerenderer.html#a42015b1686299580fface71f08ed1f44", null ],
     [ "k_scene_normal_format", "namespacerenderer.html#ac6d96ed4ff59cc3745f9a60ac69418dd", null ],
     [ "k_voxel_albedo_format", "namespacerenderer.html#a1cd58175ea99f1b98645eeb4e37289d0", null ],

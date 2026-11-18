@@ -1,5 +1,8 @@
 var NAVTREEINDEX17 =
 {
+"structphysics_1_1QuerySnapshot.html":[13,0,8,76],
+"structphysics_1_1QueryVoxel.html":[13,0,8,77],
+"structphysics_1_1RayHit.html":[13,0,8,78],
 "structphysics_1_1RemovedVoxels.html":[13,0,8,79],
 "structphysics_1_1RemovedVoxels.html#a62fdb2fc83042d433bc373d611ec9c3d":[13,0,8,79,0],
 "structphysics_1_1Rng.html":[13,0,8,81],
@@ -246,8 +249,5 @@ var NAVTREEINDEX17 =
 "structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93":[11,0,1,46,8],
 "structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93":[13,0,9,51,8],
 "structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98":[11,0,1,46,4],
-"structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98":[13,0,9,51,4],
-"structrenderer_1_1Meta.html#a581b3f5775b0c563478d97efd7b6bb8b":[11,0,1,46,1],
-"structrenderer_1_1Meta.html#a581b3f5775b0c563478d97efd7b6bb8b":[13,0,9,51,1],
-"structrenderer_1_1Meta.html#a95012a506797f5f863d116e0ae041fff":[11,0,1,46,3]
+"structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98":[13,0,9,51,4]
 };

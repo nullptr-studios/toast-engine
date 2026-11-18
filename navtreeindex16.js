@@ -1,5 +1,8 @@
 var NAVTREEINDEX16 =
 {
+"structevent_1_1ProtoTraits_3_01WindowMousePosition_01_4.html":[13,0,4,131],
+"structevent_1_1ProtoTraits_3_01WindowMouseScroll_01_4.html":[13,0,4,132],
+"structevent_1_1ProtoTraits_3_01WindowResize_01_4.html":[13,0,4,133],
 "structevent_1_1ProtoTraits_3_01WorkspaceApplyHistorySnapshot_01_4.html":[13,0,4,134],
 "structevent_1_1ProtoTraits_3_01WorkspaceAutosave_01_4.html":[13,0,4,135],
 "structevent_1_1ProtoTraits_3_01WorkspaceConvertToProceduralVoxel_01_4.html":[13,0,4,136],
@@ -246,8 +249,5 @@ var NAVTREEINDEX16 =
 "structphysics_1_1Penetration.html":[13,0,8,71],
 "structphysics_1_1PhysicsMaterial.html":[13,0,8,72],
 "structphysics_1_1PinParams.html":[13,0,8,74],
-"structphysics_1_1QueryContact.html":[13,0,8,75],
-"structphysics_1_1QuerySnapshot.html":[13,0,8,76],
-"structphysics_1_1QueryVoxel.html":[13,0,8,77],
-"structphysics_1_1RayHit.html":[13,0,8,78]
+"structphysics_1_1QueryContact.html":[13,0,8,75]
 };

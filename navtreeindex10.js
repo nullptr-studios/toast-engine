@@ -1,5 +1,7 @@
 var NAVTREEINDEX10 =
 {
+"classtoast_1_1VoxelNode.html#a047104df879c6d7eba36646c7c0331a3":[11,0,2,94,18],
+"classtoast_1_1VoxelNode.html#a047104df879c6d7eba36646c7c0331a3":[13,0,14,97,18],
 "classtoast_1_1VoxelNode.html#a04dcaa3be9b4a7438e3459ed32b7fb4f":[11,0,2,94,7],
 "classtoast_1_1VoxelNode.html#a04dcaa3be9b4a7438e3459ed32b7fb4f":[13,0,14,97,7],
 "classtoast_1_1VoxelNode.html#a0a2dc5ab6c0fc7a5f7cb262981a868da":[11,0,2,94,9],
@@ -247,7 +249,5 @@ var NAVTREEINDEX10 =
 "classtoast_1_1Workspace.html#a5535aae7ca75147de8082a474821c05a":[11,0,2,98,11],
 "classtoast_1_1Workspace.html#a5535aae7ca75147de8082a474821c05a":[13,0,14,101,11],
 "classtoast_1_1Workspace.html#a575710657af5e029e04be5affb1e06bd":[11,0,2,98,9],
-"classtoast_1_1Workspace.html#a575710657af5e029e04be5affb1e06bd":[13,0,14,101,9],
-"classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969":[11,0,2,98,24],
-"classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969":[13,0,14,101,24]
+"classtoast_1_1Workspace.html#a575710657af5e029e04be5affb1e06bd":[13,0,14,101,9]
 };

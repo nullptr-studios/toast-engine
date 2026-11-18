@@ -1,5 +1,8 @@
 var NAVTREEINDEX15 =
 {
+"structassets_1_1AnimationClip.html#a503599763cd5aee195d5e3b9d1494070":[13,0,0,3,1],
+"structassets_1_1AnimationClip.html#a630bcaf8d16d37841132d55614678fba":[13,0,0,3,3],
+"structassets_1_1AnimationClip.html#aba7ed77926f96cd29d5c12fad2055d68":[13,0,0,3,2],
 "structassets_1_1AnimationClip.html#afaa98081e96a585d4c2ad1bf1e06d67d":[13,0,0,3,0],
 "structassets_1_1AnimationTrack.html":[13,0,0,4],
 "structassets_1_1AnimationTrack.html#a3ef270af228f0e767dfee02a390d6a98":[13,0,0,4,0],
@@ -246,8 +249,5 @@ var NAVTREEINDEX15 =
 "structevent_1_1ProtoTraits_3_01WindowDrop_01_4.html":[13,0,4,127],
 "structevent_1_1ProtoTraits_3_01WindowKey_01_4.html":[13,0,4,128],
 "structevent_1_1ProtoTraits_3_01WindowMouseButton_01_4.html":[13,0,4,129],
-"structevent_1_1ProtoTraits_3_01WindowMouseLock_01_4.html":[13,0,4,130],
-"structevent_1_1ProtoTraits_3_01WindowMousePosition_01_4.html":[13,0,4,131],
-"structevent_1_1ProtoTraits_3_01WindowMouseScroll_01_4.html":[13,0,4,132],
-"structevent_1_1ProtoTraits_3_01WindowResize_01_4.html":[13,0,4,133]
+"structevent_1_1ProtoTraits_3_01WindowMouseLock_01_4.html":[13,0,4,130]
 };

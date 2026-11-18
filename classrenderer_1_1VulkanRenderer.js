@@ -13,6 +13,7 @@ var classrenderer_1_1VulkanRenderer =
     [ "getGlassNearestDepthView", "classrenderer_1_1VulkanRenderer.html#a7bc97af9a04ebaa5d287c14da1fc3f3a", null ],
     [ "getOpaqueDepthView", "classrenderer_1_1VulkanRenderer.html#ac4e830174fd44438eb6cc4e24f431075", null ],
     [ "getOpaqueNormalView", "classrenderer_1_1VulkanRenderer.html#ad916ca7138cf0e78e6aec7a3e64d4d33", null ],
+    [ "getSceneAmbientSpecularView", "classrenderer_1_1VulkanRenderer.html#a6b26720163bb0e6942de17d608c4f939", null ],
     [ "getVoxelCandidateReservoirView", "classrenderer_1_1VulkanRenderer.html#afd2055157f8f587a1404d19f99868cb4", null ],
     [ "getVoxelDenoisedIndirectView", "classrenderer_1_1VulkanRenderer.html#a93c8b3c64cdece394bdd4146b44532b3", null ],
     [ "getVoxelDetailNormalView", "classrenderer_1_1VulkanRenderer.html#a9bb0870cdb1c1f66b49329b7ce2c9a82", null ],
