@@ -97,6 +97,8 @@ struct FSOutput
     float4 normalRoughness : SV_Target2;
     /// Indirect over albedo that fragmentAmbient occludes when ambient rays are on
     float4 noisyDiffuse : SV_Target3;
+    /// rgb environment specular in the colour that SSR replaces where it hits and a clip w of the pixel
+    float4 ambientSpecular : SV_Target4;
 };
 
 [shader("vertex")]
@@ -812,7 +814,14 @@ int2 giGatherPixel(int2 half)
 float4 fragmentGiGather(VSOutput input) : SV_Target0
 {
     const float4 none = float4(0.0, 0.0, 0.0, -1.0);
-    const int2 pixel = giGatherPixel(int2(input.position.xy));
+    const bool denoised = (gPush.reuse.x & kGiDenoise) != 0u;
+    const int2 half = int2(input.position.xy);
+    // Checkerboard flipping each frame since every 2 by 2 upsample still finds a diagonal pair and the history fills the rest
+    if (denoised && ((uint(half.x + half.y) + uint(gCamera.noiseParams.z)) & 1u) != 0u)
+    {
+        return none;
+    }
+    const int2 pixel = giGatherPixel(half);
     float3 normal;
     if (!isLitVoxel(gAlbedo.Load(int3(pixel, 0)).a) || !isLitVoxelAt(pixel, normal))
     {
@@ -821,9 +830,9 @@ float4 fragmentGiGather(VSOutput input) : SV_Target0
     float3 irradiance;
     float sky;
     // Side cones turn and start further out per pixel and frame and the denoiser history averages both
-    const float turn = (gPush.reuse.x & kGiDenoise) != 0u ? interleavedGradientNoise(float2(pixel)) : 0.0;
-    const float jitter = (gPush.reuse.x & kGiDenoise) != 0u ? interleavedGradientNoise(float2(pixel) + 17.0) : 0.0;
-    if (!sampleGiClipmap(positionAt(pixel), normal, turn, irradiance, sky, jitter))
+    const float turn = denoised ? interleavedGradientNoise(float2(pixel)) : 0.0;
+    const float jitter = denoised ? interleavedGradientNoise(float2(pixel) + 17.0) : 0.0;
+    if (!sampleGiClipmap(positionAt(pixel), normal, turn, irradiance, sky, jitter, denoised))
     {
         return none;
     }
@@ -876,6 +885,7 @@ FSOutput fragmentMain(VSOutput input)
     output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
     output.normalRoughness = float4(0.0, 0.0, 0.0, 0.0);
     output.noisyDiffuse = float4(0.0, 0.0, 0.0, 0.0);
+    output.ambientSpecular = float4(0.0, 0.0, 0.0, 0.0);
     if (!isLitVoxel(albedo.a))
     {
         output.color = float4(albedo.rgb, 1.0);
@@ -890,8 +900,8 @@ FSOutput fragmentMain(VSOutput input)
     const float4 material = gMaterial.Load(texel);
     const float roughness = clamp(material.b, 0.045, 1.0);
 
-    const bool traced = (gPush.reuse.x & kTracedSpecular) != 0u && material.g > 1e-3 &&
-                        roughness <= float((gPush.reuse.x >> 8) & 0xffu) / 255.0;
+    const float tracedRoughness = float((gPush.reuse.x >> 8) & 0xffu) / 255.0;
+    const bool traced = (gPush.reuse.x & kTracedSpecular) != 0u && material.g > 1e-3 && roughness <= tracedRoughness;
     // SSR only reads roughness so zero reflectivity must look fully rough
     output.normalRoughness =
         encodeSceneNormal(normal, traced ? kTracedMark : lerp(1.0, roughness, material.g), specularF0(albedo.rgb, material.r));
@@ -942,7 +952,12 @@ FSOutput fragmentMain(VSOutput input)
     output.color = float4(lit.color + albedo.rgb * decodeEmissive(material.a), 1.0);
     if (traced)
     {
-        output.color.rgb -= lit.ambientSpecular;
+        // The rest stays so the traced pass fades in over the top of its roughness range
+        output.color.rgb -= lit.ambientSpecular * tracedSpecularShare(roughness, tracedRoughness);
+    }
+    else
+    {
+        output.ambientSpecular = float4(lit.ambientSpecular, mul(gCamera.viewProjection, float4(position, 1.0)).w);
     }
 
     // Ambient diffuse moves into the filtered term when traced AO occludes it or clipmap GI needs the history

@@ -69,6 +69,10 @@ Sampler2D gResolved;
 [[vk::binding(12, 2)]]
 Sampler2D<uint4> gSurface;
 
+/// Last frame resolve box filtered to half resolution then halved per level
+[[vk::binding(13, 2)]]
+Sampler2D gColourPyramid;
+
 /// Mirrors voxel_lighting.slang
 static const float kTracedMark = 2.0;
 static const float kVoxelSize = 0.1;
@@ -79,7 +83,7 @@ static const float kNoTrace = -1.0;
 /// Below this a surface is a mirror and traces the reflection itself
 static const float kMirrorRoughness = 0.05;
 /// Trims the noisy GGX tail
-static const float kLobeTrim = 0.75;
+static const float kLobeTrim = 0.95;
 /// Meters off the plane of the hit face the visible surface may sit and still count as the same face
 static const float kScreenPlane = 0.025;
 /// History roughness further off than this belongs to another material
@@ -93,6 +97,17 @@ static const float kMissDistance = 60000.0;
 static const int kResolveReach = 2;
 /// Lobe over pdf a single ray may reach so one unlikely neighbour cannot take the texel
 static const float kMaxRayWeight = 8.0;
+
+/// Mirrors TracedSpecularPass::k_pyramid_levels
+static const float kPyramidLevels = 6.0;
+/// Share of the GGX lobe volume a footprint spans
+static const float kFootprintVolume = 0.75;
+
+/// Tangent of the cone holding kFootprintVolume of the reflected lobe
+float lobeTanHalf(float roughness)
+{
+    return roughness * roughness * kFootprintVolume / (1.0 - kFootprintVolume);
+}
 
 /// Frames of history in the integer part and roughness in the fraction
 float packHistory(float frames, float roughness)
@@ -173,8 +188,8 @@ TracedPixel tracedPixelAt(int2 pixel)
     return surface;
 }
 
-/// False unless the pixel the hit projects to shows the same face
-bool screenRadiance(float3 position, float3 normal, out float3 radiance)
+/// False unless the pixel the hit projects to shows the same face. The pyramid level matches the cone of this ray at the hit
+bool screenRadiance(float3 position, float3 normal, float coneWidth, out float3 radiance)
 {
     radiance = float3(0.0, 0.0, 0.0);
     const float3 toCamera = gCamera.position - position;
@@ -212,18 +227,23 @@ bool screenRadiance(float3 position, float3 normal, out float3 radiance)
     const float2 previousUv = (float2(pixel) + 0.5) / float2(float(width), float(height)) - (motion.w > 0.5 ? motion.xy : float2(0.0, 0.0));
     if (gParams.resolve.x > 0.5 && motion.z <= 0.5 && all(previousUv >= float2(0.0, 0.0)) && all(previousUv < float2(1.0, 1.0)))
     {
+        // Pixels across the cone at the hit and level 0 of the pyramid spans two
+        const float pixels = coneWidth * abs(gCamera.projection[1][1]) * float(height) / (2.0 * distance);
+        const float level = log2(max(pixels, 1e-4)) - 1.0;
         // By uv since TAA output is output sized
-        radiance = gPreviousColour.SampleLevel(previousUv, 0.0).rgb;
+        radiance = level > 0.0 ? gColourPyramid.SampleLevel(previousUv, min(level, kPyramidLevels - 1.0)).rgb
+                               : gPreviousColour.SampleLevel(previousUv, 0.0).rgb;
     }
     return true;
 }
 
-float3 hitRadiance(SceneHit hit, float3 origin, float3 direction, float coneSlope, float2 pixel, inout uint random)
+/// rayTan is the cone half angle tangent each of the strata rays stands for
+float3 hitRadiance(SceneHit hit, float3 origin, float3 direction, float coneSlope, float rayTan, float2 pixel, inout uint random)
 {
     const float3 position = origin + direction * hit.t;
     const float3 normal = sceneHitNormal(hit, direction);
     float3 radiance;
-    if (screenRadiance(position, normal, radiance))
+    if (screenRadiance(position, normal, 2.0 * rayTan * hit.t, radiance))
     {
         return radiance;
     }
@@ -417,8 +437,11 @@ float4 traceMain(VSOutput input) : SV_Target0
     {
         return float4(ambientSpecularRadiance(surface.position, mirror, surface.roughness), kMissDistance);
     }
-    uint random = giHash(uint(texel.x) | (uint(texel.y) << 16));
-    return float4(hitRadiance(hit, origin, L, coneSlope, float2(pixel), random), hit.t);
+    // Frame in the seed so history averages the light pick instead of freezing it
+    uint random = giHash((uint(texel.x) | (uint(texel.y) << 16)) ^ giHash(uint(gCamera.noiseParams.z)));
+    // Each stratum ray covers its share of the lobe so its screen hit reads a matching blur
+    const float rayTan = surface.roughness > kMirrorRoughness ? lobeTanHalf(surface.roughness) / sqrt(float(kLobeStrata)) : 0.0;
+    return float4(hitRadiance(hit, origin, L, coneSlope, rayTan, float2(pixel), random), hit.t);
 }
 
 float specularLuma(float3 colour)
@@ -514,6 +537,79 @@ float4 resolveMain(VSOutput input) : SV_Target0
     return float4(expand(sum / weightSum), packed);
 }
 
+/// Sigmas of the neighbour box history may sit from the mean like voxel_denoise kSpecularClip
+static const float kHistoryClip = 1.25;
+/// Blend gained per half resolution texel of motion a frame
+static const float kMotionFade = 0.05;
+
+bool historyMatches(float4 value, float roughness)
+{
+    return value.a >= 0.0 && abs(historyRoughness(value.a) - roughness) <= kRoughnessChange;
+}
+
+/// Compressed history from the matching texels of the bilinear footprint then the nearest match so thin surfaces keep it
+bool fetchHistory(float2 previousUv, float roughness, int2 last, out float3 colour, out float frames)
+{
+    colour = float3(0.0, 0.0, 0.0);
+    frames = 0.0;
+    const float2 size = float2(last + 1);
+    const float2 position = previousUv * size - 0.5;
+    const int2 base = int2(floor(position));
+    const float2 f = position - float2(base);
+    float3 sum = float3(0.0, 0.0, 0.0);
+    float weightSum = 0.0;
+    float youngest = kMaxHistory;
+    for (int i = 0; i < 4; ++i)
+    {
+        const int2 offset = int2(i & 1, i >> 1);
+        const int2 tap = base + offset;
+        if (any(tap < int2(0, 0)) || any(tap > last))
+        {
+            continue;
+        }
+        const float4 value = gHistory.Load(int3(tap, 0));
+        const float weight = (offset.x == 1 ? f.x : 1.0 - f.x) * (offset.y == 1 ? f.y : 1.0 - f.y);
+        if (weight <= 1e-4 || !historyMatches(value, roughness))
+        {
+            continue;
+        }
+        sum += compress(value.rgb) * weight;
+        weightSum += weight;
+        youngest = min(youngest, historyFrames(value.a));
+    }
+    if (weightSum > 1e-3)
+    {
+        colour = sum / weightSum;
+        frames = youngest;
+        return true;
+    }
+
+    const float2 target = previousUv * size;
+    const int2 nearest = int2(floor(target));
+    float best = 1e9;
+    for (int y = -1; y <= 1; ++y)
+    {
+        for (int x = -1; x <= 1; ++x)
+        {
+            const int2 tap = nearest + int2(x, y);
+            if (any(tap < int2(0, 0)) || any(tap > last))
+            {
+                continue;
+            }
+            const float4 value = gHistory.Load(int3(tap, 0));
+            const float2 offset = float2(tap) + 0.5 - target;
+            const float distanceSquared = dot(offset, offset);
+            if (distanceSquared < best && historyMatches(value, roughness))
+            {
+                best = distanceSquared;
+                colour = compress(value.rgb);
+                frames = historyFrames(value.a);
+            }
+        }
+    }
+    return best < 1e9;
+}
+
 /// Mirrors keep a faster floor blend since surface motion smears them
 [shader("fragment")]
 float4 temporalMain(VSOutput input) : SV_Target0
@@ -530,6 +626,7 @@ float4 temporalMain(VSOutput input) : SV_Target0
     uint height;
     gResolved.GetDimensions(width, height);
     const int2 last = int2(int(width), int(height)) - 1;
+    // Same surface only so a thin strip does not borrow the spread of what surrounds it
     float3 mean = float3(0.0, 0.0, 0.0);
     float3 meanSquared = float3(0.0, 0.0, 0.0);
     float count = 0.0;
@@ -538,7 +635,7 @@ float4 temporalMain(VSOutput input) : SV_Target0
         for (int x = -1; x <= 1; ++x)
         {
             const float4 value = gResolved.Load(int3(clamp(texel + int2(x, y), int2(0, 0), last), 0));
-            if (value.a < 0.0)
+            if (!historyMatches(value, roughness))
             {
                 continue;
             }
@@ -548,34 +645,110 @@ float4 temporalMain(VSOutput input) : SV_Target0
             count += 1.0;
         }
     }
-    mean /= count;
-    const float3 sigma = sqrt(max(meanSquared / count - mean * mean, float3(0.0, 0.0, 0.0)));
+    mean /= max(count, 1.0);
+    const float3 sigma = sqrt(max(meanSquared / max(count, 1.0) - mean * mean, float3(0.0, 0.0, 0.0)));
 
     const float4 motion = gMotion.Load(int3(texel * 2, 0));
-    const float2 uv = (float2(texel) + 0.5) / float2(float(width), float(height));
-    const float2 previousUv = uv - (motion.w > 0.5 ? motion.xy : float2(0.0, 0.0));
+    const float2 size = float2(float(width), float(height));
+    const float2 uv = (float2(texel) + 0.5) / size;
+    const float2 movement = motion.w > 0.5 ? motion.xy : float2(0.0, 0.0);
+    const float2 previousUv = uv - movement;
     if (motion.z > 0.5 || any(previousUv < float2(0.0, 0.0)) || any(previousUv > float2(1.0, 1.0)))
     {
         return current;
     }
-    const float4 history = gHistory.SampleLevel(previousUv, 0.0);
-    if (history.a < 0.0 || abs(historyRoughness(history.a) - roughness) > kRoughnessChange)
+    float3 history;
+    float historyAge;
+    if (!fetchHistory(previousUv, roughness, last, history, historyAge))
     {
         return current;
     }
 
     // A young history trusts the box less since it is still mostly noise
-    const float frames = historyFrames(history.a) + 1.0;
-    const float3 clipped = clamp(compress(history.rgb), mean - 2.0 * sigma, mean + 2.0 * sigma);
+    const float frames = historyAge + 1.0;
+    const float3 clipped = clamp(history, mean - kHistoryClip * sigma, mean + kHistoryClip * sigma);
     const float floorBlend = lerp(0.2, 0.04, saturate(roughness / max(gParams.tracing.y, 1e-3)));
-    const float blend = max(1.0 / (frames + 1.0), floorBlend);
+    // Reflections slide against surface motion so fast movement trusts history less
+    const float moving = saturate(length(movement * size) * kMotionFade);
+    const float blend = max(max(1.0 / (frames + 1.0), floorBlend), moving);
     return float4(expand(lerp(clipped, compress(current.rgb), blend)), packHistory(frames, roughness));
 }
 
-/// Half resolution texels a rough pixel gathers across on top of the bilinear footprint
-static const float kFilterRadius = 2.0;
+/// 2x2 box of the last frame resolve over each half resolution texel
+[shader("fragment")]
+float4 pyramidMain(VSOutput input) : SV_Target0
+{
+    uint width;
+    uint height;
+    gSurface.GetDimensions(width, height);
+    const float2 quarter = 0.25 / float2(float(width), float(height));
+    float3 sum = float3(0.0, 0.0, 0.0);
+    for (int i = 0; i < 4; ++i)
+    {
+        const float2 offset = float2(i & 1, i >> 1) * 2.0 - 1.0;
+        sum += gPreviousColour.SampleLevel(input.uv + offset * quarter, 0.0).rgb;
+    }
+    return float4(sum * 0.25, 1.0);
+}
 
-/// Gaussian widened with roughness and kept on the surface by plane distance and normal
+/// Gaussian of the 2x2 bilinear core in half resolution texels
+static const float kBilinearSigma = 0.6;
+/// Vogel disk taps spread over the reflection footprint
+static const int kFootprintTaps = 12;
+/// Full resolution pixels the footprint radius may reach so 12 taps still overlap
+static const float kMaxFootprintPixels = 32.0;
+/// Below this the bilinear core already covers the blur
+static const float kMinFootprintPixels = 1.5;
+/// Elongation cap along the view so grazing floors keep their taps on screen
+static const float kMaxStretch = 4.0;
+/// Hit distance a miss counts as since its radiance came from far away
+static const float kFarHitDistance = 1000.0;
+
+/// Plane distance and normal agreement of the half resolution texel with this surface
+float sourceWeight(TracedPixel surface, int2 texel, float distance)
+{
+    const int2 source = texel * 2;
+    const float3 sourceNormal = gSceneNormal.Load(int3(source, 0)).xyz;
+    const float facing = dot(sourceNormal, sourceNormal) > 1e-4 ? saturate(dot(normalize(sourceNormal), surface.normal)) : 0.0;
+    return planeWeight(surface, worldAt(source, gDepth.Load(int3(source, 0)).r), distance) * pow(facing, 16.0);
+}
+
+/// Mean of hit over hit plus camera distance across the raw rays on this surface so contact reflections stay sharp
+float footprintHitFactor(TracedPixel surface, int2 base, int2 last, float distance)
+{
+    float sum = 0.0;
+    float weightSum = 0.0;
+    for (int y = -1; y <= 2; ++y)
+    {
+        for (int x = -1; x <= 2; ++x)
+        {
+            const int2 tap = base + int2(x, y);
+            if (any(tap < int2(0, 0)) || any(tap > last))
+            {
+                continue;
+            }
+            const float hit = gTrace.Load(int3(tap, 0)).a;
+            if (hit < 0.0)
+            {
+                continue;
+            }
+            const float weight = planeWeight(surface, asfloat(gSurface.Load(int3(tap, 0)).xyz), distance);
+            const float clamped = min(hit, kFarHitDistance);
+            sum += clamped / (clamped + distance) * weight;
+            weightSum += weight;
+        }
+    }
+    return weightSum > 1e-4 ? sum / weightSum : 1.0;
+}
+
+float2 fullPixelOf(float3 position, float2 fullSize, out bool visible)
+{
+    const float4 clip = mul(gCamera.jitteredViewProjection, float4(position, 1.0));
+    visible = clip.w > 0.0;
+    return (clip.xy / max(clip.w, 1e-6) * 0.5 + 0.5) * fullSize;
+}
+
+/// Bilinear core plus disk taps over the GGX lobe footprint at the hit distance projected on the surface plane
 [shader("fragment")]
 float4 compositeMain(VSOutput input) : SV_Target0
 {
@@ -594,16 +767,12 @@ float4 compositeMain(VSOutput input) : SV_Target0
     const float2 low = (float2(pixel) + 0.5) * 0.5 - 0.5;
     const int2 base = int2(floor(low));
     const float distance = length(gCamera.position - surface.position);
-    const float spread = saturate(surface.roughness / max(gParams.tracing.y, 1e-3));
-    const float sigma = 0.6 + kFilterRadius * spread;
-    // Mirrors stay on the bilinear footprint and rough pixels reach two texels further
-    const int reach = spread > 0.25 ? 2 : 0;
 
     float3 reflection = float3(0.0, 0.0, 0.0);
     float weightSum = 0.0;
-    for (int y = -reach; y <= 1 + reach; ++y)
+    for (int y = 0; y <= 1; ++y)
     {
-        for (int x = -reach; x <= 1 + reach; ++x)
+        for (int x = 0; x <= 1; ++x)
         {
             const int2 texel = base + int2(x, y);
             if (any(texel < int2(0, 0)) || any(texel > last))
@@ -615,19 +784,92 @@ float4 compositeMain(VSOutput input) : SV_Target0
             {
                 continue;
             }
-            const int2 source = texel * 2;
-            const float3 sourceNormal = gSceneNormal.Load(int3(source, 0)).xyz;
-            const float facing = dot(sourceNormal, sourceNormal) > 1e-4 ? saturate(dot(normalize(sourceNormal), surface.normal)) : 0.0;
-            const float3 sourcePosition = worldAt(source, gDepth.Load(int3(source, 0)).r);
             const float2 offset = float2(texel) - low;
             const float weight =
-                exp(-dot(offset, offset) / (2.0 * sigma * sigma)) * planeWeight(surface, sourcePosition, distance) * pow(facing, 16.0);
+                exp(-dot(offset, offset) / (2.0 * kBilinearSigma * kBilinearSigma)) * sourceWeight(surface, texel, distance);
             reflection += compress(value.rgb) * weight;
             weightSum += weight;
         }
     }
 
+    // Lobe radius on the plane is its tangent times the distance to the virtual image seen from the camera
     const float3 V = normalize(gCamera.position - surface.position);
+    float radius = lobeTanHalf(surface.roughness) * distance * footprintHitFactor(surface, base, last, distance);
+    const float3 N = surface.face;
+    float3 along = V - N * dot(V, N);
+    float3 across;
+    if (dot(along, along) > 1e-6)
+    {
+        along = normalize(along);
+        across = cross(N, along);
+    }
+    else
+    {
+        perpendicularBasis(N, along, across);
+    }
+    // Reflections stretch toward the viewer as the view grazes the surface
+    const float stretch = min(1.0 / max(abs(dot(V, N)), 1e-3), kMaxStretch);
+
+    const float2 fullSize = float2(float(width), float(height)) * 2.0;
+    bool visible;
+    const float2 centre = fullPixelOf(surface.position, fullSize, visible);
+    const float2 alongPixels = fullPixelOf(surface.position + along * (radius * stretch), fullSize, visible) - centre;
+    const float2 acrossPixels = fullPixelOf(surface.position + across * radius, fullSize, visible) - centre;
+    const float pixels = max(length(alongPixels), length(acrossPixels));
+    if (pixels > kMinFootprintPixels)
+    {
+        radius *= min(1.0, kMaxFootprintPixels / pixels);
+        const float turn = interleavedGradientNoise(float2(pixel)) * 6.28318530718;
+        for (int i = 0; i < kFootprintTaps; ++i)
+        {
+            const float r = sqrt((float(i) + 0.5) / float(kFootprintTaps));
+            const float angle = float(i) * 2.39996323 + turn;
+            const float3 position = surface.position + (along * (cos(angle) * stretch) + across * sin(angle)) * (r * radius);
+            const int2 texel = int2(floor(fullPixelOf(position, fullSize, visible) * 0.5));
+            if (!visible || any(texel < int2(0, 0)) || any(texel > last))
+            {
+                continue;
+            }
+            const float4 value = gTemporal.Load(int3(texel, 0));
+            if (value.a < 0.0 || abs(historyRoughness(value.a) - surface.roughness) > kRoughnessChange)
+            {
+                continue;
+            }
+            const float weight = exp(-2.0 * r * r) * sourceWeight(surface, texel, distance);
+            reflection += compress(value.rgb) * weight;
+            weightSum += weight;
+        }
+    }
+
+    // A thin surface the half resolution grid skipped this frame takes its best nearby texel instead of flipping to ambient
+    if (weightSum <= 1e-4)
+    {
+        float best = 1e-3;
+        for (int y = -1; y <= 2; ++y)
+        {
+            for (int x = -1; x <= 2; ++x)
+            {
+                const int2 texel = base + int2(x, y);
+                if (any(texel < int2(0, 0)) || any(texel > last))
+                {
+                    continue;
+                }
+                const float4 value = gTemporal.Load(int3(texel, 0));
+                if (value.a < 0.0 || abs(historyRoughness(value.a) - surface.roughness) > kRoughnessChange)
+                {
+                    continue;
+                }
+                const float score = sourceWeight(surface, texel, distance);
+                if (score > best)
+                {
+                    best = score;
+                    reflection = compress(value.rgb);
+                    weightSum = 1.0;
+                }
+            }
+        }
+    }
+
     reflection = weightSum > 1e-4 ? expand(reflection / weightSum)
                                   : ambientSpecularRadiance(surface.position, reflect(-V, surface.normal), surface.roughness);
 
@@ -635,5 +877,7 @@ float4 compositeMain(VSOutput input) : SV_Target0
     const float3 F0 = lerp(float3(0.04, 0.04, 0.04), surface.albedo, surface.metallic);
     const float3 fresnel = fresnelSchlickRoughness(NdotV, F0, surface.roughness);
     const float2 split = environmentBRDF(surface.roughness, NdotV);
-    return float4(scene + reflection * (fresnel * split.x + split.y) * surface.reflectivity, 1.0);
+    // Quantized like the voxel_lighting copy so both sides of the handover agree
+    const float share = tracedSpecularShare(surface.roughness, round(gParams.tracing.y * 255.0) / 255.0);
+    return float4(scene + reflection * (fresnel * split.x + split.y) * (surface.reflectivity * share), 1.0);
 }

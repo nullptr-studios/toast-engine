@@ -328,6 +328,12 @@ public:
 		return m_scene_indirect.view.has_value() ? **m_scene_indirect.view : vk::ImageView {};
 	}
 
+	/// Only written on frames ssrFrame() is true
+	[[nodiscard]]
+	auto getSceneAmbientSpecularView() const noexcept -> vk::ImageView {
+		return m_scene_ambient_specular.view.has_value() ? **m_scene_ambient_specular.view : vk::ImageView {};
+	}
+
 	[[nodiscard]]
 	auto getSceneMotionView() const noexcept -> vk::ImageView {
 		return m_scene_motion.view.has_value() ? **m_scene_motion.view : vk::ImageView {};
@@ -1582,6 +1588,8 @@ private:
 
 	static constexpr vk::Format m_scene_indirect_format = renderer::k_scene_indirect_format;
 	SceneColorResources m_scene_indirect;
+
+	SceneColorResources m_scene_ambient_specular;
 
 	static constexpr vk::Format m_scene_motion_format = renderer::k_scene_motion_format;
 	SceneColorResources m_scene_motion;

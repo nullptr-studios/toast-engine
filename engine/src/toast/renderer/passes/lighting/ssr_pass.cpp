@@ -136,7 +136,8 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	const vk::ImageView depth_view = VulkanRenderer::instance->getOpaqueDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getOpaqueNormalView();
 	const vk::ImageView motion_view = VulkanRenderer::instance->getSceneMotionView();
-	if (!depth_view || !normal_view || !motion_view) {
+	const vk::ImageView ambient_view = VulkanRenderer::instance->getSceneAmbientSpecularView();
+	if (!depth_view || !normal_view || !motion_view || !ambient_view) {
 		return source_view;
 	}
 
@@ -163,8 +164,8 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	const vk::DescriptorSet set = *m_descriptor_sets[set_index];
 
 	const vk::ImageView previous_view = VulkanRenderer::instance->previousResolvedColour();
-	const std::array<vk::ImageView, 5> wanted {
-	  source_view, previous_view ? previous_view : source_view, depth_view, normal_view, hiz.view()
+	const std::array<vk::ImageView, 6> wanted {
+	  source_view, previous_view ? previous_view : source_view, depth_view, normal_view, hiz.view(), ambient_view
 	};
 	if (m_bound_views.update(set_index, wanted)) {
 		// Point sampled except the colours since interpolated depth or normals invent surfaces
@@ -181,6 +182,7 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		  vk::DescriptorImageInfo(*m_point_sampler, history_write.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
 		  vk::DescriptorImageInfo(*m_sampler, wanted[1], vk::ImageLayout::eShaderReadOnlyOptimal),
 		  vk::DescriptorImageInfo(hiz.sampler(), hiz.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_point_sampler, ambient_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		};
 
 		std::array<vk::WriteDescriptorSet, k_binding_count> writes {};
@@ -220,7 +222,8 @@ auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	    history_valid ? 1.0f : 0.0f,
 	    previous_view ? 1.0f : 0.0f
 	);
-	params.pyramid = glm::vec4(static_cast<float>(hiz.builtLevels()), 0.0f, 0.0f, 0.0f);
+	params.pyramid =
+	    glm::vec4(static_cast<float>(hiz.builtLevels()), VulkanRenderer::instance->ssrFrame() ? 1.0f : 0.0f, 0.0f, 0.0f);
 
 	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {
 		target.beginScope(cmd);

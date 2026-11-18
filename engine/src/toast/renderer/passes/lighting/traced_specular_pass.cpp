@@ -14,6 +14,9 @@
 #include "toast/renderer/voxel/voxel_trace_scene.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
+#include <algorithm>
+#include <bit>
+
 namespace renderer {
 
 namespace {
@@ -32,6 +35,8 @@ constexpr uint32_t k_specular_trace_bricks_binding = 15;
 
 /// voxel_specular.slang gDepth
 constexpr uint32_t k_specular_depth_binding = 1;
+/// voxel_specular.slang gColourPyramid
+constexpr uint32_t k_specular_pyramid_binding = 13;
 
 }
 
@@ -83,6 +88,7 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 	build_pipeline(m_resolve_pipeline, k_trace_format, half, "resolveMain", "TracedSpecular Resolve");
 	build_pipeline(m_temporal_pipeline, k_trace_format, half, "temporalMain", "TracedSpecular Temporal");
 	build_pipeline(m_composite_pipeline, scene_format, extent, "compositeMain", "TracedSpecular Composite");
+	build_pipeline(m_pyramid_pipeline, k_pyramid_format, half, "pyramidMain", "TracedSpecular Pyramid");
 
 	m_scene_sets.create(core, shader->reflection, *layouts[k_specular_scene_set], "TracedSpecular");
 	m_instances_bound = std::ranges::any_of(shader->reflection.bindings, [](const ShaderBinding& binding) {
@@ -92,7 +98,8 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 	createTargets(core, extent);
 
 	m_ready = m_surface_pipeline.isReady() && m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() &&
-	          m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() && !m_scene_sets.empty() && !m_storage_sets.empty();
+	          m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() && m_pyramid_pipeline.isReady() &&
+	          !m_scene_sets.empty() && !m_storage_sets.empty();
 	if (m_ready) {
 		TOAST_INFO("Render", "TracedSpecularPass ready (GGX rays traced at half resolution)");
 	}
@@ -112,6 +119,8 @@ void TracedSpecularPass::createSets(const VulkanCore& core) {
 	// Nearest since interpolated depth or normals invent surfaces
 	m_point_sampler = vk::raii::Sampler(device, nearestClampSamplerInfo());
 	setDebugName(core, *m_point_sampler, "TracedSpecular PointSampler");
+	m_pyramid_sampler = vk::raii::Sampler(device, linearClampMippedSamplerInfo(static_cast<float>(k_pyramid_levels)));
+	setDebugName(core, *m_pyramid_sampler, "TracedSpecular PyramidSampler");
 
 	const vk::DescriptorSetLayout storage_layout = *layouts[k_specular_storage_set];
 	const vk::DescriptorSetLayout image_layout = *layouts[k_specular_image_set];
@@ -157,8 +166,103 @@ void TracedSpecularPass::createTargets(const VulkanCore& core, vk::Extent2D exte
 	m_resolved.create(core, half, k_trace_format, "TracedSpecular Resolved");
 	m_history[0].create(core, half, k_trace_format, "TracedSpecular History0");
 	m_history[1].create(core, half, k_trace_format, "TracedSpecular History1");
+	createPyramid(core, half);
 	m_image_bound.invalidate();
 	m_history_valid = false;
+}
+
+void TracedSpecularPass::createPyramid(const VulkanCore& core, vk::Extent2D extent) {
+	// Views before the image they view
+	m_pyramid_top_view.reset();
+	m_pyramid_view.reset();
+	m_pyramid.reset();
+	m_pyramid_extent = extent;
+	m_pyramid_level_count =
+	    std::min(k_pyramid_levels, static_cast<uint32_t>(std::bit_width(std::max(extent.width, extent.height))));
+
+	auto image_ci =
+	    colorTargetImageInfo(extent, k_pyramid_format, vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst);
+	image_ci.mipLevels = m_pyramid_level_count;
+	vma::AllocationCreateInfo allocation_ci {};
+	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
+	m_pyramid.emplace(core.getAllocator().createImage(image_ci, allocation_ci));
+	setDebugName(core, **m_pyramid, "TracedSpecular Pyramid");
+	const vk::ImageSubresourceRange levels(vk::ImageAspectFlagBits::eColor, 0, m_pyramid_level_count, 0, 1);
+	m_pyramid_state.reset(**m_pyramid, levels);
+
+	vk::ImageViewCreateInfo view_ci {};
+	view_ci.image = **m_pyramid;
+	view_ci.viewType = vk::ImageViewType::e2D;
+	view_ci.format = k_pyramid_format;
+	view_ci.subresourceRange = levels;
+	m_pyramid_view.emplace(core.getDevice(), view_ci);
+	setDebugName(core, **m_pyramid_view, "TracedSpecular PyramidView");
+	view_ci.subresourceRange = colorSubresourceRange();
+	m_pyramid_top_view.emplace(core.getDevice(), view_ci);
+	setDebugName(core, **m_pyramid_top_view, "TracedSpecular PyramidTopView");
+}
+
+void TracedSpecularPass::recordPyramid(
+    vk::CommandBuffer cmd, vk::PipelineLayout layout, std::span<const vk::DescriptorSet> sets, const Params& params
+) {
+	ZoneScoped;
+	sync::transition(cmd, m_pyramid_state, sync::Usage::color_attachment);
+	vk::RenderingAttachmentInfo attachment {};
+	attachment.imageView = **m_pyramid_top_view;
+	attachment.imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+	attachment.loadOp = vk::AttachmentLoadOp::eDontCare;
+	attachment.storeOp = vk::AttachmentStoreOp::eStore;
+	vk::RenderingInfo rendering_info {};
+	rendering_info.renderArea = vk::Rect2D({0, 0}, m_pyramid_extent);
+	rendering_info.layerCount = 1;
+	rendering_info.colorAttachmentCount = 1;
+	rendering_info.pColorAttachments = &attachment;
+	cmd.beginRendering(rendering_info);
+	const vk::Viewport viewport(
+	    0.0f, 0.0f, static_cast<float>(m_pyramid_extent.width), static_cast<float>(m_pyramid_extent.height), 0.0f, 1.0f
+	);
+	cmd.setViewport(0, std::array {viewport});
+	cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, m_pyramid_extent)});
+	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pyramid_pipeline.getPipeline());
+	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, k_specular_scene_set, sets, {});
+	cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
+	cmd.draw(3, 1, 0, 0);
+	cmd.endRendering();
+	if (m_pyramid_level_count < 2) {
+		sync::transition(cmd, m_pyramid_state, sync::Usage::shader_sampled);
+		return;
+	}
+
+	const vk::Image image = **m_pyramid;
+	const auto level = [](uint32_t mip, uint32_t count = 1) {
+		return vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, mip, count, 0, 1);
+	};
+	const auto size = [&](uint32_t mip) {
+		return vk::Offset3D {
+		  static_cast<int32_t>(std::max(m_pyramid_extent.width >> mip, 1u)),
+		  static_cast<int32_t>(std::max(m_pyramid_extent.height >> mip, 1u)),
+		  1
+		};
+	};
+	sync::BarrierBatch barriers;
+	barriers.image(image, level(0), sync::Usage::color_attachment, sync::Usage::transfer_src);
+	barriers.image(image, level(1, m_pyramid_level_count - 1), sync::Usage::color_attachment, sync::Usage::transfer_dst);
+	barriers.flush(cmd);
+	for (uint32_t mip = 1; mip < m_pyramid_level_count; ++mip) {
+		vk::ImageBlit blit {};
+		blit.srcSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, mip - 1, 0, 1);
+		blit.srcOffsets[1] = size(mip - 1);
+		blit.dstSubresource = vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, mip, 0, 1);
+		blit.dstOffsets[1] = size(mip);
+		cmd.blitImage(
+		    image, vk::ImageLayout::eTransferSrcOptimal, image, vk::ImageLayout::eTransferDstOptimal, blit, vk::Filter::eLinear
+		);
+		barriers.image(image, level(mip), sync::Usage::transfer_dst, sync::Usage::transfer_src);
+		barriers.flush(cmd);
+	}
+	barriers.image(image, level(0, m_pyramid_level_count), sync::Usage::transfer_src, sync::Usage::shader_sampled);
+	barriers.flush(cmd);
+	m_pyramid_state.usage = sync::Usage::shader_sampled;
 }
 
 void TracedSpecularPass::onResize(vk::Extent2D extent) {
@@ -205,6 +309,7 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	  previous_view ? previous_view : source_view,
 	  m_resolved.view(),
 	  m_surface.view(),
+	  m_pyramid_view.has_value() ? **m_pyramid_view : vk::ImageView {},
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return source_view;
@@ -216,7 +321,7 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 			    image_set,
 			    binding,
 			    vk::DescriptorType::eCombinedImageSampler,
-			    *m_point_sampler,
+			    binding == k_specular_pyramid_binding ? *m_pyramid_sampler : *m_point_sampler,
 			    views[binding],
 			    binding == k_specular_depth_binding ? vk::ImageLayout::eDepthReadOnlyOptimal : vk::ImageLayout::eShaderReadOnlyOptimal
 			);
@@ -252,6 +357,11 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 		target.endScope(cmd);
 	};
 
+	if (previous_view) {
+		recordPyramid(cmd, layout, sets, params);
+	} else if (m_pyramid_state.usage == sync::Usage::none) {
+		sync::transition(cmd, m_pyramid_state, sync::Usage::shader_sampled);
+	}
 	draw(m_surface, m_surface_pipeline);
 	draw(m_trace, m_trace_pipeline);
 	draw(m_resolved, m_resolve_pipeline);

@@ -254,7 +254,8 @@ void DebrisPass::recordGlass(vk::CommandBuffer cmd, uint32_t frame_index) {
 	}
 
 	PushConstants push = m_push;
-	if (renderer->ssrFrame() && renderer->glassBackdropCaptured()) {
+	// Traced frames too since otherwise glass debris keeps the bare environment while the voxels around it reflect the scene
+	if ((renderer->ssrFrame() || renderer->tracedSpecularFrame()) && renderer->glassBackdropCaptured()) {
 		const auto ssr = renderer->glassSsrSettings();
 		push.reflection_reach = ssr.stride * static_cast<float>(ssr.max_steps);
 		push.reflection_steps = ssr.max_steps;

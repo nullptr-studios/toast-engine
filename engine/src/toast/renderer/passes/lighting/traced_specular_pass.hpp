@@ -17,6 +17,8 @@
 #include <array>
 #include <glm/glm.hpp>
 #include <memory>
+#include <optional>
+#include <span>
 #include <vector>
 
 namespace renderer {
@@ -57,10 +59,20 @@ private:
 	/// voxel_specular.slang packSurface
 	static constexpr vk::Format k_surface_format = vk::Format::eR32G32B32A32Uint;
 
-	static constexpr uint32_t k_image_bindings = 13;
+	/// Last frame resolve box filtered to half resolution then halved per level so rough screen hits read it blurred
+	static constexpr vk::Format k_pyramid_format = vk::Format::eR16G16B16A16Sfloat;
+	/// Mirrors voxel_specular.slang kPyramidLevels
+	static constexpr uint32_t k_pyramid_levels = 6;
+
+	static constexpr uint32_t k_image_bindings = 14;
 
 	void createSets(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
+	void createPyramid(const VulkanCore& core, vk::Extent2D extent);
+	/// Level 0 drawn from binding 10 then each level blitted from the one above
+	void recordPyramid(
+	    vk::CommandBuffer cmd, vk::PipelineLayout layout, std::span<const vk::DescriptorSet> sets, const Params& params
+	);
 
 	const VulkanCore* m_core = nullptr;
 	vk::Format m_scene_format = vk::Format::eUndefined;
@@ -72,10 +84,13 @@ private:
 	VulkanPipeline m_resolve_pipeline;
 	VulkanPipeline m_temporal_pipeline;
 	VulkanPipeline m_composite_pipeline;
+	VulkanPipeline m_pyramid_pipeline;
 	SceneDescriptorSets m_scene_sets;
 	bool m_instances_bound = false;
 
 	vk::raii::Sampler m_point_sampler = nullptr;
+	/// Trilinear across the pyramid levels
+	vk::raii::Sampler m_pyramid_sampler = nullptr;
 
 	/// Per frame in flight
 	std::vector<vk::raii::DescriptorSet> m_storage_sets;
@@ -90,6 +105,14 @@ private:
 	/// The temporal pass reads one and writes the other
 	std::array<PostProcessTarget, 2> m_history;
 	PostProcessTarget m_target;
+
+	std::optional<vma::raii::Image> m_pyramid;
+	/// Every level for sampling and level 0 alone for drawing
+	std::optional<vk::raii::ImageView> m_pyramid_view;
+	std::optional<vk::raii::ImageView> m_pyramid_top_view;
+	vk::Extent2D m_pyramid_extent {};
+	uint32_t m_pyramid_level_count = 0;
+	sync::ImageState m_pyramid_state;
 
 	uint32_t m_parity = 0;
 	bool m_history_valid = false;
