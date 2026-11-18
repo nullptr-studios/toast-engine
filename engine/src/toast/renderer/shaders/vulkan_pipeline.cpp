@@ -53,6 +53,7 @@ auto createGraphicsPipelineImpl(
 	        : config.fragment_entry;
 
 	std::vector<vk::SpecializationMapEntry> specialization_entries;
+	specialization_entries.reserve(config.specialization_constants.size());
 	for (uint32_t i = 0; i < config.specialization_constants.size(); ++i) {
 		specialization_entries.emplace_back(i, static_cast<uint32_t>(i * sizeof(uint32_t)), sizeof(uint32_t));
 	}

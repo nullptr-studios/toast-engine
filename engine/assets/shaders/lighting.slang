@@ -826,14 +826,20 @@ static const float kWidePenumbraTexels = 6.0;
 static const uint kWidePenumbraTaps = 16u;
 
 
-/// xyz irradiance over pi w open sky share and below 0 for none since lighting never gathers on its own
+/// xyz irradiance over pi w open sky share or kGiSkyHeld from the cascades and below 0 for none since lighting never gathers on its own
 static float4 gGiGathered = float4(0.0, 0.0, 0.0, -1.0);
 
 bool giSurfaceIrradiance(out float3 irradiance, out float sky)
 {
     irradiance = gGiGathered.rgb;
-    sky = gGiGathered.w;
+    sky = gGiGathered.w >= kGiSkyHeld ? 0.0 : gGiGathered.w;
     return gGiGathered.w >= 0.0;
+}
+
+/// Share of the sky map a surface reflects where the cascades hold the sky and say nothing so all of it
+float giSpecularOpen()
+{
+    return gGiGathered.w >= kGiSkyHeld ? 1.0 : saturate(gGiGathered.w);
 }
 
 float interleavedGradientNoise(float2 pixel)
@@ -1710,6 +1716,15 @@ float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float ro
     return uniformRadiance + globalSpecular;
 }
 
+/// Top share of the traced roughness range that fades from traced back to environment specular
+static const float kTracedHandover = 0.2;
+
+/// Share of the environment specular the traced specular pass replaces so its roughness limit leaves no edge
+float tracedSpecularShare(float roughness, float maxRoughness)
+{
+    return saturate((maxRoughness - roughness) / max(kTracedHandover * maxRoughness, 1e-3));
+}
+
 float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float roughness)
 {
     float weight;
@@ -1902,7 +1917,7 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     const int bestProbe = bestReflectionProbe(surface.worldPosition, bestProbeWeight);
 
     float3 irradiance = uniformRadiance;
-    const float3 prefiltered = ambientSpecularRadiance(surface.worldPosition, reflect(-V, N), roughness, bestProbe, bestProbeWeight);
+    float3 prefiltered = ambientSpecularRadiance(surface.worldPosition, reflect(-V, N), roughness, bestProbe, bestProbeWeight);
 
     float3 cascadeIrradiance;
     float cascadeSky;
@@ -1935,6 +1950,10 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
     {
         // The clipmap leaves the open share of the hemisphere to the ambient above and the cascades leave none
         irradiance = cascadeIrradiance * giIntensity() + cascadeSky * irradiance;
+        // The environment map is the sky so only the open share reflects it and the closed share reflects the bounce GI found
+        // shortcut: the bounce is cosine weighted irradiance so smooth indoor surfaces reflect it too flat, upgrade with a specular cone
+        const float open = giSpecularOpen();
+        prefiltered = prefiltered * open + cascadeIrradiance * giIntensity() * (1.0 - open);
         result.contactReach = giContactReach(surface.worldPosition);
     }
 

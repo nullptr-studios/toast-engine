@@ -442,7 +442,7 @@ void VulkanCore::createInstance(std::span<const char* const> required_instance_e
 	std::vector<const char*> layers;
 #ifdef DEBUG
 	if (m_validation_enabled) {
-		layers.push_back("VK_LAYER_KHRONOS_validation");
+		// layers.push_back("VK_LAYER_KHRONOS_validation");
 	}
 #endif
 
