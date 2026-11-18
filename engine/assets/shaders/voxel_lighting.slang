@@ -900,8 +900,8 @@ FSOutput fragmentMain(VSOutput input)
     const float4 material = gMaterial.Load(texel);
     const float roughness = clamp(material.b, 0.045, 1.0);
 
-    const bool traced = (gPush.reuse.x & kTracedSpecular) != 0u && material.g > 1e-3 &&
-                        roughness <= float((gPush.reuse.x >> 8) & 0xffu) / 255.0;
+    const float tracedRoughness = float((gPush.reuse.x >> 8) & 0xffu) / 255.0;
+    const bool traced = (gPush.reuse.x & kTracedSpecular) != 0u && material.g > 1e-3 && roughness <= tracedRoughness;
     // SSR only reads roughness so zero reflectivity must look fully rough
     output.normalRoughness =
         encodeSceneNormal(normal, traced ? kTracedMark : lerp(1.0, roughness, material.g), specularF0(albedo.rgb, material.r));
@@ -952,7 +952,8 @@ FSOutput fragmentMain(VSOutput input)
     output.color = float4(lit.color + albedo.rgb * decodeEmissive(material.a), 1.0);
     if (traced)
     {
-        output.color.rgb -= lit.ambientSpecular;
+        // The rest stays so the traced pass fades in over the top of its roughness range
+        output.color.rgb -= lit.ambientSpecular * tracedSpecularShare(roughness, tracedRoughness);
     }
     else
     {

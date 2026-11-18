@@ -1716,6 +1716,15 @@ float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float ro
     return uniformRadiance + globalSpecular;
 }
 
+/// Top share of the traced roughness range that fades from traced back to environment specular
+static const float kTracedHandover = 0.2;
+
+/// Share of the environment specular the traced specular pass replaces so its roughness limit leaves no edge
+float tracedSpecularShare(float roughness, float maxRoughness)
+{
+    return saturate((maxRoughness - roughness) / max(kTracedHandover * maxRoughness, 1e-3));
+}
+
 float3 ambientSpecularRadiance(float3 worldPosition, float3 reflection, float roughness)
 {
     float weight;

@@ -1740,13 +1740,17 @@ void VoxelPass::recordGlassBricks(vk::CommandBuffer cmd, uint32_t frame_index, G
 	const bool screen = lit && !traced && renderer->ssrFrame();
 	const auto* rendering = renderer->renderingFrame();
 	const bool debug_views = rendering != nullptr && rendering->render_mode != 0;
-	const GlassVariant variant = debug_views ? glass_variant_debug
-	                             : traced    ? glass_variant_traced
-	                             : screen    ? glass_variant_screen
-	                                         : glass_variant_plain;
-	const std::array<VulkanPipeline, 2>& pipelines = lit                            ? m_glass_pipelines[variant]
-	                                                 : stage == GlassStage::surface ? m_glass_surface_pipelines
-	                                                                                : m_glass_nearest_pipelines;
+	GlassVariant variant = glass_variant_plain;
+	if (debug_views) {
+		variant = glass_variant_debug;
+	} else if (traced) {
+		variant = glass_variant_traced;
+	} else if (screen) {
+		variant = glass_variant_screen;
+	}
+	const std::array<VulkanPipeline, 2>& unlit_pipelines =
+	    stage == GlassStage::surface ? m_glass_surface_pipelines : m_glass_nearest_pipelines;
+	const std::array<VulkanPipeline, 2>& pipelines = lit ? m_glass_pipelines[variant] : unlit_pipelines;
 	if (count == 0 || first + count > m_glass_count || !pipelines[0].isReady() || !pipelines[1].isReady() ||
 	    frame_index >= m_glass_sets.size() || !m_glass_scene_sets.get(frame_index)) {
 		return;

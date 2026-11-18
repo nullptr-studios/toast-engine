@@ -1132,7 +1132,7 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 		if (const auto bounds = m_voxel_pass != nullptr ? m_voxel_pass->glassScreenBounds() : std::nullopt; bounds.has_value()) {
 			constexpr int32_t k_margin = 2;
 			const auto to_pixel = [](float ndc, uint32_t size) {
-				return static_cast<int32_t>(std::floor((ndc * 0.5f + 0.5f) * static_cast<float>(size)));
+				return static_cast<int32_t>(std::floor(((ndc * 0.5f) + 0.5f) * static_cast<float>(size)));
 			};
 			const int32_t x0 =
 			    std::clamp(to_pixel(bounds->x, scene_extent.width) - k_margin, 0, static_cast<int32_t>(scene_extent.width));
