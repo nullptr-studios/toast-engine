@@ -3,6 +3,7 @@ import fullscreen;
 import depth_convention;
 import scene_normal;
 import ggx_sampling;
+import screen_march;
 
 struct SsrParams
 {
@@ -57,9 +58,6 @@ Sampler2D gHiz;
 /// rgb environment specular already in gSceneColor and a its clip w so a pixel a mesh later covered is left alone
 [[vk::binding(10, 0)]]
 Sampler2D gAmbientSpecular;
-
-/// Pixels a finest level step scans along the ray so grazing floors reach as far as steep walls
-static const float kScanCell = 8.0;
 
 /// Below this a surface is a mirror and gets one ray with no reuse
 static const float kMirrorRoughness = 0.05;
@@ -158,150 +156,16 @@ float planeWeight(SurfaceSample surface, float3 position)
     return exp(-abs(dot(surface.normal, position - surface.position)) / (0.005 * surface.linearDepth + 0.01));
 }
 
-/// Full resolution check of the ray against gDepth at @p t, @p behind true when the ray went behind a surface too thick to hit
-bool pixelHit(float2 p0, float2 d, float z0, float dz, float t, float2 size, out bool behind)
-{
-    behind = false;
-    const float2 uv = (p0 + d * t) / size;
-    const float depth = gDepth.SampleLevel(uv, 0.0).r;
-    if (isFarDepth(depth) || isCloserDepth(z0 + dz * t, depth))
-    {
-        return false;
-    }
-    const float sceneDepth = linearDepth(uv, depth);
-    const float gap = linearDepth(uv, z0 + dz * t) - sceneDepth;
-    behind = gap > gParams.tuning.z * (1.0 + 0.025 * sceneDepth);
-    return !behind;
-}
-
-/// Hi-Z march in screen space clipped to the screen and the reach so a ray goes as far as the screen shows
-/// @p fade drops reach limited rays near their end so they fade out instead of cutting off
 bool marchScreen(float3 origin, float3 direction, float jitter, out float2 hitUv, out float fade)
 {
-    hitUv = float2(0.0, 0.0);
-    fade = 1.0;
-
-    uint width;
-    uint height;
-    gDepth.GetDimensions(width, height);
-    const float2 size = float2(float(width), float(height));
-
-    float reach = gParams.marching.x;
-    const float4 start = mul(gParams.viewProjection, float4(origin, 1.0));
-    float4 end = mul(gParams.viewProjection, float4(origin + direction * reach, 1.0));
-
-    // Stops short of the near plane so 1 / w stays finite
-    const float minW = 1e-3;
-    if (end.w < minW)
-    {
-        reach *= (start.w - minW) / max(start.w - end.w, 1e-6);
-        end = mul(gParams.viewProjection, float4(origin + direction * reach, 1.0));
-    }
-
-    const float2 p0 = (start.xy / start.w * 0.5 + 0.5) * size;
-    const float2 p1 = (end.xy / end.w * 0.5 + 0.5) * size;
-    const float z0 = start.z / start.w;
-    const float dz = end.z / end.w - z0;
-    const float2 d = p1 - p0;
-    const float pixels = length(d);
-    if (pixels < 1.0)
-    {
-        return false;
-    }
-
-    // Clipped to the screen edge so the reach is only a cap
-    float tEnd = 1.0;
-    [unroll]
-    for (int axis = 0; axis < 2; ++axis)
-    {
-        if (abs(d[axis]) > 1e-6)
-        {
-            tEnd = min(tEnd, ((d[axis] > 0.0 ? size[axis] - 0.5 : 0.5) - p0[axis]) / d[axis]);
-        }
-    }
-    if (tEnd <= 0.0)
-    {
-        return false;
-    }
-    const bool reachLimited = tEnd >= 1.0;
-
-    const float2 inverseD = float2(abs(d.x) > 1e-6 ? 1.0 / d.x : 1e30, abs(d.y) > 1e-6 ? 1.0 / d.y : 1e30);
-    const float2 forward = step(float2(0.0, 0.0), d);
-    const float tPixel = 1.0 / pixels;
-    const int topLevel = max(int(gParams.pyramid.x) - 1, 0);
-    const uint maxSteps = max(uint(gParams.tuning.w), 1u);
-
-    float t = tPixel * (1.0 + jitter);
-    int level = 0;
-    for (uint i = 0u; i < maxSteps && t < tEnd; ++i)
-    {
-        const float2 p = p0 + d * t;
-        const float cellSize = float(2u << uint(level));
-        const float2 cell = floor(p / cellSize);
-        const float cellDepth = gHiz.Load(int3(int2(cell), level)).r;
-        const float2 exits = ((cell + forward) * cellSize - p0) * inverseD;
-        // A hair past the boundary so the next cell is the one the ray enters
-        const float tCell = min(min(exits.x, exits.y) + 0.01 * tPixel, tEnd);
-
-        if (!isCloserDepth(z0 + dz * t, cellDepth))
-        {
-            if (level > 0)
-            {
-                --level;
-                continue;
-            }
-            // The 2x2 cell holds something at least as close as the ray so test pixels at full resolution
-            // on to the edge of the 8x8 cell around it since a grazing ray otherwise spends a step every 2 pixels
-            const float2 scanCell = floor(p / kScanCell);
-            const float2 scanExits = ((scanCell + forward) * kScanCell - p0) * inverseD;
-            const float tScan = max(min(min(scanExits.x, scanExits.y) + 0.01 * tPixel, tEnd), tCell);
-            float previous = t - tPixel;
-            for (float x = t; x < tScan; x += tPixel)
-            {
-                bool behind;
-                if (pixelHit(p0, d, z0, dz, x, size, behind))
-                {
-                    float lo = max(previous, 0.0);
-                    float hi = x;
-                    [unroll]
-                    for (uint j = 0u; j < 4u; ++j)
-                    {
-                        const float mid = 0.5 * (lo + hi);
-                        const float2 midUv = (p0 + d * mid) / size;
-                        const float midDepth = gDepth.SampleLevel(midUv, 0.0).r;
-                        if (!isFarDepth(midDepth) && !isCloserDepth(z0 + dz * mid, midDepth))
-                        {
-                            hi = mid;
-                        }
-                        else
-                        {
-                            lo = mid;
-                        }
-                    }
-                    hitUv = (p0 + d * hi) / size;
-                    fade = reachLimited ? 1.0 - smoothstep(0.7, 1.0, hi) : 1.0;
-                    return true;
-                }
-                previous = x;
-            }
-            t = tScan;
-            continue;
-        }
-
-        if (isCloserDepth(z0 + dz * tCell, cellDepth))
-        {
-            // Wholly in front of everything in the cell
-            t = tCell;
-            level = min(level + 1, topLevel);
-        }
-        else
-        {
-            // Reaches the closest depth inside the cell so refine from there
-            t = max(t + 0.01 * tPixel, (cellDepth - z0) / dz);
-            level = max(level - 1, 0);
-        }
-    }
-    return false;
+    ScreenMarch march;
+    march.viewProjection = gParams.viewProjection;
+    march.inverseViewProjection = gParams.inverseViewProjection;
+    march.reach = gParams.marching.x;
+    march.thickness = gParams.tuning.z;
+    march.maxSteps = uint(gParams.tuning.w);
+    march.levels = int(gParams.pyramid.x);
+    return marchScreenHiz(march, gDepth, gHiz, origin, direction, jitter, hitUv, fade);
 }
 
 /// Stratum fixed to the surface on its dominant axis plane so rough reflections hold still as the camera moves

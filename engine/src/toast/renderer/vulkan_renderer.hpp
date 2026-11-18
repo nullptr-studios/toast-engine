@@ -563,6 +563,14 @@ public:
 		return m_voxel_specular_roughness.load(std::memory_order_relaxed);
 	}
 
+	void setVoxelSpecularHitLights(bool enabled) noexcept { m_voxel_specular_hit_lights.store(enabled, std::memory_order_relaxed); }
+
+	/// Off screen reflection hits take a local light with its shadow ray on top of the sun and GI
+	[[nodiscard]]
+	auto voxelSpecularHitLights() const noexcept -> bool {
+		return m_voxel_specular_hit_lights.load(std::memory_order_relaxed);
+	}
+
 	void setVoxelSpecularReach(float meters) noexcept {
 		m_voxel_specular_reach.store(std::max(meters, 0.1f), std::memory_order_relaxed);
 	}
@@ -1632,6 +1640,7 @@ private:
 	std::atomic<float> m_volumetric_distance {100.0f};
 	std::atomic<float> m_voxel_specular_roughness {0.6f};
 	std::atomic<float> m_voxel_specular_reach {32.0f};
+	std::atomic_bool m_voxel_specular_hit_lights {true};
 	std::atomic<uint32_t> m_voxel_glass_lit_surfaces {4};
 	std::atomic<float> m_voxel_glass_reflection_reach {32.0f};
 	std::atomic<float> m_glass_glow_scale {1.0f};
