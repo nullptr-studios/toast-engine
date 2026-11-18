@@ -1,5 +1,6 @@
 var NAVTREEINDEX20 =
 {
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9453b031439dda6f257558c5473c1004":[13,0,14,101,3,8],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4":[11,0,2,98,3,0],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4":[13,0,14,101,3,0],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4a34be958a921e43d813a2075297d8e862":[11,0,2,98,3,0,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX20 =
 "volume_8hpp_source.html":[14,0,2,0,0,12,35],
 "volume__bounds_8hpp.html":[14,0,2,0,0,10,15],
 "volume__bounds_8hpp_source.html":[14,0,2,0,0,10,15],
-"volumetric__pass_8cpp.html":[14,0,2,0,0,6,5,3,20],
-"volumetric__pass_8hpp.html":[14,0,2,0,0,6,5,3,21]
+"volumetric__pass_8cpp.html":[14,0,2,0,0,6,5,3,20]
 };

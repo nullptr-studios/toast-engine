@@ -2,6 +2,7 @@ var hierarchy =
 [
     [ "physics::AABB", "structphysics_1_1AABB.html", null ],
     [ "physics::AABBTree", "classphysics_1_1AABBTree.html", null ],
+    [ "physics::AABBTreeBuildLeaf", "structphysics_1_1AABBTreeBuildLeaf.html", null ],
     [ "physics::AABBTreeDebugNode", "structphysics_1_1AABBTreeDebugNode.html", null ],
     [ "toast::_detail::Accessor&lt; Tag &gt;", "structtoast_1_1__detail_1_1Accessor.html", null ],
     [ "physics::Accumulator", "classphysics_1_1Accumulator.html", null ],

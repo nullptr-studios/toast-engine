@@ -1,5 +1,6 @@
 var NAVTREEINDEX19 =
 {
+"structrenderer_1_1shadow__slots_1_1Slot.html":[13,0,9,2,1],
 "structrenderer_1_1sync_1_1ImageState.html":[13,0,9,3,1],
 "structrenderer_1_1sync_1_1ImageState.html#a61cc3e5481c16405247ef26d4255a70c":[13,0,9,3,1,0],
 "structrenderer_1_1sync_1_1QueueHandoff.html":[13,0,9,3,2],
@@ -248,6 +249,5 @@ var NAVTREEINDEX19 =
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a528c1ad99d74a13249bda7cb426984aa":[13,0,14,101,3,10],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a717f78818a38a493bac9509f3194515e":[11,0,2,98,3,12],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a717f78818a38a493bac9509f3194515e":[13,0,14,101,3,12],
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9453b031439dda6f257558c5473c1004":[11,0,2,98,3,8],
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9453b031439dda6f257558c5473c1004":[13,0,14,101,3,8]
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9453b031439dda6f257558c5473c1004":[11,0,2,98,3,8]
 };

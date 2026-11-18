@@ -1,5 +1,6 @@
 var NAVTREEINDEX18 =
 {
+"structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98":[13,0,9,51,4],
 "structrenderer_1_1Meta.html#a581b3f5775b0c563478d97efd7b6bb8b":[11,0,1,46,1],
 "structrenderer_1_1Meta.html#a581b3f5775b0c563478d97efd7b6bb8b":[13,0,9,51,1],
 "structrenderer_1_1Meta.html#a95012a506797f5f863d116e0ae041fff":[11,0,1,46,3],
@@ -248,6 +249,5 @@ var NAVTREEINDEX18 =
 "structrenderer_1_1gi__clip_1_1Box.html#ad3df8059ca793a524dcbb8b239e02dda":[13,0,9,0,0,0],
 "structrenderer_1_1light__culling_1_1DepthRange.html":[13,0,9,1,1],
 "structrenderer_1_1light__culling_1_1Sphere.html":[13,0,9,1,0],
-"structrenderer_1_1shadow__slots_1_1Candidate.html":[13,0,9,2,0],
-"structrenderer_1_1shadow__slots_1_1Slot.html":[13,0,9,2,1]
+"structrenderer_1_1shadow__slots_1_1Candidate.html":[13,0,9,2,0]
 };

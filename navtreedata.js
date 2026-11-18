@@ -205,11 +205,11 @@ var NAVTREEINDEX =
 "namespacerenderer.html#a9edc6f6486f8dbb9b1ed51ddb3c8e925",
 "structassets_1_1AnimationClip.html#a503599763cd5aee195d5e3b9d1494070",
 "structevent_1_1ProtoTraits_3_01WindowMousePosition_01_4.html",
-"structphysics_1_1QuerySnapshot.html",
-"structrenderer_1_1Meta.html#a581b3f5775b0c563478d97efd7b6bb8b",
-"structrenderer_1_1sync_1_1ImageState.html",
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4",
-"volumetric__pass_8hpp_source.html"
+"structphysics_1_1QueryContact.html",
+"structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98",
+"structrenderer_1_1shadow__slots_1_1Slot.html",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9453b031439dda6f257558c5473c1004",
+"volumetric__pass_8hpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

@@ -123,12 +123,27 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classphysics_1
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a50569eecc146d6eb84eca82dc5adf439" id="r_a50569eecc146d6eb84eca82dc5adf439"><td class="memItemLeft"><a id="a50569eecc146d6eb84eca82dc5adf439" name="a50569eecc146d6eb84eca82dc5adf439"></a>
 &#160;</td><td class="memItemRight"><b>AABBTree</b> (size_t expected_shapes=0)</td></tr>
-<tr class="memitem:a77bbdb4dec7b03107ace4cf345582e0b" id="r_a77bbdb4dec7b03107ace4cf345582e0b"><td class="memItemLeft"><a id="a77bbdb4dec7b03107ace4cf345582e0b" name="a77bbdb4dec7b03107ace4cf345582e0b"></a>
-auto&#160;</td><td class="memItemRight"><b>insert</b> (<a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> shape, const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;bounds) -&gt; TreeNodeID</td></tr>
+<tr class="memitem:a9eac1afef888b9ad72445ed9322ce969" id="r_a9eac1afef888b9ad72445ed9322ce969"><td class="memItemLeft"><a id="a9eac1afef888b9ad72445ed9322ce969" name="a9eac1afef888b9ad72445ed9322ce969"></a>
+auto&#160;</td><td class="memItemRight"><b>insert</b> (<a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> shape, const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;tight_bounds, glm::vec3 displacement={}) -&gt; TreeNodeID</td></tr>
 <tr class="memitem:a8be940491338f583cdc7447f2397cec7" id="r_a8be940491338f583cdc7447f2397cec7"><td class="memItemLeft"><a id="a8be940491338f583cdc7447f2397cec7" name="a8be940491338f583cdc7447f2397cec7"></a>
 void&#160;</td><td class="memItemRight"><b>remove</b> (TreeNodeID leaf_id)</td></tr>
-<tr class="memitem:af615622fe3ef0b6626ebb833e002718c" id="r_af615622fe3ef0b6626ebb833e002718c"><td class="memItemLeft"><a id="af615622fe3ef0b6626ebb833e002718c" name="af615622fe3ef0b6626ebb833e002718c"></a>
-auto&#160;</td><td class="memItemRight"><b>updateLeaf</b> (TreeNodeID leaf_id, const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;tight_bounds) -&gt; bool</td></tr>
+<tr class="memitem:ac04852f5af7a08209d34c3615ca9fde4" id="r_ac04852f5af7a08209d34c3615ca9fde4"><td class="memItemLeft"><a id="ac04852f5af7a08209d34c3615ca9fde4" name="ac04852f5af7a08209d34c3615ca9fde4"></a>
+auto&#160;</td><td class="memItemRight"><b>needsUpdate</b> (TreeNodeID leaf_id, const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;tight_bounds, glm::vec3 displacement={}) const -&gt; bool</td></tr>
+<tr class="memitem:ae65756208381a347ecf89db6056f76d6" id="r_ae65756208381a347ecf89db6056f76d6"><td class="memItemLeft"><a id="ae65756208381a347ecf89db6056f76d6" name="ae65756208381a347ecf89db6056f76d6"></a>
+void&#160;</td><td class="memItemRight"><b>reinsert</b> (TreeNodeID leaf_id, const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;tight_bounds, glm::vec3 displacement={})</td></tr>
+<tr class="memitem:af5807eb34f49876aea32650ae020f5f3" id="r_af5807eb34f49876aea32650ae020f5f3"><td class="memItemLeft"><a id="af5807eb34f49876aea32650ae020f5f3" name="af5807eb34f49876aea32650ae020f5f3"></a>
+auto&#160;</td><td class="memItemRight"><b>updateLeaf</b> (TreeNodeID leaf_id, const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;tight_bounds, glm::vec3 displacement={}) -&gt; bool</td></tr>
+<tr class="memitem:a865052b30a98f616f7dcab149b6db8d9" id="r_a865052b30a98f616f7dcab149b6db8d9"><td class="memItemLeft"><a id="a865052b30a98f616f7dcab149b6db8d9" name="a865052b30a98f616f7dcab149b6db8d9"></a>
+void&#160;</td><td class="memItemRight"><b>rebuild</b> (std::span&lt; const <a class="el" href="structphysics_1_1AABBTreeBuildLeaf.html">AABBTreeBuildLeaf</a> &gt; leaves, std::span&lt; TreeNodeID &gt; out_leaf_nodes)</td></tr>
+<tr class="memitem:ac81efe4207cfa13bc4a070e1c853eb15" id="r_ac81efe4207cfa13bc4a070e1c853eb15"><td class="memItemLeft"><a id="ac81efe4207cfa13bc4a070e1c853eb15" name="ac81efe4207cfa13bc4a070e1c853eb15"></a>
+auto&#160;</td><td class="memItemRight"><b>leafBounds</b> (TreeNodeID leaf_id) const -&gt; const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;</td></tr>
+<tr class="memitem:a981b8a2da15b38fef9834e862f599549" id="r_a981b8a2da15b38fef9834e862f599549"><td class="memItemLeft"><a id="a981b8a2da15b38fef9834e862f599549" name="a981b8a2da15b38fef9834e862f599549"></a>
+auto&#160;</td><td class="memItemRight"><b>leafCount</b> () const -&gt; size_t</td></tr>
+<tr class="memitem:a21b66fb6accc493c897a9ec05a82f3ad" id="r_a21b66fb6accc493c897a9ec05a82f3ad"><td class="memItemLeft"><a id="a21b66fb6accc493c897a9ec05a82f3ad" name="a21b66fb6accc493c897a9ec05a82f3ad"></a>
+auto&#160;</td><td class="memItemRight"><b>height</b> () const -&gt; int</td></tr>
+<tr class="memitem:a9882215afa0daa4f1f6473cd4104e9a0" id="r_a9882215afa0daa4f1f6473cd4104e9a0"><td class="memTemplParams" colspan="2"><a id="a9882215afa0daa4f1f6473cd4104e9a0" name="a9882215afa0daa4f1f6473cd4104e9a0"></a>
+template&lt;typename Visit&gt; </td></tr>
+<tr class="memitem:a9882215afa0daa4f1f6473cd4104e9a0 template"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><b>visitOverlaps</b> (const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;bounds, Visit &amp;&amp;visit) const -&gt; size_t</td></tr>
 <tr class="memitem:a50ead3813f51852ab0bdc028c99992c2" id="r_a50ead3813f51852ab0bdc028c99992c2"><td class="memItemLeft"><a id="a50ead3813f51852ab0bdc028c99992c2" name="a50ead3813f51852ab0bdc028c99992c2"></a>
 auto&#160;</td><td class="memItemRight"><b>query</b> (const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;bounds, <a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> ignored_shape={}) const -&gt; std::vector&lt; <a class="el" href="structphysics_1_1ShapeID.html">ShapeID</a> &gt;</td></tr>
 <tr class="memitem:a21ce829113b1b0ffde62d09d9e32fb5b" id="r_a21ce829113b1b0ffde62d09d9e32fb5b"><td class="memTemplParams" colspan="2"><a id="a21ce829113b1b0ffde62d09d9e32fb5b" name="a21ce829113b1b0ffde62d09d9e32fb5b"></a>
@@ -140,6 +155,11 @@ auto&#160;</td><td class="memItemRight"><b>debugNodes</b> () const -&gt; std::ve
 auto&#160;</td><td class="memItemRight"><b>size</b> () const -&gt; size_t</td></tr>
 <tr class="memitem:ad925ec71016765fd5bbdd00efbdb1937" id="r_ad925ec71016765fd5bbdd00efbdb1937"><td class="memItemLeft"><a id="ad925ec71016765fd5bbdd00efbdb1937" name="ad925ec71016765fd5bbdd00efbdb1937"></a>
 auto&#160;</td><td class="memItemRight"><b>validate</b> () const -&gt; bool</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 id="header-pub-static-methods" class="groupheader"><a id="pub-static-methods" name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a1f8db18910ad467b71a0dbeadbb02662" id="r_a1f8db18910ad467b71a0dbeadbb02662"><td class="memItemLeft"><a id="a1f8db18910ad467b71a0dbeadbb02662" name="a1f8db18910ad467b71a0dbeadbb02662"></a>
+static auto&#160;</td><td class="memItemRight"><b>fatten</b> (const <a class="el" href="structphysics_1_1AABB.html">AABB</a> &amp;tight_bounds, glm::vec3 displacement={}) -&gt; <a class="el" href="structphysics_1_1AABB.html">AABB</a></td></tr>
 </table>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/physics/<a class="el" href="aabb__tree_8hpp_source.html">aabb_tree.hpp</a></li>

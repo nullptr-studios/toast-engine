@@ -129,6 +129,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('aabb__tree_8hp
 <code>#include &lt;cstdint&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
 <code>#include &lt;optional&gt;</code><br />
+<code>#include &lt;span&gt;</code><br />
 <code>#include &lt;<a class="el" href="export_8hpp_source.html">toast/export.hpp</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="log_8hpp_source.html">toast/log.hpp</a>&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
@@ -137,52 +138,54 @@ Include dependency graph for aabb_tree.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="aabb__tree_8hpp__incl.png" border="0" usemap="#aengine_2src_2toast_2physics_2aabb__tree_8hpp" loading="lazy" alt=""/></div>
 <map name="aengine_2src_2toast_2physics_2aabb__tree_8hpp" id="aengine_2src_2toast_2physics_2aabb__tree_8hpp">
-<area shape="rect" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1298,5,1476,50"/>
+<area shape="rect" title="TODO: Brief description of the file&#39;s purpose." alt="" coords="1362,5,1540,50"/>
 <area shape="rect" href="aabb_8hpp.html" title="Axis&#45;aligned bounds node." alt="" coords="708,174,789,201"/>
-<area shape="poly" title=" " alt="" coords="1295,31,1173,39,1030,50,899,70,848,84,810,100,794,113,781,128,761,161,758,157,777,125,791,109,807,96,846,79,898,65,1030,45,1173,34,1300,30"/>
+<area shape="poly" title=" " alt="" coords="1359,30,1223,36,1062,47,983,56,912,67,853,82,810,100,794,113,781,128,761,161,758,157,777,125,791,109,807,96,851,77,911,62,983,50,1061,41,1223,31,1364,29"/>
 <area shape="rect" title=" " alt="" coords="1452,325,1526,353"/>
-<area shape="poly" title=" " alt="" coords="1295,39,1131,66,1040,86,956,112,886,144,860,162,841,181,830,202,828,224,835,249,854,275,927,286,1092,302,1439,333,1433,333,1091,308,926,291,851,279,831,251,822,225,825,200,836,178,856,157,883,139,954,107,1039,81,1130,61,1300,38"/>
+<area shape="poly" title=" " alt="" coords="1359,36,1176,59,1072,77,975,102,895,133,864,152,841,172,828,195,825,219,833,246,854,275,927,286,1092,302,1439,333,1433,333,1091,308,926,291,851,279,829,248,820,219,823,193,837,169,861,148,892,129,973,97,1071,72,1175,54,1364,35"/>
 <area shape="rect" href="export_8hpp.html" title=" " alt="" coords="676,325,805,353"/>
-<area shape="poly" title=" " alt="" coords="1295,31,1154,40,985,51,827,71,764,84,716,100,657,134,633,153,613,174,600,197,594,222,597,248,610,275,633,300,665,320,660,319,630,304,605,279,591,249,588,221,595,195,609,171,629,149,654,129,714,96,762,79,826,66,985,46,1154,34,1300,31"/>
-<area shape="rect" href="shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="1343,98,1432,126"/>
-<area shape="poly" title=" " alt="" coords="1389,48,1389,84,1385,81,1386,52"/>
+<area shape="poly" title=" " alt="" coords="1359,30,1205,37,1017,48,839,68,768,83,715,100,656,134,632,153,613,174,599,197,594,222,597,248,610,275,633,300,665,320,660,319,630,304,605,279,592,249,588,222,594,195,608,171,628,149,653,129,713,96,767,78,839,63,1016,43,1204,32,1364,30"/>
+<area shape="rect" href="shape_8hpp.html" title="Shape identifiers, geometry, and runtime records." alt="" coords="1356,98,1445,126"/>
+<area shape="poly" title=" " alt="" coords="1440,49,1418,87,1415,82,1436,52"/>
 <area shape="rect" title=" " alt="" coords="1617,325,1683,353"/>
-<area shape="poly" title=" " alt="" coords="1477,30,1587,47,1648,62,1708,83,1765,111,1815,147,1856,193,1871,219,1883,248,1888,264,1883,279,1857,292,1810,306,1699,331,1698,325,1809,301,1855,287,1879,275,1882,264,1878,250,1867,222,1851,196,1812,151,1762,115,1706,88,1646,67,1586,52,1477,36"/>
+<area shape="poly" title=" " alt="" coords="1541,37,1636,58,1687,75,1737,97,1785,125,1826,159,1860,200,1883,248,1888,264,1883,279,1857,292,1810,306,1699,331,1698,325,1809,301,1855,287,1879,275,1882,264,1878,250,1856,203,1823,163,1781,129,1735,102,1685,80,1634,63,1541,42"/>
 <area shape="rect" title=" " alt="" coords="918,325,980,353"/>
-<area shape="poly" title=" " alt="" coords="1295,32,1167,42,1015,54,874,73,817,86,775,100,719,129,679,158,648,195,620,250,616,264,620,275,633,283,659,291,735,306,905,332,900,332,734,312,657,296,631,288,616,279,611,264,616,248,644,192,675,154,717,124,773,96,816,81,873,68,1015,49,1167,36,1301,32"/>
+<area shape="poly" title=" " alt="" coords="1359,31,1217,39,1047,51,887,71,823,84,775,100,719,129,679,157,648,195,620,250,616,264,620,275,633,283,659,291,735,306,905,332,900,332,734,312,657,296,631,288,616,279,611,264,616,248,644,192,675,154,717,124,773,96,821,79,886,66,1046,46,1217,34,1364,31"/>
 <area shape="rect" title=" " alt="" coords="1454,249,1512,277"/>
-<area shape="poly" title=" " alt="" coords="1410,48,1429,71,1446,97,1460,132,1471,170,1483,236,1478,232,1466,171,1455,134,1441,99,1425,74,1408,53"/>
+<area shape="poly" title=" " alt="" coords="1456,49,1482,235,1477,233,1452,52"/>
 <area shape="rect" title=" " alt="" coords="1742,325,1798,353"/>
-<area shape="poly" title=" " alt="" coords="1477,28,1546,34,1624,46,1705,66,1782,96,1811,111,1832,127,1869,172,1891,199,1908,223,1914,249,1912,263,1904,278,1886,299,1863,315,1813,333,1812,328,1860,310,1882,295,1900,276,1907,262,1909,249,1903,226,1887,202,1865,175,1828,131,1808,116,1780,100,1703,71,1623,52,1545,40,1477,34"/>
+<area shape="poly" title=" " alt="" coords="1541,30,1623,42,1712,67,1757,85,1799,109,1837,137,1869,172,1891,199,1908,223,1914,249,1912,263,1904,278,1886,299,1863,315,1813,333,1812,328,1860,310,1882,295,1900,276,1907,262,1909,249,1903,225,1887,202,1865,175,1833,141,1796,113,1754,90,1711,72,1622,47,1541,36"/>
 <area shape="rect" title=" " alt="" coords="2052,98,2136,126"/>
-<area shape="poly" title=" " alt="" coords="1477,33,1728,57,1880,74,2033,95,2039,99,2034,99,2032,101,1880,79,1727,62,1477,39"/>
+<area shape="poly" title=" " alt="" coords="1541,35,1765,59,2033,95,2039,99,2034,99,2032,101,1764,64,1541,40"/>
 <area shape="rect" title=" " alt="" coords="2161,98,2230,126"/>
-<area shape="poly" title=" " alt="" coords="1477,29,1771,48,1956,68,2148,98,2143,98,1956,73,1770,54,1477,35"/>
+<area shape="poly" title=" " alt="" coords="1541,31,1808,51,1975,69,2148,98,2143,98,1974,74,1808,56,1541,36"/>
+<area shape="rect" title=" " alt="" coords="2254,98,2307,126"/>
+<area shape="poly" title=" " alt="" coords="1540,28,1674,32,1847,44,2042,64,2242,98,2237,98,2041,69,1847,49,1674,38,1541,33"/>
 <area shape="rect" href="log_8hpp.html" title="Public logging interface for the engine." alt="" coords="348,249,454,277"/>
-<area shape="poly" title=" " alt="" coords="1295,31,1087,39,829,51,599,71,519,84,491,92,474,100,446,129,426,165,414,202,406,235,402,232,409,200,422,162,442,126,471,96,490,87,518,79,599,66,828,46,1086,34,1300,30"/>
+<area shape="poly" title=" " alt="" coords="1359,31,1137,38,859,49,726,58,610,69,523,83,493,91,474,100,446,129,426,165,414,202,406,235,402,232,409,200,422,162,442,126,471,96,491,86,522,78,609,64,725,53,858,44,1137,32,1364,30"/>
 <area shape="rect" title=" " alt="" coords="630,249,739,277"/>
 <area shape="poly" title=" " alt="" coords="740,201,707,240,705,235,735,203"/>
 <area shape="poly" title=" " alt="" coords="755,199,775,239,791,259,810,275,891,285,1069,301,1439,333,1433,333,1068,306,890,290,808,279,787,263,771,242,752,204"/>
 <area shape="poly" title=" " alt="" coords="710,195,660,216,638,231,620,251,616,261,616,271,627,289,650,304,680,320,675,319,647,309,623,292,611,272,611,260,616,248,634,227,658,211,705,196"/>
-<area shape="poly" title=" " alt="" coords="1340,119,805,182,805,177,1346,118"/>
-<area shape="rect" href="body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="1270,174,1350,201"/>
-<area shape="poly" title=" " alt="" coords="1376,125,1336,165,1333,161,1371,127"/>
-<area shape="poly" title=" " alt="" coords="1432,114,1620,133,1718,150,1758,160,1787,171,1814,186,1834,201,1849,221,1862,248,1867,264,1861,279,1835,297,1793,312,1699,333,1698,328,1792,307,1833,292,1857,275,1861,264,1857,250,1844,224,1830,205,1811,191,1785,176,1756,165,1717,155,1620,138,1432,119"/>
+<area shape="poly" title=" " alt="" coords="1353,119,805,183,805,177,1358,117"/>
+<area shape="rect" href="body_8hpp.html" title="Body identifiers, creation data, and copied runtime state." alt="" coords="1274,174,1354,201"/>
+<area shape="poly" title=" " alt="" coords="1388,125,1342,166,1340,161,1383,127"/>
+<area shape="poly" title=" " alt="" coords="1445,114,1627,134,1721,150,1759,160,1787,171,1814,186,1834,201,1849,221,1862,248,1867,264,1861,279,1835,297,1793,312,1699,333,1698,328,1792,307,1833,292,1857,275,1861,264,1857,250,1844,224,1830,205,1811,191,1785,176,1757,165,1720,156,1626,139,1445,119"/>
 <area shape="rect" title=" " alt="" coords="1352,249,1430,277"/>
-<area shape="poly" title=" " alt="" coords="1390,124,1393,235,1388,232,1386,128"/>
+<area shape="poly" title=" " alt="" coords="1402,124,1395,236,1391,232,1398,128"/>
 <area shape="rect" title=" " alt="" coords="865,249,968,277"/>
-<area shape="poly" title=" " alt="" coords="1349,126,973,247,972,242,1343,127"/>
-<area shape="poly" title=" " alt="" coords="1397,123,1469,237,1464,235,1394,128"/>
+<area shape="poly" title=" " alt="" coords="1361,126,974,247,973,242,1355,127"/>
+<area shape="poly" title=" " alt="" coords="1409,124,1471,237,1466,235,1406,128"/>
 <area shape="rect" href="material__defaults_8hpp.html" title="The values a material has when nothing sets them." alt="" coords="1609,174,1774,201"/>
-<area shape="poly" title=" " alt="" coords="1432,121,1625,170,1619,170,1431,126"/>
+<area shape="poly" title=" " alt="" coords="1446,122,1627,169,1622,169,1445,127"/>
 <area shape="rect" href="layers_8hpp.html" title="Collision layers." alt="" coords="992,249,1081,277"/>
-<area shape="poly" title=" " alt="" coords="1272,199,1097,249,1096,243,1267,200"/>
-<area shape="poly" title=" " alt="" coords="1312,200,1320,239,1329,258,1342,275,1379,288,1448,303,1605,331,1599,331,1447,308,1377,293,1339,279,1325,261,1315,240,1309,204"/>
-<area shape="poly" title=" " alt="" coords="1325,199,1368,240,1363,238,1324,204"/>
-<area shape="poly" title=" " alt="" coords="1273,196,984,251,983,246,1267,196"/>
+<area shape="poly" title=" " alt="" coords="1276,199,1097,249,1096,243,1271,200"/>
+<area shape="poly" title=" " alt="" coords="1316,200,1322,239,1330,258,1342,275,1379,289,1448,303,1605,331,1599,331,1447,309,1377,294,1339,279,1325,261,1317,240,1312,204"/>
+<area shape="poly" title=" " alt="" coords="1329,199,1369,239,1364,238,1327,204"/>
+<area shape="poly" title=" " alt="" coords="1277,196,984,251,983,246,1271,196"/>
 <area shape="rect" title=" " alt="" coords="1105,249,1278,277"/>
-<area shape="poly" title=" " alt="" coords="1291,201,1226,244,1224,239,1286,203"/>
-<area shape="poly" title=" " alt="" coords="1341,199,1443,244,1437,243,1341,205"/>
+<area shape="poly" title=" " alt="" coords="1295,201,1227,244,1225,239,1290,203"/>
+<area shape="poly" title=" " alt="" coords="1345,199,1443,243,1437,243,1344,205"/>
 <area shape="poly" title=" " alt="" coords="994,275,809,323,808,318,989,276"/>
 <area shape="poly" title=" " alt="" coords="1082,272,1093,274,1218,292,1315,302,1538,322,1604,332,1599,332,1538,328,1315,308,1217,298,1092,280,1082,278"/>
 <area shape="rect" title=" " alt="" coords="594,325,652,353"/>
@@ -256,6 +259,7 @@ This graph shows which files directly or indirectly include this file:</div>
 Classes</h2></td></tr>
 <tr class="memitem:physics_3A_3ATreeNode" id="r_physics_3A_3ATreeNode"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1TreeNode.html">physics::TreeNode</a></td></tr>
 <tr class="memitem:physics_3A_3AAABBTreeDebugNode" id="r_physics_3A_3AAABBTreeDebugNode"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1AABBTreeDebugNode.html">physics::AABBTreeDebugNode</a></td></tr>
+<tr class="memitem:physics_3A_3AAABBTreeBuildLeaf" id="r_physics_3A_3AAABBTreeBuildLeaf"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structphysics_1_1AABBTreeBuildLeaf.html">physics::AABBTreeBuildLeaf</a></td></tr>
 <tr class="memitem:physics_3A_3AAABBTree" id="r_physics_3A_3AAABBTree"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classphysics_1_1AABBTree.html">physics::AABBTree</a></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-typedef-members" class="groupheader"><a id="typedef-members" name="typedef-members"></a>
