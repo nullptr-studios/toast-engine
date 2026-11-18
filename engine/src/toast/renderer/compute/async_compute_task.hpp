@@ -108,7 +108,8 @@ public:
 		}
 
 		/// CPU copy of a cpu_readback ring buffer from this same step
-		[[nodiscard]] auto read(BufferId id, std::span<std::byte> out) const -> bool;
+		[[nodiscard]]
+		auto read(BufferId id, std::span<std::byte> out) const -> bool;
 
 	private:
 		friend class AsyncComputeTask;

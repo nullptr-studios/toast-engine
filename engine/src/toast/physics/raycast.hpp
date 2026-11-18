@@ -26,6 +26,7 @@ struct RayHit {
 	float distance;
 	BodyID body;
 	ShapeID shape;
+	uint8_t palette_index = 0;
 };
 
 /**
