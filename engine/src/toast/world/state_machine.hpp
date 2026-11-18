@@ -44,7 +44,7 @@ public:
 	void setState(const std::string& name);
 
 	[[Reflect]]
-	auto getState() -> std::string_view {
+	auto getState() -> std::string {
 		return current_state;
 	}
 
