@@ -1,36 +1,12 @@
-/// @file vulkan_renderer_voxel.cpp
-/// @author dario
-/// @date 16/05/2026
-
-#include "toast/renderer/debug/editor_overlays.hpp"
-#include "toast/renderer/debug/voxel_debug.hpp"
-#include "toast/renderer/lighting/clustered_lighting_constants.hpp"
-#include "toast/renderer/lighting/cube_face_basis.hpp"
-#include "toast/renderer/lighting/frustum.hpp"
-#include "toast/renderer/lighting/light_culling.hpp"
-#include "toast/renderer/lighting/shadow_slots.hpp"
-#include "toast/renderer/passes/debug/selection_outline.hpp"
-#include "toast/renderer/passes/geometry/debris_pass.hpp"
-#include "toast/renderer/passes/geometry/depth_prepass.hpp"
-#include "toast/renderer/passes/geometry/material_pass.hpp"
-#include "toast/renderer/passes/geometry/skinning_pass.hpp"
-#include "toast/renderer/passes/geometry/voxel_pass.hpp"
-#include "toast/renderer/passes/lighting/environment_pass.hpp"
-#include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
-#include "toast/renderer/passes/lighting/shadow_pass.hpp"
-#include "toast/renderer/passes/lighting/traced_specular_pass.hpp"
-#include "toast/renderer/passes/post/taa_pass.hpp"
-#include "toast/renderer/raytracing/ray_tracing_scene.hpp"
-#include "toast/renderer/raytracing/skinned_blas_pool.hpp"
-#include "toast/renderer/resources/blue_noise.hpp"
-#include "toast/renderer/settings/renderer_settings.hpp"
-#include "toast/renderer/shaders/shader_compiler.hpp"
-#include "toast/renderer/vulkan_renderer.hpp"
-#include "toast/renderer/vulkan_renderer_detail.hpp"
+#include "debug/voxel_debug.hpp"
+#include "passes/debug/selection_outline.hpp"
+#include "passes/geometry/voxel_pass.hpp"
+#include "passes/lighting/shadow_pass.hpp"
+#include "passes/lighting/traced_specular_pass.hpp"
+#include "settings/renderer_settings.hpp"
+#include "vulkan_renderer.hpp"
 
 #include <SDL3/SDL_keycode.h>
-#include <iostream>
-#include <iterator>
 #include <toast/assets/animation.hpp>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/material.hpp>
