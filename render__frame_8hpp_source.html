@@ -207,106 +207,106 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('render__frame_
 <div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keywordtype">float</span> bounds_radius = 0.0f;</div>
 <div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span> </div>
 <div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keywordtype">float</span> view_distance = 0.0f;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  uint32_t highlight_record = 0;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span></div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75">   92</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75">has_previous</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">bool</span> camera_inside = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <span class="keywordtype">bool</span> mirrored = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  <span class="keywordtype">bool</span> visible = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelVolumeProxy.html#a577ebd5a4636c57183712fb5abc84c02">  101</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="structrenderer_1_1VoxelVolumeProxy.html#a577ebd5a4636c57183712fb5abc84c02">outlined</a> = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>};</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span></div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75">   91</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75">has_previous</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <span class="keywordtype">bool</span> camera_inside = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span> </div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <span class="keywordtype">bool</span> mirrored = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span> </div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordtype">bool</span> visible = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span></div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno"><a class="line" href="structrenderer_1_1VoxelVolumeProxy.html#a577ebd5a4636c57183712fb5abc84c02">  100</a></span>  <span class="keywordtype">bool</span> <a class="code hl_variable" href="structrenderer_1_1VoxelVolumeProxy.html#a577ebd5a4636c57183712fb5abc84c02">outlined</a> = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>};</div>
 </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="foldopen" id="foldopen00104" data-start="{" data-end="};">
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno"><a class="line" href="structrenderer_1_1UIWorldPanelProxy.html">  104</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1UIWorldPanelProxy.html">UIWorldPanelProxy</a> {</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  vk::ImageView view = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  glm::mat4 model = glm::mat4(1.0f);</div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <span class="keywordtype">bool</span> always_on_top = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>};</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
+<div class="foldopen" id="foldopen00103" data-start="{" data-end="};">
+<div class="line"><a id="l00103" name="l00103"></a><span class="lineno"><a class="line" href="structrenderer_1_1UIWorldPanelProxy.html">  103</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1UIWorldPanelProxy.html">UIWorldPanelProxy</a> {</div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  vk::ImageView view = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  glm::mat4 model = glm::mat4(1.0f);</div>
+<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span>  <span class="keywordtype">bool</span> always_on_top = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>};</div>
 </div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
-<div class="foldopen" id="foldopen00110" data-start="{" data-end="};">
-<div class="line"><a id="l00110" name="l00110"></a><span class="lineno"><a class="line" href="structrenderer_1_1SizeHandleDraw.html">  110</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1SizeHandleDraw.html">SizeHandleDraw</a> {</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  glm::vec3 world_position {0.0f};</div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> handle = toast::GizmoHandle::none;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>};</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span> </div>
+<div class="foldopen" id="foldopen00109" data-start="{" data-end="};">
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno"><a class="line" href="structrenderer_1_1SizeHandleDraw.html">  109</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1SizeHandleDraw.html">SizeHandleDraw</a> {</div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  glm::vec3 world_position {0.0f};</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> handle = toast::GizmoHandle::none;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>};</div>
 </div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span> </div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span><span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_max_size_handles = 6;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span> </div>
-<div class="foldopen" id="foldopen00117" data-start="{" data-end="};">
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno"><a class="line" href="structrenderer_1_1TransformGizmoDraw.html">  117</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1TransformGizmoDraw.html">TransformGizmoDraw</a> {</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <span class="keywordtype">bool</span> visible = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a26ba0ceff8dbf69c21a2df47c1941d16">toast::GizmoTool</a> tool = toast::GizmoTool::select;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> hover = toast::GizmoHandle::none;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> active = toast::GizmoHandle::none;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  glm::mat4 model {1.0f};</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span> </div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <span class="keywordtype">float</span> drag_scale_factor = 1.0f;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  std::array&lt;SizeHandleDraw, k_max_size_handles&gt; size_handles {};</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  uint32_t size_handle_count = 0;</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keywordtype">float</span> size_handle_scale = 1.0f;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>};</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span> </div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span><span class="keyword">constexpr</span> <span class="keywordtype">size_t</span> k_max_size_handles = 6;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span> </div>
+<div class="foldopen" id="foldopen00116" data-start="{" data-end="};">
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno"><a class="line" href="structrenderer_1_1TransformGizmoDraw.html">  116</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1TransformGizmoDraw.html">TransformGizmoDraw</a> {</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <span class="keywordtype">bool</span> visible = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a26ba0ceff8dbf69c21a2df47c1941d16">toast::GizmoTool</a> tool = toast::GizmoTool::select;</div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> hover = toast::GizmoHandle::none;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> active = toast::GizmoHandle::none;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  glm::mat4 model {1.0f};</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span> </div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  <span class="keywordtype">float</span> drag_scale_factor = 1.0f;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span> </div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  std::array&lt;SizeHandleDraw, k_max_size_handles&gt; size_handles {};</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  uint32_t size_handle_count = 0;</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keywordtype">float</span> size_handle_scale = 1.0f;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>};</div>
 </div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span> </div>
-<div class="foldopen" id="foldopen00131" data-start="{" data-end="};">
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno"><a class="line" href="structrenderer_1_1GizmoState.html">  131</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1GizmoState.html">GizmoState</a> {</div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  glm::vec3 origin {0.0f};</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  glm::quat orientation {1.0f, 0.0f, 0.0f, 0.0f};</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>  <span class="keywordtype">float</span> drag_scale_factor = 1.0f;</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  std::array&lt;SizeHandleDraw, k_max_size_handles&gt; size_handles {};</div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  uint32_t size_handle_count = 0;</div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>  <span class="keywordtype">float</span> size_handle_scale = 1.0f;</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  <span class="keywordtype">bool</span> visible = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a26ba0ceff8dbf69c21a2df47c1941d16">toast::GizmoTool</a> tool = toast::GizmoTool::select;</div>
-<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> hover = toast::GizmoHandle::none;</div>
-<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> active = toast::GizmoHandle::none;</div>
-<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span>};</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
+<div class="foldopen" id="foldopen00130" data-start="{" data-end="};">
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno"><a class="line" href="structrenderer_1_1GizmoState.html">  130</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1GizmoState.html">GizmoState</a> {</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  glm::vec3 origin {0.0f};</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  glm::quat orientation {1.0f, 0.0f, 0.0f, 0.0f};</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  <span class="keywordtype">float</span> drag_scale_factor = 1.0f;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span> </div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>  std::array&lt;SizeHandleDraw, k_max_size_handles&gt; size_handles {};</div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>  uint32_t size_handle_count = 0;</div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>  <span class="keywordtype">float</span> size_handle_scale = 1.0f;</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span> </div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>  <span class="keywordtype">bool</span> visible = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a26ba0ceff8dbf69c21a2df47c1941d16">toast::GizmoTool</a> tool = toast::GizmoTool::select;</div>
+<div class="line"><a id="l00141" name="l00141"></a><span class="lineno">  141</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> hover = toast::GizmoHandle::none;</div>
+<div class="line"><a id="l00142" name="l00142"></a><span class="lineno">  142</span>  <a class="code hl_enumeration" href="gizmo__layout_8hpp.html#a97503304f8d31e85c7550dbe2d54ef47">toast::GizmoHandle</a> active = toast::GizmoHandle::none;</div>
+<div class="line"><a id="l00143" name="l00143"></a><span class="lineno">  143</span>};</div>
 </div>
-<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span> </div>
-<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span><span class="preprocessor">#if defined(TOAST_DEV_TOOLS)</span></div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span><span class="keyword">struct </span>ImGuiKeyEvent {</div>
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  int32_t key = 0;</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="keywordtype">bool</span> down = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>};</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span> </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span><span class="keyword">struct </span>ImGuiInputSnapshot {</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  glm::vec2 mouse_pos {-1.0f, -1.0f};    <span class="comment">// -1 -1 when outside the window</span></div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  std::array&lt;bool, 3&gt; mouse_down {};     <span class="comment">// 0 left 1 right 2 middle</span></div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordtype">float</span> mouse_wheel_x = 0.0f;</div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  <span class="keywordtype">float</span> mouse_wheel_y = 0.0f;</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  std::vector&lt;ImGuiKeyEvent&gt; key_events;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>  std::vector&lt;uint32_t&gt; char_events;</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>};</div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span><span class="preprocessor">#endif</span></div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span> </div>
-<div class="foldopen" id="foldopen00162" data-start="{" data-end="};">
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno"><a class="line" href="structrenderer_1_1LightStats.html">  162</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1LightStats.html">LightStats</a> {</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  uint32_t submitted = 0;</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  uint32_t offscreen = 0;</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  uint32_t truncated = 0;</div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  uint32_t spot_shadows = 0;</div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>  uint32_t point_shadows = 0;</div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno"><a class="line" href="structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad">  169</a></span>  uint32_t <a class="code hl_variable" href="structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad">spot_denied</a> = 0;</div>
-<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  uint32_t point_denied = 0;</div>
-<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>  uint64_t shadow_displaced = 0;</div>
-<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span>};</div>
+<div class="line"><a id="l00144" name="l00144"></a><span class="lineno">  144</span> </div>
+<div class="line"><a id="l00145" name="l00145"></a><span class="lineno">  145</span><span class="preprocessor">#if defined(TOAST_DEV_TOOLS)</span></div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span><span class="keyword">struct </span>ImGuiKeyEvent {</div>
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>  int32_t key = 0;</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <span class="keywordtype">bool</span> down = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>};</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span> </div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span><span class="keyword">struct </span>ImGuiInputSnapshot {</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  glm::vec2 mouse_pos {-1.0f, -1.0f};    <span class="comment">// -1 -1 when outside the window</span></div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>  std::array&lt;bool, 3&gt; mouse_down {};     <span class="comment">// 0 left 1 right 2 middle</span></div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>  <span class="keywordtype">float</span> mouse_wheel_x = 0.0f;</div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>  <span class="keywordtype">float</span> mouse_wheel_y = 0.0f;</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>  std::vector&lt;ImGuiKeyEvent&gt; key_events;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>  std::vector&lt;uint32_t&gt; char_events;</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>};</div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span><span class="preprocessor">#endif</span></div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span> </div>
+<div class="foldopen" id="foldopen00161" data-start="{" data-end="};">
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno"><a class="line" href="structrenderer_1_1LightStats.html">  161</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1LightStats.html">LightStats</a> {</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>  uint32_t submitted = 0;</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>  uint32_t offscreen = 0;</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>  uint32_t truncated = 0;</div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>  uint32_t spot_shadows = 0;</div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>  uint32_t point_shadows = 0;</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno"><a class="line" href="structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad">  168</a></span>  uint32_t <a class="code hl_variable" href="structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad">spot_denied</a> = 0;</div>
+<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span>  uint32_t point_denied = 0;</div>
+<div class="line"><a id="l00170" name="l00170"></a><span class="lineno">  170</span>  uint64_t shadow_displaced = 0;</div>
+<div class="line"><a id="l00171" name="l00171"></a><span class="lineno">  171</span>};</div>
 </div>
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span> </div>
-<div class="foldopen" id="foldopen00174" data-start="{" data-end="};">
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno"><a class="line" href="structrenderer_1_1RenderFrame.html">  174</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a> {</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>  <a class="code hl_struct" href="structrenderer_1_1FrameUBO.html">FrameUBO</a> frame_data;</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span>  std::vector&lt;MeshInstanceProxy&gt; mesh_instances;</div>
-<div class="line"><a id="l00178" name="l00178"></a><span class="lineno">  178</span></div>
-<div class="line"><a id="l00180" name="l00180"></a><span class="lineno"><a class="line" href="structrenderer_1_1RenderFrame.html#aca151f551ec6a4ff9e187a90046dc192">  180</a></span>  std::vector&lt;VoxelVolumeProxy&gt; <a class="code hl_variable" href="structrenderer_1_1RenderFrame.html#aca151f551ec6a4ff9e187a90046dc192">voxel_instances</a>;</div>
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno">  172</span> </div>
+<div class="foldopen" id="foldopen00173" data-start="{" data-end="};">
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno"><a class="line" href="structrenderer_1_1RenderFrame.html">  173</a></span><span class="keyword">struct </span><a class="code hl_struct" href="structrenderer_1_1RenderFrame.html">RenderFrame</a> {</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>  <a class="code hl_struct" href="structrenderer_1_1FrameUBO.html">FrameUBO</a> frame_data;</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span> </div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>  std::vector&lt;MeshInstanceProxy&gt; mesh_instances;</div>
+<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span></div>
+<div class="line"><a id="l00179" name="l00179"></a><span class="lineno"><a class="line" href="structrenderer_1_1RenderFrame.html#aca151f551ec6a4ff9e187a90046dc192">  179</a></span>  std::vector&lt;VoxelVolumeProxy&gt; <a class="code hl_variable" href="structrenderer_1_1RenderFrame.html#aca151f551ec6a4ff9e187a90046dc192">voxel_instances</a>;</div>
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno">  180</span>  std::vector&lt;VoxelVolumeProxy&gt; voxel_outline_only;</div>
 <div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span> </div>
 <div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>  std::shared_ptr&lt;const VoxelGpuStorage&gt; voxel_storage;</div>
 <div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span> </div>
@@ -397,30 +397,30 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('render__frame_
 <div class="ttc" id="anamespacerenderer_html"><div class="ttname"><a href="namespacerenderer.html">renderer</a></div><div class="ttdoc">Custom render passes from game code.</div><div class="ttdef"><b>Definition</b> mesh.hpp:18</div></div>
 <div class="ttc" id="apost__process__settings_8hpp_html"><div class="ttname"><a href="post__process__settings_8hpp.html">post_process_settings.hpp</a></div></div>
 <div class="ttc" id="astructrenderer_1_1FrameUBO_html"><div class="ttname"><a href="structrenderer_1_1FrameUBO.html">renderer::FrameUBO</a></div><div class="ttdef"><b>Definition</b> gpu_types.hpp:89</div></div>
-<div class="ttc" id="astructrenderer_1_1GizmoState_html"><div class="ttname"><a href="structrenderer_1_1GizmoState.html">renderer::GizmoState</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:131</div></div>
-<div class="ttc" id="astructrenderer_1_1LightStats_html"><div class="ttname"><a href="structrenderer_1_1LightStats.html">renderer::LightStats</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:162</div></div>
-<div class="ttc" id="astructrenderer_1_1LightStats_html_ac3d098358060471349d41e7007496aad"><div class="ttname"><a href="structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad">renderer::LightStats::spot_denied</a></div><div class="ttdeci">uint32_t spot_denied</div><div class="ttdoc">Lights within their shadow distance left without a shadow because every slot was taken.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:169</div></div>
+<div class="ttc" id="astructrenderer_1_1GizmoState_html"><div class="ttname"><a href="structrenderer_1_1GizmoState.html">renderer::GizmoState</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:130</div></div>
+<div class="ttc" id="astructrenderer_1_1LightStats_html"><div class="ttname"><a href="structrenderer_1_1LightStats.html">renderer::LightStats</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:161</div></div>
+<div class="ttc" id="astructrenderer_1_1LightStats_html_ac3d098358060471349d41e7007496aad"><div class="ttname"><a href="structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad">renderer::LightStats::spot_denied</a></div><div class="ttdeci">uint32_t spot_denied</div><div class="ttdoc">Lights within their shadow distance left without a shadow because every slot was taken.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:168</div></div>
 <div class="ttc" id="astructrenderer_1_1MeshInstanceProxy_html"><div class="ttname"><a href="structrenderer_1_1MeshInstanceProxy.html">renderer::MeshInstanceProxy</a></div><div class="ttdoc">Widest fields first since this is copied per instance every frame.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:48</div></div>
 <div class="ttc" id="astructrenderer_1_1MeshInstanceProxy_html_a43cf7890c67b787bdb4d156448c62454"><div class="ttname"><a href="structrenderer_1_1MeshInstanceProxy.html#a43cf7890c67b787bdb4d156448c62454">renderer::MeshInstanceProxy::outlined</a></div><div class="ttdeci">bool outlined</div><div class="ttdoc">Selected in the editor hierarchy.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:71</div></div>
 <div class="ttc" id="astructrenderer_1_1PostProcessSettings_html"><div class="ttname"><a href="structrenderer_1_1PostProcessSettings.html">renderer::PostProcessSettings</a></div><div class="ttdef"><b>Definition</b> post_process_settings.hpp:15</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_1_1MaterialRange_html"><div class="ttname"><a href="structrenderer_1_1RenderFrame_1_1MaterialRange.html">renderer::RenderFrame::MaterialRange</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:196</div></div>
-<div class="ttc" id="astructrenderer_1_1RenderFrame_html"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html">renderer::RenderFrame</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:174</div></div>
+<div class="ttc" id="astructrenderer_1_1RenderFrame_html"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html">renderer::RenderFrame</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:173</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_html_a1e5c825fa14b84e5695a9a1b95628b9f"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#a1e5c825fa14b84e5695a9a1b95628b9f">renderer::RenderFrame::viewport_extent</a></div><div class="ttdeci">glm::vec2 viewport_extent</div><div class="ttdoc">Render resolution.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:231</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_html_a7e4031189c8a82bbab0c5f043c875b9f"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#a7e4031189c8a82bbab0c5f043c875b9f">renderer::RenderFrame::taa_reset</a></div><div class="ttdeci">bool taa_reset</div><div class="ttdoc">History is stale since the camera switched or TAA just turned on.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:259</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_html_a9de8817e9cd5110ffab4fba8bc05c2e8"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#a9de8817e9cd5110ffab4fba8bc05c2e8">renderer::RenderFrame::near_plane</a></div><div class="ttdeci">float near_plane</div><div class="ttdoc">Camera near plane distance so voxel cells it clips draw with the camera inside variant.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:237</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_html_ab7ecaf924ab021ebb7543c42a9aba4ee"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#ab7ecaf924ab021ebb7543c42a9aba4ee">renderer::RenderFrame::fog_volumes</a></div><div class="ttdeci">std::vector&lt; FogVolumeGpu &gt; fog_volumes</div><div class="ttdoc">Nearest first and at most k_max_fog_volumes.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:205</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_html_ac478d4be1f4cca6ef06d7d4d4d48798f"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#ac478d4be1f4cca6ef06d7d4d4d48798f">renderer::RenderFrame::taa_active</a></div><div class="ttdeci">bool taa_active</div><div class="ttdoc">Jittered and resolved by TaaPass which then skips FxaaPass.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:256</div></div>
-<div class="ttc" id="astructrenderer_1_1RenderFrame_html_aca151f551ec6a4ff9e187a90046dc192"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#aca151f551ec6a4ff9e187a90046dc192">renderer::RenderFrame::voxel_instances</a></div><div class="ttdeci">std::vector&lt; VoxelVolumeProxy &gt; voxel_instances</div><div class="ttdoc">Sorted front to back.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:180</div></div>
+<div class="ttc" id="astructrenderer_1_1RenderFrame_html_aca151f551ec6a4ff9e187a90046dc192"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#aca151f551ec6a4ff9e187a90046dc192">renderer::RenderFrame::voxel_instances</a></div><div class="ttdeci">std::vector&lt; VoxelVolumeProxy &gt; voxel_instances</div><div class="ttdoc">Sorted front to back.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:179</div></div>
 <div class="ttc" id="astructrenderer_1_1RenderFrame_html_afb2216c02ffd61fbc40ddf427dcbcbae"><div class="ttname"><a href="structrenderer_1_1RenderFrame.html#afb2216c02ffd61fbc40ddf427dcbcbae">renderer::RenderFrame::jitter_ndc</a></div><div class="ttdeci">glm::vec2 jitter_ndc</div><div class="ttdoc">NDC offset jittered_view_projection adds.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:234</div></div>
 <div class="ttc" id="astructrenderer_1_1ShadowFrame_html"><div class="ttname"><a href="structrenderer_1_1ShadowFrame.html">renderer::ShadowFrame</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:40</div></div>
 <div class="ttc" id="astructrenderer_1_1ShadowFrame_html_a160d522a466a70b26c6a241fd877a12e"><div class="ttname"><a href="structrenderer_1_1ShadowFrame.html#a160d522a466a70b26c6a241fd877a12e">renderer::ShadowFrame::matrices</a></div><div class="ttdeci">std::vector&lt; glm::mat4 &gt; matrices</div><div class="ttdoc">matrices[i] belongs to views[i]</div><div class="ttdef"><b>Definition</b> render_frame.hpp:44</div></div>
 <div class="ttc" id="astructrenderer_1_1ShadowView_html"><div class="ttname"><a href="structrenderer_1_1ShadowView.html">renderer::ShadowView</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:30</div></div>
-<div class="ttc" id="astructrenderer_1_1SizeHandleDraw_html"><div class="ttname"><a href="structrenderer_1_1SizeHandleDraw.html">renderer::SizeHandleDraw</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:110</div></div>
-<div class="ttc" id="astructrenderer_1_1TransformGizmoDraw_html"><div class="ttname"><a href="structrenderer_1_1TransformGizmoDraw.html">renderer::TransformGizmoDraw</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:117</div></div>
-<div class="ttc" id="astructrenderer_1_1UIWorldPanelProxy_html"><div class="ttname"><a href="structrenderer_1_1UIWorldPanelProxy.html">renderer::UIWorldPanelProxy</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:104</div></div>
+<div class="ttc" id="astructrenderer_1_1SizeHandleDraw_html"><div class="ttname"><a href="structrenderer_1_1SizeHandleDraw.html">renderer::SizeHandleDraw</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:109</div></div>
+<div class="ttc" id="astructrenderer_1_1TransformGizmoDraw_html"><div class="ttname"><a href="structrenderer_1_1TransformGizmoDraw.html">renderer::TransformGizmoDraw</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:116</div></div>
+<div class="ttc" id="astructrenderer_1_1UIWorldPanelProxy_html"><div class="ttname"><a href="structrenderer_1_1UIWorldPanelProxy.html">renderer::UIWorldPanelProxy</a></div><div class="ttdef"><b>Definition</b> render_frame.hpp:103</div></div>
 <div class="ttc" id="astructrenderer_1_1VoxelVolumeProxy_html"><div class="ttname"><a href="structrenderer_1_1VoxelVolumeProxy.html">renderer::VoxelVolumeProxy</a></div><div class="ttdoc">Widest fields first since this is copied per instance every frame.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:75</div></div>
-<div class="ttc" id="astructrenderer_1_1VoxelVolumeProxy_html_a577ebd5a4636c57183712fb5abc84c02"><div class="ttname"><a href="structrenderer_1_1VoxelVolumeProxy.html#a577ebd5a4636c57183712fb5abc84c02">renderer::VoxelVolumeProxy::outlined</a></div><div class="ttdeci">bool outlined</div><div class="ttdoc">Selected in the editor hierarchy.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:101</div></div>
-<div class="ttc" id="astructrenderer_1_1VoxelVolumeProxy_html_aab6cd229fdde2f4d3f06e67bf37c2f75"><div class="ttname"><a href="structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75">renderer::VoxelVolumeProxy::has_previous</a></div><div class="ttdeci">bool has_previous</div><div class="ttdoc">False the first frame this node_uid is drawn so the shader reports motion as not written instead of z...</div><div class="ttdef"><b>Definition</b> render_frame.hpp:92</div></div>
+<div class="ttc" id="astructrenderer_1_1VoxelVolumeProxy_html_a577ebd5a4636c57183712fb5abc84c02"><div class="ttname"><a href="structrenderer_1_1VoxelVolumeProxy.html#a577ebd5a4636c57183712fb5abc84c02">renderer::VoxelVolumeProxy::outlined</a></div><div class="ttdeci">bool outlined</div><div class="ttdoc">Selected in the editor hierarchy.</div><div class="ttdef"><b>Definition</b> render_frame.hpp:100</div></div>
+<div class="ttc" id="astructrenderer_1_1VoxelVolumeProxy_html_aab6cd229fdde2f4d3f06e67bf37c2f75"><div class="ttname"><a href="structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75">renderer::VoxelVolumeProxy::has_previous</a></div><div class="ttdeci">bool has_previous</div><div class="ttdoc">False the first frame this node_uid is drawn so the shader reports motion as not written instead of z...</div><div class="ttdef"><b>Definition</b> render_frame.hpp:91</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

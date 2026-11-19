@@ -46,10 +46,9 @@ var searchData=
   ['vulkan_5frenderer_5fresources_2ecpp_43',['vulkan_renderer_resources.cpp',['../vulkan__renderer__resources_8cpp.html',1,'']]],
   ['vulkan_5frenderer_5fscene_2ecpp_44',['vulkan_renderer_scene.cpp',['../vulkan__renderer__scene_8cpp.html',1,'']]],
   ['vulkan_5frenderer_5fthread_2ecpp_45',['vulkan_renderer_thread.cpp',['../vulkan__renderer__thread_8cpp.html',1,'']]],
-  ['vulkan_5frenderer_5fvoxel_2ecpp_46',['vulkan_renderer_voxel.cpp',['../vulkan__renderer__voxel_8cpp.html',1,'']]],
-  ['vulkan_5fresource_5fbase_2ehpp_47',['vulkan_resource_base.hpp',['../vulkan__resource__base_8hpp.html',1,'']]],
-  ['vulkan_5fsampler_2ecpp_48',['vulkan_sampler.cpp',['../vulkan__sampler_8cpp.html',1,'']]],
-  ['vulkan_5fsampler_2ehpp_49',['vulkan_sampler.hpp',['../vulkan__sampler_8hpp.html',1,'']]],
-  ['vulkan_5ftexture_2ecpp_50',['vulkan_texture.cpp',['../vulkan__texture_8cpp.html',1,'']]],
-  ['vulkan_5ftexture_2ehpp_51',['vulkan_texture.hpp',['../vulkan__texture_8hpp.html',1,'']]]
+  ['vulkan_5fresource_5fbase_2ehpp_46',['vulkan_resource_base.hpp',['../vulkan__resource__base_8hpp.html',1,'']]],
+  ['vulkan_5fsampler_2ecpp_47',['vulkan_sampler.cpp',['../vulkan__sampler_8cpp.html',1,'']]],
+  ['vulkan_5fsampler_2ehpp_48',['vulkan_sampler.hpp',['../vulkan__sampler_8hpp.html',1,'']]],
+  ['vulkan_5ftexture_2ecpp_49',['vulkan_texture.cpp',['../vulkan__texture_8cpp.html',1,'']]],
+  ['vulkan_5ftexture_2ehpp_50',['vulkan_texture.hpp',['../vulkan__texture_8hpp.html',1,'']]]
 ];

@@ -57,6 +57,7 @@ var classtoast_1_1VoxelNode =
     [ "contact_end", "classtoast_1_1VoxelNode.html#a2f10ad9cc1319c985fe44ea2f2988b6f", null ],
     [ "damaged", "classtoast_1_1VoxelNode.html#a134cb66dd5802b062bdccb0c1581a0e2", null ],
     [ "emptied", "classtoast_1_1VoxelNode.html#a12799e080a1df0c4a1c21dfebc90178e", null ],
+    [ "grabbed", "classtoast_1_1VoxelNode.html#a47972ba8a82fc31448d17e50f0572bbf", null ],
     [ "rebuilt_shape", "classtoast_1_1VoxelNode.html#a60a4d8c8cba74d30d76303740faa0bdc", null ],
     [ "render_only", "classtoast_1_1VoxelNode.html#a1ff933c68d2d10735ab7a4896611bf0a", null ],
     [ "simulation_type", "classtoast_1_1VoxelNode.html#a97a85c25927ece8f3541460ffedf53ea", null ],

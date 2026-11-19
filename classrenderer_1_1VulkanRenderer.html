@@ -405,6 +405,11 @@ void&#160;</td><td class="memItemRight"><b>setVoxelSpecularRoughness</b> (float 
 <tr class="memdesc:a64b0c9974831ce154d51223ba94df90a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Rougher voxels keep the environment specular. <br /></td></tr>
 <tr class="memitem:a7d88b66fb2d8652db215f3260eada898" id="r_a7d88b66fb2d8652db215f3260eada898"><td class="memItemLeft"><a id="a7d88b66fb2d8652db215f3260eada898" name="a7d88b66fb2d8652db215f3260eada898"></a>
 auto&#160;</td><td class="memItemRight"><b>voxelSpecularRoughness</b> () const noexcept -&gt; float</td></tr>
+<tr class="memitem:a334d78d98b5a5b4c8eb2357c78e35219" id="r_a334d78d98b5a5b4c8eb2357c78e35219"><td class="memItemLeft"><a id="a334d78d98b5a5b4c8eb2357c78e35219" name="a334d78d98b5a5b4c8eb2357c78e35219"></a>
+void&#160;</td><td class="memItemRight"><b>setVoxelSpecularHitLights</b> (bool enabled) noexcept</td></tr>
+<tr class="memitem:a8eb0f4a7c78d7e9e6302afa10b154478" id="r_a8eb0f4a7c78d7e9e6302afa10b154478"><td class="memItemLeft"><a id="a8eb0f4a7c78d7e9e6302afa10b154478" name="a8eb0f4a7c78d7e9e6302afa10b154478"></a>
+auto&#160;</td><td class="memItemRight"><b>voxelSpecularHitLights</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a8eb0f4a7c78d7e9e6302afa10b154478"><td class="mdescLeft">&#160;</td><td class="mdescRight">Off screen reflection hits take a local light with its shadow ray on top of the sun and GI. <br /></td></tr>
 <tr class="memitem:a404399293b5caf2099931c3dfb43ed0d" id="r_a404399293b5caf2099931c3dfb43ed0d"><td class="memItemLeft"><a id="a404399293b5caf2099931c3dfb43ed0d" name="a404399293b5caf2099931c3dfb43ed0d"></a>
 void&#160;</td><td class="memItemRight"><b>setVoxelSpecularReach</b> (float meters) noexcept</td></tr>
 <tr class="memitem:a5e7b5ec05b1019d25c67ebed28e52906" id="r_a5e7b5ec05b1019d25c67ebed28e52906"><td class="memItemLeft"><a id="a5e7b5ec05b1019d25c67ebed28e52906" name="a5e7b5ec05b1019d25c67ebed28e52906"></a>
@@ -678,6 +683,8 @@ void&#160;</td><td class="memItemRight"><b>setGizmoState</b> (const <a class="el
 <tr class="memitem:aa7a325bc384592da55da7a6b62ba0965" id="r_aa7a325bc384592da55da7a6b62ba0965"><td class="memItemLeft"><a id="aa7a325bc384592da55da7a6b62ba0965" name="aa7a325bc384592da55da7a6b62ba0965"></a>
 void&#160;</td><td class="memItemRight"><b>setOutlinedNodes</b> (std::vector&lt; uint64_t &gt; rids) noexcept</td></tr>
 <tr class="memdesc:aa7a325bc384592da55da7a6b62ba0965"><td class="mdescLeft">&#160;</td><td class="mdescRight">Node rids whose meshes and voxels get the selection outline. <br /></td></tr>
+<tr class="memitem:a5a46e434d7d11074125c6e1102c38285" id="r_a5a46e434d7d11074125c6e1102c38285"><td class="memItemLeft"><a id="a5a46e434d7d11074125c6e1102c38285" name="a5a46e434d7d11074125c6e1102c38285"></a>
+auto&#160;</td><td class="memItemRight"><b>isNodeOutlined</b> (uint64_t node_rid) const -&gt; bool</td></tr>
 <tr class="memitem:acbf2bff132777ae1e214fe9f29729ef4" id="r_acbf2bff132777ae1e214fe9f29729ef4"><td class="memItemLeft"><a id="acbf2bff132777ae1e214fe9f29729ef4" name="acbf2bff132777ae1e214fe9f29729ef4"></a>
 void&#160;</td><td class="memItemRight"><b>setDebugDrawEnabled</b> (bool enabled) noexcept</td></tr>
 <tr class="memitem:a2092fc1560fed853d62e90b3ed1ee66c" id="r_a2092fc1560fed853d62e90b3ed1ee66c"><td class="memItemLeft"><a id="a2092fc1560fed853d62e90b3ed1ee66c" name="a2092fc1560fed853d62e90b3ed1ee66c"></a>
@@ -726,9 +733,6 @@ void&#160;</td><td class="memItemRight"><b>requestPostProcessSettings</b> (const
 <tr class="memitem:a31165884aa4a043743e459d974eabbc4" id="r_a31165884aa4a043743e459d974eabbc4"><td class="memItemLeft"><a id="a31165884aa4a043743e459d974eabbc4" name="a31165884aa4a043743e459d974eabbc4"></a>
 void&#160;</td><td class="memItemRight"><b>setRenderOwnerFilter</b> (const <a class="el" href="classtoast_1_1INodeOwner.html">toast::INodeOwner</a> *owner)</td></tr>
 <tr class="memdesc:a31165884aa4a043743e459d974eabbc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">nullptr renders every owner. Main thread only <br /></td></tr>
-<tr class="memitem:a475b98fb320ebb76f5b96ee1e67df8d5" id="r_a475b98fb320ebb76f5b96ee1e67df8d5"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a475b98fb320ebb76f5b96ee1e67df8d5">setVoxelHighlight</a> (const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> *node, const <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *highlight, uint64_t part_key=0)</td></tr>
-<tr class="memitem:ad4b66ff2a92a3294a5c85777d291c3cb" id="r_ad4b66ff2a92a3294a5c85777d291c3cb"><td class="memItemLeft"><a id="ad4b66ff2a92a3294a5c85777d291c3cb" name="ad4b66ff2a92a3294a5c85777d291c3cb"></a>
-void&#160;</td><td class="memItemRight"><b>clearVoxelHighlights</b> (const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> *node)</td></tr>
 <tr class="memitem:a9f9e8aa2a8136a0250660b9ffc4c934c" id="r_a9f9e8aa2a8136a0250660b9ffc4c934c"><td class="memItemLeft"><a id="a9f9e8aa2a8136a0250660b9ffc4c934c" name="a9f9e8aa2a8136a0250660b9ffc4c934c"></a>
 void&#160;</td><td class="memItemRight"><b>setSecondaryOwner</b> (const <a class="el" href="classtoast_1_1INodeOwner.html">toast::INodeOwner</a> *owner, const glm::mat4 &amp;transform, const <a class="el" href="classtoast_1_1Node.html">toast::Node</a> *hidden)</td></tr>
 <tr class="memitem:ac394e7962137c1e94dba67b0e91be6b0" id="r_ac394e7962137c1e94dba67b0e91be6b0"><td class="memItemLeft"><a id="ac394e7962137c1e94dba67b0e91be6b0" name="ac394e7962137c1e94dba67b0e91be6b0"></a>
@@ -839,41 +843,6 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 
 </div>
 </div>
-<a id="a475b98fb320ebb76f5b96ee1e67df8d5" name="a475b98fb320ebb76f5b96ee1e67df8d5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a475b98fb320ebb76f5b96ee1e67df8d5">&#9670;&#160;</a></span>setVoxelHighlight()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void renderer::VulkanRenderer::setVoxelHighlight </td>
-          <td>(</td>
-          <td class="paramtype">const <a class="el" href="classtoast_1_1VoxelNode.html">toast::VoxelNode</a> *</td>          <td class="paramname"><span class="paramname"><em>node</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *</td>          <td class="paramname"><span class="paramname"><em>highlight</em></span>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">uint64_t</td>          <td class="paramname"><span class="paramname"><em>part_key</em></span><span class="paramdefsep"> = </span><span class="paramdefval">0</span>&#160;)</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-<p>Tints the voxels of node that are solid in highlight </p><dl class="section note"><dt>Note</dt><dd>nullptr clears it </dd></dl>
-
-</div>
-</div>
 <a id="a598581b9421635962e600c6dd77cf9fd" name="a598581b9421635962e600c6dd77cf9fd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a598581b9421635962e600c6dd77cf9fd">&#9670;&#160;</a></span>uploadStats()</h2>
 
@@ -908,7 +877,7 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 <li>engine/src/toast/renderer/<a class="el" href="vulkan__renderer__resources_8cpp.html">vulkan_renderer_resources.cpp</a></li>
 <li>engine/src/toast/renderer/<a class="el" href="vulkan__renderer__scene_8cpp.html">vulkan_renderer_scene.cpp</a></li>
 <li>engine/src/toast/renderer/<a class="el" href="vulkan__renderer__thread_8cpp.html">vulkan_renderer_thread.cpp</a></li>
-<li>engine/src/toast/renderer/<a class="el" href="vulkan__renderer__voxel_8cpp.html">vulkan_renderer_voxel.cpp</a></li>
+<li>engine/src/toast/renderer/<b>vulkan_renderer_voxel.cpp</b></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

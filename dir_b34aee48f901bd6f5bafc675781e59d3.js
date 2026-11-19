@@ -21,6 +21,5 @@ var dir_b34aee48f901bd6f5bafc675781e59d3 =
     [ "vulkan_renderer_record.cpp", "vulkan__renderer__record_8cpp.html", null ],
     [ "vulkan_renderer_resources.cpp", "vulkan__renderer__resources_8cpp.html", null ],
     [ "vulkan_renderer_scene.cpp", "vulkan__renderer__scene_8cpp.html", null ],
-    [ "vulkan_renderer_thread.cpp", "vulkan__renderer__thread_8cpp.html", null ],
-    [ "vulkan_renderer_voxel.cpp", "vulkan__renderer__voxel_8cpp.html", null ]
+    [ "vulkan_renderer_thread.cpp", "vulkan__renderer__thread_8cpp.html", null ]
 ];

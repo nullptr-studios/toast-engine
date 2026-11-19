@@ -1,6 +1,7 @@
 var voxel__node_8hpp =
 [
     [ "toast::VoxelPart", "structtoast_1_1VoxelPart.html", null ],
+    [ "toast::VoxelOutlineGhost", "structtoast_1_1VoxelOutlineGhost.html", null ],
     [ "toast::VoxelNode", "classtoast_1_1VoxelNode.html", "classtoast_1_1VoxelNode" ],
     [ "toast::VoxelNode::ActiveContact", "structtoast_1_1VoxelNode_1_1ActiveContact.html", null ],
     [ "toast::VoxelNode::PendingEvents", "structtoast_1_1VoxelNode_1_1PendingEvents.html", null ],

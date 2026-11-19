@@ -51,7 +51,6 @@ var classrenderer_1_1VulkanRenderer =
     [ "setVoxelDetailTexture", "classrenderer_1_1VulkanRenderer.html#ae6b492fbca27743d89b130cda9d7ed6b", null ],
     [ "setVoxelGlassCoarseDistance", "classrenderer_1_1VulkanRenderer.html#a26cb7de3a368dfa110788daba1ba7aea", null ],
     [ "setVoxelGlassReflectionReach", "classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6", null ],
-    [ "setVoxelHighlight", "classrenderer_1_1VulkanRenderer.html#a475b98fb320ebb76f5b96ee1e67df8d5", null ],
     [ "setVoxelLightCandidates", "classrenderer_1_1VulkanRenderer.html#ac29dfa5a5cdb1edf5cd641db59b13ea9", null ],
     [ "setVoxelOcclusionIdleFrames", "classrenderer_1_1VulkanRenderer.html#a6b2e883cb138670ec635f236a4ae2b02", null ],
     [ "setVoxelOcclusionMinHidden", "classrenderer_1_1VulkanRenderer.html#ad7495f50b7628e2457580a722e3b7b4e", null ],
@@ -72,5 +71,6 @@ var classrenderer_1_1VulkanRenderer =
     [ "voxelDenoisedIndirectFrame", "classrenderer_1_1VulkanRenderer.html#a895f928084bfd8e763d336f47d2993df", null ],
     [ "voxelDetailView", "classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b", null ],
     [ "voxelReservoirHistory", "classrenderer_1_1VulkanRenderer.html#a74519c2d77ad01e06245680fa9991388", null ],
+    [ "voxelSpecularHitLights", "classrenderer_1_1VulkanRenderer.html#a8eb0f4a7c78d7e9e6302afa10b154478", null ],
     [ "waitForFrameSlot", "classrenderer_1_1VulkanRenderer.html#a121139fc596c480941a235425f596218", null ]
 ];

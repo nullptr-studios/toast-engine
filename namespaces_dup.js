@@ -98,6 +98,7 @@ var namespaces_dup =
       [ "VoxelLine", "classtoast_1_1VoxelLine.html", "classtoast_1_1VoxelLine" ],
       [ "VoxelMesh", "classtoast_1_1VoxelMesh.html", "classtoast_1_1VoxelMesh" ],
       [ "VoxelNode", "classtoast_1_1VoxelNode.html", "classtoast_1_1VoxelNode" ],
+      [ "VoxelOutlineGhost", "structtoast_1_1VoxelOutlineGhost.html", null ],
       [ "VoxelPart", "structtoast_1_1VoxelPart.html", null ],
       [ "VoxelPiece", "classtoast_1_1VoxelPiece.html", "classtoast_1_1VoxelPiece" ],
       [ "VoxelVolume", "classtoast_1_1VoxelVolume.html", "classtoast_1_1VoxelVolume" ],

@@ -12,18 +12,18 @@
 <area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="1096,59,1047,100,1045,95,1091,61"/>
 <area shape="rect" id="Node000007" href="$vulkan__renderer__thread_8cpp.html" title=" " alt="" coords="1144,98,1350,143"/>
 <area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="1172,57,1222,98,1217,97,1170,62"/>
-<area shape="rect" id="Node000008" href="$vulkan__renderer__voxel_8cpp.html" title=" " alt="" coords="1374,98,1573,143"/>
-<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1228,52,1394,97,1389,98,1228,57"/>
-<area shape="rect" id="Node000009" href="$editor__camera_8hpp.html" title=" " alt="" coords="1598,98,1763,143"/>
-<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1235,40,1400,64,1586,95,1600,100,1594,100,1585,101,1399,69,1235,45"/>
-<area shape="rect" id="Node000012" href="$ruler_8hpp.html" title=" " alt="" coords="1787,98,1952,143"/>
-<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1235,34,1482,57,1629,74,1775,95,1789,100,1784,100,1774,101,1628,79,1481,62,1235,39"/>
-<area shape="rect" id="Node000013" href="$workspace__history_8hpp_source.html" title=" " alt="" coords="1976,98,2150,143"/>
-<area shape="poly" id="edge13_Node000001_Node000013" title=" " alt="" coords="1235,31,1561,51,1762,70,1965,95,1978,100,1973,100,1964,101,1762,75,1560,57,1235,36"/>
-<area shape="rect" id="Node000010" href="$workspace_8hpp_source.html" title=" " alt="" coords="1787,191,1952,235"/>
-<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="1740,147,1827,191,1822,190,1739,152"/>
-<area shape="rect" id="Node000011" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="1787,283,1952,328"/>
-<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="1871,249,1871,285,1868,281,1868,253"/>
-<area shape="poly" id="edge12_Node000012_Node000010" title=" " alt="" coords="1871,156,1871,192,1868,189,1868,160"/>
-<area shape="poly" id="edge14_Node000013_Node000010" title=" " alt="" coords="2005,149,1916,193,1915,188,2000,150"/>
+<area shape="rect" id="Node000008" href="$procedural__compose_8hpp.html" title="Builds only the modified parts of a ProceduralVoxel." alt="" coords="1374,98,1605,143"/>
+<area shape="poly" id="edge7_Node000001_Node000008" title=" " alt="" coords="1232,52,1407,97,1401,98,1232,57"/>
+<area shape="rect" id="Node000009" href="$editor__camera_8hpp.html" title=" " alt="" coords="1630,98,1795,143"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="1234,39,1414,63,1618,95,1632,100,1626,100,1617,101,1413,68,1234,44"/>
+<area shape="rect" id="Node000012" href="$ruler_8hpp.html" title=" " alt="" coords="1819,98,1984,143"/>
+<area shape="poly" id="edge11_Node000001_Node000012" title=" " alt="" coords="1235,33,1496,56,1652,73,1807,95,1821,100,1816,100,1806,101,1651,79,1495,61,1235,38"/>
+<area shape="rect" id="Node000013" href="$workspace__history_8hpp_source.html" title=" " alt="" coords="2008,98,2182,143"/>
+<area shape="poly" id="edge13_Node000001_Node000013" title=" " alt="" coords="1235,30,1574,51,1785,69,1997,95,2010,100,2005,100,1996,101,1784,75,1574,56,1235,36"/>
+<area shape="rect" id="Node000010" href="$workspace_8hpp_source.html" title=" " alt="" coords="1819,191,1984,235"/>
+<area shape="poly" id="edge9_Node000009_Node000010" title=" " alt="" coords="1772,147,1859,191,1854,190,1771,152"/>
+<area shape="rect" id="Node000011" href="$play__workspace_8hpp.html" title="Ticking clone of a Workspace used by the editor&#39;s play mode." alt="" coords="1819,283,1984,328"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="1903,249,1903,285,1900,281,1900,253"/>
+<area shape="poly" id="edge12_Node000012_Node000010" title=" " alt="" coords="1903,156,1903,192,1900,189,1900,160"/>
+<area shape="poly" id="edge14_Node000013_Node000010" title=" " alt="" coords="2037,149,1948,193,1947,188,2032,150"/>
 </map>

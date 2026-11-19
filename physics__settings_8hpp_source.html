@@ -198,20 +198,22 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('physics__setti
 <div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keywordtype">float</span> air_density = 1.225f;</div>
 <div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  glm::vec3 wind = {0.0f, 0.0f, 0.0f};</div>
 <div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keywordtype">float</span> wind_shelter_distance = 64.0f;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <span class="keyword">auto</span> fixedDelta() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">double</span> {</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>    <span class="keywordflow">return</span> frequency &gt; 0.0 ? 1.0 / frequency : 1.0 / 60.0;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  }</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>};</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  <span class="keywordtype">float</span> kill_plane_z = -50.0f;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordtype">bool</span> time_narrow_pairs = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <span class="keyword">auto</span> fixedDelta() <span class="keyword">const</span> <span class="keyword">noexcept</span> -&gt; <span class="keywordtype">double</span> {</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>    <span class="keywordflow">return</span> frequency &gt; 0.0 ? 1.0 / frequency : 1.0 / 60.0;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  }</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>};</div>
 </div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>[[nodiscard]]</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>TOAST_API <span class="keyword">auto</span> tunables() -&gt; <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1Tunables.html">Tunables</a>&amp;;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span> </div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>TOAST_API <span class="keywordtype">void</span> registerPhysicsSettings();</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span> </div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>[[nodiscard]]</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>TOAST_API <span class="keyword">auto</span> tunables() -&gt; <span class="keyword">const</span> <a class="code hl_struct" href="structphysics_1_1Tunables.html">Tunables</a>&amp;;</div>
 <div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>}</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>TOAST_API <span class="keywordtype">void</span> registerPhysicsSettings();</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span> </div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>}</div>
 <div class="ttc" id="aexport_8hpp_html"><div class="ttname"><a href="export_8hpp.html">export.hpp</a></div></div>
 <div class="ttc" id="astructphysics_1_1Tunables_html"><div class="ttname"><a href="structphysics_1_1Tunables.html">physics::Tunables</a></div><div class="ttdef"><b>Definition</b> physics_settings.hpp:14</div></div>
 </div><!-- fragment --></div><!-- contents -->

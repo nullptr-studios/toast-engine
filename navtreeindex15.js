@@ -1,5 +1,9 @@
 var NAVTREEINDEX15 =
 {
+"structFrameResources.html":[13,0,17],
+"structRenderInterface__VK_1_1effects__push__t.html":[13,0,21,0],
+"structTimeSnapshot.html":[13,0,23],
+"structassets_1_1AnimationClip.html":[13,0,0,3],
 "structassets_1_1AnimationClip.html#a503599763cd5aee195d5e3b9d1494070":[13,0,0,3,1],
 "structassets_1_1AnimationClip.html#a630bcaf8d16d37841132d55614678fba":[13,0,0,3,3],
 "structassets_1_1AnimationClip.html#aba7ed77926f96cd29d5c12fad2055d68":[13,0,0,3,2],
@@ -245,9 +249,5 @@ var NAVTREEINDEX15 =
 "structevent_1_1ProtoTraits_3_01VoxelSplitPieces_01_4.html":[13,0,4,123],
 "structevent_1_1ProtoTraits_3_01WindowChar_01_4.html":[13,0,4,124],
 "structevent_1_1ProtoTraits_3_01WindowClose_01_4.html":[13,0,4,125],
-"structevent_1_1ProtoTraits_3_01WindowDisplayScale_01_4.html":[13,0,4,126],
-"structevent_1_1ProtoTraits_3_01WindowDrop_01_4.html":[13,0,4,127],
-"structevent_1_1ProtoTraits_3_01WindowKey_01_4.html":[13,0,4,128],
-"structevent_1_1ProtoTraits_3_01WindowMouseButton_01_4.html":[13,0,4,129],
-"structevent_1_1ProtoTraits_3_01WindowMouseLock_01_4.html":[13,0,4,130]
+"structevent_1_1ProtoTraits_3_01WindowDisplayScale_01_4.html":[13,0,4,126]
 };

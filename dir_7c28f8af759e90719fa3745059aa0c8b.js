@@ -3,6 +3,7 @@ var dir_7c28f8af759e90719fa3745059aa0c8b =
     [ "carve_volume.hpp", "carve__volume_8hpp.html", "carve__volume_8hpp" ],
     [ "fill_volume.hpp", "fill__volume_8hpp.html", "fill__volume_8hpp" ],
     [ "paint_volume.hpp", "paint__volume_8hpp.html", "paint__volume_8hpp" ],
+    [ "procedural_compose.hpp", "procedural__compose_8hpp.html", "procedural__compose_8hpp" ],
     [ "procedural_voxel.hpp", "procedural__voxel_8hpp.html", "procedural__voxel_8hpp" ],
     [ "voxel.hpp", "voxel_8hpp.html", "voxel_8hpp" ],
     [ "voxel_brush.hpp", "voxel__brush_8hpp.html", "voxel__brush_8hpp" ],

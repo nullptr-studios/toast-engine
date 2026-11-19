@@ -1188,6 +1188,13 @@ var annotated_dup =
       [ "light_gizmo", null, [
         [ "Handle", "structtoast_1_1light__gizmo_1_1Handle.html", "structtoast_1_1light__gizmo_1_1Handle" ]
       ] ],
+      [ "procedural", null, [
+        [ "ApplyStats", "structtoast_1_1procedural_1_1ApplyStats.html", null ],
+        [ "Part", "structtoast_1_1procedural_1_1Part.html", null ],
+        [ "Request", "structtoast_1_1procedural_1_1Request.html", null ],
+        [ "Result", "structtoast_1_1procedural_1_1Result.html", null ],
+        [ "Stamp", "structtoast_1_1procedural_1_1Stamp.html", "structtoast_1_1procedural_1_1Stamp" ]
+      ] ],
       [ "settings", null, [
         [ "Meta", "structtoast_1_1settings_1_1Meta.html", "structtoast_1_1settings_1_1Meta" ],
         [ "Entry", "structtoast_1_1settings_1_1Entry.html", "structtoast_1_1settings_1_1Entry" ],
@@ -1288,6 +1295,7 @@ var annotated_dup =
       [ "VoxelLine", "classtoast_1_1VoxelLine.html", "classtoast_1_1VoxelLine" ],
       [ "VoxelMesh", "classtoast_1_1VoxelMesh.html", "classtoast_1_1VoxelMesh" ],
       [ "VoxelNode", "classtoast_1_1VoxelNode.html", "classtoast_1_1VoxelNode" ],
+      [ "VoxelOutlineGhost", "structtoast_1_1VoxelOutlineGhost.html", null ],
       [ "VoxelPart", "structtoast_1_1VoxelPart.html", null ],
       [ "VoxelPiece", "classtoast_1_1VoxelPiece.html", "classtoast_1_1VoxelPiece" ],
       [ "VoxelVolume", "classtoast_1_1VoxelVolume.html", "classtoast_1_1VoxelVolume" ],

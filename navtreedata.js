@@ -199,17 +199,17 @@ var NAVTREEINDEX =
 "classtoast_1_1AudioEmitter.html#a76ef346d2a66e40abbb43ddd9e6ddfed",
 "classtoast_1_1Node.html#ae37c89e7fd2eaeed46bea58784bb8ad5",
 "classtoast_1_1VoxelNode.html#a047104df879c6d7eba36646c7c0331a3",
-"classtoast_1_1Workspace.html#a580beb85b06c63ceee52c4df9f101969",
-"environment__pass_8hpp_source.html",
-"layers_8hpp.html",
-"namespacerenderer.html#a9edc6f6486f8dbb9b1ed51ddb3c8e925",
-"structassets_1_1AnimationClip.html#a503599763cd5aee195d5e3b9d1494070",
-"structevent_1_1ProtoTraits_3_01WindowMousePosition_01_4.html",
-"structphysics_1_1QueryContact.html",
-"structrenderer_1_1Meta.html#a0f6e25e2923ca1cc0331df22220abe98",
-"structrenderer_1_1shadow__slots_1_1Slot.html",
-"structtoast_1_1Workspace_1_1VoxelToolState.html#a9453b031439dda6f257558c5473c1004",
-"volumetric__pass_8hpp.html"
+"classtoast_1_1Workspace.html#a575710657af5e029e04be5affb1e06bd",
+"environment__pass_8cpp.html",
+"keycodes_8hpp_source.html",
+"namespacerenderer.html#a9c134b43e7a09d4cc83511cc4b21718c",
+"structFrameResources.html",
+"structevent_1_1ProtoTraits_3_01WindowDrop_01_4.html",
+"structphysics_1_1PackedFractureProfile.html",
+"structrenderer_1_1Meta.html#a0763ae167e255b7f448ef9a97656cd93",
+"structrenderer_1_1light__culling_1_1Sphere.html",
+"structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4a456de07ce58a2f11b323d618434cef23",
+"volumetric__pass_8cpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

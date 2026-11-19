@@ -15,6 +15,7 @@ var hierarchy =
     [ "Application", null, [
       [ "editor.App", "classeditor_1_1App.html", null ]
     ] ],
+    [ "toast::procedural::ApplyStats", "structtoast_1_1procedural_1_1ApplyStats.html", null ],
     [ "physics::AreaDamage", "structphysics_1_1AreaDamage.html", null ],
     [ "assets::Asset", "classassets_1_1Asset.html", [
       [ "assets::Animation", "classassets_1_1Animation.html", null ],
@@ -1316,7 +1317,7 @@ var hierarchy =
     [ "toast::ParameterInfo", "structtoast_1_1ParameterInfo.html", null ],
     [ "toast::MusicPlayer::ParamID", "structtoast_1_1MusicPlayer_1_1ParamID.html", null ],
     [ "renderer::VulkanTexture::Params", "structrenderer_1_1VulkanTexture_1_1Params.html", null ],
-    [ "toast::ProceduralVoxel::ComposeOutput::Part", "structtoast_1_1ProceduralVoxel_1_1ComposeOutput_1_1Part.html", null ],
+    [ "toast::procedural::Part", "structtoast_1_1procedural_1_1Part.html", null ],
     [ "event::RenderPassList::PassInfo", "structevent_1_1RenderPassList_1_1PassInfo.html", null ],
     [ "renderer::VulkanRenderer::PassInfo", "structrenderer_1_1VulkanRenderer_1_1PassInfo.html", null ],
     [ "renderer::VoxelScenePatcher::Patched", "structrenderer_1_1VoxelScenePatcher_1_1Patched.html", null ],
@@ -1354,7 +1355,6 @@ var hierarchy =
     [ "renderer::PostProcessSettings", "structrenderer_1_1PostProcessSettings.html", null ],
     [ "renderer::PostProcessTarget", "classrenderer_1_1PostProcessTarget.html", null ],
     [ "ui::PreprocessContext", "structui_1_1PreprocessContext.html", null ],
-    [ "toast::ProceduralVoxel::ComposeInput::Preview", "structtoast_1_1ProceduralVoxel_1_1ComposeInput_1_1Preview.html", null ],
     [ "renderer::voxel_debug::Probe", "structrenderer_1_1voxel__debug_1_1Probe.html", null ],
     [ "renderer::voxel_debug::ProbeResult", "structrenderer_1_1voxel__debug_1_1ProbeResult.html", null ],
     [ "toast::ProfilerSections", "classtoast_1_1ProfilerSections.html", null ],
@@ -1496,9 +1496,11 @@ var hierarchy =
     [ "Rml::RenderInterface", null, [
       [ "RenderInterface_VK", "classRenderInterface__VK.html", null ]
     ] ],
+    [ "toast::procedural::Request", "structtoast_1_1procedural_1_1Request.html", null ],
     [ "signals::ResolvedBinding", "structsignals_1_1ResolvedBinding.html", null ],
     [ "input::Bind::Result", "structinput_1_1Bind_1_1Result.html", null ],
     [ "input::ITrigger::Result", "structinput_1_1ITrigger_1_1Result.html", null ],
+    [ "toast::procedural::Result", "structtoast_1_1procedural_1_1Result.html", null ],
     [ "renderer::voxel_debug::Rgb", "structrenderer_1_1voxel__debug_1_1Rgb.html", null ],
     [ "physics::Rng", "structphysics_1_1Rng.html", null ],
     [ "toast::_detail::Robber&lt; Tag, Ptr &gt;", "structtoast_1_1__detail_1_1Robber.html", null ],
@@ -1584,6 +1586,7 @@ var hierarchy =
     [ "physics::SphereShape", "structphysics_1_1SphereShape.html", null ],
     [ "renderer::PostProcessSettings::Ssao", "structrenderer_1_1PostProcessSettings_1_1Ssao.html", null ],
     [ "renderer::PostProcessSettings::Ssr", "structrenderer_1_1PostProcessSettings_1_1Ssr.html", null ],
+    [ "toast::procedural::Stamp", "structtoast_1_1procedural_1_1Stamp.html", null ],
     [ "voxel::StampResult", "structvoxel_1_1StampResult.html", null ],
     [ "renderer::ShaderCache::StartupProgress", "structrenderer_1_1ShaderCache_1_1StartupProgress.html", null ],
     [ "toast::StartupSplash", "classtoast_1_1StartupSplash.html", null ],
@@ -1754,6 +1757,7 @@ var hierarchy =
     [ "renderer::VoxelInstanceGpu", "structrenderer_1_1VoxelInstanceGpu.html", null ],
     [ "assets::VoxelMaterialSlot", "structassets_1_1VoxelMaterialSlot.html", null ],
     [ "editor.Assets.VoxelMaterialSlot", "classeditor_1_1Assets_1_1VoxelMaterialSlot.html", null ],
+    [ "toast::VoxelOutlineGhost", "structtoast_1_1VoxelOutlineGhost.html", null ],
     [ "renderer::VoxelPackedScene", "structrenderer_1_1VoxelPackedScene.html", null ],
     [ "physics::VoxelPairPartial", "structphysics_1_1VoxelPairPartial.html", null ],
     [ "editor.Assets.VoxelPaletteEntry", "classeditor_1_1Assets_1_1VoxelPaletteEntry.html", null ],

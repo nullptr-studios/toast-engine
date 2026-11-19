@@ -16,6 +16,7 @@ var searchData=
   ['voxelnode_13',['VoxelNode',['../classtoast_1_1VoxelNode.html#a164ceb5621ed99155feac96fd1d6823f',1,'toast::VoxelNode::VoxelNode()=default'],['../classtoast_1_1VoxelNode.html#a9c6dcfcd84104f2bfa98b707154c51a4',1,'toast::VoxelNode::VoxelNode(assets::Handle&lt; assets::VoxelModel &gt; model)']]],
   ['voxelpalettetip_14',['VoxelPaletteTip',['../namespaceeditor_1_1Assets.html#a3a0e444f62cea4a39d6194a655f56012',1,'editor::Assets']]],
   ['voxelreservoirhistory_15',['voxelReservoirHistory',['../classrenderer_1_1VulkanRenderer.html#a74519c2d77ad01e06245680fa9991388',1,'renderer::VulkanRenderer']]],
-  ['voxeltoworld_16',['voxelToWorld',['../classtoast_1_1VoxelNode.html#a66d0b4fac31fa4d55eca774c7c1d0aeb',1,'toast::VoxelNode']]],
-  ['vulkanswapchain_17',['VulkanSwapchain',['../classrenderer_1_1VulkanSwapchain.html#a3cdb869c5837e756265b4f9f915ff2ba',1,'renderer::VulkanSwapchain']]]
+  ['voxelspecularhitlights_16',['voxelSpecularHitLights',['../classrenderer_1_1VulkanRenderer.html#a8eb0f4a7c78d7e9e6302afa10b154478',1,'renderer::VulkanRenderer']]],
+  ['voxeltoworld_17',['voxelToWorld',['../classtoast_1_1VoxelNode.html#a66d0b4fac31fa4d55eca774c7c1d0aeb',1,'toast::VoxelNode']]],
+  ['vulkanswapchain_18',['VulkanSwapchain',['../classrenderer_1_1VulkanSwapchain.html#a3cdb869c5837e756265b4f9f915ff2ba',1,'renderer::VulkanSwapchain']]]
 ];
