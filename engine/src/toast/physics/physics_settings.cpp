@@ -72,6 +72,16 @@ void registerPhysicsSettings() {
 	     .step = 1.0f},
 	    &Tunables::wind_shelter_distance);
 
+	flt("physics.world.kill_plane_z",
+	    -50.0f,
+	    {.label = "Kill plane Z",
+	     .category = "World",
+	     .description = "Rigidbodies that fall below this height are destroyed",
+	     .min = -100000.0f,
+	     .max = 100000.0f,
+	     .step = 1.0f},
+	    &Tunables::kill_plane_z);
+
 	uint_setting(
 	    "physics.solver.iterations",
 	    8,
@@ -656,6 +666,14 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::voxel_pair_split_regions
 	);
+	toast::settings::declareBool(
+	    "physics.debug.time_narrow_pairs",
+	    false,
+	    {.label = "Time narrow phase pairs",
+			 .category = "Debug",
+			 .description = "Times every narrow phase pair per shape type for the debug overlay"}
+	)
+	    .onChange([](bool v) { g_tunables.time_narrow_pairs = v; });
 	uint_setting(
 	    "physics.character.sweep_refine_iterations",
 	    6,

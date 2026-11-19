@@ -107,12 +107,16 @@ VSOutput vertexMain(uint vertexId : SV_VertexID)
     return fullscreenTriangle(vertexId);
 }
 
-float3 positionAt(int2 pixel)
+float3 positionFrom(int2 pixel, float depth)
 {
     const float2 uv = (float2(pixel) + 0.5) / gPush.viewport.xy;
-    const float depth = gDepth.Load(int3(pixel, 0)).r;
     const float4 world = mul(gPush.inverseViewProjection, float4(uv * 2.0 - 1.0, depth, 1.0));
     return world.xyz / world.w;
+}
+
+float3 positionAt(int2 pixel)
+{
+    return positionFrom(pixel, gDepth.Load(int3(pixel, 0)).r);
 }
 
 bool isLitVoxelAt(int2 pixel, out float3 faceNormal)
@@ -846,25 +850,37 @@ float4 giGatherAt(int2 pixel, float3 position, float3 normal)
     const float2 at = float2(pixel) * 0.5;
     const int2 base = int2(floor(at));
     const float2 blend = at - float2(base);
+    // Every load of the four taps is issued before any test so they overlap instead of waiting one by one
+    float4 gathered[4];
+    float4 sourceEncoded[4];
+    float sourceDepth[4];
+    int2 source[4];
+    [unroll]
+    for (int tap = 0; tap < 4; ++tap)
+    {
+        const int2 half = clamp(base + int2(tap & 1, tap >> 1), int2(0, 0), size - 1);
+        source[tap] = giGatherPixel(half);
+        gathered[tap] = gGiGather.Load(int3(half, 0));
+        sourceEncoded[tap] = gFaceNormal.Load(int3(source[tap], 0));
+        sourceDepth[tap] = gDepth.Load(int3(source[tap], 0)).r;
+    }
     float4 sum = float4(0.0, 0.0, 0.0, 0.0);
     float total = 0.0;
+    [unroll]
     for (int tap = 0; tap < 4; ++tap)
     {
         const int2 corner = int2(tap & 1, tap >> 1);
-        const int2 half = clamp(base + corner, int2(0, 0), size - 1);
-        const float4 gathered = gGiGather.Load(int3(half, 0));
-        const int2 source = giGatherPixel(half);
-        float3 sourceNormal;
-        if (gathered.a < 0.0 || !isLitVoxelAt(source, sourceNormal))
+        if (gathered[tap].a < 0.0 || sourceEncoded[tap].a <= 0.5)
         {
             continue;
         }
+        const float3 sourceNormal = decodeFaceNormal(sourceEncoded[tap]);
         const float2 side = lerp(1.0 - blend, blend, float2(corner));
         const float facing = saturate(dot(normal, sourceNormal));
-        const float plane = saturate(1.0 - abs(dot(positionAt(source) - position, normal)) / kGiGatherPlane);
+        const float plane = saturate(1.0 - abs(dot(positionFrom(source[tap], sourceDepth[tap]) - position, normal)) / kGiGatherPlane);
         // A floor so a pixel right on a gather pixel still takes its neighbours when that one is rejected
         const float weight = (side.x * side.y + 0.01) * facing * facing * facing * facing * plane;
-        sum += gathered * weight;
+        sum += gathered[tap] * weight;
         total += weight;
     }
     return total > 1e-4 ? sum / total : float4(0.0, 0.0, 0.0, -1.0);
@@ -876,6 +892,11 @@ FSOutput fragmentMain(VSOutput input)
     const int2 pixel = int2(input.position.xy);
     const int3 texel = int3(pixel, 0);
     const float4 albedo = gAlbedo.Load(texel);
+    // Above the discard so all five gbuffer reads are in flight together
+    const float depth = gDepth.Load(texel).r;
+    const float4 faceEncoded = gFaceNormal.Load(texel);
+    const float4 detailEncoded = gDetailNormal.Load(texel);
+    const float4 material = gMaterial.Load(texel);
     if (!isVoxelCoverage(albedo.a))
     {
         discard;
@@ -892,12 +913,10 @@ FSOutput fragmentMain(VSOutput input)
         return output;
     }
 
-    const float3 position = positionAt(pixel);
-    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
-    const float4 detailEncoded = gDetailNormal.Load(texel);
+    const float3 position = positionFrom(pixel, depth);
+    const float3 faceNormal = decodeFaceNormal(faceEncoded);
     // Shading and every later pass reading the scene normal take the bumped one and rays keep the face
     const float3 normal = detailEncoded.a > 0.5 ? decodeFaceNormal(detailEncoded) : faceNormal;
-    const float4 material = gMaterial.Load(texel);
     const float roughness = clamp(material.b, 0.045, 1.0);
 
     const float tracedRoughness = float((gPush.reuse.x >> 8) & 0xffu) / 255.0;

@@ -182,13 +182,14 @@ struct QualityLevel {
 /// Scalability
 constexpr std::array<QualityLevel, GiSettings::k_quality_custom> k_quality_levels {
   {
-   {.ray_budget = 150'000,
-	   .cascades = 4,
-	   .spacing = 0.2f,
-	   .lod_distance = 4.0f,
-	   .multibounce = false,
-	   .points = 8192,
-	   .interval = 2},
+   // Cheapest since the Low preset without ray tracing runs it on software traces
+    {.ray_budget = 100'000,
+		 .cascades = 4,
+		 .spacing = 0.25f,
+		 .lod_distance = 4.0f,
+		 .multibounce = false,
+		 .points = 8192,
+		 .interval = 2},
    {.ray_budget = 300'000,
 	   .cascades = 4,
 	   .spacing = 0.15f,

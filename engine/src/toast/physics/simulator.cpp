@@ -20,6 +20,7 @@
 #include "voxel_data_lock.hpp"
 #include "voxel_smash.hpp"
 
+#include <bit>
 #include <deque>
 #include <thread>
 #include <toast/voxel/assets/voxel_model.hpp>
@@ -705,8 +706,6 @@ auto Simulator::nodeFor(BodyID body) -> toast::Box<toast::Node> {
 		return {};
 	}
 
-	ZoneScoped;
-
 	const auto rigidbody_binding =
 	    std::ranges::find_if(instance->m_node_bindings, [body](const NodeBinding& candidate) { return candidate.body == body; });
 	if (rigidbody_binding != instance->m_node_bindings.end()) {
@@ -727,8 +726,6 @@ auto Simulator::colliderFor(BodyID body, ShapeID shape) -> toast::Box<toast::Nod
 	if (!instance) {
 		return {};
 	}
-
-	ZoneScoped;
 
 	for (const NodeBinding& binding : instance->m_node_bindings) {
 		if (binding.body != body) {
@@ -797,6 +794,7 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
+	destroyFallenBodies();
 	checkJointAnchors();
 	integrate(dt);
 	checkTriggers();
@@ -849,13 +847,21 @@ void Simulator::tick() {
 	m_profile.voxel_shape_count = static_cast<size_t>(std::ranges::count_if(m_shapes, [](const ShapeSlot& s) {
 		return s.occupied && s.shape.type == ShapeType::voxel;
 	}));
+	size_t rigidbody_count = 0;
+	size_t awake_rigidbody_count = 0;
 	for (const BodySlot& b : m_bodies) {
 		if (!b.occupied) {
 			continue;
 		}
 		++m_profile.body_count;
 		m_profile.awake_body_count += b.body.awake ? 1 : 0;
+		if (b.body.type == BodyType::dynamic_body && b.body.enabled) {
+			++rigidbody_count;
+			awake_rigidbody_count += b.body.awake ? 1 : 0;
+		}
 	}
+	TracyPlot("physics::Rigidbodies", static_cast<int64_t>(rigidbody_count));
+	TracyPlot("physics::Awake rigidbodies", static_cast<int64_t>(awake_rigidbody_count));
 	const voxel::BrickPool& pool = voxel::runtimeBrickPool();
 	m_profile.brick_pool_allocated = pool.allocatedCount();
 	m_profile.brick_pool_capacity = pool.capacity();
@@ -1703,7 +1709,6 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	  .voxels = extracted.voxels,
 	};
 
-	const glm::uvec3 extracted_brick_dims = extracted.volume.brickDims();
 	glm::vec3 origin_local = glm::vec3(extracted.offset) * static_cast<float>(voxel::k_brick_dim) * voxel::k_voxel_size;
 	glm::quat frag_rotation = glm::normalize(rotation * local_rotation);
 	glm::vec3 frag_pos = position + rotation * (local_center + local_rotation * origin_local);
@@ -1765,28 +1770,6 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	rebuildMassProperties(frag_body);
 
 	++m_profile.fragments_spawned;
-
-	TOAST_TRACE(
-	    "Physics",
-	    "Fragment body {} broke off shape {}: {} voxels across {} pieces, extracted volume {}x{}x{} bricks ({}x{}x{} voxels, "
-	    "{:.2f}x{:.2f}x{:.2f} m) at brick offset {} {} {}",
-	    frag_body.slot,
-	    source_shape_id.slot,
-	    component.voxel_count,
-	    component.pieces.size(),
-	    extracted_brick_dims.x,
-	    extracted_brick_dims.y,
-	    extracted_brick_dims.z,
-	    extracted_brick_dims.x * voxel::k_brick_dim,
-	    extracted_brick_dims.y * voxel::k_brick_dim,
-	    extracted_brick_dims.z * voxel::k_brick_dim,
-	    static_cast<float>(extracted_brick_dims.x) * voxel::k_brick_size,
-	    static_cast<float>(extracted_brick_dims.y) * voxel::k_brick_size,
-	    static_cast<float>(extracted_brick_dims.z) * voxel::k_brick_size,
-	    extracted.offset.x,
-	    extracted.offset.y,
-	    extracted.offset.z
-	);
 
 	if (auto* b = tryGetBody(frag_body)) {
 		glm::vec3 frag_com_world = b->worldCenterOfMass();
@@ -1918,15 +1901,6 @@ auto Simulator::spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComp
 
 	++m_profile.static_splits_spawned;
 
-	TOAST_TRACE(
-	    "Physics",
-	    "Static body {} split off shape {}: {} voxels across {} pieces, still anchored",
-	    split_body.slot,
-	    source_shape_id.slot,
-	    component.voxel_count,
-	    component.pieces.size()
-	);
-
 	return true;
 }
 
@@ -1962,6 +1936,43 @@ void Simulator::despawnSettledFragments(float dt) {
 		destroyBody(id);
 	}
 	m_profile.fragments_despawned = doomed.size();
+}
+
+void Simulator::destroyFallenBodies() {
+	ZoneScopedN("physics::DestroyFallenBodies");
+
+	const float kill_z = tunables().kill_plane_z;
+	if (not std::isfinite(kill_z)) {
+		return;
+	}
+
+	std::erase_if(m_scheduled_kills, [this](BodyID id) { return not valid(id); });
+
+	std::vector<toast::Box<Rigidbody>> fallen_nodes;
+	for (const NodeBinding& binding : m_node_bindings) {
+		const Body* body = tryGetBody(binding.body);
+		if (body != nullptr && body->enabled && body->type == BodyType::dynamic_body && body->position.z < kill_z &&
+		    binding.node.exists() && std::ranges::find(m_scheduled_kills, binding.body) == m_scheduled_kills.end()) {
+			fallen_nodes.push_back(binding.node);
+			m_scheduled_kills.push_back(binding.body);
+		}
+	}
+
+	std::vector<BodyID> fallen_fragments;
+	for (const FragmentRecord& fragment : m_fragments) {
+		const Body* body = tryGetBody(fragment.body);
+		if (body != nullptr && body->position.z < kill_z) {
+			fallen_fragments.push_back(fragment.body);
+		}
+	}
+
+	for (toast::Box<Rigidbody>& node : fallen_nodes) {
+		event::send<event::CacheNode>(*node);
+		event::send<event::DestroyNode>(*node);
+	}
+	for (const BodyID id : fallen_fragments) {
+		destroyBody(id);
+	}
 }
 
 void Simulator::syncEnabledState() {
@@ -2475,9 +2486,6 @@ void Simulator::publishTransforms() {
 }
 
 auto Simulator::publishTransform(NodeBinding& binding) -> bool {
-	ZoneScoped;
-	ZoneValue(static_cast<uint64_t>(binding.body.slot));
-
 	Body* body = tryGetBody(binding.body);
 	if (not binding.node.exists() || not body) {
 		return false;
@@ -2494,9 +2502,6 @@ auto Simulator::publishTransform(NodeBinding& binding) -> bool {
 }
 
 auto Simulator::publishVoxelTransform(VoxelNodeBinding& binding) -> bool {
-	ZoneScoped;
-	ZoneValue(static_cast<uint64_t>(binding.body.slot));
-
 	Body* body = tryGetBody(binding.body);
 	if (not binding.node.exists() || not body) {
 		return false;
@@ -2761,8 +2766,6 @@ auto Simulator::velocityAtPoint(const Body& body, const glm::vec3& r) -> glm::ve
 auto Simulator::effectiveMassAlong(
     const Body& body_a, const Body& body_b, const glm::vec3& r_a, const glm::vec3& r_b, const glm::vec3& direction
 ) -> std::optional<float> {
-	ZoneScopedN("physics::EffectiveMass");
-
 	const bool a_moves = movable(body_a);
 	const bool b_moves = movable(body_b);
 	glm::vec3 angular_a = a_moves ? body_a.inverse_inertia_world * glm::cross(r_a, direction) : glm::vec3 {0.0f};
@@ -3088,6 +3091,7 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 	        ? 0
 	        : std::min(maximum_job_count, std::max(active_candidates.size() / minimum_candidates_per_job, size_t {1}));
 
+	const bool time_pairs = tunables().time_narrow_pairs;
 	std::vector<std::future<ManifoldQueue>> futures;
 	futures.reserve(job_count);
 
@@ -3096,10 +3100,10 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 		const size_t end = (job_index + 1) * active_candidates.size() / job_count;
 		auto batch = std::span<const BroadPhasePair> {active_candidates}.subspan(begin, end - begin);
 
-		futures.emplace_back(toast::ThreadPool::push([this, world, batch] {
+		futures.emplace_back(toast::ThreadPool::push([this, world, batch, time_pairs] {
 			ZoneScopedN("physics::NarrowPhaseBatch");    // NOLINT
 			ZoneValue(static_cast<uint64_t>(batch.size()));
-			return m_narrow_phase.generateManifolds(world, batch);
+			return m_narrow_phase.generateManifolds(world, batch, time_pairs);
 		}));
 	}
 
@@ -3189,44 +3193,9 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 			m_profile.rejected_manifolds += queue.rejected_manifold_count;
 			m_profile.contact_points += queue.contact_count;
 			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::box_voxel)];
-			const double split_ms = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
-			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::box_voxel)] += split_ms;
-			if (split_ms > 2.0) {
-				// diagnostic, remove; body type 0 static 1 dynamic 2 kinematic
-				const Body& box_body = split.view.box.body;
-				const Body& voxel_body = split.view.voxel.body;
-				const glm::vec3 box_size = split.view.box.shape.box.size;
-				const glm::uvec3 voxel_dims = split.view.voxel_data.volume->brickDims();
-				size_t candidates = 0;
-				for (const VoxelPairPartial& partial : partials) {
-					for (const auto& per_normal : partial.candidates_per_normal) {
-						candidates += per_normal.size();
-					}
-				}
-				TOAST_WARN(
-				    "Physics",
-				    "[box-voxel slow] {:.2f} ms, {} regions, {} candidates, local extent {:.1f}x{:.1f}x{:.1f} m | box type {} awake {} "
-				    "size {:.1f}x{:.1f}x{:.1f} | "
-				    "voxel type {} awake {} bricks {}x{}x{} solid {} fragment {}",
-				    split_ms,
-				    partials.size(),
-				    candidates,
-				    split.local_bounds.max.x - split.local_bounds.min.x,
-				    split.local_bounds.max.y - split.local_bounds.min.y,
-				    split.local_bounds.max.z - split.local_bounds.min.z,
-				    static_cast<int>(box_body.type),
-				    box_body.awake,
-				    box_size.x,
-				    box_size.y,
-				    box_size.z,
-				    static_cast<int>(voxel_body.type),
-				    voxel_body.awake,
-				    voxel_dims.x,
-				    voxel_dims.y,
-				    voxel_dims.z,
-				    split.view.voxel_data.solid_voxel_count,
-				    valid(split.view.voxel_data.fragment_origin)
-				);
+			if (time_pairs) {
+				m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::box_voxel)] +=
+				    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
 			}
 			merged.insert_range(merged.end(), std::move(queue.manifolds));
 		}
@@ -3255,8 +3224,10 @@ auto Simulator::generateManifoldsAsync(CollisionWorldView world, std::span<const
 			m_profile.rejected_manifolds += queue.rejected_manifold_count;
 			m_profile.contact_points += queue.contact_count;
 			++m_profile.narrow_pair_candidates[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)];
-			m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)] +=
-			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
+			if (time_pairs) {
+				m_profile.narrow_pair_time_ms[static_cast<size_t>(NarrowPhasePairType::voxel_voxel)] +=
+				    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - split_start).count();
+			}
 			merged.insert_range(merged.end(), std::move(queue.manifolds));
 		}
 	}
@@ -3605,8 +3576,6 @@ void Simulator::integrate(float dt) {
 void Simulator::integrateBody(
     BodyID id, Body& body, const glm::vec3& gravity, float air_density, const glm::vec3& wind, float dt
 ) {
-	ZoneScopedN("physics::IntegrateBody");
-	ZoneValue(static_cast<uint64_t>(id.slot));
 	if (not body.enabled) {
 		return;
 	}
@@ -4423,8 +4392,6 @@ void Simulator::checkTriggers() {
 		if (not trigger.exists()) {
 			continue;
 		}
-		ZoneScopedN("physics::CheckTrigger");
-
 		// Trigger::onDisable already sent the exits
 		if (not trigger->enabled()) {
 			continue;
@@ -4999,7 +4966,6 @@ auto Simulator::setLinearVelocity(BodyID body, const glm::vec3& velocity) -> boo
 }
 
 void Simulator::recordDamage(DamageCommand&& command) {
-	ZoneScopedN("physics::RecordDamage");
 	std::scoped_lock lock {m_damage_mutex};
 	m_damage_commands.emplace_back(command);
 }
@@ -5116,21 +5082,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 		// cracks in the band around the crater
 		const ShatterPlan shatter = planShatter(volume, data->palette, data->materials, crater, c.max_hardness);
-		TOAST_INFO(
-		    "Physics",
-		    "Shatter: pattern {} shatter_energy {:.3f} kJ density {:.2f} kJ/m3 radius {:.3f} m band_voxels {} width {:.3f} m cells "
-		    "{} cracks {} | stop: "
-		    "{}",
-		    fracturePatternName(crater.pattern),
-		    crater.shatter_energy,
-		    shatter.density,
-		    crater.radius,
-		    shatter.band_voxels,
-		    shatter.width,
-		    shatter.cells,
-		    shatter.crack.size(),
-		    shatter.stop
-		);
 
 		const float seal_floor = glm::max(craterMinRadius(crater) - voxel::k_voxel_size, 0.0f);
 		const float seal_floor_squared = seal_floor * seal_floor;
@@ -5240,15 +5191,6 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 
 			// fragmenting
 			const CoreSplit core_split = planCoreSplit(core, crater);
-			TOAST_INFO(
-			    "Physics",
-			    "Fragment: energy {:.3f} kJ density {:.2f} kJ/m3 core_voxels {} parts {} cracks {}",
-			    crater.fragment_energy,
-			    core_split.density,
-			    core.size(),
-			    core_split.parts,
-			    core_split.crack.size()
-			);
 			for (const glm::ivec3& v : core_split.crack) {
 				const uint8_t palette_index = volume.materialAt(v);
 				if (palette_index == voxel::k_empty_palette_index) {
@@ -5692,7 +5634,6 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 	glm::vec3 debris_index_sum {0.0f};
 	glm::vec3 chunk_index_sum {0.0f};
 	uint32_t chunk_voxels = 0;
-	uint32_t crack_voxels = 0;
 	float debris_energy = 0.0f;
 	float reach = 0.0f;
 
@@ -5902,7 +5843,6 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 												continue;
 											}
 											debris = true;
-											++crack_voxels;
 										} else if (not loose) {
 											continue;
 										}
@@ -5962,7 +5902,6 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 	}
 
 	const AABB bounds {.min = explosion.point - glm::vec3(reach), .max = explosion.point + glm::vec3(reach)};
-	size_t chunk_count = 0;
 	{
 		ZoneNamedN(chunks_zone, "physics::ExplodeShape::Chunks", true);    // NOLINT
 		SmashPieces chunks;
@@ -5977,7 +5916,6 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 			}
 			chunks.pieces.push_back(std::move(piece));
 		}
-		chunk_count = chunks.pieces.size();
 		breakPieces(
 		    shape_id,
 		    chunks,
@@ -5999,18 +5937,6 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 	}
 	unlockSleep(shape->owner);
 	wakeBodiesInBounds(bounds);
-
-	TOAST_INFO(
-	    "Physics",
-	    "Explosion: force {:.1f} reach {:.2f} m debris_voxels {} (cracks {}) chunk_voxels {} chunks {} debris_energy {:.3f} kJ",
-	    explosion.force,
-	    reach,
-	    debris_voxels.size(),
-	    crack_voxels,
-	    chunk_voxels,
-	    chunk_count,
-	    debris_energy
-	);
 
 	const uint32_t solid_after = data->solid_voxel_count;
 	return solid_before - std::min(solid_before, solid_after);
@@ -6354,8 +6280,6 @@ auto Simulator::tryGetBody(BodyID body) const -> const Body* {
 auto Simulator::findCachedContact(
     const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b
 ) -> CachedContact* {
-	ZoneScopedN("physics::FindCachedContact");
-
 	const CachedManifoldKey key {.pair = pair, .normal_index = normal_index};
 	const auto manifold = std::lower_bound(
 	    m_cached_manifolds.begin(), m_cached_manifolds.end(), key, [](const CachedManifold& cached, CachedManifoldKey candidate) {
@@ -6377,8 +6301,6 @@ auto Simulator::findCachedContact(
 auto Simulator::findCachedContact(
     const BroadPhasePair& pair, uint8_t normal_index, ContactFeatureID feature_a, ContactFeatureID feature_b
 ) const -> const CachedContact* {
-	ZoneScopedN("physics::FindCachedContact");
-
 	const CachedManifoldKey key {.pair = pair, .normal_index = normal_index};
 	const auto manifold = std::lower_bound(
 	    m_cached_manifolds.begin(), m_cached_manifolds.end(), key, [](const CachedManifold& cached, CachedManifoldKey candidate) {
@@ -6474,9 +6396,6 @@ auto Simulator::prepareConstraints(const std::vector<Manifold>& manifolds) -> st
 		constraints.insert(constraints.end(), m_prepare_chunks[job_index].begin(), m_prepare_chunks[job_index].end());
 	}
 
-	if (rejected_contact_count > 0) {
-		TOAST_WARN("Physics", "Rejected {} invalid contact(s) while preparing constraints", rejected_contact_count);
-	}
 	m_profile.constraints = constraints.size();
 	m_profile.rejected_constraints = rejected_contact_count;
 	m_profile.warm_started_constraints = std::ranges::count_if(constraints, [](const Constraint& constraint) {
@@ -6651,7 +6570,10 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 	}
 
 	// Shared across islands since none share a dynamic body so never reset between them, only once per call
-	m_island_next_free_batch.assign(m_bodies.size(), 0);
+	// A body holds a bit per colour it already uses, a body past every mask colour falls back to batches above it
+	constexpr uint32_t k_mask_colors = 64;
+	m_island_color_mask.assign(m_bodies.size(), 0);
+	m_island_next_free_batch.assign(m_bodies.size(), k_mask_colors);
 
 	for (SimulationIsland& island : islands) {
 		// Load bearing: makes the greedy coloring below deterministic, not just the final storage order
@@ -6673,7 +6595,6 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			return lhs.feature_b < rhs.feature_b;
 		});
 
-		// Greedy list coloring per body pair not per contact
 		m_island_constraint_batch.resize(island.constraints.size());
 		uint32_t batch_count = island.constraints.empty() ? 0 : 1;
 		size_t group_begin = 0;
@@ -6689,25 +6610,46 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 			const bool a_dynamic = body_a != nullptr && movable(*body_a);
 			const bool b_dynamic = body_b != nullptr && movable(*body_b);
 
-			uint32_t batch = 0;
+			uint64_t used = 0;
 			if (a_dynamic) {
-				batch = std::max(batch, m_island_next_free_batch[constraint.body_a.slot]);
+				used |= m_island_color_mask[constraint.body_a.slot];
 			}
 			if (b_dynamic) {
-				batch = std::max(batch, m_island_next_free_batch[constraint.body_b.slot]);
+				used |= m_island_color_mask[constraint.body_b.slot];
 			}
+
+			uint32_t batch = 0;
+			if (used != ~uint64_t {0}) {
+				batch = static_cast<uint32_t>(std::countr_one(used));
+				const uint64_t bit = uint64_t {1} << batch;
+				if (a_dynamic) {
+					m_island_color_mask[constraint.body_a.slot] |= bit;
+				}
+				if (b_dynamic) {
+					m_island_color_mask[constraint.body_b.slot] |= bit;
+				}
+			} else {
+				batch = k_mask_colors;
+				if (a_dynamic) {
+					batch = std::max(batch, m_island_next_free_batch[constraint.body_a.slot]);
+				}
+				if (b_dynamic) {
+					batch = std::max(batch, m_island_next_free_batch[constraint.body_b.slot]);
+				}
+				if (a_dynamic) {
+					m_island_next_free_batch[constraint.body_a.slot] = batch + 1;
+				}
+				if (b_dynamic) {
+					m_island_next_free_batch[constraint.body_b.slot] = batch + 1;
+				}
+			}
+
 			std::fill(
 			    m_island_constraint_batch.begin() + static_cast<std::ptrdiff_t>(group_begin),
 			    m_island_constraint_batch.begin() + static_cast<std::ptrdiff_t>(group_end),
 			    batch
 			);
 			batch_count = std::max(batch_count, batch + 1);
-			if (a_dynamic) {
-				m_island_next_free_batch[constraint.body_a.slot] = batch + 1;
-			}
-			if (b_dynamic) {
-				m_island_next_free_batch[constraint.body_b.slot] = batch + 1;
-			}
 			group_begin = group_end;
 		}
 
@@ -6786,9 +6728,6 @@ auto Simulator::buildIslands(std::span<const Manifold> manifolds, const std::vec
 }
 
 auto Simulator::prepareConstraint(const Manifold& manifold, const ContactPoint& contact) const -> std::optional<Constraint> {
-	ZoneScopedN("physics::PrepareConstraint");
-	ZoneValue((static_cast<uint64_t>(manifold.pair.a.body.slot) << 32) | static_cast<uint64_t>(manifold.pair.b.body.slot));
-
 	const Body* body_a = tryGetBody(manifold.pair.a.body);
 	const Body* body_b = tryGetBody(manifold.pair.b.body);
 	if (not body_a || not body_b) {
@@ -7215,9 +7154,6 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 		}
 	}
 
-	if (invalid_constraint_count > 0) {
-		TOAST_WARN("Physics", "Skipped {} invalid solver constraint(s)", invalid_constraint_count);
-	}
 	m_profile.invalid_constraints = invalid_constraint_count;
 
 	// Position correction is one pass over each island manifolds same reasoning as warm start above

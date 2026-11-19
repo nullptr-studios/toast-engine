@@ -481,7 +481,8 @@ float4 giClipAmbientAt(GiClipFrame frame, uint level, float3 worldPosition, floa
 }
 
 /// Empty cells hold nothing so the filtered value is divided by the solid share around the point
-bool sampleGiClipAmbient(float3 worldPosition, float3 normal, out float3 irradiance)
+/// @p blendLevels false takes the finer level alone, cheaper where a seam is hidden
+bool sampleGiClipAmbient(float3 worldPosition, float3 normal, bool blendLevels, out float3 irradiance)
 {
     irradiance = float3(0.0, 0.0, 0.0);
     const GiClipFrame frame = gGiClipFrame[0];
@@ -498,7 +499,7 @@ bool sampleGiClipAmbient(float3 worldPosition, float3 normal, out float3 irradia
     const float level = min(soft, last);
     const uint fine = uint(floor(level));
     float4 ambient = giClipAmbientAt(frame, fine, worldPosition, normal);
-    if (level > float(fine))
+    if (blendLevels && level > float(fine))
     {
         ambient = lerp(ambient, giClipAmbientAt(frame, fine + 1u, worldPosition, normal), level - float(fine));
     }
@@ -512,7 +513,17 @@ bool sampleGiClipAmbient(float3 worldPosition, float3 normal, out float3 irradia
 
 bool giHitIrradiance(float3 worldPosition, float3 normal, out float3 irradiance)
 {
-    if (sampleGiClipAmbient(worldPosition, normal, irradiance))
+    if (sampleGiClipAmbient(worldPosition, normal, true, irradiance))
+    {
+        return true;
+    }
+    return sampleRadianceCascades(worldPosition, normal, irradiance);
+}
+
+/// For reflected hits off screen where the blur of the lobe hides the step between levels
+bool giHitIrradianceNearest(float3 worldPosition, float3 normal, out float3 irradiance)
+{
+    if (sampleGiClipAmbient(worldPosition, normal, false, irradiance))
     {
         return true;
     }

@@ -32,6 +32,10 @@ namespace event {
 struct ProceduralVoxelLayout;
 }
 
+namespace toast::procedural {
+struct Request;
+}
+
 namespace toast {
 
 /**
@@ -186,10 +190,6 @@ private:
 	/** Writes one piece into target whose first voxel is the shape voxel origin */
 	static auto apply(voxel::Volume& target, const Landing& landing, glm::ivec3 origin) -> voxel::EditResult;
 
-	/** Builds the whole shape into a fresh volume, async */
-	[[nodiscard]]
-	static auto compose(const ComposeInput& input) -> std::shared_ptr<ComposeOutput>;
-
 	[[nodiscard]]
 	auto keyOf(const std::vector<Collected>& pieces) -> uint64_t;
 
@@ -200,14 +200,17 @@ private:
 	/** Start building the piece async */
 	void launchCompose(const std::vector<Collected>& pieces);
 
+	void refreshOutlineGhosts();
+
+	uint32_t m_ghost_generation = 0;
+
 	/** Copies the volumes of a finished compose into the parts */
 	void applyComposed(ComposeOutput& output);
 
-	/** Makes the volume of part cover bounds */
-	auto growPart(VoxelPart& part, const voxel::EditBounds& bounds) -> bool;
-
 	[[nodiscard]]
 	auto makeComposeInput(const std::vector<Collected>& pieces, bool wait) -> std::shared_ptr<ComposeInput>;
+
+	static void finishComposeInput(ComposeInput& input);
 
 	[[nodiscard]]
 	auto averageColor(const Landing& landing) -> glm::vec3;
@@ -218,8 +221,6 @@ private:
 	[[nodiscard]]
 	auto toolPiece() -> VoxelPiece*;
 
-	UID m_highlight_for;
-
 	std::vector<PieceLayout> m_layout;
 	std::vector<PieceLayout> m_pending_layout;
 	bool m_keep_grids = false;
@@ -228,6 +229,10 @@ private:
 	std::shared_ptr<ComposeOutput> m_last_compose;
 	bool m_compose_wanted = false;
 	bool m_pending_projections = false;
+
+	std::shared_ptr<const procedural::Request> m_composed;
+	uint32_t m_composed_parts_revision = 0;
+	bool m_compose_full = false;
 
 	struct CachedRemap {
 		voxel::PaletteRemapTable table {};

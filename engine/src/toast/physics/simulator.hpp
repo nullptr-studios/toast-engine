@@ -17,7 +17,6 @@
 #include "joint_solver.hpp"
 #include "manifold.hpp"
 #include "narrow_phase.hpp"
-#include "physics_material.hpp"
 #include "shape.hpp"
 #include "shape_query.hpp"
 #include "toast/physics/raycast.hpp"
@@ -684,6 +683,7 @@ private:
 	[[nodiscard]]
 	auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent& component) -> bool;
 	void despawnSettledFragments(float dt);
+	void destroyFallenBodies();
 	void retireVoxelBody(BodyID id);
 	auto debrisIfSmall(ShapeID shape) -> bool;
 	void destroyFragmentsOf(BodyID origin);
@@ -773,6 +773,7 @@ private:
 	std::vector<size_t> m_island_parents;
 	std::vector<bool> m_island_participates;
 	std::vector<size_t> m_island_by_root;
+	std::vector<uint64_t> m_island_color_mask;
 	std::vector<uint32_t> m_island_next_free_batch;
 	std::vector<uint32_t> m_island_constraint_batch;
 	std::vector<size_t> m_island_batch_cursor;
@@ -822,6 +823,7 @@ private:
 	std::unordered_map<uint32_t, size_t> m_fragment_index;
 	std::vector<PendingFragments> m_pending_fragments;
 	std::vector<BodyID> m_doomed_fragments;
+	std::vector<BodyID> m_scheduled_kills;
 
 	/// Round robin start so a connectivity job cap does not starve the same shapes
 	size_t m_connectivity_cursor = 0;

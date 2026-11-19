@@ -142,7 +142,6 @@ auto Joint3D::frameRotation() const -> glm::quat {
 }
 
 void Joint3D::drawDebug() {
-	ZoneScoped;
 	if (not draw_debug) {
 		return;
 	}

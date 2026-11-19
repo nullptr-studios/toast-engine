@@ -424,18 +424,17 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
     // Surfaces the walk entered within the lit budget, shaded after it so the walk loop stays small
     // Written by constant index so they stay in registers
     float slotT[kMaxLitSurfaces];
-    int slotAxis[kMaxLitSurfaces];
-    uint slotMaterial[kMaxLitSurfaces];
+    /// Material with the axis in the top two bits
+    uint slotKey[kMaxLitSurfaces];
     float3 slotWeight[kMaxLitSurfaces];
-    float slotFresnel[kMaxLitSurfaces];
+    // Only the first surface can reflect so only its fresnel is kept
+    float firstFresnel = 0.0;
     [unroll]
     for (uint k = 0u; k < kMaxLitSurfaces; ++k)
     {
         slotT[k] = 0.0;
-        slotAxis[k] = 0;
-        slotMaterial[k] = 0u;
+        slotKey[k] = 0u;
         slotWeight[k] = float3(0.0, 0.0, 0.0);
-        slotFresnel[k] = 0.0;
     }
 
     // A run of glass is nearly always one palette entry
@@ -578,10 +577,12 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
                         if (k == litInterfaces)
                         {
                             slotT[k] = t;
-                            slotAxis[k] = axis;
-                            slotMaterial[k] = material;
+                            slotKey[k] = material | (uint(axis) << 30u);
                             slotWeight[k] = result.transmittance;
-                            slotFresnel[k] = fresnel;
+                            if (k == 0u)
+                            {
+                                firstFresnel = fresnel;
+                            }
                         }
                     }
                     ++litInterfaces;
@@ -637,27 +638,43 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
     [loop]
     for (uint k = 0u; k < kMaxLitSurfaces; ++k)
     {
+        // Picked by constant index since a slot array read at k would move the arrays to local memory
+        float slotTk = 0.0;
+        uint slotKeyK = 0u;
+        float3 slotWeightK = float3(0.0, 0.0, 0.0);
+        [unroll]
+        for (uint j = 0u; j < kMaxLitSurfaces; ++j)
+        {
+            if (j == k)
+            {
+                slotTk = slotT[j];
+                slotKeyK = slotKey[j];
+                slotWeightK = slotWeight[j];
+            }
+        }
+        const int slotAxisK = int(slotKeyK >> 30u);
+        const uint slotMaterialK = slotKeyK & 0x3FFFFFFFu;
         // Weights only fall so nothing past a dim surface shows either
-        if (k >= litInterfaces || max(slotWeight[k].x, max(slotWeight[k].y, slotWeight[k].z)) < kContributionCutoff)
+        if (k >= litInterfaces || max(slotWeightK.x, max(slotWeightK.y, slotWeightK.z)) < kContributionCutoff)
         {
             break;
         }
-        if (lightCached && slotAxis[k] == lightAxis && slotMaterial[k] == lightMaterial)
+        if (lightCached && slotAxisK == lightAxis && slotMaterialK == lightMaterial)
         {
-            result.color += slotWeight[k] * cachedLight;
+            result.color += slotWeightK * cachedLight;
             continue;
         }
 
         float3 voxelNormal = float3(0.0, 0.0, 0.0);
-        voxelNormal[slotAxis[k]] = direction[slotAxis[k]] > 0.0 ? -1.0 : 1.0;
+        voxelNormal[slotAxisK] = direction[slotAxisK] > 0.0 ? -1.0 : 1.0;
         const float3 normal = normalize(mul(transpose((float3x3)worldToVoxel), voxelNormal));
         // The first surface of each brick reflects so glass seen through glass shows the scene and not the bare sky, unless what
         // it reflects is too dim to show past the glass in front
-        const bool reflects = k == 0u && max(slotWeight[k].x, max(slotWeight[k].y, slotWeight[k].z)) * slotFresnel[k] >= kReflectionCutoff;
+        const bool reflects = k == 0u && max(slotWeightK.x, max(slotWeightK.y, slotWeightK.z)) * firstFresnel >= kReflectionCutoff;
         float fresnel;
         bool debugView = false;
-        const float3 light = shadeInterface(camera + worldDirection * slotT[k], normal, view, input.position.xy,
-                                            samplePalette(record, slotMaterial[k]), reflects, fresnel, debugView);
+        const float3 light = shadeInterface(camera + worldDirection * slotTk, normal, view, input.position.xy,
+                                            samplePalette(record, slotMaterialK), reflects, fresnel, debugView);
         if (debugView)
         {
             result.color = light;
@@ -665,13 +682,13 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
             result.debugView = true;
             return true;
         }
-        result.color += slotWeight[k] * light;
+        result.color += slotWeightK * light;
         ++result.shaded;
         result.reflected = result.reflected || (reflects && kSpecReflection != kReflectionNone);
         // Never a reflecting surface whose reflection belongs to it alone
         lightCached = !reflects;
-        lightAxis = slotAxis[k];
-        lightMaterial = slotMaterial[k];
+        lightAxis = slotAxisK;
+        lightMaterial = slotMaterialK;
         cachedLight = light;
     }
     return true;

@@ -24,8 +24,6 @@ struct EditorOverlays {
 	bool volume_edges = false;          ///< Lines along the AABB volume for the voxels
 	bool projections = false;           ///< 2D diedrico projections peak dibujo tecnico
 
-	toast::UID selected;                ///< Focused node
-
 	toast::UID cut_root;                ///< The voxel the Split and Slice preview is on
 	bool cut_active = false;
 	glm::vec4 cut_plane {0.0f};         ///< red is where the normal points

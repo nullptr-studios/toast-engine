@@ -545,7 +545,6 @@ auto Workspace::voxelToolMouseButton(uint32_t button, bool pressed, int mods) ->
 		}
 		VoxelPiece* piece = shape->pickPiece(local.origin, local.direction);
 		m_focused_node = piece != nullptr ? piece->box() : Box<Node> {};
-		renderer::editorOverlays().selected = piece != nullptr ? piece->uid() : UID {};
 		event::NodePicked picked;
 		picked.workspace_handle = m_handle.data();
 		picked.node = piece != nullptr ? piece->uid() : UID {};
@@ -798,7 +797,6 @@ void Workspace::subscribeVoxelEditing() {
 			return;
 		}
 		m_focused_node = node;
-		renderer::editorOverlays().selected = node->uid();
 		event::NodePicked picked;
 		picked.workspace_handle = m_handle.data();
 		picked.node = node->uid();

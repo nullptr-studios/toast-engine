@@ -89,6 +89,7 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 	build_pipeline(m_temporal_pipeline, k_trace_format, half, "temporalMain", "TracedSpecular Temporal");
 	build_pipeline(m_composite_pipeline, scene_format, extent, "compositeMain", "TracedSpecular Composite");
 	build_pipeline(m_pyramid_pipeline, k_pyramid_format, half, "pyramidMain", "TracedSpecular Pyramid");
+	build_pipeline(m_filter_pipeline, k_trace_format, half, "filterMain", "TracedSpecular Filter");
 
 	m_scene_sets.create(core, shader->reflection, *layouts[k_specular_scene_set], "TracedSpecular");
 	m_instances_bound = std::ranges::any_of(shader->reflection.bindings, [](const ShaderBinding& binding) {
@@ -99,7 +100,7 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 
 	m_ready = m_surface_pipeline.isReady() && m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() &&
 	          m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() && m_pyramid_pipeline.isReady() &&
-	          !m_scene_sets.empty() && !m_storage_sets.empty();
+	          m_filter_pipeline.isReady() && !m_scene_sets.empty() && !m_storage_sets.empty();
 	if (m_ready) {
 		TOAST_INFO("Render", "TracedSpecularPass ready (GGX rays traced at half resolution)");
 	}
@@ -166,6 +167,7 @@ void TracedSpecularPass::createTargets(const VulkanCore& core, vk::Extent2D exte
 	m_resolved.create(core, half, k_trace_format, "TracedSpecular Resolved");
 	m_history[0].create(core, half, k_trace_format, "TracedSpecular History0");
 	m_history[1].create(core, half, k_trace_format, "TracedSpecular History1");
+	m_filtered.create(core, half, k_trace_format, "TracedSpecular Filtered");
 	createPyramid(core, half);
 	m_image_bound.invalidate();
 	m_history_valid = false;
@@ -290,6 +292,16 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 		writeVoxelStorageDescriptors(m_core->getDevice(), *m_storage_sets[frame_index], *frame->voxel_storage);
 	}
 
+	// Views only change on a resize after a wait for idle so recreating here never frees a pyramid in flight
+	const vk::ImageView depth_view = renderer->getOpaqueDepthView();
+	const vk::Extent2D depth_extent = renderer->renderExtent();
+	if (depth_view && m_hiz.source() != depth_view) {
+		m_hiz.create(*m_core, depth_view, depth_extent, HiZPyramid::Reduction::closest);
+	}
+	if (!m_hiz.isReady()) {
+		return source_view;
+	}
+
 	const PostProcessTarget& history_write = m_history[m_parity];
 	const PostProcessTarget& history_read = m_history[1 - m_parity];
 	const uint32_t set_index = (frame_index * 2) + m_parity;
@@ -310,6 +322,8 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	  m_resolved.view(),
 	  m_surface.view(),
 	  m_pyramid_view.has_value() ? **m_pyramid_view : vk::ImageView {},
+	  m_hiz.view(),
+	  m_filtered.view(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return source_view;
@@ -346,9 +360,25 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	);
 	params.resolve = glm::vec4(previous_view ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f);
 
+	{
+		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, "TracedSpecular depth pyramid");
+		m_hiz.record(cmd, depth_extent, frame->frame_data.jittered_view_projection);
+		sync::BarrierBatch barriers;
+		m_hiz.beforeFragmentRead(barriers);
+		barriers.flush(cmd);
+	}
+	const auto ssr = renderer->ssrSettings();
+	params.march = glm::vec4(
+	    static_cast<float>(m_hiz.builtLevels()),
+	    static_cast<float>(ssr.max_steps),
+	    ssr.thickness,
+	    renderer->voxelSpecularHitLights() ? 1.0f : 0.0f
+	);
+
 	const vk::PipelineLayout layout = *m_layout.getPipelineLayout();
 	const std::array<vk::DescriptorSet, 3> sets {m_scene_sets.get(frame_index), *m_storage_sets[frame_index], image_set};
-	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline) {
+	const auto draw = [&](const PostProcessTarget& target, const VulkanPipeline& pipeline, std::string_view scope_name) {
+		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, scope_name);
 		target.beginScope(cmd);
 		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
 		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, k_specular_scene_set, sets, {});
@@ -358,15 +388,17 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	};
 
 	if (previous_view) {
+		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, "TracedSpecular colour pyramid");
 		recordPyramid(cmd, layout, sets, params);
 	} else if (m_pyramid_state.usage == sync::Usage::none) {
 		sync::transition(cmd, m_pyramid_state, sync::Usage::shader_sampled);
 	}
-	draw(m_surface, m_surface_pipeline);
-	draw(m_trace, m_trace_pipeline);
-	draw(m_resolved, m_resolve_pipeline);
-	draw(history_write, m_temporal_pipeline);
-	draw(m_target, m_composite_pipeline);
+	draw(m_surface, m_surface_pipeline, "TracedSpecular surface");
+	draw(m_trace, m_trace_pipeline, "TracedSpecular trace");
+	draw(m_resolved, m_resolve_pipeline, "TracedSpecular resolve");
+	draw(history_write, m_temporal_pipeline, "TracedSpecular temporal");
+	draw(m_filtered, m_filter_pipeline, "TracedSpecular filter");
+	draw(m_target, m_composite_pipeline, "TracedSpecular composite");
 
 	m_parity = 1 - m_parity;
 	m_history_valid = true;
