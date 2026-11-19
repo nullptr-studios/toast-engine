@@ -1,9 +1,9 @@
 #include "procedural_voxel.hpp"
 
 #include "procedural_compose.hpp"
+#include "toast/voxel/nodes/voxel_piece.hpp"
 #include "voxel_node_utils.hpp"
 
-#include <bitset>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/hash.hpp>
 #include <toast/renderer/debug/editor_overlays.hpp>
@@ -586,9 +586,14 @@ void ProceduralVoxel::launchCompose(const std::vector<Collected>& pieces) {
 	if (VoxelPiece* tool = toolPiece()) {
 		if (VoxelPiece::GridRef grid = tool->readyGrid()) {
 			const glm::ivec3 box_min = glm::min(overlays.tool_box_min, overlays.tool_box_max);
-			const auto kind = overlays.tool_box_kind == 0   ? PieceKind::fill
-			                  : overlays.tool_box_kind == 1 ? PieceKind::carve
-			                                                : PieceKind::paint;
+
+			PieceKind kind = PieceKind::paint;
+			if (overlays.tool_box_kind == 0) {
+				kind = PieceKind::fill;
+			} else if (overlays.tool_box_kind == 1) {
+				kind = PieceKind::carve;
+			}
+
 			request.preview = procedural::Stamp {
 			  .id = procedural::k_preview_key,
 			  .grid = std::shared_ptr<const voxel::Volume>(grid, grid->volume.get()),

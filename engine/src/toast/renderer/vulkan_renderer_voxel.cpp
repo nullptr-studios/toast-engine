@@ -499,10 +499,17 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				m_voxel_change_tracker.published();
 			} else {
 				if (m_voxel_storage != nullptr) {
-					const char* reason = keep_mirror                   ? "a voxel debug view keeps a CPU mirror"
-					                     : !m_voxel_storage->isReady() ? "the previous upload is not ready"
-					                     : !patched.has_value()        ? "dead records or the edit outweigh half the scene"
-					                                                   : "the GPU buffers ran out of spare room";
+					const char* reason;
+					if (keep_mirror) {
+						reason = "a voxel debug view keeps a CPU mirror";
+					} else if (not m_voxel_storage->isReady()) {
+						reason = "the previous upload is not ready";
+					} else if (not patched.has_value()) {
+						reason = "dead records or the edit outweigh half the scene";
+					} else {
+						reason = "the GPU buffers ran out of spare room";
+					}
+
 					TOAST_INFO("Render", "Voxel scene uploads every brick again: {}", reason);
 				}
 				auto packed = std::make_shared<VoxelPackedScene>(VoxelPackedScene {
