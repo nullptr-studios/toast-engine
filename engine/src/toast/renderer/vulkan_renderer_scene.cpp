@@ -1270,7 +1270,7 @@ void VulkanRenderer::logLightingInputs(const RenderFrame& frame, glm::vec3 ambie
 	static std::optional<decltype(state)> last_state;
 	if (!last_state.has_value() || *last_state != state) {
 		last_state = state;
-		TOAST_TRACE(
+		/*TOAST_TRACE(
 		    "Render",
 		    "Lighting inputs: ambient=({:.3f}, {:.3f}, {:.3f}), {} directional, {} punctual, environment={}, "
 		    "{} mesh instances, render mode {}, exposure {:.3f}, {} probes (baked mask {:#x}),",
@@ -1285,7 +1285,7 @@ void VulkanRenderer::logLightingInputs(const RenderFrame& frame, glm::vec3 ambie
 		    frame.post_process.tonemap.exposure,
 		    frame.frame_data.reflection_probe_count_pad.x,
 		    frame.frame_data.reflection_probe_count_pad.z
-		);
+		);*/
 	}
 }
 

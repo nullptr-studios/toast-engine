@@ -533,7 +533,7 @@ auto VulkanRenderer::recordVoxelScopes(
 	                          specular_frame->irradiance_capture_index < 0;
 	// Read here since glass records under m_pass_mutex
 	m_ssr_frame = specular_frame != nullptr && specular_frame->render_mode == 0 && specular_frame->probe_capture_index < 0 &&
-	              specular_frame->irradiance_capture_index < 0 && isPostProcessPassEnabled("SSR");
+	              specular_frame->irradiance_capture_index < 0 && isPostProcessPassEnabled("SSR") && !m_traced_specular_frame;
 
 	const vk::CommandBuffer cmd = *frame.command_buffer;
 	{

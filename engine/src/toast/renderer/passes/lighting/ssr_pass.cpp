@@ -125,6 +125,11 @@ void SsrPass::onResize(vk::Extent2D extent) {
 
 auto SsrPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -> vk::ImageView {
 	ZoneScoped;
+	// Traced specular owns reflections on its frames and the rest keep the environment specular already in the colour
+	if (VulkanRenderer::instance->tracedSpecularFrame()) {
+		m_history_valid = false;
+		return source_view;
+	}
 	const bool pipelines_ready = m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() && m_temporal_pipeline.isReady() &&
 	                             m_composite_pipeline.isReady();
 	const bool targets_ready = m_target.isReady() && m_hit_target.isReady() && m_resolve_target.isReady() &&

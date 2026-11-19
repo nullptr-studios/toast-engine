@@ -124,13 +124,18 @@ public bool marchScreenHiz(ScreenMarch march, Sampler2D depthTexture, Sampler2D 
             const float2 scanExits = ((scanCell + forward) * kScanCell - p0) * inverseD;
             const float tScan = max(min(min(scanExits.x, scanExits.y) + 0.01 * tPixel, tEnd), tCell);
             float previous = t - tPixel;
-            for (float x = t; x < tScan; x += tPixel)
+            // Two pixels a step with both reads issued before either is tested so their latency overlaps
+            for (float x = t; x < tScan; x += 2.0 * tPixel)
             {
+                const float next = x + tPixel;
                 bool behind;
-                if (pixelHit(march, depthTexture, p0, d, z0, dz, x, size, behind))
+                bool behindNext;
+                const bool hitHere = pixelHit(march, depthTexture, p0, d, z0, dz, x, size, behind);
+                const bool hitNext = pixelHit(march, depthTexture, p0, d, z0, dz, next, size, behindNext) && next < tScan;
+                if (hitHere || hitNext)
                 {
-                    float lo = max(previous, 0.0);
-                    float hi = x;
+                    float lo = max(hitHere ? previous : x, 0.0);
+                    float hi = hitHere ? x : next;
                     [unroll]
                     for (uint j = 0u; j < 4u; ++j)
                     {
@@ -150,7 +155,7 @@ public bool marchScreenHiz(ScreenMarch march, Sampler2D depthTexture, Sampler2D 
                     fade = reachLimited ? 1.0 - smoothstep(0.7, 1.0, hi) : 1.0;
                     return true;
                 }
-                previous = x;
+                previous = next;
             }
             t = tScan;
             continue;

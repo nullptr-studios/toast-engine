@@ -446,12 +446,19 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 	stencil_info.storeOp = vk::AttachmentStoreOp::eStore;
 	stencil_info.clearValue = vk::ClearValue(vk::ClearDepthStencilValue {0.0f, 0});
 
-	const vk::Rect2D full {
-	  {0, 0},
-    m_extent
+	// The resolve reads the mask up to k_outline_reach past the rect, outside that the stale mask is never read
+	const int32_t mask_x0 = std::max(rect.offset.x - k_outline_reach, 0);
+	const int32_t mask_y0 = std::max(rect.offset.y - k_outline_reach, 0);
+	const int32_t mask_x1 =
+	    std::min(rect.offset.x + static_cast<int32_t>(rect.extent.width) + k_outline_reach, static_cast<int32_t>(m_extent.width));
+	const int32_t mask_y1 =
+	    std::min(rect.offset.y + static_cast<int32_t>(rect.extent.height) + k_outline_reach, static_cast<int32_t>(m_extent.height));
+	const vk::Rect2D mask_rect {
+	  {                                 mask_x0,                                  mask_y0},
+    {static_cast<uint32_t>(mask_x1 - mask_x0), static_cast<uint32_t>(mask_y1 - mask_y0)}
 	};
 	vk::RenderingInfo rendering_info {};
-	rendering_info.renderArea = full;
+	rendering_info.renderArea = mask_rect;
 	rendering_info.layerCount = 1;
 	rendering_info.pStencilAttachment = &stencil_info;
 
@@ -460,7 +467,7 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 	    0,
 	    std::array {vk::Viewport(0.0f, 0.0f, static_cast<float>(m_extent.width), static_cast<float>(m_extent.height), 0.0f, 1.0f)}
 	);
-	cmd.setScissor(0, std::array {full});
+	cmd.setScissor(0, std::array {mask_rect});
 
 	const vk::PipelineLayout layout = *m_mask_layout.getPipelineLayout();
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, std::array {*m_mask_sets[frame_index]}, {});

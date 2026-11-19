@@ -508,14 +508,27 @@ float4 temporalMain(VSOutput input) : SV_Target0
     return lerp(history, current, kTemporalBlend);
 }
 
+/// View depth capped like rayEnd, a single dot product since composite only compares texels with their neighbours
+float compositeDepth(int2 pixel, float2 size)
+{
+    const float depth = gDepth.Load(int3(pixel, 0)).r;
+    if (isFarDepth(depth))
+    {
+        return marchLimit();
+    }
+    const float2 uv = (float2(pixel) + 0.5) / size;
+    const float w = dot(gParams.inverseViewProjection[3], float4(uv * 2.0 - 1.0, depth, 1.0));
+    return min(1.0 / max(w, 1e-8), marchLimit());
+}
+
 /// Bilinear among texels whose rays ended about as far away
 [shader("fragment")]
 float4 compositeMain(VSOutput input) : SV_Target0
 {
     const int2 pixel = int2(input.position.xy);
+    const float2 size = fullSize();
     const float3 scene = gSceneColour.Load(int3(pixel, 0)).rgb;
-    float distance;
-    rayEnd(pixel, distance);
+    const float distance = compositeDepth(pixel, size);
 
     uint width;
     uint height;
@@ -525,28 +538,33 @@ float4 compositeMain(VSOutput input) : SV_Target0
     const int2 base = int2(floor(low));
     const float2 fraction = low - float2(base);
 
+    // All eight reads first so they overlap
+    float4 values[4];
+    float texelDistances[4];
+    [unroll]
+    for (int i = 0; i < 4; ++i)
+    {
+        const int2 texel = clamp(base + int2(i & 1, i >> 1), int2(0, 0), last);
+        values[i] = gTemporal.Load(int3(texel, 0));
+        texelDistances[i] = compositeDepth(texel * int(gParams.quality.x), size);
+    }
+
     float4 fog = float4(0.0, 0.0, 0.0, 0.0);
     float weightSum = 0.0;
     float4 nearest = float4(0.0, 0.0, 0.0, 1.0);
     float nearestError = 1e30;
-    for (int y = 0; y < 2; ++y)
+    [unroll]
+    for (int i = 0; i < 4; ++i)
     {
-        for (int x = 0; x < 2; ++x)
+        const float error = abs(texelDistances[i] - distance);
+        const float2 bilinear = lerp(1.0 - fraction, fraction, float2(float(i & 1), float(i >> 1)));
+        const float weight = bilinear.x * bilinear.y * exp(-error / (0.05 * distance + 0.05));
+        fog += values[i] * weight;
+        weightSum += weight;
+        if (error < nearestError)
         {
-            const int2 texel = clamp(base + int2(x, y), int2(0, 0), last);
-            const float4 value = gTemporal.Load(int3(texel, 0));
-            float texelDistance;
-            rayEnd(texel * int(gParams.quality.x), texelDistance);
-            const float error = abs(texelDistance - distance);
-            const float2 bilinear = lerp(1.0 - fraction, fraction, float2(float(x), float(y)));
-            const float weight = bilinear.x * bilinear.y * exp(-error / (0.05 * distance + 0.05));
-            fog += value * weight;
-            weightSum += weight;
-            if (error < nearestError)
-            {
-                nearestError = error;
-                nearest = value;
-            }
+            nearestError = error;
+            nearest = values[i];
         }
     }
     fog = weightSum > 1e-4 ? fog / weightSum : nearest;
