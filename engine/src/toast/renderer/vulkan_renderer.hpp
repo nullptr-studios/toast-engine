@@ -1128,6 +1128,11 @@ public:
 		m_outlined_rids = std::move(rids);
 	}
 
+	[[nodiscard]]
+	auto isNodeOutlined(uint64_t node_rid) const -> bool {
+		return isOutlined(node_rid);
+	}
+
 	void setDebugDrawEnabled(bool enabled) noexcept { m_debug_draw_enabled.store(enabled, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -1272,24 +1277,6 @@ public:
 		}
 		m_render_owner_filter = owner;
 		cancelIrradianceBake();
-	}
-
-	/**
-	 * Tints the voxels of node that are solid in highlight
-	 * @note nullptr clears it
-	 */
-	void setVoxelHighlight(const toast::VoxelNode* node, const voxel::Volume* highlight, uint64_t part_key = 0) {
-		std::scoped_lock lock(m_voxel_proxy_mutex);
-		if (highlight == nullptr) {
-			m_voxel_highlights.erase(VoxelHighlightKey {node, part_key});
-		} else {
-			m_voxel_highlights[VoxelHighlightKey {node, part_key}] = highlight;
-		}
-	}
-
-	void clearVoxelHighlights(const toast::VoxelNode* node) {
-		std::scoped_lock lock(m_voxel_proxy_mutex);
-		std::erase_if(m_voxel_highlights, [node](const auto& entry) { return entry.first.node == node; });
 	}
 
 	void setSecondaryOwner(const toast::INodeOwner* owner, const glm::mat4& transform, const toast::Node* hidden) {
@@ -1726,20 +1713,6 @@ private:
 
 	const toast::INodeOwner* m_render_owner_filter = nullptr;
 
-	struct VoxelHighlightKey {
-		const toast::VoxelNode* node = nullptr;
-		uint64_t part = 0;
-
-		auto operator==(const VoxelHighlightKey&) const noexcept -> bool = default;
-	};
-
-	struct VoxelHighlightKeyHash {
-		auto operator()(const VoxelHighlightKey& key) const noexcept -> size_t {
-			return std::hash<const void*> {}(key.node) ^ (std::hash<uint64_t> {}(key.part) * 0x9E3779B97F4A7C15ull);
-		}
-	};
-
-	std::unordered_map<VoxelHighlightKey, const voxel::Volume*, VoxelHighlightKeyHash> m_voxel_highlights;
 	const toast::INodeOwner* m_secondary_owner = nullptr;
 	glm::mat4 m_secondary_transform {1.0f};
 	const toast::Node* m_secondary_hidden = nullptr;

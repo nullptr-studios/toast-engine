@@ -560,6 +560,7 @@ void VulkanRenderer::resetFrameBuild(RenderFrame& frame) {
 	frame.mesh_instances.clear();
 	frame.material_ranges.clear();
 	frame.voxel_instances.clear();
+	frame.voxel_outline_only.clear();
 	frame.voxel_storage.reset();
 	frame.probe_capture_index = -1;
 	frame.probe_capture_face = 0;

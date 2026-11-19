@@ -33,7 +33,7 @@ struct VoxelInstance
     float4x4 worldToVoxel;
     float4x4 previousVoxelToWorld;
     uint recordIndex;
-    uint highlightRecord; /// this is for selection tint
+    uint pad0;
     /// Bit 0 no real previous frame and bit 1 a mirrored transform
     uint flags;
     /// First global coarse cell of this instance in the cell cull dispatch

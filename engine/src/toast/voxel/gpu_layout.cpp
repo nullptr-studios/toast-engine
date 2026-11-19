@@ -1,5 +1,6 @@
 #include "gpu_layout.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace voxel::gpu {
@@ -8,11 +9,7 @@ namespace {
 
 [[nodiscard]]
 auto poolSlotsInUse(const BrickPool& pool) -> uint32_t {
-	uint32_t used = 0;
-	while (used < pool.capacity() && pool.isValid(used)) {
-		++used;
-	}
-	return used;
+	return std::min(pool.slotsInUse(), pool.capacity());
 }
 
 [[nodiscard]]

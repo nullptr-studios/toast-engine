@@ -66,6 +66,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto slotsInUse() const noexcept -> uint32_t {
+		return m_next_unused.load(std::memory_order_acquire);
+	}
+
+	[[nodiscard]]
 	auto isValid(uint32_t id) const noexcept -> bool {
 		return id < m_next_unused.load(std::memory_order_acquire);
 	}
