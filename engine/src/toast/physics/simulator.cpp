@@ -797,6 +797,7 @@ void Simulator::tick() {
 	spawnBudgetedFragments();
 	enforceFragmentBudget(dt);
 	despawnSettledFragments(dt);
+	destroyFallenBodies();
 	checkJointAnchors();
 	integrate(dt);
 	checkTriggers();
@@ -1962,6 +1963,43 @@ void Simulator::despawnSettledFragments(float dt) {
 		destroyBody(id);
 	}
 	m_profile.fragments_despawned = doomed.size();
+}
+
+void Simulator::destroyFallenBodies() {
+	ZoneScopedN("physics::DestroyFallenBodies");
+
+	const float kill_z = tunables().kill_plane_z;
+	if (not std::isfinite(kill_z)) {
+		return;
+	}
+
+	std::erase_if(m_scheduled_kills, [this](BodyID id) { return not valid(id); });
+
+	std::vector<toast::Box<Rigidbody>> fallen_nodes;
+	for (const NodeBinding& binding : m_node_bindings) {
+		const Body* body = tryGetBody(binding.body);
+		if (body != nullptr && body->enabled && body->type == BodyType::dynamic_body && body->position.z < kill_z &&
+		    binding.node.exists() && std::ranges::find(m_scheduled_kills, binding.body) == m_scheduled_kills.end()) {
+			fallen_nodes.push_back(binding.node);
+			m_scheduled_kills.push_back(binding.body);
+		}
+	}
+
+	std::vector<BodyID> fallen_fragments;
+	for (const FragmentRecord& fragment : m_fragments) {
+		const Body* body = tryGetBody(fragment.body);
+		if (body != nullptr && body->position.z < kill_z) {
+			fallen_fragments.push_back(fragment.body);
+		}
+	}
+
+	for (toast::Box<Rigidbody>& node : fallen_nodes) {
+		event::send<event::CacheNode>(*node);
+		event::send<event::DestroyNode>(*node);
+	}
+	for (const BodyID id : fallen_fragments) {
+		destroyBody(id);
+	}
 }
 
 void Simulator::syncEnabledState() {

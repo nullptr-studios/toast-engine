@@ -64,10 +64,10 @@ auto enabled() noexcept -> bool {
 	if (length > 0 && length < 4) {
 		return value[0] != L'0';
 	}
-#ifdef NDEBUG
-	return false;
-#else
+#ifdef TOAST_DEV_TOOLS
 	return true;
+#else
+	return false;
 #endif
 }
 

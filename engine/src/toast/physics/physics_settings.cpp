@@ -72,6 +72,16 @@ void registerPhysicsSettings() {
 	     .step = 1.0f},
 	    &Tunables::wind_shelter_distance);
 
+	flt("physics.world.kill_plane_z",
+	    -50.0f,
+	    {.label = "Kill plane Z",
+	     .category = "World",
+	     .description = "Rigidbodies that fall below this height are destroyed",
+	     .min = -100000.0f,
+	     .max = 100000.0f,
+	     .step = 1.0f},
+	    &Tunables::kill_plane_z);
+
 	uint_setting(
 	    "physics.solver.iterations",
 	    8,
