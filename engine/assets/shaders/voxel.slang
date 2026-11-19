@@ -263,7 +263,6 @@ float gridLine(float2 position, float2 voxelsPerPixel, float period, float halfW
 static const uint kOverlayUnitGrid = 1u;
 static const uint kOverlayVoxelGrid = 2u;
 static const uint kOverlayVoxelEdges = 4u;
-static const float3 kSelectionTint = float3(1.0, 0.366, 0.0);
 
 /// Voxel contour thing
 float voxelEdgeCoverage(uint recordIndex, RayHit hit, float3 cellPosition, float3 voxelsPerPixel, int3 outward)
@@ -384,10 +383,6 @@ float3 applyEditorOverlays(float3 color, VoxelInstance instance, RayHit hit, flo
         }
     }
 
-    if (instance.highlightRecord != 0u && voxelMaterialAt(instance.highlightRecord - 1u, hit.voxel) != 0u)
-    {
-        color = lerp(color, kSelectionTint, 0.55);
-    }
     return color;
 }
 

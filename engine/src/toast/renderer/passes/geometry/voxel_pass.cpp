@@ -952,7 +952,6 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 		const auto index = static_cast<uint32_t>(m_draws.size());
 		VoxelInstanceGpu instance =
 		    makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.previous_model, proxy.has_previous, proxy.record_index);
-		instance.pad0 = proxy.highlight_record;
 		instance.cell_base = m_total_cells;
 		if (proxy.mirrored) {
 			instance.flags |= k_voxel_instance_mirrored;
