@@ -2727,7 +2727,7 @@ void Workspace::tick() {
 		tickActiveCameraController();
 		if (m_root_node.exists()) {
 			tickAnimationPreviews(*m_root_node);
-			if (receivesEvents()) {
+			if (receivesEvents() && isActiveWorkspace()) {
 				m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::editor_tick);
 			}
 		}
