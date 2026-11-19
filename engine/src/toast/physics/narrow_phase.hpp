@@ -43,7 +43,8 @@ struct ManifoldQueue {
 class NarrowPhase {
 public:
 	[[nodiscard]]
-	auto generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates) const -> ManifoldQueue;
+	auto generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates, bool time_pairs) const
+	    -> ManifoldQueue;
 
 	/// Same validate/count/keep-or-reject step generateManifolds runs so a split pair can fold results in too
 	void accumulate(std::span<Manifold> manifolds, CollisionWorldView world, ManifoldQueue& queue) const;

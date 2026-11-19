@@ -1098,9 +1098,6 @@ auto contactGroup(const glm::vec3& normal) -> uint8_t {
 }
 
 auto collideSpheres(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& shape_a = a.shape;
 	const Body& body_a = a.body;
 	const Shape& shape_b = b.shape;
@@ -1147,9 +1144,6 @@ auto collideSpheres(BroadPhasePair pair, CollisionElement a, CollisionElement b)
 
 auto collideSphereBox(BroadPhasePair pair, CollisionElement sphere_element, CollisionElement box_element)
     -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& sph_shape = sphere_element.shape;
 	const Body& sph_body = sphere_element.body;
 	const Shape& box_shape = box_element.shape;
@@ -1257,9 +1251,6 @@ auto collideSphereBox(BroadPhasePair pair, CollisionElement sphere_element, Coll
 
 auto collideSphereCapsule(BroadPhasePair pair, CollisionElement sphere_element, CollisionElement capsule_element)
     -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& sph_shape = sphere_element.shape;
 	const Body& sph_body = sphere_element.body;
 	const Shape& caps_shape = capsule_element.shape;
@@ -1332,12 +1323,6 @@ auto collideSphereCapsule(BroadPhasePair pair, CollisionElement sphere_element, 
 }
 
 namespace {
-[[nodiscard]]
-auto queryVolumeInVoxels(const AABB& bounds) -> uint64_t {
-	const glm::vec3 extent = glm::max(bounds.max - bounds.min, glm::vec3(0.0f)) / voxel::k_voxel_size;
-	return static_cast<uint64_t>(extent.x) * static_cast<uint64_t>(extent.y) * static_cast<uint64_t>(extent.z);
-}
-
 // Surface area not volume since queryVoxelSurface only ever visits surface-classified voxels
 [[nodiscard]]
 auto querySurfaceAreaInVoxels(const AABB& bounds) -> uint64_t {
@@ -1352,9 +1337,6 @@ void collideSphereVoxel(
     BroadPhasePair pair, CollisionElement sphere_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
 ) {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& sph_shape = sphere_element.shape;
 	const Body& sph_body = sphere_element.body;
 	const Shape& voxel_shape = voxel_element.shape;
@@ -1371,7 +1353,6 @@ void collideSphereVoxel(
 	  .min = local_center - glm::vec3(radius),
 	  .max = local_center + glm::vec3(radius),
 	};
-	ZoneValue(queryVolumeInVoxels(local_bounds));
 
 	const VoxelQueryContext context {
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
@@ -1390,7 +1371,6 @@ void collideSphereVoxel(
 	std::array<std::optional<BestContact>, voxel::k_normal_direction_count> best_per_normal;
 
 	{
-		ZoneScopedN("physics::VoxelQueryWalk");
 		queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
 			if (candidate.normal_index >= best_per_normal.size()) {
 				return;
@@ -1436,7 +1416,6 @@ void collideSphereVoxel(
 	}
 
 	{
-		ZoneScopedN("physics::BuildManifolds");
 		for (size_t normal_index = 0; normal_index < best_per_normal.size(); ++normal_index) {
 			const std::optional<BestContact>& best = best_per_normal[normal_index];
 			if (not best.has_value()) {
@@ -1467,9 +1446,6 @@ void collideSphereVoxel(
 }
 
 auto collideBoxes(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& shape_a = a.shape;
 	const Body& body_a = a.body;
 	const Shape& shape_b = b.shape;
@@ -1505,9 +1481,6 @@ auto collideBoxes(BroadPhasePair pair, CollisionElement a, CollisionElement b) -
 
 auto collideCapsuleBox(BroadPhasePair pair, CollisionElement capsule_element, CollisionElement box_element)
     -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& capsule_shape = capsule_element.shape;
 	const Body& capsule_body = capsule_element.body;
 	const Shape& box_shape = box_element.shape;
@@ -1603,9 +1576,6 @@ auto collideCapsuleBox(BroadPhasePair pair, CollisionElement capsule_element, Co
 }
 
 auto collideCapsules(BroadPhasePair pair, CollisionElement a, CollisionElement b) -> std::optional<Manifold> {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& shape_a = a.shape;
 	const Body& body_a = a.body;
 	const Shape& shape_b = b.shape;
@@ -1686,6 +1656,8 @@ auto collideCapsules(BroadPhasePair pair, CollisionElement a, CollisionElement b
 }
 
 namespace {
+
+constexpr size_t k_voxel_pair_test_budget = 4096;
 
 struct VoxelVoxelScratch {
 	std::array<std::vector<_detail::ContactCandidate>, voxel::k_normal_direction_count> candidates_per_normal;
@@ -1816,8 +1788,6 @@ auto classifyVoxelVoxelSplit(const VoxelVoxelPairView& view) -> std::optional<Vo
 }
 
 auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_region) -> VoxelPairPartial {
-	ZoneScoped;
-
 	VoxelPairPartial partial;
 	const auto setup = voxelVoxelSetup(view);
 	if (not setup) {
@@ -1828,7 +1798,7 @@ auto collideVoxelVoxelRegion(const VoxelVoxelPairView& view, const AABB& probe_r
 	const glm::mat3 probe_basis = setup->probe_basis;
 	const glm::mat3 ref_basis_inv = setup->ref_basis_inv;
 	const glm::vec3 ref_origin = setup->ref_origin;
-	size_t remaining_budget = 256;
+	size_t remaining_budget = k_voxel_pair_test_budget;
 
 	queryVoxelSurface(setup->probe_context, probe_region, [&](const VoxelCandidate& probe_c) -> bool {
 		if (remaining_budget == 0) {
@@ -1983,9 +1953,6 @@ void collideVoxelVoxel(
     BroadPhasePair pair, CollisionElement a, const VoxelShapeData& data_a, CollisionElement b, const VoxelShapeData& data_b,
     std::vector<Manifold>& output
 ) {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	bool a_is_probe = data_a.solid_voxel_count <= data_b.solid_voxel_count;
 	auto probe = a_is_probe ? a : b;
 	const VoxelShapeData& probe_data = a_is_probe ? data_a : data_b;
@@ -2035,9 +2002,6 @@ void collideVoxelVoxel(
 	if (glm::any(glm::greaterThan(probe_search_bounds.min, probe_search_bounds.max))) {
 		return;
 	}
-	ZoneValue(queryVolumeInVoxels(probe_search_bounds));
-	ZoneValue(queryVolumeInVoxels(probe.shape.voxel.local_bounds));
-	ZoneValue(queryVolumeInVoxels(ref.shape.voxel.local_bounds));
 
 	static thread_local VoxelVoxelScratch scratch;
 	scratch.reset();
@@ -2046,10 +2010,9 @@ void collideVoxelVoxel(
 	auto& normal_sum_per_group = scratch.normal_sum_per_group;
 	auto& material_per_group = scratch.material_per_group;
 	auto& group_started = scratch.group_started;
-	size_t remaining_budget = 256;
+	size_t remaining_budget = k_voxel_pair_test_budget;
 
 	{
-		ZoneScopedN("physics::VoxelQueryWalk");
 		queryVoxelSurface(probe_context, probe_search_bounds, [&](const VoxelCandidate& probe_c) -> bool {
 			if (remaining_budget == 0) {
 				return false;
@@ -2138,7 +2101,6 @@ void collideVoxelVoxel(
 	}
 
 	{
-		ZoneScopedN("physics::BuildManifolds");
 		for (size_t i = 0; i < candidates_per_normal.size(); ++i) {
 			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[i];
 			if (bucket.empty()) {
@@ -2176,9 +2138,6 @@ void collideCapsuleVoxel(
     BroadPhasePair pair, CollisionElement capsule_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
 ) {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& caps_shape = capsule_element.shape;
 	const Body& caps_body = capsule_element.body;
 	const Shape& voxel_shape = voxel_element.shape;
@@ -2199,7 +2158,6 @@ void collideCapsuleVoxel(
 	  .min = glm::min(local_a, local_b) - glm::vec3(radius),
 	  .max = glm::max(local_a, local_b) + glm::vec3(radius),
 	};
-	ZoneValue(queryVolumeInVoxels(local_bounds));
 	const VoxelQueryContext context {
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
@@ -2218,7 +2176,6 @@ void collideCapsuleVoxel(
 	std::array<std::optional<BestContact>, voxel::k_normal_direction_count> best_per_normal;
 
 	{
-		ZoneScopedN("physics::VoxelQueryWalk");
 		queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
 			if (candidate.normal_index >= best_per_normal.size()) {
 				return;
@@ -2250,7 +2207,6 @@ void collideCapsuleVoxel(
 	}
 
 	{
-		ZoneScopedN("physics::BuildManifolds");
 		for (size_t normal_index = 0; normal_index < best_per_normal.size(); ++normal_index) {
 			const std::optional<BestContact>& best = best_per_normal[normal_index];
 			if (not best.has_value()) {
@@ -2408,8 +2364,6 @@ auto splitVoxelRegions(const AABB& local_bounds, size_t region_count) -> std::ve
 }
 
 auto collideBoxVoxelRegion(const BoxVoxelPairView& view, const AABB& region) -> VoxelPairPartial {
-	ZoneScoped;
-
 	const _detail::WorldBox local_box = boxVoxelLocalBox(view);
 	const VoxelQueryContext context {
 	  .volume = *view.voxel_data.volume,
@@ -2536,9 +2490,6 @@ void collideBoxVoxel(
     BroadPhasePair pair, CollisionElement box_element, CollisionElement voxel_element, const VoxelShapeData& voxel_data,
     std::vector<Manifold>& output
 ) {
-	ZoneScoped;
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape& box_shape = box_element.shape;
 	const Body& box_body = box_element.body;
 	const Shape& voxel_shape = voxel_element.shape;
@@ -2564,8 +2515,6 @@ void collideBoxVoxel(
 	  .min = local_box.center - local_world_extents,
 	  .max = local_box.center + local_world_extents,
 	};
-	ZoneValue(queryVolumeInVoxels(local_bounds));
-	ZoneValue(queryVolumeInVoxels(voxel_shape.voxel.local_bounds));
 	const VoxelQueryContext context {
 	  .volume = *voxel_data.volume, .surface = voxel_data.surface, .palette = voxel_data.palette, .materials = voxel_data.materials
 	};
@@ -2579,7 +2528,6 @@ void collideBoxVoxel(
 	auto& group_started = scratch.group_started;
 
 	{
-		ZoneScopedN("physics::VoxelQueryWalk");
 		queryVoxelSurface(context, local_bounds, [&](const VoxelCandidate& candidate) {
 			if (candidate.normal_index >= candidates_per_normal.size()) {
 				return;
@@ -2591,7 +2539,6 @@ void collideBoxVoxel(
 			  .half_extents = (candidate.max - candidate.min) * 0.5f,
 			};
 
-			ZoneScopedN("physics::BoxVoxelSAT");    // NOLINT
 			auto sat = _detail::collideWorldBoxes(local_box, voxel_box, voxel::k_all_faces_exposed, candidate.exposure);
 			if (not sat.has_value()) {
 				return;
@@ -2624,7 +2571,6 @@ void collideBoxVoxel(
 	}
 
 	{
-		ZoneScopedN("physics::BuildManifolds");
 		for (size_t normal_index = 0; normal_index < candidates_per_normal.size(); ++normal_index) {
 			std::vector<_detail::ContactCandidate>& bucket = candidates_per_normal[normal_index];
 			if (bucket.empty()) {

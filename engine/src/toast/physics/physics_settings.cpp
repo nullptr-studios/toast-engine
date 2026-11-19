@@ -666,6 +666,14 @@ void registerPhysicsSettings() {
 			 .step = 1.0},
 	    &Tunables::voxel_pair_split_regions
 	);
+	toast::settings::declareBool(
+	    "physics.debug.time_narrow_pairs",
+	    false,
+	    {.label = "Time narrow phase pairs",
+			 .category = "Debug",
+			 .description = "Times every narrow phase pair per shape type for the debug overlay"}
+	)
+	    .onChange([](bool v) { g_tunables.time_narrow_pairs = v; });
 	uint_setting(
 	    "physics.character.sweep_refine_iterations",
 	    6,

@@ -773,6 +773,7 @@ private:
 	std::vector<size_t> m_island_parents;
 	std::vector<bool> m_island_participates;
 	std::vector<size_t> m_island_by_root;
+	std::vector<uint64_t> m_island_color_mask;
 	std::vector<uint32_t> m_island_next_free_batch;
 	std::vector<uint32_t> m_island_constraint_batch;
 	std::vector<size_t> m_island_batch_cursor;

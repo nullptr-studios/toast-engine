@@ -90,7 +90,6 @@ void Collider::clearColorOverride() {
 }
 
 void Collider::drawDebug() {
-	ZoneScoped;
 	if (!m_debug_visible) {
 		return;
 	}
