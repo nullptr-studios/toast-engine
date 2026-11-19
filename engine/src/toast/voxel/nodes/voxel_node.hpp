@@ -349,6 +349,8 @@ public:
 	signals::Signal<toast::Box<toast::Node>> contact_end;      ///< Sent when it stops touching another body
 	signals::Signal<> went_to_sleep;                           ///< Sent when the body falls asleep
 	signals::Signal<> woke_up;                                 ///< Sent when the body wakes up
+	
+	signals::Signal<> grabbed;                                 ///< Triggered when an object is grabbed
 
 	/** Puts the physics body to sleep */
 	[[Reflect]]
