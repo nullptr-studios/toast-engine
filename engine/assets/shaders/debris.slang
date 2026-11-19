@@ -3,7 +3,6 @@
 struct Params {
     float3 gravity;
     float dt;
-    float fadeIn;
     float restitution;
     float friction;
     float voxelSize;
@@ -19,6 +18,7 @@ struct Params {
     uint pad0;
     uint pad1;
     uint pad2;
+    uint pad3;
 };
 
 [[vk::push_constant]]
@@ -34,7 +34,8 @@ struct DebrisParticle {
     uint albedo;
     float scale;
     uint glass;
-    uint pad0;
+    /// Palette emissive intensity
+    float emissive;
     uint pad1;
 };
 
@@ -58,7 +59,7 @@ struct DebrisSpawn {
     float lifetime;
     float scale;
     uint glass;
-    uint pad0;
+    float emissive;
 };
 
 struct DebrisVolume {
@@ -90,6 +91,9 @@ StructuredBuffer<DebrisVolume> gVolumes;
 StructuredBuffer<uint> gRetires;
 [[vk::binding(8, 0)]]
 RWStructuredBuffer<uint> gGrid;
+/// Opaque caster box min xyz and max xyz as ordered uints then changing pieces then the fastest speed bits
+[[vk::binding(9, 0)]]
+RWStructuredBuffer<uint> gShadowBounds;
 
 struct VolumeRecord {
     uint brickDimsX;
@@ -125,7 +129,6 @@ static const uint kTagUniform = 1;
 static const uint kMaskBits = 0xFFu;
 static const uint kFlagAsleep = 1u << 24;
 static const uint kFlagGlass = 1u << 25;
-static const float kSpawnScale = 0.4;       // grows from this share of its size
 
 static const float kSleepSpeed = 0.2;       // below this speed a piece may sleep
 static const uint kSleepSteps = 15;
@@ -239,11 +242,10 @@ float pieceRadius(uint mask, float scale) {
     return gParams.voxelSize * scale * lerp(0.6, 1.0, float(countbits(mask & kMaskBits)) / 8.0);
 }
 
-// Grows in after spawning and shrinks away before dying
+// Shrinks away before dying
 float displayScale(DebrisMotion motion) {
-    float grow = lerp(kSpawnScale, 1.0, saturate(motion.age / max(gParams.fadeIn, 1e-4)));
     float shrink = smoothstep(0.0, max(gParams.fadeOut, 1e-4), motion.lifetime - motion.age);
-    return motion.baseScale * grow * shrink;
+    return motion.baseScale * shrink;
 }
 
 struct Contact {
@@ -361,9 +363,46 @@ void appendVoxels(uint index, uint mask, bool glass) {
     }
 }
 
+/// Sorts like the float it came from
+uint orderedFloat(float value) {
+    uint bits = asuint(value);
+    return (bits & 0x80000000u) != 0u ? ~bits : bits | 0x80000000u;
+}
+
+/// Feeds the shadow pass cull and cache, changing means its shadow moves this step
+void addShadowCaster(DebrisParticle particle, DebrisMotion motion, bool changing) {
+    if ((particle.packed & kFlagGlass) != 0u) {
+        return;
+    }
+    // Two voxel wide box around the center at any rotation
+    const float radius = 1.74 * gParams.voxelSize * motion.baseScale;
+    const float3 low = particle.position - radius;
+    const float3 high = particle.position + radius;
+    InterlockedMin(gShadowBounds[0], orderedFloat(low.x));
+    InterlockedMin(gShadowBounds[1], orderedFloat(low.y));
+    InterlockedMin(gShadowBounds[2], orderedFloat(low.z));
+    InterlockedMax(gShadowBounds[3], orderedFloat(high.x));
+    InterlockedMax(gShadowBounds[4], orderedFloat(high.y));
+    InterlockedMax(gShadowBounds[5], orderedFloat(high.z));
+    const bool fading = motion.age > motion.lifetime - gParams.fadeOut;
+    if (changing || fading) {
+        InterlockedAdd(gShadowBounds[6], 1u);
+    }
+    // Positive floats sort as uints
+    InterlockedMax(gShadowBounds[7], asuint(length(particle.velocity)));
+}
+
 [shader("compute")]
 [numthreads(1, 1, 1)]
 void resetMain(uint3 id : SV_DispatchThreadID) {
+    gShadowBounds[0] = 0xFFFFFFFFu;
+    gShadowBounds[1] = 0xFFFFFFFFu;
+    gShadowBounds[2] = 0xFFFFFFFFu;
+    gShadowBounds[3] = 0u;
+    gShadowBounds[4] = 0u;
+    gShadowBounds[5] = 0u;
+    gShadowBounds[6] = 0u;
+    gShadowBounds[7] = 0u;
     gDrawArgs[0] = 36u;
     gDrawArgs[1] = 0u;
     gDrawArgs[2] = 0u;
@@ -544,6 +583,7 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
             gCurrent[i] = particle;
             gMotion[i] = motion;
             appendVoxels(i, mask, glass);
+            addShadowCaster(particle, motion, false);
             return;
         }
         particle.packed &= ~kFlagAsleep;
@@ -695,6 +735,8 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
     gCurrent[i] = particle;
     gMotion[i] = motion;
     appendVoxels(i, mask, glass);
+    // Falling asleep this step still moved it
+    addShadowCaster(particle, motion, true);
 }
 
 [shader("compute")]
@@ -717,7 +759,7 @@ void spawnMain(uint3 id : SV_DispatchThreadID) {
     particle.velocity = spawn.velocity;
     particle.albedo = spawn.albedo;
     particle.glass = spawn.glass;
-    particle.pad0 = 0u;
+    particle.emissive = spawn.emissive;
     particle.pad1 = 0u;
 
     DebrisMotion motion;
@@ -733,4 +775,5 @@ void spawnMain(uint3 id : SV_DispatchThreadID) {
     gCurrent[spawn.slot] = particle;
 
     appendVoxels(spawn.slot, spawn.packed & kMaskBits, (spawn.packed & kFlagGlass) != 0u);
+    addShadowCaster(particle, motion, true);
 }

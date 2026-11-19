@@ -114,7 +114,8 @@ auto SsaoPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 	const vk::ImageView depth_view = VulkanRenderer::instance->getDepthView();
 	const vk::ImageView normal_view = VulkanRenderer::instance->getSceneNormalView();
 	const vk::ImageView indirect_view = VulkanRenderer::instance->getSceneIndirectView();
-	if (!depth_view || !normal_view || !indirect_view) {
+	const vk::ImageView denoised_view = VulkanRenderer::instance->getVoxelDenoisedIndirectView();
+	if (!depth_view || !normal_view || !indirect_view || !denoised_view) {
 		return source_view;
 	}
 
@@ -125,10 +126,11 @@ auto SsaoPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		  vk::DescriptorImageInfo(*m_point_sampler, normal_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  vk::DescriptorImageInfo(*m_point_sampler, indirect_view, vk::ImageLayout::eShaderReadOnlyOptimal),
 		  // Point sampled since the upsample picks its own texels
-		  vk::DescriptorImageInfo(*m_point_sampler, m_occlusion_target.view(), vk::ImageLayout::eShaderReadOnlyOptimal)
+		  vk::DescriptorImageInfo(*m_point_sampler, m_occlusion_target.view(), vk::ImageLayout::eShaderReadOnlyOptimal),
+		  vk::DescriptorImageInfo(*m_point_sampler, denoised_view, vk::ImageLayout::eShaderReadOnlyOptimal)
 		};
 
-		std::array<vk::WriteDescriptorSet, 5> writes {};
+		std::array<vk::WriteDescriptorSet, 6> writes {};
 		for (uint32_t binding = 0; binding < writes.size(); ++binding) {
 			writes[binding] = vk::WriteDescriptorSet(
 			    *m_descriptor_sets[frame_index], binding, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_infos[binding]
@@ -156,7 +158,7 @@ auto SsaoPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView
 		    static_cast<float>(size.width),
 		    static_cast<float>(size.height),
 		    static_cast<float>(frame != nullptr ? frame->sequence % 4096 : 0),
-		    0.0f
+		    VulkanRenderer::instance->voxelDenoisedIndirectFrame() ? 1.0f : 0.0f
 		);
 
 		target.beginScope(cmd);

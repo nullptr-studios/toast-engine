@@ -2,7 +2,12 @@
 import voxel_dda;
 import lighting;
 import gi_sample;
+import gi_common;
+import scene_trace;
+import trace_shading;
 import scene_normal;
+import glass_reflection;
+import fullscreen;
 import depth_convention;
 
 /// Instance index then brick grid index sorted far to near
@@ -14,17 +19,55 @@ struct GlassPush
 {
     /// Run start in gGlassBricks since SV_InstanceID leaves out firstInstance
     uint first;
-    /// 0 when the backdrop was not captured this frame
-    float refraction;
-    /// Meters past which glass does not refract
-    float refractionDistance;
-    /// Voxels the glass run walk follows
-    uint refractionVoxels;
     /// Lit glass surfaces per brick and pixel past which layers only absorb
     uint litSurfaces;
     /// 1 when gBackdropDepth holds this frame opaque depth and the pipeline keeps only glass in front of it
     uint depthTest;
+    /// Meters a reflection ray travels
+    float reflectionReach;
+    /// Rougher surfaces keep the environment
+    float reflectionRoughness;
+    /// Screen march steps
+    uint reflectionSteps;
+    /// Meters behind the opaque depth a screen march still hits
+    float reflectionThickness;
+    /// Meters a traced hit sun ray travels before it counts as lit
+    float sunReach;
+    /// 1 draws only bricks holding the camera with back faces and 0 only the rest with front faces
+    uint inside;
+    /// 1 walks the run near to far so depth writing passes reject what is behind early
+    uint reverse;
+    /// Bricks in the run so reverse can index it
+    uint count;
+    /// 1 when gNearestGlassDepth holds this frame nearest glass surface
+    uint nearestValid;
+    /// 1 adds a cost heat colour instead of the glass, see blendGlass
+    uint costView;
 };
+
+/// Bit of the gGlassBricks instance word set for a brick the camera is inside
+static const uint kGlassInsideBit = 0x80000000u;
+
+static const uint kReflectionNone = 0u;
+/// One voxel ray since the traced specular post pass reads the opaque surface behind the glass
+static const uint kReflectionTraced = 1u;
+/// Screen march against the opaque backdrop since the ssr post pass reads the opaque surface behind the glass
+static const uint kReflectionScreen = 2u;
+
+/// Mirrors renderer::VoxelPass glass variants: what replaces the environment specular of the first surface per brick
+/// Specialized per pipeline so the driver drops the reflection paths a variant never takes and the shader keeps fewer registers
+[[vk::constant_id(0)]]
+const uint kSpecReflection = 0u;
+/// 0 drops the debug views from the variants that draw a normal frame
+[[vk::constant_id(1)]]
+const uint kSpecDebugViews = 1u;
+
+/// Lit surfaces one brick fragment records, the most glass_lit_surfaces allows
+static const uint kMaxLitSurfaces = 4u;
+/// Below this share of its light reaching the camera a surface is left unlit
+static const float kContributionCutoff = 0.02;
+/// Below this share of reflected light reaching the camera a surface keeps the environment instead of tracing
+static const float kReflectionCutoff = 0.01;
 
 [[vk::push_constant]]
 GlassPush gGlassPush;
@@ -36,13 +79,39 @@ Sampler2D gBackdrop;
 [[vk::binding(9, 1)]]
 Sampler2D gBackdropDepth;
 
-/// Ratio blending reads a near black backdrop as a difference instead
-static const float kRatioFloor = 0.02;
-static const float kMaxRatio = 16.0;
+/// Nearest glass surface depth over the opaque depth from the glass pre-pass
+[[vk::binding(16, 1)]]
+Sampler2D gNearestGlassDepth;
+
+/// Scene normal and motion of that surface so the surface copy skips the brick walk
+[[vk::binding(17, 1)]]
+Sampler2D gNearestGlassNormal;
+
+[[vk::binding(18, 1)]]
+Sampler2D gNearestGlassMotion;
+
+/// r glass covers the pixel g share of light the nearest glass surface lets through
+[[vk::binding(19, 1)]]
+Sampler2D gGlassMask;
+
+/// Below this the front pane is a mirror and glass behind it is skipped
+static const float kMirrorTransmittance = 0.02;
+
+/// The DDA hit is never closer than the front face so outside bricks keep early depth testing
+#if TOAST_REVERSED_Z
+#define GLASS_FARTHER_DEPTH SV_DepthLessEqual
+#else
+#define GLASS_FARTHER_DEPTH SV_DepthGreaterEqual
+#endif
+
 
 
 /// Below this nothing behind shows
 static const float kOpaqueTransmittance = 0.004;
+
+static const float kVoxelSize = 0.1;
+/// Voxels off the glass face a traced reflection starts
+static const float kReflectionOffset = 0.6;
 
 
 struct VSOutput
@@ -82,7 +151,16 @@ struct VSOutput
 [shader("vertex")]
 VSOutput vertexMain(uint vertexId : SV_VertexID, uint instanceId : SV_InstanceID)
 {
-    const uint2 entry = gGlassBricks[gGlassPush.first + instanceId];
+    const uint run = gGlassPush.reverse != 0u ? gGlassPush.count - 1u - instanceId : instanceId;
+    const uint2 packed = gGlassBricks[gGlassPush.first + run];
+    const uint2 entry = uint2(packed.x & ~kGlassInsideBit, packed.y);
+    if (((packed.x & kGlassInsideBit) != 0u) != (gGlassPush.inside != 0u))
+    {
+        // Zero area so the other pipeline of this run draws it
+        VSOutput culled = (VSOutput)0;
+        culled.position = float4(0.0, 0.0, 0.0, 1.0);
+        return culled;
+    }
     const VoxelInstance instance = gVoxelInstances[entry.x];
     const VolumeRecord record = gVolumeRecords[instance.recordIndex];
     const uint3 brick = uint3(entry.y % record.brickDimsX, (entry.y / record.brickDimsX) % record.brickDimsY,
@@ -127,13 +205,73 @@ struct GlassComposite
     float f0;
     float3 voxelPosition;
 
-    /// Backdrop uv the refracted ray lands on
-    bool refracted;
-    float2 refractedUv;
+    /// Share of light the entered surface lets through past its reflection and scatter
+    float frontTransmittance;
+
+    /// Surfaces lit and whether one traced or marched a reflection, for the cost view
+    uint shaded;
+    bool reflected;
 };
 
-float3 shadeInterface(float3 hitWorld, float3 normal, float3 view, float2 pixel, PaletteSample palette, out float fresnel,
-                      out bool debugView)
+/// Radiance a voxel ray hits shaded as voxel_specular hitRadiance shades it
+bool tracedReflection(float3 position, float3 normal, float3 direction, float2 pixel, out float3 radiance)
+{
+    radiance = float3(0.0, 0.0, 0.0);
+    const float3 origin = position + normal * (kReflectionOffset * kVoxelSize);
+    // A pixel wide cone so a far hit marches coarser levels than the mirror ray would
+    float2 size;
+    gBackdrop.GetDimensions(size.x, size.y);
+    const float pixelSlope = 2.0 / max(abs(gCamera.projection[1][1]) * size.y, 1.0);
+    const SceneHit hit = traceScene(origin, direction, 0.0, gGlassPush.reflectionReach, pixelSlope);
+    if (!hit.hit)
+    {
+        return false;
+    }
+    const float3 hitPosition = origin + direction * hit.t;
+    const float3 hitNormal = sceneHitNormal(hit, direction);
+    if (gGlassPush.depthTest != 0u && dot(hitNormal, gCamera.position - hitPosition) > 0.0 &&
+        glassBackdropRadiance(gBackdrop, gBackdropDepth, hitPosition, radiance))
+    {
+        return true;
+    }
+    const PaletteSample hitPalette = samplePalette(gTraceVolumes[hit.volume].recordIndex, hit.material);
+    float3 irradiance;
+    if (!giHitIrradiance(hitPosition, hitNormal, irradiance))
+    {
+        irradiance = gCamera.ambientColorIntensity.rgb * gCamera.ambientColorIntensity.a;
+        if (gCamera.environmentParams.x >= 0.5)
+        {
+            irradiance += gIrradianceMap.SampleLevel(hitNormal, 0.0).rgb;
+        }
+    }
+    uint random = giHash(uint(pixel.x) | (uint(pixel.y) << 16));
+    radiance = hitPalette.albedo * (hitPalette.emissive + irradiance) +
+               traceLocalLight(hitPosition, hitNormal, hitPalette.albedo, pixelSlope, random) +
+               traceSunLight(hitPosition, hitNormal, hitPalette.albedo, pixelSlope, gGlassPush.sunReach, pixel);
+    return true;
+}
+
+/// SSR or traced radiance along the mirror direction and false keeps the environment
+bool glassReflection(float3 position, float3 normal, float3 view, float roughness, float2 pixel, out float3 radiance)
+{
+    radiance = float3(0.0, 0.0, 0.0);
+    if (kSpecReflection == kReflectionNone || roughness > gGlassPush.reflectionRoughness)
+    {
+        return false;
+    }
+    // shortcut: mirror ray only so glass below the roughness cutoff reflects too sharp, upgrade to a GGX lobe sample with TAA
+    const float3 direction = reflect(-view, normal);
+    if (kSpecReflection == kReflectionTraced)
+    {
+        return tracedReflection(position, normal, direction, pixel, radiance);
+    }
+    return gGlassPush.depthTest != 0u && glassScreenReflection(gBackdrop, gBackdropDepth, position, direction, gGlassPush.reflectionReach,
+                                                               gGlassPush.reflectionSteps, gGlassPush.reflectionThickness, radiance);
+}
+
+/// @p reflects swaps the environment specular for glassReflection where it hits
+float3 shadeInterface(float3 hitWorld, float3 normal, float3 view, float2 pixel, PaletteSample palette, bool reflects,
+                      out float fresnel, out bool debugView)
 {
     Surface surface;
     surface.marchedShadows = false;
@@ -157,167 +295,34 @@ float3 shadeInterface(float3 hitWorld, float3 normal, float3 view, float2 pixel,
     // Glass scatters a sliver of its diffuse light and a pixel can cross several panes
     gGiGathered = giCheap(hitWorld, normal);
     // One pass split into lobes since each pass resamples every shadow map
-    const ShadingResult lit = shadeSurfaceLighting(surface);
+    // Every layer gets every light or glass seen through glass looks unlit
+    ShadingResult lit;
+    if (kSpecDebugViews != 0u)
+    {
+        lit = shadeSurfaceLighting(surface);
+    }
+    else
+    {
+        NoShadowFilter none;
+        lit = evaluateLighting(surface, clusterCellAt(surface.viewSpaceZ, surface.pixel), none);
+    }
     debugView = lit.isDebugView;
     if (debugView)
     {
         return lit.color;
     }
     const float3 diffuse = max(lit.color - lit.specular, float3(0.0, 0.0, 0.0));
+    float3 litSpecular = lit.specular;
+    float3 reflection;
+    if (reflects && glassReflection(hitWorld, normal, view, surface.roughness, pixel, reflection))
+    {
+        litSpecular = glassReflectionSpecular(lit.specular, lit.ambientSpecular, reflection, normal, view, surface.roughness);
+    }
     // Lighting assumes F0 0.04 so rescale by the Fresnel ratio
-    const float3 specular = lit.specular * fresnel / (0.04 + 0.96 * facing);
+    const float3 specular = litSpecular * fresnel / (0.04 + 0.96 * facing);
     return diffuse * glassScatter(palette.alpha, palette.roughness) + palette.albedo * palette.emissive * palette.alpha + specular;
 }
 
-
-/// First glass run of the camera ray across the whole volume
-struct GlassRun
-{
-    float entryT;
-    float exitT;
-    int3 entryVoxel;
-    float3 entryNormal;
-    float3 exitNormal;
-    float ior;
-};
-
-float3 voxelFaceNormal(float4x4 worldToVoxel, int axis, float sign)
-{
-    float3 voxelNormal = float3(0.0, 0.0, 0.0);
-    voxelNormal[axis] = sign;
-    return normalize(mul(transpose((float3x3)worldToVoxel), voxelNormal));
-}
-
-/// False when an opaque voxel comes first or the camera starts inside glass
-bool firstGlassRun(uint volume, VolumeRecord record, float4x4 worldToVoxel, float3 origin, float3 direction, float tMin,
-                   out GlassRun run)
-{
-    run.entryT = 0.0;
-    run.exitT = 0.0;
-    run.entryVoxel = int3(0, 0, 0);
-    run.entryNormal = float3(0.0, 0.0, 0.0);
-    run.exitNormal = float3(0.0, 0.0, 0.0);
-    run.ior = kDefaultIor;
-
-    const int3 dims = int3(record.brickDimsX, record.brickDimsY, record.brickDimsZ) * int(kBrickDim);
-    const RayHit hit = marchRayBox(volume, origin, direction, tMin, kFloatMax, int3(0, 0, 0), dims, false);
-    if (!hit.hit || hit.axis < 0 || !glassEntry(record, hit.material))
-    {
-        return false;
-    }
-    run.entryT = hit.t;
-    run.entryVoxel = hit.voxel;
-    run.entryNormal = voxelFaceNormal(worldToVoxel, hit.axis, direction[hit.axis] > 0.0 ? -1.0 : 1.0);
-    run.ior = samplePalette(record, hit.material).ior;
-
-    int3 voxel = hit.voxel;
-    int3 stepSign;
-    float3 next;
-    float3 delta;
-    for (int a = 0; a < 3; ++a)
-    {
-        stepSign[a] = direction[a] > 0.0 ? 1 : (direction[a] < 0.0 ? -1 : 0);
-        delta[a] = stepSign[a] == 0 ? kFloatMax : abs(1.0 / direction[a]);
-        next[a] = stepSign[a] == 0 ? kFloatMax : (float(voxel[a] + (stepSign[a] > 0 ? 1 : 0)) - origin[a]) / direction[a];
-    }
-
-    // Parallel faces when the run is longer than the walk
-    run.exitT = hit.t;
-    run.exitNormal = -run.entryNormal;
-    int3 cachedBrick = int3(-1, -1, -1);
-    uint cachedEntry = 0u;
-    uint cachedMaterial = hit.material;
-    bool cachedGlass = true;
-    for (uint step = 0u; step < gGlassPush.refractionVoxels; ++step)
-    {
-        const int axis = next.x < next.y ? (next.x < next.z ? 0 : 2) : (next.y < next.z ? 1 : 2);
-        run.exitT = next[axis];
-        voxel[axis] += stepSign[axis];
-        next[axis] += delta[axis];
-        bool glass = false;
-        if (all(voxel >= int3(0, 0, 0)) && all(voxel < dims))
-        {
-            const int3 brick = voxel >> 3;
-            if (any(brick != cachedBrick))
-            {
-                cachedBrick = brick;
-                cachedEntry = gridEntry(record, uint3(brick));
-            }
-            const uint material = brickMaterialAt(cachedEntry, voxel);
-            if (material != cachedMaterial)
-            {
-                cachedMaterial = material;
-                cachedGlass = material != 0u && glassEntry(record, material);
-            }
-            glass = cachedGlass;
-        }
-        if (!glass)
-        {
-            run.exitNormal = voxelFaceNormal(worldToVoxel, axis, float(stepSign[axis]));
-            break;
-        }
-    }
-    return true;
-}
-
-/// Camera distance of a backdrop texel
-float backdropDistance(float2 uv, float depth)
-{
-    const float4 viewPosition = mul(gClusterParams.inverseProjection, float4(uv * 2.0 - 1.0, depth, 1.0));
-    return length(viewPosition.xyz / viewPosition.w);
-}
-
-/// Snell at entry and exit faces with a straight path inside
-/// The bent ray goes as far past the glass as the straight one
-float2 refractedBackdropUv(float3 camera, float3 worldDirection, float entryT, float exitT, float3 entryNormal, float3 exitNormal,
-                           float ior, float2 pixel, out bool valid)
-{
-    valid = false;
-    float2 size;
-    gBackdrop.GetDimensions(size.x, size.y);
-    const float2 straightUv = pixel / size;
-
-    const float rayLength = length(worldDirection);
-    const float3 direction = worldDirection / rayLength;
-    const float3 entryPoint = camera + worldDirection * entryT;
-
-    const float3 inside = refract(direction, entryNormal, 1.0 / ior);
-    if (dot(inside, inside) < 1e-6)
-    {
-        return straightUv;
-    }
-    const float across = (exitT - entryT) * rayLength * max(dot(direction, -entryNormal), 1e-3);
-    const float3 exitPoint = entryPoint + inside * (across / max(dot(inside, -entryNormal), 1e-3));
-    float3 bent = refract(inside, -exitNormal, ior);
-    // Total internal reflection keeps the inside direction
-    if (dot(bent, bent) < 1e-6)
-    {
-        bent = inside;
-    }
-
-    const float straightDepth = gBackdropDepth.Load(int3(int2(pixel), 0)).r;
-    const float exitDistance = distance(camera, exitPoint);
-    const float remaining = isFarDepth(straightDepth) ? 1000.0 : max(backdropDistance(straightUv, straightDepth) - exitDistance, 0.0);
-    const float4 clip = mul(gCamera.jitteredViewProjection, float4(exitPoint + bent * remaining, 1.0));
-    if (clip.w <= 1e-4)
-    {
-        return straightUv;
-    }
-    const float2 uv = lerp(straightUv, clip.xy / clip.w * 0.5 + 0.5, gGlassPush.refraction);
-    if (any(uv < float2(0.0, 0.0)) || any(uv > float2(1.0, 1.0)))
-    {
-        return straightUv;
-    }
-
-    // Something in front of the glass never shows through it
-    const float bentDepth = gBackdropDepth.SampleLevel(uv, 0.0).r;
-    if (!isFarDepth(bentDepth) && backdropDistance(uv, bentDepth) < distance(camera, entryPoint))
-    {
-        return straightUv;
-    }
-    valid = true;
-    return uv;
-}
 
 /// Every glass layer front to back or with @p surfaceOnly the nearest entered surface unlit
 /// Surfaces reflect by Fresnel and scatter by glassScatter and the path filters by glassPathFilter
@@ -333,16 +338,17 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
     result.roughness = 1.0;
     result.f0 = 0.0;
     result.voxelPosition = float3(0.0, 0.0, 0.0);
-    result.refracted = false;
-    result.refractedUv = float2(0.0, 0.0);
-    if (isVoxelDebugMode(gCamera.renderModePad.x))
+    result.frontTransmittance = 1.0;
+    result.shaded = 0u;
+    result.reflected = false;
+    if (kSpecDebugViews != 0u && isVoxelDebugMode(gCamera.renderModePad.x))
     {
         return false;
     }
 
     const uint volume = input.volume;
     const VolumeRecord record = gVolumeRecords[volume];
-    // Only surface normals and refraction read it
+    // Only surface normals read it
     const float4x4 worldToVoxel = gVoxelInstances[input.instanceIndex].worldToVoxel;
     const float3 camera = gCamera.position;
 
@@ -415,13 +421,75 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
     float firstT = t;
     uint litInterfaces = 0u;
 
+    // Surfaces the walk entered within the lit budget, shaded after it so the walk loop stays small
+    // Written by constant index so they stay in registers
+    float slotT[kMaxLitSurfaces];
+    int slotAxis[kMaxLitSurfaces];
+    uint slotMaterial[kMaxLitSurfaces];
+    float3 slotWeight[kMaxLitSurfaces];
+    float slotFresnel[kMaxLitSurfaces];
+    [unroll]
+    for (uint k = 0u; k < kMaxLitSurfaces; ++k)
+    {
+        slotT[k] = 0.0;
+        slotAxis[k] = 0;
+        slotMaterial[k] = 0u;
+        slotWeight[k] = float3(0.0, 0.0, 0.0);
+        slotFresnel[k] = 0.0;
+    }
+
     // A run of glass is nearly always one palette entry
     uint cachedMaterial = 0xFFFFFFFFu;
     bool cachedGlass = false;
     PaletteSample palette = {};
 
+    const bool pooled = (input.brickEntry & 3u) >= kTagShared;
     for (uint step = 0u; step < 3u * kBrickDim; ++step)
     {
+        // Empty 4x4x4 sub-cells of a pooled brick are crossed in one step, which leaves a thin pane only a few steps
+        if (pooled)
+        {
+            const uint3 local = uint3(voxel & 7);
+            const uint subBase = ((input.brickEntry >> 2) << 4) + (((local.x >> 2) | ((local.y >> 2) << 1) | ((local.z >> 2) << 2)) << 1);
+            if ((gBrickOccupancy[subBase] | gBrickOccupancy[subBase + 1u]) == 0u)
+            {
+                const int3 low = voxel & int3(~3, ~3, ~3);
+                float tLeave = kFloatMax;
+                int leaveAxis = 0;
+                for (int a = 0; a < 3; ++a)
+                {
+                    if (stepSign[a] != 0)
+                    {
+                        const float bound = float(low[a] + (stepSign[a] > 0 ? 4 : 0));
+                        const float ta = (bound - origin[a]) * inverse[a];
+                        if (ta < tLeave)
+                        {
+                            tLeave = ta;
+                            leaveAxis = a;
+                        }
+                    }
+                }
+                if (tLeave >= tExit)
+                {
+                    break;
+                }
+                inside = false;
+                t = tLeave;
+                axis = leaveAxis;
+                voxel = clamp(int3(floor(origin + direction * t)), low, low + 3);
+                voxel[leaveAxis] = stepSign[leaveAxis] > 0 ? low[leaveAxis] + 4 : low[leaveAxis] - 1;
+                if (any(voxel < boxMin) || any(voxel >= boxMax))
+                {
+                    break;
+                }
+                for (int a = 0; a < 3; ++a)
+                {
+                    next[a] = stepSign[a] == 0 ? kFloatMax : (float(voxel[a] + (stepSign[a] > 0 ? 1 : 0)) - origin[a]) * inverse[a];
+                }
+                continue;
+            }
+        }
+
         // The march stays in its brick so one grid entry covers it
         const uint material = brickMaterialAt(input.brickEntry, voxel);
         const int nextAxis = next.x < next.y ? (next.x < next.z ? 0 : 2) : (next.y < next.z ? 1 : 2);
@@ -461,6 +529,20 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
                         return false;
                     }
                 }
+                // Behind a front pane that reflects nearly everything nothing of this brick shows, so its lit layers would only add light
+                if (!surfaceOnly && gGlassPush.nearestValid != 0u)
+                {
+                    const int3 texel = int3(int2(input.position.xy), 0);
+                    const float2 mask = gGlassMask.Load(texel).rg;
+                    if (mask.r > 0.5 && mask.g < kMirrorTransmittance)
+                    {
+                        const float entryW = mul(gCamera.viewProjection, float4(camera + worldDirection * t, 1.0)).w;
+                        if (glassViewDepth(gNearestGlassDepth.Load(texel).r) < entryW - (0.01 + 0.002 * entryW))
+                        {
+                            return false;
+                        }
+                    }
+                }
             }
 
             if (!inside && axis >= 0)
@@ -468,10 +550,14 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
                 float3 voxelNormal = float3(0.0, 0.0, 0.0);
                 voxelNormal[axis] = direction[axis] > 0.0 ? -1.0 : 1.0;
                 const float3 normal = normalize(mul(transpose((float3x3)worldToVoxel), voxelNormal));
+                // Every surface reflects whether or not it is lit, or past the lit budget glass would turn clear and show the lit layers behind
+                const float f0 = iorF0(palette.ior);
+                float fresnel = f0 + (1.0 - f0) * pow(1.0 - saturate(dot(normal, view)), 5.0);
 
                 if (!result.entered)
                 {
                     result.entered = true;
+                    result.frontTransmittance = (1.0 - fresnel) * (1.0 - glassScatter(palette.alpha, palette.roughness));
                     result.normal = normal;
                     result.roughness = clamp(palette.roughness, 0.045, 1.0);
                     result.f0 = iorF0(palette.ior);
@@ -483,21 +569,21 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
                     }
                 }
 
-                float fresnel = 0.0;
-                if (litInterfaces < gGlassPush.litSurfaces)
+                // Within the budget since every lit layer adds light and stacked glass would wash out
+                if (litInterfaces < min(gGlassPush.litSurfaces, kMaxLitSurfaces))
                 {
-                    bool debugView = false;
-                    const float3 light = shadeInterface(camera + worldDirection * t, normal, view, input.position.xy, palette, fresnel,
-                                                        debugView);
-                    if (debugView)
+                    [unroll]
+                    for (uint k = 0u; k < kMaxLitSurfaces; ++k)
                     {
-                        result.color = light;
-                        result.transmittance = float3(0.0, 0.0, 0.0);
-                        result.debugView = true;
-                        firstT = t;
-                        break;
+                        if (k == litInterfaces)
+                        {
+                            slotT[k] = t;
+                            slotAxis[k] = axis;
+                            slotMaterial[k] = material;
+                            slotWeight[k] = result.transmittance;
+                            slotFresnel[k] = fresnel;
+                        }
                     }
-                    result.color += result.transmittance * light;
                     ++litInterfaces;
                 }
 
@@ -542,14 +628,51 @@ bool compositeGlass(VSOutput input, bool surfaceOnly, out GlassComposite result)
     const float4 clip = mul(gCamera.viewProjection, float4(camera + worldDirection * firstT, 1.0));
     result.depth = clip.z / clip.w;
 
-    // Only the brick holding the entry voxel refracts
-    GlassRun run;
-    if (!surfaceOnly && !result.debugView && result.entered && gGlassPush.refraction > 0.0 &&
-        firstT * length(worldDirection) <= gGlassPush.refractionDistance &&
-        firstGlassRun(volume, record, worldToVoxel, origin, direction, tMin, run) && all((run.entryVoxel >> 3) == input.brick))
+    // Layers behind the first in a brick that face the same way with the same palette entry lie under a brick apart so they share one lighting
+    bool lightCached = false;
+    int lightAxis = -1;
+    uint lightMaterial = 0u;
+    float3 cachedLight = float3(0.0, 0.0, 0.0);
+    // A real loop so the lighting is inlined once
+    [loop]
+    for (uint k = 0u; k < kMaxLitSurfaces; ++k)
     {
-        result.refractedUv = refractedBackdropUv(camera, worldDirection, run.entryT, run.exitT, run.entryNormal, run.exitNormal, run.ior,
-                                                 input.position.xy, result.refracted);
+        // Weights only fall so nothing past a dim surface shows either
+        if (k >= litInterfaces || max(slotWeight[k].x, max(slotWeight[k].y, slotWeight[k].z)) < kContributionCutoff)
+        {
+            break;
+        }
+        if (lightCached && slotAxis[k] == lightAxis && slotMaterial[k] == lightMaterial)
+        {
+            result.color += slotWeight[k] * cachedLight;
+            continue;
+        }
+
+        float3 voxelNormal = float3(0.0, 0.0, 0.0);
+        voxelNormal[slotAxis[k]] = direction[slotAxis[k]] > 0.0 ? -1.0 : 1.0;
+        const float3 normal = normalize(mul(transpose((float3x3)worldToVoxel), voxelNormal));
+        // The first surface of each brick reflects so glass seen through glass shows the scene and not the bare sky, unless what
+        // it reflects is too dim to show past the glass in front
+        const bool reflects = k == 0u && max(slotWeight[k].x, max(slotWeight[k].y, slotWeight[k].z)) * slotFresnel[k] >= kReflectionCutoff;
+        float fresnel;
+        bool debugView = false;
+        const float3 light = shadeInterface(camera + worldDirection * slotT[k], normal, view, input.position.xy,
+                                            samplePalette(record, slotMaterial[k]), reflects, fresnel, debugView);
+        if (debugView)
+        {
+            result.color = light;
+            result.transmittance = float3(0.0, 0.0, 0.0);
+            result.debugView = true;
+            return true;
+        }
+        result.color += slotWeight[k] * light;
+        ++result.shaded;
+        result.reflected = result.reflected || (reflects && kSpecReflection != kReflectionNone);
+        // Never a reflecting surface whose reflection belongs to it alone
+        lightCached = !reflects;
+        lightAxis = slotAxis[k];
+        lightMaterial = slotMaterial[k];
+        cachedLight = light;
     }
     return true;
 }
@@ -566,54 +689,104 @@ struct DualSourceOutput
     float4 transmittance : SV_Target1;
 };
 
-[shader("fragment")]
-DualSourceOutput fragmentMain(VSOutput input, out float depth : SV_Depth)
+bool blendGlass(VSOutput input, out DualSourceOutput output, out float depth)
 {
+    output = (DualSourceOutput)0;
     GlassComposite glass;
     if (!compositeGlass(input, false, glass))
     {
-        discard;
+        depth = input.position.z;
+        return false;
     }
     depth = glass.depth;
-
-    // The blend sees only the straight backdrop so the bent one scales or offsets it
-    float3 offset = float3(0.0, 0.0, 0.0);
-    float3 scale = glass.transmittance;
-    if (glass.refracted)
+    output.color = float4(glass.color, 1.0);
+    output.transmittance = float4(glass.transmittance, 1.0);
+    if (gGlassPush.costView != 0u)
     {
-        const float3 straight = gBackdrop.Load(int3(int2(input.position.xy), 0)).rgb;
-        const float3 bent = gBackdrop.SampleLevel(glass.refractedUv, 0.0).rgb;
-        [unroll]
-        for (int c = 0; c < 3; ++c)
-        {
-            if (straight[c] > kRatioFloor)
-            {
-                scale[c] *= min(bent[c] / straight[c], kMaxRatio);
-            }
-            else
-            {
-                offset[c] = scale[c] * (bent[c] - straight[c]);
-            }
-        }
+        // Added on top of what is behind: green per brick fragment, red per lit surface, blue per reflection
+        output.color = float4(0.15 * float(glass.shaded), 0.04, glass.reflected ? 0.3 : 0.0, 1.0);
+        output.transmittance = float4(1.0, 1.0, 1.0, 1.0);
     }
+    return true;
+}
 
+[shader("fragment")]
+DualSourceOutput fragmentMain(VSOutput input, out float depth : SV_Depth)
+{
     DualSourceOutput output;
-    output.color = float4(glass.color + offset, 1.0);
-    output.transmittance = float4(scale, 1.0);
+    if (!blendGlass(input, output, depth))
+    {
+        discard;
+    }
+    return output;
+}
+
+[shader("fragment")]
+DualSourceOutput fragmentMainOutside(VSOutput input, out float depth : GLASS_FARTHER_DEPTH)
+{
+    DualSourceOutput output;
+    if (!blendGlass(input, output, depth))
+    {
+        discard;
+    }
+    // Slab entry can land a hair in front of the face
+    depth = fartherDepth(depth, input.position.z);
+    return output;
+}
+
+/// Far outside bricks at a coarse shading rate, which drivers only honour without a depth export
+/// The rasterized front face is closer than the glass and compositeGlass rejects glass behind the opaque depth itself
+[shader("fragment")]
+DualSourceOutput fragmentMainFar(VSOutput input)
+{
+    DualSourceOutput output;
+    float depth;
+    if (!blendGlass(input, output, depth))
+    {
+        discard;
+    }
     return output;
 }
 
 /// Without dualSrcBlend the tint is lost and the background only fades
+float4 premultipliedGlass(DualSourceOutput blend)
+{
+    return float4(blend.color.rgb, 1.0 - dot(blend.transmittance.rgb, float3(1.0, 1.0, 1.0)) / 3.0);
+}
+
 [shader("fragment")]
 float4 fragmentPremultiplied(VSOutput input, out float depth : SV_Depth) : SV_Target0
 {
-    GlassComposite glass;
-    if (!compositeGlass(input, false, glass))
+    DualSourceOutput output;
+    if (!blendGlass(input, output, depth))
     {
         discard;
     }
-    depth = glass.depth;
-    return float4(glass.color, 1.0 - dot(glass.transmittance, float3(1.0, 1.0, 1.0)) / 3.0);
+    return premultipliedGlass(output);
+}
+
+[shader("fragment")]
+float4 fragmentPremultipliedFar(VSOutput input) : SV_Target0
+{
+    DualSourceOutput output;
+    float depth;
+    if (!blendGlass(input, output, depth))
+    {
+        discard;
+    }
+    return premultipliedGlass(output);
+}
+
+[shader("fragment")]
+float4 fragmentPremultipliedOutside(VSOutput input, out float depth : GLASS_FARTHER_DEPTH) : SV_Target0
+{
+    DualSourceOutput output;
+    if (!blendGlass(input, output, depth))
+    {
+        discard;
+    }
+    depth = fartherDepth(depth, input.position.z);
+    return premultipliedGlass(output);
 }
 
 // Mirrors the world stage attachment order with the scene colour masked off
@@ -627,19 +800,20 @@ struct SurfaceOutput
     float4 motion : SV_Target3;
 };
 
-/// After every blended draw
-[shader("fragment")]
-SurfaceOutput fragmentSurface(VSOutput input, out float depth : SV_Depth)
+bool surfaceGlass(VSOutput input, out SurfaceOutput output, out float depth, out float frontTransmittance)
 {
+    output = (SurfaceOutput)0;
+    frontTransmittance = 1.0;
     GlassComposite glass;
     if (!compositeGlass(input, true, glass))
     {
-        discard;
+        depth = input.position.z;
+        return false;
     }
     depth = glass.depth;
+    frontTransmittance = glass.frontTransmittance;
 
     const VoxelInstance instance = gVoxelInstances[input.instanceIndex];
-    SurfaceOutput output;
     output.color = float4(0.0, 0.0, 0.0, 0.0);
     output.normalRoughness = encodeSceneNormal(glass.normal, glass.roughness, glass.f0);
     output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
@@ -650,17 +824,98 @@ SurfaceOutput fragmentSurface(VSOutput input, out float depth : SV_Depth)
         const float4 previousClip = mul(gCamera.previousViewProjection, mul(instance.previousVoxelToWorld, float4(glass.voxelPosition, 1.0)));
         output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
     }
+    return true;
+}
+
+/// After every blended draw
+[shader("fragment")]
+SurfaceOutput fragmentSurface(VSOutput input, out float depth : SV_Depth)
+{
+    SurfaceOutput output;
+    float frontTransmittance;
+    if (!surfaceGlass(input, output, depth, frontTransmittance))
+    {
+        discard;
+    }
     return output;
 }
 
 [shader("fragment")]
-float4 fragmentMask(VSOutput input, out float depth : SV_Depth) : SV_Target0
+SurfaceOutput fragmentSurfaceOutside(VSOutput input, out float depth : GLASS_FARTHER_DEPTH)
 {
-    GlassComposite glass;
-    if (!compositeGlass(input, true, glass))
+    SurfaceOutput output;
+    float frontTransmittance;
+    if (!surfaceGlass(input, output, depth, frontTransmittance))
     {
         discard;
     }
-    depth = glass.depth;
-    return float4(1.0, 1.0, 1.0, 1.0);
+    depth = fartherDepth(depth, input.position.z);
+    return output;
+}
+
+/// Pre-pass of the nearest glass surface into its own depth, the bloom glass mask and the surface the copy writes later
+struct NearestOutput
+{
+    float4 mask : SV_Target0;
+    float4 normalRoughness : SV_Target1;
+    float4 motion : SV_Target2;
+};
+
+NearestOutput nearestOutput(SurfaceOutput surface, float frontTransmittance)
+{
+    NearestOutput output;
+    output.mask = float4(1.0, frontTransmittance, 0.0, 1.0);
+    output.normalRoughness = surface.normalRoughness;
+    output.motion = surface.motion;
+    return output;
+}
+
+[shader("fragment")]
+NearestOutput fragmentNearest(VSOutput input, out float depth : SV_Depth)
+{
+    SurfaceOutput surface;
+    float frontTransmittance;
+    if (!surfaceGlass(input, surface, depth, frontTransmittance))
+    {
+        discard;
+    }
+    return nearestOutput(surface, frontTransmittance);
+}
+
+[shader("fragment")]
+NearestOutput fragmentNearestOutside(VSOutput input, out float depth : GLASS_FARTHER_DEPTH)
+{
+    SurfaceOutput surface;
+    float frontTransmittance;
+    if (!surfaceGlass(input, surface, depth, frontTransmittance))
+    {
+        discard;
+    }
+    depth = fartherDepth(depth, input.position.z);
+    return nearestOutput(surface, frontTransmittance);
+}
+
+[shader("vertex")]
+FullscreenVSOutput vertexFullscreen(uint vertexId : SV_VertexID)
+{
+    return fullscreenTriangle(vertexId);
+}
+
+/// After every blended draw, writes what the pre-pass found where it found glass in front of the opaque depth
+[shader("fragment")]
+SurfaceOutput fragmentSurfaceCopy(FullscreenVSOutput input, out float depth : SV_Depth)
+{
+    const int3 texel = int3(int2(input.position.xy), 0);
+    // The mask is cleared everywhere each frame while the nearest depth is only copied where glass is
+    if (gGlassMask.Load(texel).r < 0.5)
+    {
+        discard;
+    }
+    depth = gNearestGlassDepth.Load(texel).r;
+    SurfaceOutput output;
+    output.color = float4(0.0, 0.0, 0.0, 0.0);
+    output.normalRoughness = gNearestGlassNormal.Load(texel);
+    output.indirectDiffuse = float4(0.0, 0.0, 0.0, 1.0);
+    output.motion = gNearestGlassMotion.Load(texel);
+    return output;
 }

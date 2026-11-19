@@ -52,6 +52,19 @@ auto createGraphicsPipelineImpl(
 	        ? spirv::resolveEntryPoint(fragment_spirv, spirv::ExecutionModel::fragment, config.fragment_entry, config.debug_name)
 	        : config.fragment_entry;
 
+	std::vector<vk::SpecializationMapEntry> specialization_entries;
+	specialization_entries.reserve(config.specialization_constants.size());
+	for (uint32_t i = 0; i < config.specialization_constants.size(); ++i) {
+		specialization_entries.emplace_back(i, static_cast<uint32_t>(i * sizeof(uint32_t)), sizeof(uint32_t));
+	}
+	const vk::SpecializationInfo specialization_info(
+	    static_cast<uint32_t>(specialization_entries.size()),
+	    specialization_entries.data(),
+	    config.specialization_constants.size() * sizeof(uint32_t),
+	    config.specialization_constants.data()
+	);
+	const vk::SpecializationInfo* specialization = specialization_entries.empty() ? nullptr : &specialization_info;
+
 	std::vector<vk::PipelineShaderStageCreateInfo> shader_stages;
 	if (mesh) {
 		if (!task_entry.empty()) {
@@ -59,15 +72,24 @@ auto createGraphicsPipelineImpl(
 			    vk::PipelineShaderStageCreateFlags {},
 			    vk::ShaderStageFlagBits::eTaskEXT,
 			    task_module != nullptr ? **task_module : *shader_module,
-			    task_entry.c_str()
+			    task_entry.c_str(),
+			    specialization
 			);
 		}
 		shader_stages.emplace_back(
-		    vk::PipelineShaderStageCreateFlags {}, vk::ShaderStageFlagBits::eMeshEXT, *shader_module, mesh_entry.c_str()
+		    vk::PipelineShaderStageCreateFlags {},
+		    vk::ShaderStageFlagBits::eMeshEXT,
+		    *shader_module,
+		    mesh_entry.c_str(),
+		    specialization
 		);
 	} else {
 		shader_stages.emplace_back(
-		    vk::PipelineShaderStageCreateFlags {}, vk::ShaderStageFlagBits::eVertex, *shader_module, vertex_entry.c_str()
+		    vk::PipelineShaderStageCreateFlags {},
+		    vk::ShaderStageFlagBits::eVertex,
+		    *shader_module,
+		    vertex_entry.c_str(),
+		    specialization
 		);
 	}
 	if (has_fragment_stage) {
@@ -75,7 +97,8 @@ auto createGraphicsPipelineImpl(
 		    vk::PipelineShaderStageCreateFlags {},
 		    vk::ShaderStageFlagBits::eFragment,
 		    fragment_module != nullptr ? **fragment_module : *shader_module,
-		    fragment_entry.c_str()
+		    fragment_entry.c_str(),
+		    specialization
 		);
 	}
 
@@ -234,6 +257,16 @@ auto createGraphicsPipelineImpl(
 		    0.0f,                                                          // minDepthBounds
 		    1.0f                                                           // maxDepthBounds
 		);
+	}
+
+	// Keep combiners so only this pipeline rate applies
+	vk::PipelineFragmentShadingRateStateCreateInfoKHR shading_rate_ci {};
+	shading_rate_ci.fragmentSize = config.fragment_shading_rate;
+	shading_rate_ci.combinerOps =
+	    std::array {vk::FragmentShadingRateCombinerOpKHR::eKeep, vk::FragmentShadingRateCombinerOpKHR::eKeep};
+	if (core.isFragmentShadingRateSupported() &&
+	    (config.fragment_shading_rate.width > 1 || config.fragment_shading_rate.height > 1)) {
+		rendering_ci.pNext = &shading_rate_ci;
 	}
 
 	vk::GraphicsPipelineCreateInfo pipeline_ci {};

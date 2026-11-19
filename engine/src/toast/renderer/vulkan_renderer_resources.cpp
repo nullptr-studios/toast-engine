@@ -257,9 +257,22 @@ auto VulkanRenderer::createDepthResources() -> void {
 	setDebugName(*m_core, **m_glass_backdrop_depth.view, "VulkanRenderer GlassBackdropDepthView");
 	m_glass_backdrop_depth.state.reset(**m_glass_backdrop_depth.image, depthAttachmentRange(m_depth_format));
 
+	m_glass_nearest_depth.view.reset();
+	m_glass_nearest_depth.image.reset();
+	vk::ImageCreateInfo nearest_ci = image_ci;
+	nearest_ci.usage =
+	    vk::ImageUsageFlagBits::eDepthStencilAttachment | vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eTransferDst;
+	m_glass_nearest_depth.image.emplace(m_core->getAllocator().createImage(nearest_ci, allocation_ci));
+	setDebugName(*m_core, **m_glass_nearest_depth.image, "VulkanRenderer GlassNearestDepthImage");
+	vk::ImageViewCreateInfo nearest_view_ci = backdrop_view_ci;
+	nearest_view_ci.image = **m_glass_nearest_depth.image;
+	m_glass_nearest_depth.view.emplace(m_core->getDevice(), nearest_view_ci);
+	setDebugName(*m_core, **m_glass_nearest_depth.view, "VulkanRenderer GlassNearestDepthView");
+	m_glass_nearest_depth.state.reset(**m_glass_nearest_depth.image, depthAttachmentRange(m_depth_format));
+
 	auto depth_image = m_core->getAllocator().createImage(image_ci, allocation_ci);
 	m_depth_resources.image.emplace(std::move(depth_image));
-	setDebugName(*m_core, **m_depth_resources.image, "VulkanRenderer DepthImage");
+	setDebugName(*m_core, **m_depth_resources.image, "VulkanRenderer FuckingDepthImage");
 
 	vk::ImageViewCreateInfo view_ci {};
 	view_ci.image = **m_depth_resources.image;
@@ -329,16 +342,21 @@ void VulkanRenderer::createSceneColorResources() {
 
 	create(m_scene_color, m_scene_color_format, "SceneColor", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop, m_scene_color_format, "GlassBackdrop", vk::ImageUsageFlagBits::eTransferDst);
-	create(m_glass_mask, vk::Format::eR8Unorm, "GlassMask");
+	// r covered g share of light the nearest glass lets through
+	create(m_glass_mask, vk::Format::eR8G8Unorm, "GlassMask");
+	create(m_glass_nearest_normal, m_scene_normal_format, "GlassNearestNormal");
+	create(m_glass_nearest_motion, m_scene_motion_format, "GlassNearestMotion");
 	create(m_scene_normal, m_scene_normal_format, "SceneNormal", vk::ImageUsageFlagBits::eTransferSrc);
 	create(m_glass_backdrop_normal, m_scene_normal_format, "GlassBackdropNormal", vk::ImageUsageFlagBits::eTransferDst);
 	create(m_scene_indirect, m_scene_indirect_format, "SceneIndirect");
+	create(m_scene_ambient_specular, k_scene_ambient_specular_format, "SceneAmbientSpecular");
 	create(m_scene_motion, m_scene_motion_format, "SceneMotion");
 	create(m_voxel_albedo, k_voxel_albedo_format, "VoxelAlbedo");
 	create(m_voxel_material, k_voxel_material_format, "VoxelMaterial");
 	create(m_voxel_face_normal, k_voxel_face_normal_format, "VoxelFaceNormal");
 	create(m_voxel_detail_normal, k_voxel_face_normal_format, "VoxelDetailNormal");
 	create(m_voxel_noisy_diffuse, k_voxel_noisy_format, "VoxelNoisyDiffuse");
+	create(m_voxel_denoised_indirect, k_voxel_denoised_indirect_format, "VoxelDenoisedIndirect");
 	create(m_voxel_noisy_specular, k_voxel_noisy_format, "VoxelNoisySpecular");
 	create(m_voxel_gi, k_voxel_gi_format, "VoxelGi", {}, 2);
 	create(m_voxel_reservoirs[0], k_voxel_reservoir_format, "VoxelReservoirs0");

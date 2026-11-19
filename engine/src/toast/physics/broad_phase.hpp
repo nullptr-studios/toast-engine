@@ -10,6 +10,7 @@
 #include "collision_world.hpp"
 
 #include <optional>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -18,6 +19,7 @@ namespace physics {
 struct ShapeBoundsUpdate {
 	ShapeID shape;
 	AABB bounds;
+	glm::vec3 displacement {};
 	bool active = false;
 };
 
@@ -30,8 +32,11 @@ struct BroadPhaseStats {
 	size_t removed_leaves = 0;
 	size_t skipped_refits = 0;
 	size_t skipped_self_queries = 0;
+	size_t rebuilds = 0;
 	size_t queries = 0;
+	size_t query_nodes_visited = 0;
 	size_t query_hits = 0;
+	size_t skipped_mirror_hits = 0;
 	size_t pair_records = 0;
 	size_t candidate_pairs = 0;
 	size_t duplicate_pairs = 0;
@@ -43,6 +48,7 @@ struct BroadPhaseStats {
 	size_t rejected_layers = 0;
 	size_t rejected_joint_excluded = 0;
 	size_t tree_nodes = 0;
+	size_t tree_height = 0;
 };
 
 [[nodiscard]]
@@ -85,9 +91,18 @@ private:
 	auto testPair(CollisionWorldView world, ShapeID shape_a, ShapeID shape_b, BroadPhaseStats& stats)
 	    -> std::optional<BroadPhasePair>;
 
+	void updateTree(CollisionWorldView world, std::span<const ShapeBoundsUpdate> bounds);
+
 	AABBTree m_tree;
 	std::vector<ShapeLeaf> m_shape_leaves;
 	BroadPhaseStats m_stats;
+
+	std::vector<uint32_t> m_pending_leaves;
+	std::vector<uint32_t> m_queriers;
+	std::vector<uint8_t> m_is_querier;
+	std::vector<AABBTreeBuildLeaf> m_build_leaves;
+	std::vector<uint32_t> m_build_shapes;
+	std::vector<TreeNodeID> m_build_nodes;
 };
 
 }

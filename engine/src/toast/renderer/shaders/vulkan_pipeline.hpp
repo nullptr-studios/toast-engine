@@ -103,6 +103,12 @@ public:
 		float depth_bias_slope = 0.0f;
 		bool blend_enable = false;
 		BlendPreset blend_preset = BlendPreset::none;
+
+		/// Pixels one fragment shades, only applied with VulkanCore::isFragmentShadingRateSupported
+		vk::Extent2D fragment_shading_rate {1, 1};
+
+		/// Value of [[vk::constant_id(i)]] at index i for every stage so the driver strips the branches they turn off
+		std::vector<uint32_t> specialization_constants;
 	};
 
 	VulkanPipeline() = default;

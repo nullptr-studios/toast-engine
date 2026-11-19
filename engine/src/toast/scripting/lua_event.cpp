@@ -121,6 +121,15 @@ auto readEventPrimitive(lua_State* state, int index, toast::Box<toast::Node>& ou
 		out = {};
 		return true;
 	}
+	// A script's `self` is a table bound to its node, accept it like signals do
+	if (lua_istable(state, index)) {
+		const NodeProxy node = nodeOfSelfTable(luabridge::LuaRef::fromStack(state, index));
+		if (!node.exists()) {
+			return false;
+		}
+		out = node.box();
+		return true;
+	}
 	auto result = luabridge::Stack<NodeProxy>::get(state, index);
 	if (!result) {
 		return false;

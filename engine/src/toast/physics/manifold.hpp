@@ -225,7 +225,7 @@ struct BoxVoxelPairView {
 auto resolveBoxVoxelPair(CollisionWorldView world, BroadPhasePair pair) -> std::optional<BoxVoxelPairView>;
 
 struct BoxVoxelSplitInfo {
-	/// The box AABB in voxel local space safe to partition spatially across jobs
+	/// The box AABB in voxel local space clipped to the volume, safe to partition spatially across jobs
 	AABB local_bounds {};
 	/// Cheap surface area estimate, not an actual walk, since queryVoxelSurface only visits surface voxels
 	uint64_t estimated_voxels = 0;

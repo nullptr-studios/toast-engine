@@ -107,7 +107,6 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		m_expansion.Complete();
 		if (sender is not Control { DataContext: HierarchyElement el } || Vm is not { } vm) return;
 		if (!vm.Rows.Contains(el)) return;
-		if (el.IsInsidePrefab) return; // prefab interior nodes are read-only
 
 		var props = e.GetCurrentPoint(this).Properties;
 
@@ -123,7 +122,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		// remember the press so a small move can promote to a drag, and a click
 		// can fall through to fold/unfold on release
 		var wasSelected = ReferenceEquals(el, vm.SelectedNode);
-		m_rowPress.Begin(el, e, this, wasSelected);
+		if (!el.IsInsidePrefab) m_rowPress.Begin(el, e, this, wasSelected);
 		if (!wasSelected) vm.SelectedNode = el;
 		Focus();
 	}
@@ -143,9 +142,9 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	}
 
 	private void OnRenameStarted(HierarchyElement element) {
-		Rows.ScrollIntoView(element);
-		// delay one render frame so the TextBox is visible before we try to focus it
 		Dispatcher.UIThread.Post(() => {
+			if (!element.IsRenaming || Vm?.Rows.Contains(element) != true) return;
+			Rows.ScrollIntoView(element);
 			if (Rows.ItemsPanelRoot is not Panel panel) return;
 			foreach (var child in panel.Children) {
 				if (child.DataContext != element) continue;

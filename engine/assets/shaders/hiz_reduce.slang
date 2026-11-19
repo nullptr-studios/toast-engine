@@ -1,4 +1,4 @@
-// Every level of renderer::HiZPyramid in one dispatch where each texel keeps the farthest depth of the 2x2 texels under it
+// Every level of renderer::HiZPyramid in one dispatch where each texel keeps the farthest or closest depth of the 2x2 texels under it
 // Groups reduce 32x32 tiles of level 0 to level 5 in shared memory and the last group to finish reduces the rest
 import depth_convention;
 
@@ -13,6 +13,8 @@ struct ReducePush
     uint2 sourceSize;
     uint levelCount;
     uint groupCount;
+    /// 1 keeps the closest depth for ray marching and 0 the farthest for occlusion culling
+    uint closest;
 };
 
 [[vk::push_constant]]
@@ -40,12 +42,22 @@ uint2 levelSize(uint level)
     return (gReduce.sourceSize + ((1u << shift) - 1u)) >> shift;
 }
 
-/// Missing texels are the near depth which no farther test ever keeps
+/// Depth the reduction never keeps so missing texels drop out
+float missingDepth()
+{
+    return gReduce.closest != 0u ? kFarDepth : kNearDepth;
+}
+
+float reduceDepth(float a, float b)
+{
+    return gReduce.closest != 0u ? closerDepth(a, b) : fartherDepth(a, b);
+}
+
 float sourceDepth(uint2 pixel)
 {
     if (pixel.x >= gReduce.sourceSize.x || pixel.y >= gReduce.sourceSize.y)
     {
-        return kNearDepth;
+        return missingDepth();
     }
     return gDepth.Load(int3(int2(pixel), 0)).x;
 }
@@ -55,7 +67,7 @@ float levelDepth(uint level, uint2 texel)
     const uint2 size = levelSize(level);
     if (texel.x >= size.x || texel.y >= size.y)
     {
-        return kNearDepth;
+        return missingDepth();
     }
     return gLevels[level][texel];
 }
@@ -80,8 +92,8 @@ void computeMain(uint3 group : SV_GroupID, uint index : SV_GroupIndex)
         const uint2 local = thread * 2u + uint2(corner & 1u, corner >> 1);
         const uint2 texel = group.xy * kTile + local;
         const uint2 pixel = texel * 2u;
-        float depth = fartherDepth(sourceDepth(pixel), sourceDepth(pixel + uint2(1u, 0u)));
-        depth = fartherDepth(depth, fartherDepth(sourceDepth(pixel + uint2(0u, 1u)), sourceDepth(pixel + uint2(1u, 1u))));
+        float depth = reduceDepth(sourceDepth(pixel), sourceDepth(pixel + uint2(1u, 0u)));
+        depth = reduceDepth(depth, reduceDepth(sourceDepth(pixel + uint2(0u, 1u)), sourceDepth(pixel + uint2(1u, 1u))));
         sDepth[local.y][local.x] = depth;
         storeLevel(0u, texel, depth);
     }
@@ -92,12 +104,12 @@ void computeMain(uint3 group : SV_GroupID, uint index : SV_GroupIndex)
         const uint width = kTile >> level;
         const bool active = index < width * width;
         const uint2 local = uint2(index % width, index / width);
-        float depth = kNearDepth;
+        float depth = missingDepth();
         if (active)
         {
             const uint2 child = local * 2u;
-            depth = fartherDepth(fartherDepth(sDepth[child.y][child.x], sDepth[child.y][child.x + 1u]),
-                                 fartherDepth(sDepth[child.y + 1u][child.x], sDepth[child.y + 1u][child.x + 1u]));
+            depth = reduceDepth(reduceDepth(sDepth[child.y][child.x], sDepth[child.y][child.x + 1u]),
+                                 reduceDepth(sDepth[child.y + 1u][child.x], sDepth[child.y + 1u][child.x + 1u]));
         }
         GroupMemoryBarrierWithGroupSync();
         if (active)
@@ -135,8 +147,8 @@ void computeMain(uint3 group : SV_GroupID, uint index : SV_GroupIndex)
         {
             const uint2 texel = uint2(i % size.x, i / size.x);
             const uint2 child = texel * 2u;
-            const float depth = fartherDepth(fartherDepth(levelDepth(level - 1u, child), levelDepth(level - 1u, child + uint2(1u, 0u))),
-                                             fartherDepth(levelDepth(level - 1u, child + uint2(0u, 1u)),
+            const float depth = reduceDepth(reduceDepth(levelDepth(level - 1u, child), levelDepth(level - 1u, child + uint2(1u, 0u))),
+                                             reduceDepth(levelDepth(level - 1u, child + uint2(0u, 1u)),
                                                           levelDepth(level - 1u, child + uint2(1u, 1u))));
             gLevels[level][texel] = depth;
         }

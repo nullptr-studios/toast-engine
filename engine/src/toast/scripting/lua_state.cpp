@@ -702,6 +702,28 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addProperty("r", &Vec3FieldProxy::getX, &Vec3FieldProxy::setX)
 	    .addProperty("g", &Vec3FieldProxy::getY, &Vec3FieldProxy::setY)
 	    .addProperty("b", &Vec3FieldProxy::getZ, &Vec3FieldProxy::setZ)
+	    .addFunction("__add", [](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 { return glm::vec3(a) + b; })
+	    .addFunction("__sub", [](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 { return glm::vec3(a) - b; })
+	    .addFunction(
+	        "__mul",
+	        overload<const Vec3FieldProxy&, float>(+[](const Vec3FieldProxy& v, float s) -> glm::vec3 { return glm::vec3(v) * s; }),
+	        overload<const Vec3FieldProxy&, const glm::vec3&>(+[](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 {
+		        return glm::vec3(a) * b;
+	        })
+	    )
+	    .addFunction(
+	        "__div",
+	        overload<const Vec3FieldProxy&, float>(+[](const Vec3FieldProxy& v, float s) -> glm::vec3 { return glm::vec3(v) / s; }),
+	        overload<const Vec3FieldProxy&, const glm::vec3&>(+[](const Vec3FieldProxy& a, const glm::vec3& b) -> glm::vec3 {
+		        return glm::vec3(a) / b;
+	        })
+	    )
+	    .addFunction("__unm", [](const Vec3FieldProxy& v, const glm::vec3&) -> glm::vec3 { return -glm::vec3(v); })
+	    .addFunction("__eq", [](const Vec3FieldProxy& a, const glm::vec3& b) { return glm::vec3(a) == b; })
+	    .addFunction("__len", [](const Vec3FieldProxy& v) { return glm::length(glm::vec3(v)); })
+	    .addFunction(
+	        "__tostring", [](const Vec3FieldProxy& v) -> std::string { return std::format("vec3({}, {}, {})", v.x, v.y, v.z); }
+	    )
 	    .endClass()
 
 	    // vec4
@@ -878,6 +900,7 @@ void LuaState::registerApi(lua_State* state) noexcept {
 	    .addProperty("position", &physics::RayHit::position)
 	    .addProperty("normal", &physics::RayHit::normal)
 	    .addProperty("distance", &physics::RayHit::distance)
+	    .addProperty("palette_index", &physics::RayHit::palette_index)
 	    .addProperty(
 	        "node", +[](const physics::RayHit* hit) { return NodeProxy(hit->node); }
 	    )

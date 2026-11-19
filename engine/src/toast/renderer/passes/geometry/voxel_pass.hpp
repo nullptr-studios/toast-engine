@@ -97,7 +97,15 @@ public:
 		float distance_squared = 0.0f;
 		uint32_t instance = 0;
 		uint32_t brick = 0;
+		/// The camera is within the near plane of the brick so it draws back faces with exact depth
+		bool inside = false;
 	};
+
+	/// NDC rect around every glass brick drawn this frame, empty when one crosses the near plane and could cover anything
+	[[nodiscard]]
+	auto glassScreenBounds() const -> std::optional<glm::vec4> {
+		return m_glass_screen_bounds;
+	}
 
 	/// Far to near in the order recordGlass() indexes them and empty when no glass draws this frame
 	[[nodiscard]]
@@ -111,15 +119,13 @@ public:
 	/// After every blended draw
 	void recordGlassSurfaces(vk::CommandBuffer cmd, uint32_t frame_index);
 
-	void recordGlassMask(vk::CommandBuffer cmd, uint32_t frame_index);
-
-	/// Whether the backdrop must be copied before glass draws
-	[[nodiscard]]
-	auto refractsGlass() const -> bool;
-
-	void setBackdropCaptured(bool captured) noexcept { m_backdrop_captured = captured; }
+	/// Nearest glass surface into its own depth and the glass mask, before any blended draw
+	void recordGlassNearest(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	void setBackdropDepthValid(bool valid) noexcept { m_backdrop_depth_valid = valid; }
+
+	/// Whether the nearest glass depth was written this frame so blended glass lights only its front layer fully
+	void setNearestGlassValid(bool valid) noexcept { m_nearest_glass_valid = valid; }
 
 	/// After prepare() whether the lighting scope writes denoised terms
 	[[nodiscard]]
@@ -161,7 +167,7 @@ public:
 
 	static constexpr uint32_t k_max_instances = 4096;
 
-	static constexpr uint32_t k_max_glass_bricks = 16384;
+	static constexpr uint32_t k_max_glass_bricks = 65536;
 
 private:
 	/// Throttles the over limit warning
@@ -298,9 +304,13 @@ private:
 	void createDescriptors(const VulkanCore& core, const ShaderReflection& reflection);
 	void createLighting(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent);
 	void createGlass(const VulkanCore& core, vk::Format scene_format, vk::Format depth_format, vk::Extent2D extent);
-	void recordGlassBricks(
-	    vk::CommandBuffer cmd, uint32_t frame_index, const VulkanPipeline& pipeline, uint32_t first, uint32_t count
-	);
+	enum class GlassStage : uint8_t {
+		blend,
+		surface,
+		nearest
+	};
+	/// Front faced outside bricks then back faced inside bricks of the run
+	void recordGlassBricks(vk::CommandBuffer cmd, uint32_t frame_index, GlassStage stage, uint32_t first, uint32_t count);
 	/// Sorts the glass bricks of the instances written this frame far to near into the glass buffer
 	void prepareGlass(uint32_t frame_index, const VoxelGpuStorage& storage, std::span<const VoxelInstanceGpu> instances);
 
@@ -392,13 +402,12 @@ private:
 	VulkanPipeline m_marched_composite_pipeline;
 	bool m_spatial_active = false;
 	bool m_scene_glass = false;
-	bool m_backdrop_captured = false;
 	bool m_backdrop_depth_valid = false;
-	bool m_glass_dual_source = false;
+	bool m_nearest_glass_valid = false;
 	vk::raii::Sampler m_backdrop_sampler = nullptr;
 	vk::raii::Sampler m_backdrop_depth_sampler = nullptr;
-	/// Backdrop colour and depth each glass set was written with
-	DescriptorCache<std::array<vk::ImageView, 2>> m_bound_backdrop;
+	/// Backdrop colour and depth, the nearest glass depth, normal and motion and the glass mask each glass set was written with
+	DescriptorCache<std::array<vk::ImageView, 6>> m_bound_backdrop;
 	/// The push the lighting draw used so the spatial draw matches it
 	LightingPushConstants m_lighting_push;
 
@@ -419,7 +428,7 @@ private:
 	/// rgb filtered term a linear depth it was written at
 	static constexpr vk::Format k_denoise_history_format = vk::Format::eR16G16B16A16Sfloat;
 	/// Bindings of voxel_denoise.slang in order
-	static constexpr size_t k_denoise_bindings = 10;
+	static constexpr size_t k_denoise_bindings = 11;
 
 	/// Change regions of a newly published storage that voxel.slang marks reactive
 	void writeFreshRegions(uint32_t frame_index, const VoxelGpuStorage& storage);
@@ -448,21 +457,41 @@ private:
 	bool m_denoise_active = false;
 
 	/// Mirrors voxel_glass.slang GlassPush
-	/// Mirrors voxel_glass.slang GlassPush
 	struct GlassPush {
 		uint32_t first = 0;
-		/// 0 leaves the backdrop unread
-		float refraction = 0.0f;
-		float refraction_distance = 0.0f;
-		uint32_t refraction_voxels = 0;
 		uint32_t lit_surfaces = 0;
 		uint32_t depth_test = 0;
+		float reflection_reach = 0.0f;
+		float reflection_roughness = 0.0f;
+		uint32_t reflection_steps = 0;
+		float reflection_thickness = 0.0f;
+		float sun_reach = 0.0f;
+		uint32_t inside = 0;
+		uint32_t reverse = 0;
+		uint32_t count = 0;
+		uint32_t nearest_valid = 0;
+		uint32_t cost_view = 0;
+	};
+
+	/// Blended glass pipelines specialized by voxel_glass.slang kSpecReflection, the index matching kReflection*, then one with
+	/// the debug views for render modes other than 0
+	enum GlassVariant : uint8_t {
+		glass_variant_plain = 0,
+		glass_variant_traced = 1,
+		glass_variant_screen = 2,
+		glass_variant_debug = 3,
+		glass_variant_count = 4,
 	};
 
 	ShaderLayout m_glass_layout;
-	VulkanPipeline m_glass_pipeline;
-	VulkanPipeline m_glass_surface_pipeline;
-	VulkanPipeline m_glass_mask_pipeline;
+	/// Each indexed by GlassDraw::inside and the blended ones by GlassVariant first
+	std::array<std::array<VulkanPipeline, 2>, glass_variant_count> m_glass_pipelines;
+	std::array<VulkanPipeline, 2> m_glass_surface_pipelines;
+	std::array<VulkanPipeline, 2> m_glass_nearest_pipelines;
+	/// Fullscreen copy of the pre-pass surface in place of the surface brick walk
+	VulkanPipeline m_glass_surface_copy_pipeline;
+	/// Outside bricks past VulkanRenderer::voxelGlassCoarseDistance at 2x2, only built with a pipeline shading rate
+	std::array<VulkanPipeline, glass_variant_debug> m_glass_far_pipelines;
 	SceneDescriptorSets m_glass_scene_sets;
 	std::vector<vk::raii::DescriptorSet> m_glass_sets;
 	/// Instance index and brick grid index per drawn glass brick
@@ -471,6 +500,10 @@ private:
 	uint32_t m_glass_count = 0;
 	/// Throttles the over limit warning
 	std::chrono::steady_clock::time_point m_last_glass_warning;
+	/// Hash of what built m_glass_draws, empty when it must rebuild
+	std::optional<uint64_t> m_glass_key;
+	/// Min xy max xy in NDC
+	std::optional<glm::vec4> m_glass_screen_bounds;
 };
 
 }

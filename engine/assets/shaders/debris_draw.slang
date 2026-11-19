@@ -3,12 +3,18 @@ import voxel_gbuffer;
 import lighting;
 import gi_sample;
 import glass_common;
+import glass_reflection;
 
 struct PushConstants {
     float extrapolation;
     float frameDelta;
     float voxelSize;
     uint listCapacity;
+    /// Screen march reach in meters and 0 leaves glass with the environment
+    float reflectionReach;
+    uint reflectionSteps;
+    float reflectionThickness;
+    float reflectionRoughness;
 };
 
 [[vk::push_constant]]
@@ -23,7 +29,8 @@ struct DebrisParticle {
     uint albedo;
     float scale;
     uint glass;
-    uint pad0;
+    /// Palette emissive intensity
+    float emissive;
     uint pad1;
 };
 
@@ -31,6 +38,12 @@ struct DebrisParticle {
 StructuredBuffer<DebrisParticle> gParticles;
 [[vk::binding(1, 1)]]
 StructuredBuffer<uint> gDrawList;
+
+/// Opaque scene colour and depth before anything blended, only read while reflectionReach is above 0
+[[vk::binding(0, 2)]]
+Sampler2D gBackdrop;
+[[vk::binding(1, 2)]]
+Sampler2D gBackdropDepth;
 
 static const float3 kDebrisBoxCorners[8] = {
     float3(0.0, 0.0, 0.0), float3(1.0, 0.0, 0.0), float3(1.0, 1.0, 0.0), float3(0.0, 1.0, 0.0),
@@ -84,6 +97,9 @@ struct VSOutput {
 
     [[vk::location(9)]]
     nointerpolation float scale : TEXCOORD9;
+
+    [[vk::location(10)]]
+    nointerpolation float emissive : TEXCOORD10;
 };
 
 float3 debrisRotate(float4 q, float3 v) {
@@ -108,6 +124,7 @@ VSOutput emptyVertex() {
     output.cameraLocal = float3(0.0, 0.0, 0.0);
     output.cellMin = float3(0.0, 0.0, 0.0);
     output.scale = 0.0;
+    output.emissive = 0.0;
     return output;
 }
 
@@ -140,6 +157,7 @@ VSOutput debrisVertex(uint entry, uint vertexId) {
     output.cameraLocal = debrisRotate(inverse, gCamera.position - center) / max(worldScale, 1e-6);
     output.cellMin = cell - 1.0;
     output.scale = particle.scale;
+    output.emissive = particle.emissive;
     return output;
 }
 
@@ -188,7 +206,7 @@ FSOutput fragmentMain(VSOutput input) {
     output.albedo = float4(debrisAlbedo(input.albedo), kGbufferLit);
     output.faceNormal = encodeFaceNormal(normalize(input.normal));
     output.detailNormal = output.faceNormal;
-    output.material = float4(metallic, reflectivity, debrisRoughness(input.albedo), encodeEmissive(0.0));
+    output.material = float4(metallic, reflectivity, debrisRoughness(input.albedo), encodeEmissive(input.emissive));
     output.motion = float4((clip.xy / clip.w - previousClip.xy / previousClip.w) * 0.5, 0.0, 1.0);
     return output;
 }
@@ -237,9 +255,19 @@ GlassShade shadeDebrisGlass(VSOutput input) {
     const float scatter = glassScatter(alpha, roughness);
 
     const float3 diffuse = max(lit.color - lit.specular, float3(0.0, 0.0, 0.0));
+    float3 litSpecular = lit.specular;
+    float3 reflection;
+    // shortcut: mirror ray only so rough pieces below the cutoff reflect too sharp, upgrade to a GGX lobe sample with TAA
+    // Pieces past the reach are a few pixels and would only march to miss
+    if (gPush.reflectionReach > 0.0 && roughness <= gPush.reflectionRoughness &&
+        distance(gCamera.position, input.worldPosition) <= gPush.reflectionReach &&
+        glassScreenReflection(gBackdrop, gBackdropDepth, input.worldPosition, reflect(-view, normal), gPush.reflectionReach,
+                              gPush.reflectionSteps, gPush.reflectionThickness, reflection)) {
+        litSpecular = glassReflectionSpecular(lit.specular, lit.ambientSpecular, reflection, normal, view, roughness);
+    }
     // Lighting assumes F0 0.04 so rescale by the Fresnel ratio
-    const float3 specular = lit.specular * fresnel / (0.04 + 0.96 * facing);
-    shade.color = diffuse * scatter + specular;
+    const float3 specular = litSpecular * fresnel / (0.04 + 0.96 * facing);
+    shade.color = diffuse * scatter + albedo * input.emissive * alpha + specular;
 
     // Front faces only so the exit face is the far slab of this voxel
     const float3 direction = normalize(input.boxLocal - input.cameraLocal);

@@ -197,7 +197,10 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const voxel::Volume* volume;
 		const voxel::Palette* palette;
 		glm::mat4 model;
-		std::string debug_name;
+		/// Node name and the suffix are only joined when a pack needs the debug rows
+		std::string_view debug_name;
+		std::string_view debug_suffix;
+		uint32_t fragment_slot = ~0u;
 		bool data_only = false;
 		uint64_t highlight_id = 0;
 		const toast::VoxelNode* node = nullptr;
@@ -251,7 +254,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 					.volume = part.volume.get(),
 					.palette = parts_palette,
 					.model = *owner_transform * physics::Simulator::renderPoseDelta(part) * pose * part.localTransform(),
-					.debug_name = std::string{node->name()},
+					.debug_name = node->name(),
 					.node = node,
 					.part_key = part.key,
 					.outline_id = node->rid()
@@ -283,7 +286,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			.volume = volume,
 			.palette = palette,
 			.model = *owner_transform * physics::Simulator::renderPoseDelta(*node) * node->getWorldTransform() * node->volumeLocalTransform(),
-			.debug_name = std::string{node->name()},
+			.debug_name = node->name(),
 			.node = node
 		});
 		key.push_back({
@@ -312,7 +315,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			  .volume = it->second,
 			  .palette = gathered[i].palette,
 			  .model = gathered[i].model,
-			  .debug_name = gathered[i].debug_name + " highlight",
+			  .debug_name = gathered[i].debug_name,
+			  .debug_suffix = " highlight",
 			  .data_only = true,
 			});
 			key.push_back(
@@ -325,14 +329,35 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		}
 	}
 
+	// Fragments of one blast share an origin and part entries repeat their node so each origin is checked once per node
+	std::vector<std::pair<physics::BodyID, bool>> origin_owned;
+	const auto owned_by_gathered = [&](physics::BodyID origin) {
+		if (const auto known = std::ranges::find(origin_owned, origin, &std::pair<physics::BodyID, bool>::first);
+		    known != origin_owned.end()) {
+			return known->second;
+		}
+		bool owned = false;
+		const toast::VoxelNode* checked = nullptr;
+		for (const Gathered& g : gathered) {
+			if (g.node == nullptr || g.node == checked) {
+				continue;
+			}
+			checked = g.node;
+			if (g.node->ownsBody(origin)) {
+				owned = true;
+				break;
+			}
+		}
+		origin_owned.emplace_back(origin, owned);
+		return owned;
+	};
+
 	for (const physics::VoxelRenderRecord& record : physics::Simulator::voxelFragmentRecords()) {
 		if (record.volume == nullptr) {
 			continue;
 		}
 
-		if (record.fragment_origin != physics::BodyID {} && std::ranges::none_of(gathered, [&](const Gathered& g) {
-			    return g.node != nullptr && g.node->ownsBody(record.fragment_origin);
-		    })) {
+		if (record.fragment_origin != physics::BodyID {} && !owned_by_gathered(record.fragment_origin)) {
 			// do not leak voxel shit to other voxel shit
 			continue;
 		}
@@ -341,7 +366,14 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		const uint64_t id = voxelFragmentRenderId(record.shape);
 
 		const glm::mat4 drawn_transform = physics::Simulator::renderPoseDelta(record.body) * record.transform;
-		gathered.push_back({id, record.volume, palette, drawn_transform, "Voxel fragment " + std::to_string(record.shape.slot)});
+		gathered.push_back(
+		    {.id = id,
+				 .volume = record.volume,
+				 .palette = palette,
+				 .model = drawn_transform,
+				 .debug_name = "Voxel fragment ",
+				 .fragment_slot = record.shape.slot}
+		);
 		key.push_back(
 		    {.node_rid = id,
 				 .revision = record.revision,
@@ -392,7 +424,12 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 				scene_volumes.push_back({.volume = entry.volume, .palette = entry.palette});
 				node_rids.push_back(entry.id);
 				brick_dims.push_back(entry.volume->brickDims());
-				debug.node_names.emplace_back(entry.debug_name);
+				std::string name {entry.debug_name};
+				name += entry.debug_suffix;
+				if (entry.fragment_slot != ~0u) {
+					name += std::to_string(entry.fragment_slot);
+				}
+				debug.node_names.push_back(std::move(name));
 			}
 
 			const auto pack_start = std::chrono::steady_clock::now();
@@ -509,6 +546,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	if (!m_voxel_storage) {
 		m_voxel_previous_models.clear();
 		m_voxel_drawn_models.clear();
+		m_voxel_proxy_math.clear();
+		m_voxel_collision_storage = nullptr;
+		m_voxel_collision_count = 0;
 		std::scoped_lock lock(m_voxel_collision_mutex);
 		m_voxel_collision_world.reset();
 		return;
@@ -520,9 +560,10 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		return record.has_value() ? *record + 1u : 0u;
 	};
 
-	std::unordered_map<uint64_t, glm::mat4> drawn_models;
-	drawn_models.reserve(gathered.size());
+	// Existing keys are rewritten in place so a steady scene allocates nothing here
+	const uint64_t proxy_frame = ++m_voxel_proxy_frame;
 	frame.voxel_instances.reserve(gathered.size());
+	bool collision_changed = m_voxel_collision_storage != m_voxel_storage.get();
 
 	for (const Gathered& entry : gathered) {
 		const uint64_t node_rid = entry.id;
@@ -535,29 +576,57 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		}
 
 		const glm::uvec3 dims = m_voxel_storage->recordBrickDims(*record);
-		const glm::mat4 model = entry.model;
-		const glm::vec4 sphere = voxel::worldBoundingSphere(model, dims);
+		const glm::mat4& model = entry.model;
+		auto [math_it, inserted] = m_voxel_proxy_math.try_emplace(node_rid);
+		VoxelProxyMath& math = math_it->second;
+		if (inserted || math.model != model || math.dims != dims || math.record != *record) {
+			math.model = model;
+			math.inverse = glm::inverse(model);
+			math.sphere = voxel::worldBoundingSphere(model, dims);
+			math.dims = dims;
+			math.record = *record;
+			math.mirrored = glm::determinant(model) < 0.0f;
+			collision_changed = true;
+		}
+		math.frame = proxy_frame;
+
 		const auto previous = m_voxel_previous_models.find(node_rid);
 		const bool has_previous = previous != m_voxel_previous_models.end();
 
 		frame.voxel_instances.push_back(
 		    VoxelVolumeProxy {
 		      .model = model,
-		      .inverse_model = glm::inverse(model),
-		      .previous_model = has_previous ? previous->second : model,
+		      .inverse_model = math.inverse,
+		      .previous_model = has_previous ? previous->second.model : model,
 		      .node_rid = node_rid,
 		      .brick_dims = dims,
 		      .record_index = *record,
-		      .bounds_center = glm::vec3(sphere),
-		      .bounds_radius = sphere.w,
+		      .bounds_center = glm::vec3(math.sphere),
+		      .bounds_radius = math.sphere.w,
 		      .highlight_record = highlight_record_of(entry.highlight_id),
 		      .has_previous = has_previous,
-		      .mirrored = glm::determinant(model) < 0.0f,
+		      .mirrored = math.mirrored,
 		      .outlined = isOutlined(entry.outline_id != 0 ? entry.outline_id : node_rid),
 		    }
 		);
-		drawn_models.insert_or_assign(node_rid, model);
+		m_voxel_drawn_models.insert_or_assign(node_rid, VoxelDrawnModel {.model = model, .frame = proxy_frame});
 	}
+
+	// Only sweeps when something left since a full walk costs as much as the frame saved
+	const size_t drawn = frame.voxel_instances.size();
+	if (m_voxel_drawn_models.size() > drawn) {
+		std::erase_if(m_voxel_drawn_models, [&](const auto& item) { return item.second.frame != proxy_frame; });
+	}
+	if (m_voxel_proxy_math.size() > drawn) {
+		std::erase_if(m_voxel_proxy_math, [&](const auto& item) { return item.second.frame != proxy_frame; });
+	}
+
+	collision_changed = collision_changed || m_voxel_collision_count != drawn;
+	if (!collision_changed) {
+		return;
+	}
+	m_voxel_collision_storage = m_voxel_storage.get();
+	m_voxel_collision_count = drawn;
 
 	auto collision = std::make_shared<VoxelCollisionWorld>();
 	collision->storage = m_voxel_storage;
@@ -587,12 +656,8 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		    }
 		);
 	}
-	{
-		std::scoped_lock lock(m_voxel_collision_mutex);
-		m_voxel_collision_world = std::move(collision);
-	}
-
-	m_voxel_drawn_models = std::move(drawn_models);
+	std::scoped_lock lock(m_voxel_collision_mutex);
+	m_voxel_collision_world = std::move(collision);
 }
 
 }

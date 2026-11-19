@@ -292,6 +292,7 @@ auto Simulator::makeRayHit(const RayQuery& query, const RayContact& contact, toa
 	  .distance = contact.distance,
 	  .body = contact.body,
 	  .shape = contact.shape,
+	  .palette_index = contact.palette_index,
 	};
 }
 

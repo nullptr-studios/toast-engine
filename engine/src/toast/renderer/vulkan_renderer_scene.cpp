@@ -31,6 +31,7 @@
 #include <SDL3/SDL_keycode.h>
 #include <iostream>
 #include <iterator>
+#include <numeric>
 #include <toast/assets/animation.hpp>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/material.hpp>
@@ -1340,9 +1341,18 @@ void VulkanRenderer::cullAndBuildInstances(RenderFrame& frame) {
 		proxy.view_distance = std::max(glm::distance(eye, proxy.bounds_center) - proxy.bounds_radius, 0.0f);
 	}
 
-	std::ranges::stable_sort(frame.voxel_instances, [](const VoxelVolumeProxy& a, const VoxelVolumeProxy& b) {
-		return a.view_distance < b.view_distance;
-	});
+	// Proxies are big so the order is sorted as indices and applied in one gather, and a still camera skips it
+	if (!std::ranges::is_sorted(frame.voxel_instances, {}, &VoxelVolumeProxy::view_distance)) {
+		m_voxel_sort_order.resize(frame.voxel_instances.size());
+		std::iota(m_voxel_sort_order.begin(), m_voxel_sort_order.end(), 0u);
+		std::ranges::stable_sort(m_voxel_sort_order, {}, [&](uint32_t index) { return frame.voxel_instances[index].view_distance; });
+		m_voxel_sorted.clear();
+		m_voxel_sorted.reserve(frame.voxel_instances.size());
+		for (const uint32_t index : m_voxel_sort_order) {
+			m_voxel_sorted.push_back(frame.voxel_instances[index]);
+		}
+		frame.voxel_instances.swap(m_voxel_sorted);
+	}
 
 	std::ranges::stable_sort(frame.mesh_instances, [](const MeshInstanceProxy& a, const MeshInstanceProxy& b) {
 		if (a.root_material != b.root_material) {

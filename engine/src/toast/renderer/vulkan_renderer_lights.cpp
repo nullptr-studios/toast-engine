@@ -243,23 +243,50 @@ void VulkanRenderer::fitShadowViews(
 		const glm::vec3 light_direction = glm::normalize(shadow_caster_direction);
 		const uint32_t resolution = shadows::cascadeResolution();
 		const float padding = shadows::cascadePadding();
+		// Each refit re-renders that cascade's static casters so a moving camera refits early and one cascade a frame
+		constexpr float k_early_refit_slack = 0.3f;
+		std::array<BoundingSphere, shadows::k_cascade_count> slices {};
+		std::array<bool, shadows::k_cascade_count> refit {};
+		std::optional<uint32_t> early;
+		float early_used = 0.0f;
+		bool forced = false;
+		float slice_near = m_camera->near_plane;
+		for (uint32_t cascade = 0; cascade < shadows::k_cascade_count; ++cascade) {
+			slices[cascade] = frustumSliceSphere(*m_camera, aspect, slice_near, splits[cascade]);
+			slice_near = splits[cascade];
+			const BoundingSphere& slice = slices[cascade];
+			const CascadeAnchor& anchor = m_cascade_anchors[cascade];
+
+			// A zoom that leaves the padding far too large refits too
+			const float reach = glm::distance(anchor.center, slice.center) + slice.radius;
+			refit[cascade] = anchor.resolution != resolution || glm::dot(anchor.light_direction, light_direction) <= 0.99999f ||
+			                 reach > anchor.radius || slice.radius * (1.0f + (2.0f * padding)) < anchor.radius;
+			forced = forced || refit[cascade];
+
+			// Fraction of the padding used past which the cascade may refit ahead of need
+			const float used = anchor.slack > 0.0f ? 1.0f - ((anchor.radius - reach) / anchor.slack) : 1.0f;
+			if (!refit[cascade] && used > 1.0f - k_early_refit_slack && used > early_used) {
+				early = cascade;
+				early_used = used;
+			}
+		}
+		if (!forced && early.has_value()) {
+			refit[*early] = true;
+		}
+
 		float split_near = m_camera->near_plane;
 		uint32_t cascades_refit = 0;
 		for (uint32_t cascade = 0; cascade < shadows::k_cascade_count; ++cascade) {
-			const BoundingSphere slice = frustumSliceSphere(*m_camera, aspect, split_near, splits[cascade]);
-
-			// A zoom that leaves the padding far too large refits too
 			CascadeAnchor& anchor = m_cascade_anchors[cascade];
-			const bool holds = anchor.resolution == resolution && glm::dot(anchor.light_direction, light_direction) > 0.99999f &&
-			                   glm::distance(anchor.center, slice.center) + slice.radius <= anchor.radius &&
-			                   slice.radius * (1.0f + (2.0f * padding)) >= anchor.radius;
-			if (!holds) {
+			if (refit[cascade]) {
 				++cascades_refit;
+				const BoundingSphere& slice = slices[cascade];
 				anchor = CascadeAnchor {
 				  .center = slice.center,
 				  .radius = slice.radius * (1.0f + padding),
 				  .light_direction = light_direction,
 				  .resolution = resolution,
+				  .slack = slice.radius * padding,
 				};
 			}
 			const auto fit = fitDirectionalCascade(anchor.center, anchor.radius, light_direction, resolution);

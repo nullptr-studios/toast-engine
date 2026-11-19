@@ -134,6 +134,12 @@ public:
 		return m_mesh_shader_supported;
 	}
 
+	/// VK_KHR_fragment_shading_rate with a per pipeline rate, which always offers 2x2
+	[[nodiscard]]
+	auto isFragmentShadingRateSupported() const noexcept -> bool {
+		return m_fragment_shading_rate_supported;
+	}
+
 	[[nodiscard]]
 	auto isDepthClampSupported() const noexcept -> bool {
 		return m_depth_clamp_supported;
@@ -310,6 +316,7 @@ private:
 	bool m_ray_tracing_supported = false;
 	RayTracingMode m_ray_tracing_startup_mode {};
 	bool m_mesh_shader_supported = false;
+	bool m_fragment_shading_rate_supported = false;
 	std::string_view m_ray_tracing_reason = "not probed";
 
 	uint32_t m_mesh_multiview_views = 0;

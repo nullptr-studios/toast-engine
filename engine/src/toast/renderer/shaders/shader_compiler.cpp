@@ -259,16 +259,22 @@ void logDiagnostics(const Slang::ComPtr<slang::IBlob>& diagnostics, std::string_
 	const void* diag_ptr = diagnostics->getBufferPointer();
 	const size_t diag_size = diagnostics->getBufferSize();
 	if (diag_ptr && diag_size > 0) {
-		const char* diag_c = static_cast<const char*>(diag_ptr);
-		const std::string diag_str(diag_c, diag_c + diag_size);
-
-		logging::Severity severity = logging::Severity::warning;
-
-		if (diag_str.contains(": error ")) {
-			severity = logging::Severity::error;
+		// the blob counts its null terminator
+		std::string_view diag_str(static_cast<const char*>(diag_ptr), diag_size);
+		while (!diag_str.empty() && diag_str.back() == '\0') {
+			diag_str.remove_suffix(1);
 		}
 
-		TOAST_MESSAGE(severity, "Render", std::format("Slang diagnostics for '{}'", source_name), diag_str);
+		// The row only shows the message so it carries the first error line and the details keep the full text
+		logging::Severity severity = logging::Severity::warning;
+		std::string_view headline = logging::splitFirstLine(diag_str).first;
+		if (const size_t error_at = diag_str.find(": error "); error_at != std::string_view::npos) {
+			severity = logging::Severity::error;
+			const size_t line_start = diag_str.rfind('\n', error_at);
+			headline = logging::splitFirstLine(diag_str.substr(line_start == std::string_view::npos ? 0 : line_start + 1)).first;
+		}
+
+		TOAST_MESSAGE(severity, "Render", std::format("Slang: {}", headline), diag_str);
 	}
 }
 

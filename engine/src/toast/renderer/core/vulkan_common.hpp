@@ -29,6 +29,9 @@ inline constexpr vk::Format k_scene_normal_format = vk::Format::eR16G16B16A16Sfl
 
 inline constexpr vk::Format k_scene_indirect_format = vk::Format::eB10G11R11UfloatPack32;
 
+/// rgb environment specular voxel lighting added that SSR replaces and a its clip w so SSR skips pixels a mesh covered since
+inline constexpr vk::Format k_scene_ambient_specular_format = vk::Format::eR16G16B16A16Sfloat;
+
 /// xy uv motion current minus previous z reactive w 1 when written
 inline constexpr vk::Format k_scene_motion_format = vk::Format::eR16G16B16A16Sfloat;
 
@@ -43,6 +46,8 @@ inline constexpr vk::Format k_voxel_face_normal_format = vk::Format::eA2B10G10R1
 
 /// Marched and sampled light terms before voxel_denoise.slang and never negative
 inline constexpr vk::Format k_voxel_noisy_format = vk::Format::eB10G11R11UfloatPack32;
+/// Alpha marks the pixels the voxel denoise composite wrote
+inline constexpr vk::Format k_voxel_denoised_indirect_format = vk::Format::eR16G16B16A16Sfloat;
 /// Half resolution clipmap gather with a signed alpha marking pixels that gathered nothing
 inline constexpr vk::Format k_voxel_gi_format = vk::Format::eR16G16B16A16Sfloat;
 

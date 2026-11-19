@@ -413,6 +413,10 @@ VulkanCore::VulkanCore(
 	// Layer settings are fixed at instance creation but ray query use is only known once a device is picked
 	if (m_validation_enabled && probeRayQuery(m_physical_device).used()) {
 		m_physical_device = nullptr;
+#ifndef NDEBUG
+		// before the instance since destroying it after leaves the new messenger dead
+		m_debug_messenger = nullptr;
+#endif
 		m_instance = nullptr;
 		createInstance(required_instance_extensions, true);
 		pickPhysicalDevice(required_device_extensions);
@@ -438,7 +442,7 @@ void VulkanCore::createInstance(std::span<const char* const> required_instance_e
 	std::vector<const char*> layers;
 #ifdef DEBUG
 	if (m_validation_enabled) {
-		layers.push_back("VK_LAYER_KHRONOS_validation");
+		// layers.push_back("VK_LAYER_KHRONOS_validation");
 	}
 #endif
 
@@ -929,6 +933,26 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	}
 
+	{
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const bool extension_present = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME;
+		});
+		if (extension_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDeviceFragmentShadingRateFeaturesKHR rate_probe {};
+			probe.pNext = &rate_probe;
+			(*m_physical_device).getFeatures2(&probe);
+			m_fragment_shading_rate_supported = rate_probe.pipelineFragmentShadingRate == VK_TRUE;
+		}
+		if (m_fragment_shading_rate_supported) {
+			device_extensions.push_back(VK_KHR_FRAGMENT_SHADING_RATE_EXTENSION_NAME);
+			TOAST_INFO("Render", "VK_KHR_fragment_shading_rate available; far glass shades at 2x2");
+		} else {
+			TOAST_INFO("Render", "Pipeline fragment shading rate unavailable; far glass shades every pixel");
+		}
+	}
+
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 
 	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
@@ -940,6 +964,9 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	acceleration_structure_features.accelerationStructure = VK_TRUE;
 	vk::PhysicalDeviceRayQueryFeaturesKHR ray_query_features {};
 	ray_query_features.rayQuery = VK_TRUE;
+
+	vk::PhysicalDeviceFragmentShadingRateFeaturesKHR shading_rate_features {};
+	shading_rate_features.pipelineFragmentShadingRate = VK_TRUE;
 
 	vk::PhysicalDeviceFrameBoundaryFeaturesEXT frame_boundary_features {};
 	frame_boundary_features.frameBoundary = VK_TRUE;
@@ -971,6 +998,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	if (m_mesh_shader_supported) {
 		*chain_tail = &mesh_shader_features;
 		chain_tail = &mesh_shader_features.pNext;
+	}
+	if (m_fragment_shading_rate_supported) {
+		*chain_tail = &shading_rate_features;
+		chain_tail = &shading_rate_features.pNext;
 	}
 	if (m_ray_tracing_supported) {
 		*chain_tail = &acceleration_structure_features;
@@ -1220,7 +1251,7 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 	}
 	extension_score -= static_cast<int>(required_missing_names.size()) * 100;
 
-	const std::vector<const char*> optional_extensions = {
+	const std::vector optional_extensions = {
 	  VK_EXT_MEMORY_BUDGET_EXTENSION_NAME,
 	  VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 	  VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
@@ -1245,6 +1276,7 @@ auto VulkanCore::calculateDeviceScore(const vk::PhysicalDevice& device, std::spa
 		case 0: version_score = 0; break;
 		case 1: version_score = 25; break;
 		case 2: version_score = 50; break;
+		case 3: version_score = 75; break;
 		default: version_score = 100; break;
 	}
 

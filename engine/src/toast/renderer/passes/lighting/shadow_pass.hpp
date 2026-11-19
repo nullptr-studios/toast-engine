@@ -120,6 +120,14 @@ private:
 		uint32_t directional = 0;
 	};
 
+	/// Mirrors debris_shadow.slang PushConstants
+	struct DebrisShadowPush {
+		float extrapolation = 0.0f;
+		float voxel_size = 0.0f;
+		uint32_t list_capacity = 0;
+		uint32_t view_index = 0;
+	};
+
 	static constexpr uint32_t k_max_voxel_casters = 4096;
 	/// Throttles the over limit warning
 	std::chrono::steady_clock::time_point m_last_caster_limit_warning;
@@ -132,6 +140,9 @@ private:
 		uint32_t view_mask = 1;
 
 		std::optional<vk::raii::ImageView> view;
+
+		/// Cube groups split in two three layer views where mesh shader multiview stops short of six views
+		std::array<std::optional<vk::raii::ImageView>, 2> halves;
 
 		bool dirty = true;
 
@@ -198,6 +209,9 @@ private:
 	[[nodiscard]]
 	auto voxelMeshPipelineFor(uint32_t view_mask) const -> const VulkanPipeline*;
 
+	/// Shares the voxel shadow set with the voxel casters and the debris set with DebrisPass
+	void createDebrisResources(const VulkanCore& core);
+
 	void recordMap(vk::CommandBuffer cmd, ShadowMap& map, ShadowMap& static_map, uint32_t frame_index, bool directional);
 
 	[[nodiscard]]
@@ -208,8 +222,8 @@ private:
 
 	ShaderLayout m_shader_layout;
 
-	/// VulkanPipeline is not movable
-	std::array<PipelineSet, 2> m_pipeline_sets;
+	/// One view, a cube and half a cube, VulkanPipeline is not movable
+	std::array<PipelineSet, 3> m_pipeline_sets;
 
 	Stats m_stats;
 	std::vector<VoxelCaster> m_voxel_eligible;
@@ -220,7 +234,7 @@ private:
 	StaticMaps m_static;
 
 	ShaderLayout m_voxel_layout;
-	std::array<VoxelPipelineSet, 2> m_voxel_pipeline_sets;
+	std::array<VoxelPipelineSet, 3> m_voxel_pipeline_sets;
 	std::vector<vk::raii::DescriptorSet> m_voxel_shadow_sets;
 	std::vector<vk::raii::DescriptorSet> m_voxel_storage_sets;
 	std::vector<vma::raii::Buffer> m_voxel_instance_buffers;
@@ -240,20 +254,42 @@ private:
 	};
 
 	std::unordered_map<uint64_t, SettledCaster> m_settled_casters;
+
+	struct SettledMesh {
+		glm::mat4 model {1.0f};
+		glm::vec3 bounds_center {0.0f};
+		uint64_t moved_frame = 0;
+		uint64_t seen_frame = 0;
+	};
+
+	/// Keyed by node and mesh so submeshes of one node settle apart
+	std::unordered_map<uint64_t, SettledMesh> m_settled_meshes;
+	/// Per mesh proxy this frame, the settled model is what the static signatures hash
+	std::vector<glm::mat4> m_mesh_models;
+	std::vector<uint8_t> m_mesh_moving;
+
+	/// Resting meshes go to the static maps and moving or posed ones draw over them each compose
+	void prepareMeshes(uint32_t frame_index);
 	uint64_t m_caster_frame = 0;
 	std::vector<glm::mat4> m_caster_models;
 	std::vector<uint8_t> m_caster_moving;
 
 	std::vector<uint32_t> m_voxel_draw_order;
+	/// Light clip depth per voxel instance for the marched draw order
+	std::vector<float> m_voxel_draw_keys;
 
 	ShaderLayout m_voxel_mesh_layout;
 	/// Matches m_voxel_pipeline_sets by index
-	std::array<VulkanPipeline, 2> m_voxel_mesh_pipelines;
+	std::array<VulkanPipeline, 3> m_voxel_mesh_pipelines;
 	PFN_vkCmdDrawMeshTasksEXT m_draw_mesh_tasks = nullptr;
 	std::array<uint32_t, 3> m_max_task_groups {};
 	uint32_t m_max_task_group_total = 0;
 
 	std::vector<vk::ImageCopy> m_static_copies;
+
+	ShaderLayout m_debris_layout;
+	/// Matches m_pipeline_sets by index
+	std::array<VulkanPipeline, 3> m_debris_pipelines;
 };
 
 }

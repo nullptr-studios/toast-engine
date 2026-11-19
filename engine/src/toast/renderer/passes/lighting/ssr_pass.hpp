@@ -9,6 +9,7 @@
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
+#include "toast/renderer/resources/hiz_pyramid.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
 #include "toast/renderer/shaders/vulkan_pipeline.hpp"
@@ -36,15 +37,17 @@ public:
 	void onResize(vk::Extent2D extent) override;
 
 private:
-	/// Mirrors ssr.slang SsrParams. 176 bytes so the constructor checks maxPushConstantsSize
+	/// Mirrors ssr.slang SsrParams. 192 bytes so the constructor checks maxPushConstantsSize
 	struct Params {
 		glm::mat4 view_projection {1.0f};
 		glm::mat4 inverse_view_projection {1.0f};
 		glm::vec4 camera_position {0.0f};
-		/// x intensity y max roughness z thickness w step count
+		/// x intensity y max roughness z thickness w most pyramid steps a ray takes
 		glm::vec4 tuning {0.0f};
 		/// x reach in meters y render mode z 1 with a valid history w 1 when binding 8 holds last frame resolve
 		glm::vec4 marching {0.0f};
+		/// x levels of the closest depth pyramid y 1 when binding 10 was written this frame
+		glm::vec4 pyramid {0.0f};
 	};
 
 	/// xy hit uv z pdf w confidence in 32 bit since 16 bit cannot address wide screens
@@ -53,7 +56,7 @@ private:
 	static constexpr vk::Format k_reflection_format = vk::Format::eR16G16B16A16Sfloat;
 
 	/// Bindings of ssr.slang in order
-	static constexpr uint32_t k_binding_count = 9;
+	static constexpr uint32_t k_binding_count = 11;
 
 	void createResources(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -72,8 +75,11 @@ private:
 
 	/// Per frame in flight then per history parity
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
-	/// Source then previous resolve last written into each set
-	DescriptorCache<std::array<vk::ImageView, 4>> m_bound_views;
+	/// Source, previous resolve, depth, normal, pyramid and ambient specular last written into each set
+	DescriptorCache<std::array<vk::ImageView, 6>> m_bound_views;
+
+	/// Closest depth pyramids of the scene depth and of the glass backdrop depth, whichever the frame reflects off
+	std::array<HiZPyramid, 2> m_hiz;
 
 	PostProcessTarget m_hit_target;
 	PostProcessTarget m_resolve_target;

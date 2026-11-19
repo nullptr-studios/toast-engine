@@ -68,6 +68,18 @@ auto AsyncComputeTask::FrameView::buffer(BufferId id) const -> vk::Buffer {
 	return *m_task->m_buffers[id].copies[m_slot];
 }
 
+auto AsyncComputeTask::FrameView::read(BufferId id, std::span<std::byte> out) const -> bool {
+	if (m_task == nullptr || id >= m_task->m_buffers.size() || !m_task->m_buffers[id].cpu_readback) {
+		return false;
+	}
+	// The copy is in the same submit as the step so the pinned slot holds it finished
+	const vma::raii::Buffer& readback = m_task->m_buffers[id].readbacks[m_slot];
+	const vk::DeviceSize bytes = std::min<vk::DeviceSize>(out.size(), m_task->m_buffers[id].size);
+	readback.getAllocation().invalidate(0, bytes);
+	std::memcpy(out.data(), readback.getAllocation().getInfo().pMappedData, bytes);
+	return true;
+}
+
 AsyncComputeTask::AsyncComputeTask(Config config) : m_config(std::move(config)), m_core(&getCore()) {
 	ZoneScoped;
 	m_frame_slot.fill(-1);
