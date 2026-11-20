@@ -1,5 +1,7 @@
 var NAVTREEINDEX16 =
 {
+"structevent_1_1ProtoTraits_3_01ShaderReflectionReady_01_4.html":[13,0,4,109],
+"structevent_1_1ProtoTraits_3_01SignalCallables_01_4.html":[13,0,4,110],
 "structevent_1_1ProtoTraits_3_01SignalState_01_4.html":[13,0,4,111],
 "structevent_1_1ProtoTraits_3_01UpdateHierarchyData_01_4.html":[13,0,4,112],
 "structevent_1_1ProtoTraits_3_01UpdateHierarchyData_1_1HierarchyElement_01_4.html":[13,0,4,113],
@@ -247,7 +249,5 @@ var NAVTREEINDEX16 =
 "structphysics_1_1Joint.html":[13,0,8,55],
 "structphysics_1_1JointDescriptor.html":[13,0,8,57],
 "structphysics_1_1JointFrame.html":[13,0,8,58],
-"structphysics_1_1JointID.html":[13,0,8,59],
-"structphysics_1_1JointImpulses.html":[13,0,8,60],
-"structphysics_1_1JointSlot.html":[13,0,8,61]
+"structphysics_1_1JointID.html":[13,0,8,59]
 };

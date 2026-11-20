@@ -1,5 +1,7 @@
 var NAVTREEINDEX20 =
 {
+"structtoast_1_1Workspace_1_1SnapSetting.html":[13,0,14,103,2],
+"structtoast_1_1Workspace_1_1VoxelToolState.html":[11,0,2,99,3],
 "structtoast_1_1Workspace_1_1VoxelToolState.html":[13,0,14,103,3],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a0028fbb008de6cc31dd7eb938e55339f":[11,0,2,99,3,7],
 "structtoast_1_1Workspace_1_1VoxelToolState.html#a0028fbb008de6cc31dd7eb938e55339f":[13,0,14,103,3,7],
@@ -247,7 +249,5 @@ var NAVTREEINDEX20 =
 "uid_8hpp.html":[14,0,2,0,0,29],
 "uid_8hpp_source.html":[14,0,2,0,0,29],
 "uri__handler_8hpp.html":[14,0,2,0,0,30],
-"uri__handler_8hpp.html#ac00ab098ca7137e5151e4e8974fcad3e":[11,0,2,114],
-"uri__handler_8hpp.html#ad3fc4f25272e1bca6ea7892f6359e61c":[11,0,2,113],
-"uri__handler_8hpp_source.html":[14,0,2,0,0,30]
+"uri__handler_8hpp.html#ac00ab098ca7137e5151e4e8974fcad3e":[11,0,2,114]
 };

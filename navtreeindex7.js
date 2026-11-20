@@ -1,5 +1,7 @@
 var NAVTREEINDEX7 =
 {
+"classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6":[11,0,1,116,50],
+"classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6":[13,0,9,121,50],
 "classrenderer_1_1VulkanRenderer.html#a1b77b7999b5d36c2198343748f1a47bd":[11,0,1,116,6],
 "classrenderer_1_1VulkanRenderer.html#a1b77b7999b5d36c2198343748f1a47bd":[13,0,9,121,6],
 "classrenderer_1_1VulkanRenderer.html#a1d74e649188a1b8615e656b2222bef3b":[11,0,1,116,65],
@@ -247,7 +249,5 @@ var NAVTREEINDEX7 =
 "classtoast_1_1AudioEmitter.html":[11,0,2,9],
 "classtoast_1_1AudioEmitter.html":[13,0,14,13],
 "classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c":[11,0,2,9,3],
-"classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c":[13,0,14,13,3],
-"classtoast_1_1AudioEmitter.html#a174b32e5dfbeff713d72c6eb165b4f80":[11,0,2,9,8],
-"classtoast_1_1AudioEmitter.html#a174b32e5dfbeff713d72c6eb165b4f80":[13,0,14,13,8]
+"classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c":[13,0,14,13,3]
 };

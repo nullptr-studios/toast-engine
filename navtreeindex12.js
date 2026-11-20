@@ -1,5 +1,7 @@
 var NAVTREEINDEX12 =
 {
+"dir_f844af231fcfe0f4fa05fcaf5196da29.html":[14,0,2,0,0,6,4],
+"directional__light_8hpp.html":[14,0,2,0,0,12,11],
 "directional__light_8hpp_source.html":[14,0,2,0,0,12,11],
 "docs_2examples_2async__compute_2debris__simulation_8cpp.html":[14,0,0,0,0,0],
 "docs_2examples_2async__compute_2debris__simulation_8hpp.html":[14,0,0,0,0,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX12 =
 "interfaceeditor_1_1Editors_1_1IToastZoneEditor.html":[13,0,3,4,9],
 "interfaceeditor_1_1LuaEditor_1_1Layout_1_1INodeMeasure.html":[11,0,0,9,4,5],
 "interfaceeditor_1_1LuaEditor_1_1Layout_1_1INodeMeasure.html":[13,0,3,8,4,5],
-"interfaceeditor_1_1Workspace_1_1IAutosavable.html":[11,0,0,12,24],
-"interfaceeditor_1_1Workspace_1_1IAutosavable.html":[13,0,3,11,24],
-"interfaceeditor_1_1Workspace_1_1IHierarchyRow.html":[11,0,0,12,25]
+"interfaceeditor_1_1Workspace_1_1IAutosavable.html":[11,0,0,12,24]
 };

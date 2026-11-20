@@ -1567,6 +1567,7 @@ var hierarchy =
     [ "editor.Workspace.SignalFunctionViewModel", "classeditor_1_1Workspace_1_1SignalFunctionViewModel.html", null ],
     [ "toast::SignalInfo", "structtoast_1_1SignalInfo.html", null ],
     [ "input::SignalList", "structinput_1_1SignalList.html", null ],
+    [ "editor.Workspace.SignalNodeRow", "classeditor_1_1Workspace_1_1SignalNodeRow.html", null ],
     [ "event::SignalParameter", "structevent_1_1SignalParameter.html", null ],
     [ "scripting::SignalProxy", "classscripting_1_1SignalProxy.html", null ],
     [ "event::SignalStateEntry", "structevent_1_1SignalStateEntry.html", null ],

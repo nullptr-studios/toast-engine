@@ -1,5 +1,7 @@
 var NAVTREEINDEX13 =
 {
+"interfaceeditor_1_1Workspace_1_1IAutosavable.html":[13,0,3,11,24],
+"interfaceeditor_1_1Workspace_1_1IHierarchyRow.html":[11,0,0,12,25],
 "interfaceeditor_1_1Workspace_1_1IHierarchyRow.html":[13,0,3,11,25],
 "irradiance__volume_8hpp.html":[14,0,2,0,0,12,17],
 "irradiance__volume_8hpp_source.html":[14,0,2,0,0,12,17],
@@ -247,7 +249,5 @@ var NAVTREEINDEX13 =
 "namespacerenderer.html":[11,0,1],
 "namespacerenderer.html#a0d9650875754896fa95f1a9978d34458":[11,0,1,123],
 "namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069":[11,0,1,126],
-"namespacerenderer.html#a1cd58175ea99f1b98645eeb4e37289d0":[11,0,1,150],
-"namespacerenderer.html#a25f56ab1e438210e903a5c6e6169fe4a":[11,0,1,157],
-"namespacerenderer.html#a33a2b4ce281eab29737825137684d052":[11,0,1,133]
+"namespacerenderer.html#a1cd58175ea99f1b98645eeb4e37289d0":[11,0,1,150]
 };

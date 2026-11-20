@@ -1,5 +1,7 @@
 var NAVTREEINDEX14 =
 {
+"namespacerenderer.html#a25f56ab1e438210e903a5c6e6169fe4a":[11,0,1,157],
+"namespacerenderer.html#a33a2b4ce281eab29737825137684d052":[11,0,1,133],
 "namespacerenderer.html#a367926a57f113f494bfbc5ebfd89ce96":[11,0,1,144],
 "namespacerenderer.html#a3d78879fbb26d79b8ed7b384a738f7c3":[11,0,1,139],
 "namespacerenderer.html#a42015b1686299580fface71f08ed1f44":[11,0,1,148],
@@ -247,7 +249,5 @@ var NAVTREEINDEX14 =
 "slang__vfs_8hpp_source.html":[14,0,2,0,0,6,9,6],
 "slider__joint_8hpp.html":[14,0,2,0,0,4,0,10],
 "slider__joint_8hpp_source.html":[14,0,2,0,0,4,0,10],
-"sphere__collider_8hpp_source.html":[14,0,2,0,0,4,0,11],
-"spirv__entry__points_8cpp.html":[14,0,2,0,0,6,9,7],
-"spirv__entry__points_8hpp.html":[14,0,2,0,0,6,9,8]
+"sphere__collider_8hpp_source.html":[14,0,2,0,0,4,0,11]
 };

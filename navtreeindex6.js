@@ -1,5 +1,7 @@
 var NAVTREEINDEX6 =
 {
+"classrenderer_1_1RayTracingScene.html#ad79e0b5212e744de921e8e69629ad385":[11,0,1,54,1],
+"classrenderer_1_1RayTracingScene.html#ad79e0b5212e744de921e8e69629ad385":[13,0,9,59,1],
 "classrenderer_1_1ReflectionProbePass.html":[11,0,1,56],
 "classrenderer_1_1ReflectionProbePass.html":[13,0,9,61],
 "classrenderer_1_1ReflectionProbePass.html#a589f205fbc3f14aa827c8523b05d6f63":[11,0,1,56,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX6 =
 "classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b":[11,0,1,116,69],
 "classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b":[13,0,9,121,69],
 "classrenderer_1_1VulkanRenderer.html#a121139fc596c480941a235425f596218":[11,0,1,116,72],
-"classrenderer_1_1VulkanRenderer.html#a121139fc596c480941a235425f596218":[13,0,9,121,72],
-"classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6":[11,0,1,116,50],
-"classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6":[13,0,9,121,50]
+"classrenderer_1_1VulkanRenderer.html#a121139fc596c480941a235425f596218":[13,0,9,121,72]
 };

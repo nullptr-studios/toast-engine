@@ -1,5 +1,7 @@
 var NAVTREEINDEX19 =
 {
+"structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884":[13,0,9,120,0,7],
+"structrenderer_1_1VulkanPipeline_1_1Config.html#aa1857fb19dd53b400d2ba9b729fc1e04":[11,0,1,115,0,2],
 "structrenderer_1_1VulkanPipeline_1_1Config.html#aa1857fb19dd53b400d2ba9b729fc1e04":[13,0,9,120,0,2],
 "structrenderer_1_1VulkanPipeline_1_1Config.html#aa7a6f1fb7e799b910e4faab4602e791c":[11,0,1,115,0,1],
 "structrenderer_1_1VulkanPipeline_1_1Config.html#aa7a6f1fb7e799b910e4faab4602e791c":[13,0,9,120,0,1],
@@ -247,7 +249,5 @@ var NAVTREEINDEX19 =
 "structtoast_1_1Workspace_1_1SceneHit.html":[13,0,14,103,4],
 "structtoast_1_1Workspace_1_1SizeHandlePoint.html":[11,0,2,99,0],
 "structtoast_1_1Workspace_1_1SizeHandlePoint.html":[13,0,14,103,0],
-"structtoast_1_1Workspace_1_1SnapSetting.html":[11,0,2,99,2],
-"structtoast_1_1Workspace_1_1SnapSetting.html":[13,0,14,103,2],
-"structtoast_1_1Workspace_1_1VoxelToolState.html":[11,0,2,99,3]
+"structtoast_1_1Workspace_1_1SnapSetting.html":[11,0,2,99,2]
 };

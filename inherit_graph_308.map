@@ -1,3 +1,60 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="Node000000" href="$classlogging_1_1Logger.html" title=" " alt="" coords="5,5,127,33"/>
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,84,196,112"/>
+<area shape="rect" id="Node000001" href="$classeditor_1_1Workspace_1_1HierarchyView.html" title=" " alt="" coords="248,5,480,33"/>
+<area shape="poly" id="edge638_Node000000_Node000001" title=" " alt="" coords="149,76,243,43,293,32,289,36,244,48,153,80"/>
+<area shape="rect" id="Node000020" href="$classeditor_1_1Workspace_1_1HistoryView.html" title=" " alt="" coords="256,57,472,85"/>
+<area shape="poly" id="edge639_Node000000_Node000020" title=" " alt="" coords="209,85,257,80,253,84,213,89"/>
+<area shape="rect" id="Node000021" href="$classeditor_1_1Workspace_1_1InspectorView.html" title=" " alt="" coords="249,109,478,137"/>
+<area shape="poly" id="edge640_Node000000_Node000021" title=" " alt="" coords="210,106,251,110,247,114,213,111"/>
+<area shape="rect" id="Node000027" href="$classeditor_1_1Workspace_1_1WorkspaceView.html" title=" " alt="" coords="244,161,484,189"/>
+<area shape="poly" id="edge641_Node000000_Node000027" title=" " alt="" coords="151,115,244,146,294,159,290,162,243,151,154,120"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="51,771,150,798"/>
+<area shape="poly" id="edge659_Node000002_Node000001" title=" " alt="" coords="101,755,111,607,135,393,154,283,177,183,206,100,223,68,242,44,261,31,258,36,246,48,228,71,211,102,183,184,159,284,141,394,117,607,106,756"/>
+<area shape="poly" id="edge660_Node000002_Node000020" title=" " alt="" coords="101,755,113,615,139,417,158,316,181,224,208,148,224,118,242,96,261,83,258,88,246,100,229,121,213,150,186,225,163,317,144,418,119,616,106,755"/>
+<area shape="poly" id="edge661_Node000002_Node000021" title=" " alt="" coords="102,755,115,625,142,443,161,350,184,265,211,195,226,168,242,148,262,135,259,140,246,152,230,171,215,198,189,266,166,351,147,444,121,626,107,755"/>
+<area shape="poly" id="edge667_Node000002_Node000027" title=" " alt="" coords="102,755,117,635,146,468,165,383,187,306,213,243,227,218,242,200,262,187,259,192,246,204,231,222,217,245,192,308,170,385,151,469,123,636,108,756"/>
+<area shape="rect" id="Node000003" href="$classeditor_1_1Assets_1_1AssetBrowserView.html" title=" " alt="" coords="249,973,479,1001"/>
+<area shape="poly" id="edge642_Node000002_Node000003" title=" " alt="" coords="116,810,139,846,167,886,203,926,245,960,269,972,264,974,242,964,199,930,163,890,134,849,116,815"/>
+<area shape="rect" id="Node000004" href="$classeditor_1_1DetailTextureEditor_1_1DetailTextureEditorView.html" title=" " alt="" coords="269,1025,459,1070"/>
+<area shape="poly" id="edge643_Node000002_Node000004" title=" " alt="" coords="112,811,133,856,161,910,198,964,221,989,245,1010,271,1026,266,1028,242,1015,217,993,194,968,156,913,128,858,112,816"/>
+<area shape="rect" id="Node000005" href="$classeditor_1_1Editors_1_1CurveView.html" title=" " alt="" coords="273,1093,454,1121"/>
+<area shape="poly" id="edge644_Node000002_Node000005" title=" " alt="" coords="107,811,123,870,149,943,167,981,189,1017,215,1051,245,1080,275,1097,270,1098,242,1084,211,1055,184,1020,162,983,144,945,118,872,107,816"/>
+<area shape="rect" id="Node000006" href="$classeditor_1_1Editors_1_1GenericView.html" title=" " alt="" coords="267,1145,460,1173"/>
+<area shape="poly" id="edge645_Node000002_Node000006" title=" " alt="" coords="105,811,118,879,142,966,160,1011,183,1055,211,1095,245,1130,270,1146,264,1147,242,1135,207,1099,179,1058,155,1013,137,967,113,880,105,816"/>
+<area shape="rect" id="Node000007" href="$classeditor_1_1Editors_1_1HapticsView.html" title=" " alt="" coords="268,1197,460,1225"/>
+<area shape="poly" id="edge646_Node000002_Node000007" title=" " alt="" coords="103,811,114,889,135,989,153,1042,177,1093,207,1141,245,1182,270,1199,265,1200,242,1187,203,1144,172,1096,148,1044,130,990,108,889,103,817"/>
+<area shape="rect" id="Node000008" href="$classeditor_1_1Editors_1_1PaletteView.html" title=" " alt="" coords="270,1249,458,1277"/>
+<area shape="poly" id="edge647_Node000002_Node000008" title=" " alt="" coords="102,811,109,897,116,952,128,1011,146,1072,171,1132,204,1187,245,1234,272,1252,267,1253,242,1239,199,1190,166,1134,141,1074,123,1012,111,953,104,898,101,816"/>
+<area shape="rect" id="Node000009" href="$classeditor_1_1Editors_1_1SchemaView.html" title=" " alt="" coords="266,1301,462,1329"/>
+<area shape="poly" id="edge648_Node000002_Node000009" title=" " alt="" coords="106,811,126,919,156,1062,175,1134,197,1199,220,1251,246,1287,268,1303,263,1303,242,1290,216,1254,192,1201,170,1135,151,1063,121,920,106,817"/>
+<area shape="rect" id="Node000010" href="$classeditor_1_1Editors_1_1TableView.html" title=" " alt="" coords="275,1353,452,1381"/>
+<area shape="poly" id="edge649_Node000002_Node000010" title=" " alt="" coords="105,811,124,928,153,1087,172,1167,194,1240,218,1299,246,1339,260,1349,278,1359,272,1359,257,1354,242,1342,214,1302,189,1242,167,1169,147,1088,119,929,105,816"/>
+<area shape="rect" id="Node000011" href="$classeditor_1_1Git_1_1CommitView.html" title=" " alt="" coords="279,1405,448,1433"/>
+<area shape="poly" id="edge650_Node000002_Node000011" title=" " alt="" coords="105,811,122,939,149,1113,168,1201,190,1282,216,1347,231,1372,246,1391,261,1402,282,1413,276,1413,259,1407,242,1394,226,1375,212,1349,185,1283,163,1202,144,1114,116,939,104,817"/>
+<area shape="rect" id="Node000012" href="$classeditor_1_1Git_1_1LockArtworkView.html" title=" " alt="" coords="265,1457,463,1485"/>
+<area shape="poly" id="edge651_Node000002_Node000012" title=" " alt="" coords="104,811,120,948,146,1138,165,1235,187,1323,214,1395,229,1422,246,1443,267,1460,262,1459,242,1446,225,1425,210,1397,182,1324,159,1236,141,1139,114,949,104,817"/>
+<area shape="rect" id="Node000013" href="$classeditor_1_1Git_1_1LocksView.html" title=" " alt="" coords="287,213,441,241"/>
+<area shape="poly" id="edge652_Node000002_Node000013" title=" " alt="" coords="103,755,120,644,149,493,168,416,190,347,215,290,242,252,262,238,288,230,284,234,265,243,246,256,219,293,195,349,174,418,155,494,125,645,108,755"/>
+<area shape="rect" id="Node000014" href="$classeditor_1_1Logger_1_1LogsView.html" title=" " alt="" coords="278,265,450,293"/>
+<area shape="poly" id="edge653_Node000002_Node000014" title=" " alt="" coords="98,755,101,666,108,608,119,544,137,478,162,414,197,354,242,303,258,291,279,283,276,288,261,296,245,306,201,357,167,416,142,480,124,545,113,609,107,667,104,755"/>
+<area shape="rect" id="Node000015" href="$classeditor_1_1LuaEditor_1_1Controls_1_1TypeEditor.html" title=" " alt="" coords="272,317,456,362"/>
+<area shape="poly" id="edge654_Node000002_Node000015" title=" " alt="" coords="100,755,109,678,131,575,149,520,173,467,204,416,242,372,273,353,270,358,245,376,208,419,178,469,154,522,136,577,114,679,106,755"/>
+<area shape="rect" id="Node000016" href="$classeditor_1_1LuaEditor_1_1Controls_1_1TypePicker.html" title=" " alt="" coords="272,386,456,431"/>
+<area shape="poly" id="edge655_Node000002_Node000016" title=" " alt="" coords="103,755,115,690,140,606,158,561,181,518,209,477,242,441,273,424,270,428,245,445,213,480,185,520,163,564,145,608,120,692,108,756"/>
+<area shape="rect" id="Node000017" href="$classeditor_1_1LuaEditor_1_1LuaGraphEditorView.html" title=" " alt="" coords="270,456,458,500"/>
+<area shape="poly" id="edge656_Node000002_Node000017" title=" " alt="" coords="106,755,122,702,150,636,189,569,214,538,242,510,271,495,268,499,245,515,218,541,193,572,154,639,128,704,111,756"/>
+<area shape="rect" id="Node000018" href="$classeditor_1_1VoxelEditor_1_1VoxelEditorView.html" title=" " alt="" coords="277,525,450,570"/>
+<area shape="poly" id="edge657_Node000002_Node000018" title=" " alt="" coords="111,756,131,716,160,669,197,621,242,580,278,562,275,567,245,584,201,624,164,672,136,719,116,757"/>
+<area shape="rect" id="Node000019" href="$classeditor_1_1VoxelEditor_1_1VoxelPalettePicker.html" title=" " alt="" coords="277,594,450,639"/>
+<area shape="poly" id="edge658_Node000002_Node000019" title=" " alt="" coords="120,757,172,702,206,674,242,649,278,634,275,638,245,653,209,678,176,706,125,760"/>
+<area shape="rect" id="Node000022" href="$classeditor_1_1Workspace_1_1ProjectSettingsView.html" title=" " alt="" coords="273,664,455,708"/>
+<area shape="poly" id="edge662_Node000002_Node000022" title=" " alt="" coords="142,762,243,718,280,707,276,711,245,723,146,765"/>
+<area shape="rect" id="Node000023" href="$classeditor_1_1Workspace_1_1RendererSettingsView.html" title=" " alt="" coords="266,733,462,778"/>
+<area shape="poly" id="edge663_Node000002_Node000023" title=" " alt="" coords="164,775,267,764,263,768,167,780"/>
+<area shape="rect" id="Node000024" href="$classeditor_1_1Workspace_1_1RulerOverlay.html" title="Turbo shitty ruler overlay." alt="" coords="253,801,475,829"/>
+<area shape="poly" id="edge664_Node000002_Node000024" title=" " alt="" coords="164,790,254,801,250,804,167,794"/>
+<area shape="rect" id="Node000025" href="$classeditor_1_1Workspace_1_1SignalsView.html" title=" " alt="" coords="256,853,472,881"/>
+<area shape="poly" id="edge665_Node000002_Node000025" title=" " alt="" coords="147,802,244,838,292,851,287,854,243,843,149,807"/>
+<area shape="rect" id="Node000026" href="$classeditor_1_1Workspace_1_1ViewportControl.html" title=" " alt="" coords="266,905,462,950"/>
+<area shape="poly" id="edge666_Node000002_Node000026" title=" " alt="" coords="127,806,181,849,245,890,273,903,269,905,242,895,178,854,129,812"/>
 </map>

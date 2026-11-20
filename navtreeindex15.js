@@ -1,5 +1,7 @@
 var NAVTREEINDEX15 =
 {
+"spirv__entry__points_8cpp.html":[14,0,2,0,0,6,9,7],
+"spirv__entry__points_8hpp.html":[14,0,2,0,0,6,9,8],
 "spirv__entry__points_8hpp_source.html":[14,0,2,0,0,6,9,8],
 "spotlight_8hpp.html":[14,0,2,0,0,12,31],
 "spotlight_8hpp_source.html":[14,0,2,0,0,12,31],
@@ -247,7 +249,5 @@ var NAVTREEINDEX15 =
 "structevent_1_1ProtoTraits_3_01SetVoxelCutPreview_01_4.html":[13,0,4,105],
 "structevent_1_1ProtoTraits_3_01SetVoxelEditorOverlays_01_4.html":[13,0,4,106],
 "structevent_1_1ProtoTraits_3_01SetVoxelTool_01_4.html":[13,0,4,107],
-"structevent_1_1ProtoTraits_3_01ShaderRecompiled_01_4.html":[13,0,4,108],
-"structevent_1_1ProtoTraits_3_01ShaderReflectionReady_01_4.html":[13,0,4,109],
-"structevent_1_1ProtoTraits_3_01SignalCallables_01_4.html":[13,0,4,110]
+"structevent_1_1ProtoTraits_3_01ShaderRecompiled_01_4.html":[13,0,4,108]
 };

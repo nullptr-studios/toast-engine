@@ -1,5 +1,7 @@
 var NAVTREEINDEX17 =
 {
+"structphysics_1_1JointImpulses.html":[13,0,8,60],
+"structphysics_1_1JointSlot.html":[13,0,8,61],
 "structphysics_1_1JointState.html":[13,0,8,62],
 "structphysics_1_1JointVoxelEnd.html":[13,0,8,63],
 "structphysics_1_1LayerFilter.html":[13,0,8,65],
@@ -247,7 +249,5 @@ var NAVTREEINDEX17 =
 "structrenderer_1_1IrradianceVolumeData.html#a6e205bf36462893edc99310ed7ce66ce":[13,0,9,43,0],
 "structrenderer_1_1IrradianceVolumeData.html#ac8bd58d0345ec8f68da4fa455f3027c3":[11,0,1,38,2],
 "structrenderer_1_1IrradianceVolumeData.html#ac8bd58d0345ec8f68da4fa455f3027c3":[13,0,9,43,2],
-"structrenderer_1_1IrradianceVolumeData.html#adcd601a09c2b9f6df6cf99e6c9676b55":[11,0,1,38,3],
-"structrenderer_1_1IrradianceVolumeData.html#adcd601a09c2b9f6df6cf99e6c9676b55":[13,0,9,43,3],
-"structrenderer_1_1LightStats.html":[11,0,1,41]
+"structrenderer_1_1IrradianceVolumeData.html#adcd601a09c2b9f6df6cf99e6c9676b55":[11,0,1,38,3]
 };

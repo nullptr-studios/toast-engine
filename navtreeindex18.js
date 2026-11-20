@@ -1,5 +1,7 @@
 var NAVTREEINDEX18 =
 {
+"structrenderer_1_1IrradianceVolumeData.html#adcd601a09c2b9f6df6cf99e6c9676b55":[13,0,9,43,3],
+"structrenderer_1_1LightStats.html":[11,0,1,41],
 "structrenderer_1_1LightStats.html":[13,0,9,46],
 "structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad":[11,0,1,41,0],
 "structrenderer_1_1LightStats.html#ac3d098358060471349d41e7007496aad":[13,0,9,46,0],
@@ -247,7 +249,5 @@ var NAVTREEINDEX18 =
 "structrenderer_1_1VulkanPipeline_1_1Config.html#a8f488c4cb4f59cf2ef4484e151bda228":[13,0,9,120,0,4],
 "structrenderer_1_1VulkanPipeline_1_1Config.html#a953b43f580b56bbcff1d55ce5a5e3801":[11,0,1,115,0,0],
 "structrenderer_1_1VulkanPipeline_1_1Config.html#a953b43f580b56bbcff1d55ce5a5e3801":[13,0,9,120,0,0],
-"structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884":[11,0,1,115,0,7],
-"structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884":[13,0,9,120,0,7],
-"structrenderer_1_1VulkanPipeline_1_1Config.html#aa1857fb19dd53b400d2ba9b729fc1e04":[11,0,1,115,0,2]
+"structrenderer_1_1VulkanPipeline_1_1Config.html#aa068bbca5868f984f1a7e1b9455c5884":[11,0,1,115,0,7]
 };
