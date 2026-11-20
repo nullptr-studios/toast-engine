@@ -36,20 +36,13 @@ public class AssetPickerItem : IPickerNode {
 	IEnumerable IPickerNode.VisibleChildren => Array.Empty<object>();
 	string? IPickerNode.ThumbnailUid => HasThumbnail ? Uid : null;
 
-	public bool UpdateSegments(string query, bool caseSensitive) {
-		if (string.IsNullOrEmpty(query)) {
+	public bool UpdateSegments(string query) {
+		if (string.IsNullOrWhiteSpace(query)) {
 			Segments = [new TextSegment(Name, false)];
 			return true;
 		}
 
-		var cmp = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-		var idx = Name.IndexOf(query, cmp);
-		if (idx < 0) return false;
-
-		var segments = new List<TextSegment>(3);
-		if (idx > 0) segments.Add(new TextSegment(Name[..idx], false));
-		segments.Add(new TextSegment(Name.Substring(idx, query.Length), true));
-		if (idx + query.Length < Name.Length) segments.Add(new TextSegment(Name[(idx + query.Length)..], false));
+		if (FuzzyMatcher.Segments(Name, query) is not { } segments) return false;
 		Segments = segments;
 		return true;
 	}
@@ -86,12 +79,12 @@ public class AssetTreeNode : IPickerNode {
 		return node;
 	}
 
-	public bool UpdateFilter(string query, bool caseSensitive) {
+	public bool UpdateFilter(string query) {
 		m_visible.Clear();
 		foreach (var child in m_children) {
 			var matched = child switch {
-				AssetTreeNode folder => folder.UpdateFilter(query, caseSensitive),
-				AssetPickerItem item => item.UpdateSegments(query, caseSensitive),
+				AssetTreeNode folder => folder.UpdateFilter(query),
+				AssetPickerItem item => item.UpdateSegments(query),
 				_ => false
 			};
 			if (matched) m_visible.Add(child);
@@ -109,7 +102,6 @@ public class AssetPickerViewModel : PickerViewModel {
 	private readonly List<AssetPickerItem> m_filtered = [];
 	private readonly List<AssetTreeNode> m_roots = [];
 	private readonly List<AssetTreeNode> m_visibleRoots = [];
-	private bool m_caseSensitive;
 	private string m_query = "";
 
 	public AssetPickerViewModel(string? assetType, string? extraType = null) {
@@ -167,19 +159,18 @@ public class AssetPickerViewModel : PickerViewModel {
 			yield return file;
 	}
 
-	public override void UpdateFilter(string query, bool caseSensitive) {
+	public override void UpdateFilter(string query) {
 		m_query = query;
-		m_caseSensitive = caseSensitive;
 		ApplyFilter();
 	}
 
 	private void ApplyFilter() {
 		if (s_treeMode) {
 			m_visibleRoots.Clear();
-			m_visibleRoots.AddRange(m_roots.Where(r => r.UpdateFilter(m_query, m_caseSensitive)));
+			m_visibleRoots.AddRange(m_roots.Where(r => r.UpdateFilter(m_query)));
 		} else {
 			m_filtered.Clear();
-			m_filtered.AddRange(m_all.Where(i => i.UpdateSegments(m_query, m_caseSensitive)));
+			m_filtered.AddRange(m_all.Where(i => i.UpdateSegments(m_query)));
 		}
 	}
 

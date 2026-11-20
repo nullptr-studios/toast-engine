@@ -18,7 +18,7 @@ public abstract class PickerViewModel {
 	public virtual bool HasViewToggle => false;
 	public virtual bool IsTreeMode { get; set; }
 
-	public abstract void UpdateFilter(string query, bool caseSensitive);
+	public abstract void UpdateFilter(string query);
 
 	public virtual bool IsSelectable(object? item) {
 		return item is not null;

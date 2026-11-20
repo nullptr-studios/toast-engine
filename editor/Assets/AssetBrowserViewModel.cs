@@ -23,6 +23,7 @@ using editor.Engine;
 using editor.Git;
 using editor.Workspace;
 using Lucide.Avalonia;
+using editor.Components.Elements;
 
 namespace editor.Assets;
 
@@ -1155,7 +1156,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 				.Where(f => search.Type is null || f.Definition == search.Type)
 				.Where(f => search.Tags.Count == 0 || MatchesTagTerms(f, search.Tags))
 				.Where(f => string.IsNullOrEmpty(search.Text) ||
-					f.Name.Contains(search.Text, StringComparison.OrdinalIgnoreCase));
+					FuzzyMatcher.Matches(f.Name, search.Text));
 			items = SortFiles(files).Cast<object>();
 		} else if (m_selectedFolder is not null) {
 			var files = m_selectedFolder.Files.Where(f => IsTypeVisible(f.Definition) && isTagVisible(f));

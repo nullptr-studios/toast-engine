@@ -17,6 +17,7 @@ using editor.Assets;
 using editor.Components.Modals;
 using editor.Engine;
 using Proto.Events;
+using editor.Components.Elements;
 
 namespace editor.Workspace;
 
@@ -228,7 +229,7 @@ public class HierarchyElement : INotifyPropertyChanged, IHierarchyRow {
 			if (child.ApplyFilter(query))
 				FilteredChildren.Add(child);
 
-		return Name.Contains(query, StringComparison.OrdinalIgnoreCase) || FilteredChildren.Count > 0;
+		return FuzzyMatcher.Matches(Name, query) || FilteredChildren.Count > 0;
 	}
 }
 

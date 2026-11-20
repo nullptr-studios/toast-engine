@@ -71,18 +71,7 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 			return;
 		}
 
-		var idx = Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase);
-		if (idx < 0) {
-			NameSegments = [new TextSegment(Name, false)];
-			return;
-		}
-
-		var segs = new List<TextSegment>();
-		if (idx > 0) segs.Add(new TextSegment(Name[..idx], false));
-		segs.Add(new TextSegment(Name[idx..(idx + filter.Length)], true));
-		if (idx + filter.Length < Name.Length)
-			segs.Add(new TextSegment(Name[(idx + filter.Length)..], false));
-		NameSegments = segs;
+		NameSegments = FuzzyMatcher.Segments(Name, filter) ?? [new TextSegment(Name, false)];
 	}
 }
 
@@ -142,10 +131,10 @@ public class ImportFileViewModel : ImportNodeViewModel {
 	public void ApplyFilter(string filter, bool showImported) {
 		if (IsImported)
 			IsVisible = showImported && (string.IsNullOrWhiteSpace(filter) ||
-				Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+				FuzzyMatcher.Matches(Name, filter));
 		else
 			IsVisible = string.IsNullOrWhiteSpace(filter) ||
-				Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
+				FuzzyMatcher.Matches(Name, filter);
 		BuildNameSegments(filter);
 	}
 
@@ -265,7 +254,7 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 			// When no search text, hide the folder if all its children are hidden
 			IsVisible = anyVisible;
 		} else {
-			IsVisible = anyVisible || Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
+			IsVisible = anyVisible || FuzzyMatcher.Matches(Name, filter);
 			if (IsVisible) IsExpanded = true;
 		}
 

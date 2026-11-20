@@ -12,6 +12,7 @@ using Style = Avalonia.Styling.Style;
 using Avalonia.Threading;
 using Lucide.Avalonia;
 using editor.LuaEditor.Editing;
+using editor.Components.Elements;
 
 namespace editor.LuaEditor.Controls;
 
@@ -147,7 +148,7 @@ public sealed class TypePicker : UserControl {
 	private void Fill(string? keep = null) {
 		var items = Items ?? [];
 		var query = (m_search.Text ?? "").Trim();
-		var shown = query.Length == 0 ? items : items.Where(i => i.Value.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+		var shown = query.Length == 0 ? items : items.Where(i => FuzzyMatcher.Matches(i.Value, query)).ToList();
 		var rows = PickRow.Tree(shown, m_open, query.Length > 0);
 		m_list.ItemsSource = rows;
 		var at = keep is null ? -1 : rows.FindIndex(r => r.Item is not null && r.Key == keep);

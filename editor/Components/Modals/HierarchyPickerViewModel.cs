@@ -53,8 +53,8 @@ public class HierarchyPickerViewModel : PickerViewModel {
 	public override string WindowTitle => "Select a Node...";
 	public override IEnumerable Items => m_roots;
 
-	public override void UpdateFilter(string query, bool caseSensitive) {
-		foreach (var r in m_roots) r.UpdateFilter(query, caseSensitive);
+	public override void UpdateFilter(string query) {
+		foreach (var r in m_roots) r.UpdateFilter(query);
 	}
 
 	public override bool IsSelectable(object? item) {

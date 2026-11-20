@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using editor.Assets;
+using editor.Components.Elements;
 using Lucide.Avalonia;
 
 namespace editor.Components.Modals;
@@ -31,20 +32,19 @@ public partial class AssetFolderNode : ObservableObject, IPickerNode {
 	public bool IsFolder => true;
 	System.Collections.IEnumerable IPickerNode.VisibleChildren => FilteredChildren;
 
-	public bool UpdateFilter(string query, bool caseSensitive) {
+	public bool UpdateFilter(string query) {
 		if (string.IsNullOrEmpty(query)) {
 			FilteredChildren.Clear();
 			foreach (var c in Children) {
-				c.UpdateFilter(query, caseSensitive);
+				c.UpdateFilter(query);
 				FilteredChildren.Add(c);
 			}
 
 			return true;
 		}
 
-		var cmp = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-		var nameMatch = Name.Contains(query, cmp);
-		var visible = Children.Where(c => c.UpdateFilter(query, caseSensitive)).ToList();
+		var nameMatch = FuzzyMatcher.Matches(Name, query);
+		var visible = Children.Where(c => c.UpdateFilter(query)).ToList();
 		FilteredChildren.Clear();
 		foreach (var c in visible) FilteredChildren.Add(c);
 		return nameMatch || visible.Count > 0;
@@ -79,8 +79,8 @@ public class AssetFolderTreeViewModel : PickerViewModel {
 	public override string? ExtraButtonLabel => "New Folder";
 	public override LucideIconKind ExtraIconKind => LucideIconKind.FolderPlus;
 
-	public override void UpdateFilter(string query, bool caseSensitive) {
-		var visible = m_roots.Where(r => r.UpdateFilter(query, caseSensitive)).ToList();
+	public override void UpdateFilter(string query) {
+		var visible = m_roots.Where(r => r.UpdateFilter(query)).ToList();
 		m_filtered.Clear();
 		foreach (var r in visible) m_filtered.Add(r);
 	}

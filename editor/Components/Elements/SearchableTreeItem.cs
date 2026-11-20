@@ -23,11 +23,11 @@ public abstract class SearchableTreeItem<T> : IPickerNode where T : SearchableTr
 		Segments.Add(new TextSegment(Name, false));
 	}
 
-	public bool UpdateFilter(string query, bool caseSensitive) {
-		if (string.IsNullOrEmpty(query)) {
+	public bool UpdateFilter(string query) {
+		if (string.IsNullOrWhiteSpace(query)) {
 			FilteredChildren.Clear();
 			foreach (var c in AllChildren) {
-				c.UpdateFilter(query, caseSensitive);
+				c.UpdateFilter(query);
 				FilteredChildren.Add(c);
 			}
 
@@ -36,27 +36,14 @@ public abstract class SearchableTreeItem<T> : IPickerNode where T : SearchableTr
 			return true;
 		}
 
-		var cmp = caseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
-		var idx = Name.IndexOf(query, cmp);
+		var own = FuzzyMatcher.Segments(Name, query);
+		Segments.Clear();
+		foreach (var segment in own ?? [new TextSegment(Name, false)]) Segments.Add(segment);
 
-		RebuildSegments(idx, query.Length);
-
-		var visible = AllChildren.Where(c => c.UpdateFilter(query, caseSensitive)).ToList();
+		var visible = AllChildren.Where(c => c.UpdateFilter(query)).ToList();
 		FilteredChildren.Clear();
 		foreach (var c in visible) FilteredChildren.Add(c);
 
-		return idx >= 0 || visible.Count > 0;
-	}
-
-	private void RebuildSegments(int idx, int len) {
-		Segments.Clear();
-		if (idx < 0) {
-			Segments.Add(new TextSegment(Name, false));
-			return;
-		}
-
-		if (idx > 0) Segments.Add(new TextSegment(Name[..idx], false));
-		Segments.Add(new TextSegment(Name.Substring(idx, len), true));
-		if (idx + len < Name.Length) Segments.Add(new TextSegment(Name[(idx + len)..], false));
+		return own is not null || visible.Count > 0;
 	}
 }
