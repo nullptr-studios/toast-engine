@@ -467,16 +467,20 @@ struct SetEditorCameraSettings : Event<SetEditorCameraSettings> {
 	float speed;
 
 	uint64_t workspace_handle;
+	bool horizontal_movement;
 
-	SetEditorCameraSettings(EditorCameraMode mode, float speed, uint64_t workspace_handle = 0)
+	SetEditorCameraSettings(
+	  EditorCameraMode mode, float speed, uint64_t workspace_handle = 0, bool horizontal_movement = false)
 	    : mode(mode),
 	      speed(speed),
-	      workspace_handle(workspace_handle) { }
+	      workspace_handle(workspace_handle),
+	      horizontal_movement(horizontal_movement) { }
 
-	SetEditorCameraSettings(uint32_t mode, float speed, uint64_t workspace_handle = 0)
+	SetEditorCameraSettings(uint32_t mode, float speed, uint64_t workspace_handle = 0, bool horizontal_movement = false)
 	    : mode(static_cast<EditorCameraMode>(mode)),
 	      speed(speed),
-	      workspace_handle(workspace_handle) { }
+	      workspace_handle(workspace_handle),
+	      horizontal_movement(horizontal_movement) { }
 };
 
 struct EditorCameraGesture : Event<EditorCameraGesture> {

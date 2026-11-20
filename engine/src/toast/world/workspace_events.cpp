@@ -679,10 +679,13 @@ struct ProtoTraits<SetEditorCameraSettings> {
 		p.set_mode(static_cast<Proto::Mode>(e.mode));
 		p.set_speed(e.speed);
 		p.set_workspace_handle(e.workspace_handle);
+		p.set_horizontal_movement(e.horizontal_movement);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {static_cast<uint32_t>(p.mode()), p.speed(), p.workspace_handle()}; }
+	static auto fromProto(const Proto& p) -> Event {
+		return {static_cast<uint32_t>(p.mode()), p.speed(), p.workspace_handle(), p.horizontal_movement()};
+	}
 };
 
 TOAST_PROTO_EVENT(SetEditorCameraSettings);

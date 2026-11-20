@@ -298,7 +298,6 @@ message RulerChanged {
   bool preview_active = 4;
 }
 
-// 0 clear all, 1 remove the last
 message RulerCommand {
   uint64 workspace_handle = 1;
   uint32 kind = 2;
@@ -329,12 +328,10 @@ message WorkspacePause {
   bool paused = 2;
 }
 
-// 0 Select, 1 Translate, 2 Rotate, 3 Scale, 4 Ruler
 message SetGizmoTool {
   uint32 tool = 1;
 }
 
-// 0 Lit, 1 ClusterHeatmap (clustered forward+ light-count-per-pixel debug view)
 message SetRenderMode {
   uint32 mode = 1;
 }
@@ -343,7 +340,6 @@ message SetCoordinateSpace {
   bool world = 1;
 }
 
-// kind: 0 translate, 1 rotate, 2 scale
 message SetSnapping {
   uint32 kind = 1;
   bool enabled = 2;
@@ -358,7 +354,6 @@ message EditorCameraFlyMode {
   bool active = 1;
 }
 
-// Requests a single RenderDoc frame capture around the next rendered frame; no-op if RenderDoc isn't attached
 message CaptureFrame {}
 
 message PreviewAssetToml {
@@ -393,12 +388,10 @@ message SetEditorCameraSettings {
 
   Mode mode = 1;
   float speed = 2;
-  // Addressed explicitly rather than relying on the active workspace: the editor loads these settings
-  // when the hierarchy first populates, which can land either side of the tab becoming active
   uint64 workspace_handle = 3;
+  bool horizontal_movement = 4;
 }
 
-// Trackpad gesture: dx/dy is a two-finger drag in pixels, zoom a pinch
 message EditorCameraGesture {
   float dx = 1;
   float dy = 2;

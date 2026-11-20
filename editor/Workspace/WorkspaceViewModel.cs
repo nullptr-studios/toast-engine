@@ -42,6 +42,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	[ObservableProperty] private bool m_gameCamera;
 	[ObservableProperty] private CameraMode m_cameraMode;
 	[ObservableProperty] private double m_cameraSpeed = 5.0;
+	[ObservableProperty] private bool m_minecraftMode;
 	[ObservableProperty] private bool m_isPaused;
 	private ulong m_nextSaveRequest = 1;
 	private TaskCompletionSource<WorkspaceSaveCompleted>? m_pendingSave;
@@ -204,6 +205,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		m_loadingViewportSettings = true;
 		CameraMode = settings.Mode;
 		CameraSpeed = Nearest(s_cameraSpeedSteps, settings.Speed);
+		MinecraftMode = settings.Minecraft;
 		m_loadingViewportSettings = false;
 		SendCameraSettings();
 		if (m_pendingRootName is { } name) {
@@ -338,6 +340,10 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		SaveAndSendCameraSettings();
 	}
 
+	partial void OnMinecraftModeChanged(bool value) {
+		SaveAndSendCameraSettings();
+	}
+
 	private void SaveAndSendCameraSettings() {
 		if (m_loadingViewportSettings) return;
 		SaveViewportSettings();
@@ -348,7 +354,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	private void SaveViewportSettings() {
 		if (m_loadingViewportSettings || ViewportSettingsKey is not { } key) return;
-		ViewportSettingsStore.Save(key, new ViewportSettings(CameraMode, CameraSpeed));
+		ViewportSettingsStore.Save(key, new ViewportSettings(CameraMode, CameraSpeed, MinecraftMode));
 	}
 
 	private void SendCameraSettings() {
@@ -357,7 +363,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 				? SetEditorCameraSettings.Types.Mode.Orbit
 				: SetEditorCameraSettings.Types.Mode.Free,
 			WorkspaceHandle = EffectiveHandle,
-			Speed = (float)CameraSpeed
+			Speed = (float)CameraSpeed,
+			HorizontalMovement = MinecraftMode
 		});
 	}
 

@@ -2584,7 +2584,7 @@ void Workspace::eventSubscriptions() {
 		if (e.workspace_handle == 0 && m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		m_editor_camera_controller.configure(e.mode, e.speed);
+		m_editor_camera_controller.configure(e.mode, e.speed, e.horizontal_movement);
 		return true;
 	});
 
