@@ -1,5 +1,7 @@
 #include "thread_pool.hpp"
 
+#include <tracy/Tracy.hpp>
+
 namespace toast {
 
 ThreadPool::ThreadPool() {
@@ -13,15 +15,24 @@ ThreadPool::ThreadPool() {
 }
 
 void ThreadPool::pushRaw(std::move_only_function<void()>&& job) {
-	enqueue(std::move(job));
+	enqueue(std::move(job), false);
 }
 
-void ThreadPool::enqueue(std::move_only_function<void()>&& job) {
+void ThreadPool::lpPushRaw(std::move_only_function<void()>&& job) {
+	enqueue(std::move(job), true);
+}
+
+auto ThreadPool::lowPriorityRunnable() const -> bool {
+	const int limit = static_cast<int>(std::max<size_t>(m.workers.size() / 2, 1));
+	return !m.low_jobs.empty() && m.active_low_jobs < limit;
+}
+
+void ThreadPool::enqueue(std::move_only_function<void()>&& job, bool low_priority) {
 	auto& o = get();
 
 	{
 		std::unique_lock lock(o.m.queue_mutex);
-		o.m.jobs.emplace(std::move(job));
+		(low_priority ? o.m.low_jobs : o.m.jobs).emplace(std::move(job));
 	}
 
 	o.m.job_available.notify_one();
@@ -46,12 +57,12 @@ void ThreadPool::destroy() {
 
 auto ThreadPool::busy() -> bool {
 	std::unique_lock lock(m.queue_mutex);
-	return !m.jobs.empty() || m.active_jobs > 0;
+	return !m.jobs.empty() || !m.low_jobs.empty() || m.active_jobs > 0;
 }
 
 void ThreadPool::waitIdle() {
 	std::unique_lock lock(m.queue_mutex);
-	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.active_jobs == 0; });
+	m.all_done.wait(lock, [this] { return m.jobs.empty() && m.low_jobs.empty() && m.active_jobs == 0; });
 }
 
 namespace {
@@ -80,20 +91,29 @@ void ThreadPool::threadLoop() {
 
 	while (true) {
 		std::move_only_function<void()> job;
+		bool is_low = false;
 
 		{
 			std::unique_lock lock(m.queue_mutex);
 			// track idle workers
 			m.idle_workers.fetch_add(1, std::memory_order_release);
-			m.job_available.wait(lock, [this] { return !m.jobs.empty() || m.should_stop; });
+			m.job_available.wait(lock, [this] { return !m.jobs.empty() || lowPriorityRunnable() || m.should_stop; });
 			m.idle_workers.fetch_sub(1, std::memory_order_release);
 			if (m.should_stop) {
 				return;
 			}
-			// move out of queue rather than copy
-			job = std::move(m.jobs.front());
-			m.jobs.pop();
-			++m.active_jobs;
+			// move out of queue rather than copy; normal jobs take precedence
+			if (!m.jobs.empty()) {
+				job = std::move(m.jobs.front());
+				m.jobs.pop();
+			} else {
+				job = std::move(m.low_jobs.front());
+				m.low_jobs.pop();
+				is_low = true;
+				++m.active_low_jobs;
+			}
+			int active = ++m.active_jobs;
+			TracyPlot("ThreadPool::active threads", static_cast<int64_t>(active));
 		}
 
 		{
@@ -101,10 +121,18 @@ void ThreadPool::threadLoop() {
 			job();
 		}
 
-		// Decrement and notify waitIdle() if pool is now fully idle
-		if (--m.active_jobs == 0) {
+		// Bookkeeping under the lock so a freed low-priority slot is never missed by sleeping workers
+		{
 			std::unique_lock lock(m.queue_mutex);
-			if (m.jobs.empty()) {
+			int active = --m.active_jobs;
+			TracyPlot("ThreadPool::active threads", static_cast<int64_t>(active));
+			if (is_low) {
+				--m.active_low_jobs;
+				if (!m.low_jobs.empty()) {
+					m.job_available.notify_one();
+				}
+			}
+			if (active == 0 && m.jobs.empty() && m.low_jobs.empty()) {
 				m.all_done.notify_all();
 			}
 		}

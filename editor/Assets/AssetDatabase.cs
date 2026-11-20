@@ -308,6 +308,7 @@ public static class AssetDatabase {
 			".vox" => new VoxImporter(SettingsFromMeta(voxSection)),
 			".ttf" => new FontImporter(),
 			".tga" => new UIImageImporter(),
+			".hdr" => new HdrImporter(),
 			".bank" when isStringsBank => new AudioStringImporter(new AudioStringImporter.Settings()),
 			".bank" => new AudioBankImporter(),
 			_ => new TextureImporter(textureSettings)
