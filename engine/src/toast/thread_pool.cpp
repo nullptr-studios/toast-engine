@@ -7,7 +7,8 @@ namespace toast {
 ThreadPool::ThreadPool() {
 	// Leave 4 threads for the OS
 	size_t hardware_thread_count = std::max<size_t>(std::thread::hardware_concurrency(), 1);
-	size_t target_thread_num = hardware_thread_count > 4 ? hardware_thread_count - 4 : 1;
+	// size_t target_thread_num = hardware_thread_count > 4 ? hardware_thread_count - 4 : 1;
+	size_t target_thread_num = hardware_thread_count;
 	for (size_t i = 0; i < target_thread_num; ++i) {
 		m.workers.emplace_back(&ThreadPool::threadLoop, this);
 	}
