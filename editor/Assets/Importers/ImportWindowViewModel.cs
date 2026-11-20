@@ -286,8 +286,9 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 	private Window? m_window;
 
-	public ImportWindowViewModel() {
+	public ImportWindowViewModel(string? destination = null) {
 		m_state = ImportTreeState.Load();
+		if (destination is not null) m_locationPath = destination;
 
 		m_importers = [
 			new TextureImporter(TextureSettings),
