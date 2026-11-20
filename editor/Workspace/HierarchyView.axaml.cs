@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -27,13 +28,61 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private HierarchyViewModel? m_vm;
 	private HierarchyElement? m_hoveredItem;
 	private readonly HierarchyExpansion m_expansion = new();
+	private const double AutoScrollZone = 40;
+	private const double AutoScrollMaxStep = 18;
+	private const double WheelStep = 48;
+	private static readonly TimeSpan s_autoScrollIdle = TimeSpan.FromSeconds(1);
+	private readonly DispatcherTimer m_autoScroll = new() { Interval = TimeSpan.FromMilliseconds(16) };
+	private Point? m_dragPoint;
+	private long m_dragLeftAt;
+	private DragWheelHook? m_wheelHook;
 
 	public HierarchyView() {
 		InitializeComponent();
 
 		Rows.AddHandler(DragDrop.DragOverEvent, OnDragOver);
 		Rows.AddHandler(DragDrop.DropEvent, OnDrop);
-		Rows.AddHandler(DragDrop.DragLeaveEvent, (_, _) => ClearDropFeedback());
+		Rows.AddHandler(DragDrop.DragLeaveEvent, (_, _) => {
+			ClearDropFeedback();
+			m_dragPoint = null;
+			m_dragLeftAt = Stopwatch.GetTimestamp();
+		});
+		m_autoScroll.Tick += OnAutoScrollTick;
+	}
+
+	private void BeginAutoScroll() {
+		if (!m_autoScroll.IsEnabled) m_autoScroll.Start();
+		m_wheelHook ??= DragWheelHook.Start(OnDragWheel);
+	}
+
+	private void EndAutoScroll() {
+		m_autoScroll.Stop();
+		m_wheelHook?.Dispose();
+		m_wheelHook = null;
+		m_dragPoint = null;
+	}
+
+	private void OnAutoScrollTick(object? sender, EventArgs e) {
+		if (m_dragPoint is not { } point) {
+			// the pointer left
+			if (Stopwatch.GetElapsedTime(m_dragLeftAt) > s_autoScrollIdle) EndAutoScroll();
+			return;
+		}
+
+		var height = RowsScroll.Bounds.Height;
+		var step = 0.0;
+		if (point.Y < AutoScrollZone) step = -(AutoScrollZone - Math.Max(point.Y, 0)) / AutoScrollZone;
+		else if (point.Y > height - AutoScrollZone) step = (Math.Min(point.Y, height) - (height - AutoScrollZone)) / AutoScrollZone;
+		if (step != 0) ScrollBy(step * AutoScrollMaxStep);
+	}
+
+	private void OnDragWheel(int notches) {
+		if (m_dragPoint is not null && notches != 0) ScrollBy(-notches * WheelStep);
+	}
+
+	private void ScrollBy(double delta) {
+		var max = Math.Max(0, RowsScroll.Extent.Height - RowsScroll.Viewport.Height);
+		RowsScroll.Offset = RowsScroll.Offset.WithY(Math.Clamp(RowsScroll.Offset.Y + delta, 0, max));
 	}
 
 	private HierarchyViewModel? Vm => DataContext as HierarchyViewModel;
@@ -100,6 +149,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		else m_expansion.Toggle(node, vm.Rows, node.IsExpanded, () => vm.ToggleExpand(node), Connector);
 	}
 	protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e) {
+		EndAutoScroll();
 		m_expansion.Complete(); base.OnDetachedFromVisualTree(e);
 	}
 
@@ -149,6 +199,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		var data = new DataTransfer();
 		data.Add(DataTransferItem.Create(NodeDragData.Format, drag.Row));
 		await DragDrop.DoDragDropAsync(drag.Args, data, DragDropEffects.Copy | DragDropEffects.Move);
+		EndAutoScroll();
 		SetDropTarget(null);
 		Connector.SetDropLine(-1, 0);
 	}
@@ -234,6 +285,8 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	}
 
 	private void OnDragOver(object? sender, DragEventArgs e) {
+		m_dragPoint = e.GetPosition(RowsScroll);
+		BeginAutoScroll();
 		var (mode, target) = ResolveDrop(e);
 		e.DragEffects = mode == DropMode.None ? DragDropEffects.None
 			: e.DataTransfer.TryGetValue(AssetDragData.Format) is not null ? DragDropEffects.Copy : DragDropEffects.Move;
@@ -254,6 +307,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	private void OnDrop(object? sender, DragEventArgs e) {
 		var (mode, target) = ResolveDrop(e);
 		var dragged = e.DataTransfer.TryGetValue(NodeDragData.Format);
+		EndAutoScroll();
 		SetDropTarget(null);
 		Connector.SetDropLine(-1, 0);
 		e.Handled = true;
