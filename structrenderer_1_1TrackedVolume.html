@@ -123,9 +123,11 @@ Collaboration diagram for renderer::TrackedVolume:</div>
 <div class="dyncontent">
 <div class="center"><img src="structrenderer_1_1TrackedVolume__coll__graph.png" border="0" usemap="#arenderer_1_1TrackedVolume_coll__map" loading="lazy" alt="Collaboration graph"/></div>
 <map name="arenderer_1_1TrackedVolume_coll__map" id="arenderer_1_1TrackedVolume_coll__map">
-<area shape="rect" title=" " alt="" coords="5,106,188,134"/>
-<area shape="rect" href="classvoxel_1_1Volume.html" title=" " alt="" coords="40,5,153,33"/>
-<area shape="poly" title=" " alt="" coords="99,47,99,106,94,105,94,50"/>
+<area shape="rect" title=" " alt="" coords="39,106,221,134"/>
+<area shape="rect" href="classvoxel_1_1Volume.html" title=" " alt="" coords="5,5,119,33"/>
+<area shape="poly" title=" " alt="" coords="81,44,124,105,118,106,78,48"/>
+<area shape="rect" href="structvoxel_1_1Palette.html" title="Entry 0 is the empty voxel and must stay all zero." alt="" coords="143,5,253,33"/>
+<area shape="poly" title=" " alt="" coords="188,46,168,84,146,108,143,103,164,80,184,49"/>
 </map>
 <center><span class="legend">[<a target="top" href="graph_legend.html">legend</a>]</span></center></div>
 <table class="memberdecls">
@@ -135,6 +137,11 @@ Public Attributes</h2></td></tr>
 uint64_t&#160;</td><td class="memItemRight"><b>node_rid</b> = 0</td></tr>
 <tr class="memitem:a295f78d3dabfdbe7747ecbd328586488" id="r_a295f78d3dabfdbe7747ecbd328586488"><td class="memItemLeft"><a id="a295f78d3dabfdbe7747ecbd328586488" name="a295f78d3dabfdbe7747ecbd328586488"></a>
 const <a class="el" href="classvoxel_1_1Volume.html">voxel::Volume</a> *&#160;</td><td class="memItemRight"><b>volume</b> = nullptr</td></tr>
+<tr class="memitem:a59829c3f935b5cae708a65d7be7987b5" id="r_a59829c3f935b5cae708a65d7be7987b5"><td class="memItemLeft"><a id="a59829c3f935b5cae708a65d7be7987b5" name="a59829c3f935b5cae708a65d7be7987b5"></a>
+const <a class="el" href="structvoxel_1_1Palette.html">voxel::Palette</a> *&#160;</td><td class="memItemRight"><b>palette</b> = nullptr</td></tr>
+<tr class="memdesc:a59829c3f935b5cae708a65d7be7987b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">A swapped palette is a new object that may share the old one's revision, so both are compared. <br /></td></tr>
+<tr class="memitem:a961abdfb40ed95e3132a29fa1381ea0f" id="r_a961abdfb40ed95e3132a29fa1381ea0f"><td class="memItemLeft"><a id="a961abdfb40ed95e3132a29fa1381ea0f" name="a961abdfb40ed95e3132a29fa1381ea0f"></a>
+uint32_t&#160;</td><td class="memItemRight"><b>palette_revision</b> = 0</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li>engine/src/toast/renderer/voxel/<a class="el" href="voxel__change__history_8hpp_source.html">voxel_change_history.hpp</a></li>

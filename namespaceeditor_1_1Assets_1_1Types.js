@@ -13,6 +13,7 @@ var namespaceeditor_1_1Assets_1_1Types =
     [ "DataAsset", "classeditor_1_1Assets_1_1Types_1_1DataAsset.html", null ],
     [ "DestructionMaterialAsset", "classeditor_1_1Assets_1_1Types_1_1DestructionMaterialAsset.html", null ],
     [ "DetailTextureAsset", "classeditor_1_1Assets_1_1Types_1_1DetailTextureAsset.html", null ],
+    [ "EnvironmentMapAsset", "classeditor_1_1Assets_1_1Types_1_1EnvironmentMapAsset.html", null ],
     [ "FontAsset", "classeditor_1_1Assets_1_1Types_1_1FontAsset.html", null ],
     [ "HapticAsset", "classeditor_1_1Assets_1_1Types_1_1HapticAsset.html", null ],
     [ "ImageLocalizationAsset", "classeditor_1_1Assets_1_1Types_1_1ImageLocalizationAsset.html", null ],

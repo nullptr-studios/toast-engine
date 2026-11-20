@@ -7,6 +7,7 @@ var namespaceeditor_1_1Assets_1_1Importers =
     [ "FMODMetadata", "classeditor_1_1Assets_1_1Importers_1_1FMODMetadata.html", null ],
     [ "FontImporter", "classeditor_1_1Assets_1_1Importers_1_1FontImporter.html", "classeditor_1_1Assets_1_1Importers_1_1FontImporter" ],
     [ "GltfImporter", "classeditor_1_1Assets_1_1Importers_1_1GltfImporter.html", "classeditor_1_1Assets_1_1Importers_1_1GltfImporter" ],
+    [ "HdrImporter", "classeditor_1_1Assets_1_1Importers_1_1HdrImporter.html", "classeditor_1_1Assets_1_1Importers_1_1HdrImporter" ],
     [ "IAssetImporter", "interfaceeditor_1_1Assets_1_1Importers_1_1IAssetImporter.html", "interfaceeditor_1_1Assets_1_1Importers_1_1IAssetImporter" ],
     [ "ImporterSettingsCardVM", "classeditor_1_1Assets_1_1Importers_1_1ImporterSettingsCardVM.html", null ],
     [ "ImportFileViewModel", "classeditor_1_1Assets_1_1Importers_1_1ImportFileViewModel.html", "classeditor_1_1Assets_1_1Importers_1_1ImportFileViewModel" ],

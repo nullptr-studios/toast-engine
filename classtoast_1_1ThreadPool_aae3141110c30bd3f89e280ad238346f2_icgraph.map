@@ -1,11 +1,13 @@
 <map id="toast::ThreadPool::onWorkerThread" name="toast::ThreadPool::onWorkerThread">
-<area shape="rect" id="Node000001" title=" " alt="" coords="950,89,1093,134"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="950,115,1093,159"/>
 <area shape="rect" id="Node000002" href="$classtoast_1_1INodeOwner.html#a355810be0f38823d417eb26cb8da1ff0" title="Allocates and initializes a full node tree from a prefab asset." alt="" coords="745,29,896,74"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="932,86,896,77,896,71,937,86"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="950,108,875,77,875,72,956,108"/>
 <area shape="rect" id="Node000006" href="$namespacetoast_1_1__detail.html#a1611d2383fe6b4b0f815c29dbe7d4095" title="Runs the jobs of a plan in parallel and returns once every item has run." alt="" coords="739,148,902,176"/>
-<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="937,133,879,151,878,145,932,134"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="937,148,902,155,902,149,932,148"/>
 <area shape="rect" id="Node000008" href="$classtoast_1_1TickScheduler.html#aada3144d3daa1b70a00740d65f45a026" title="Runs a lifecycle stage on root and every node below it, parents before their children." alt="" coords="265,135,418,179"/>
-<area shape="poly" id="edge12_Node000001_Node000008" title=" " alt="" coords="932,116,734,128,496,144,419,151,419,146,496,138,734,122,937,115"/>
+<area shape="poly" id="edge12_Node000001_Node000008" title=" " alt="" coords="932,135,734,136,496,144,419,150,418,145,496,138,734,131,937,135"/>
+<area shape="rect" id="Node000011" href="$classtoast_1_1ThreadPool.html#a669212d700e0b596c6b23ce2f78dfea5" title="Blocks until no low&#45;priority job is queued or running; no&#45;op on a worker thread or without a pool." alt="" coords="747,200,894,245"/>
+<area shape="poly" id="edge13_Node000001_Node000011" title=" " alt="" coords="956,165,876,202,874,197,951,166"/>
 <area shape="poly" id="edge5_Node000002_Node000002" title=" " alt="" coords="851,14,840,10,820,8,802,10,790,15,786,21,787,30,782,27,781,19,787,10,801,5,821,3,842,5,856,14"/>
 <area shape="rect" id="Node000003" href="$classtoast_1_1Workspace.html#acecbe8833a3838a8a3fe77aa661b2d1d" title="instantiates the prefab and sets up the root node" alt="" coords="496,29,691,74"/>
 <area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="727,52,692,54,691,49,733,51"/>

@@ -1,5 +1,17 @@
 var NAVTREEINDEX3 =
 {
+"classeditor_1_1Engine_1_1SettingDescriptor.html#a646a957d0f9185f9d8dca532055fecb1":[13,0,3,5,2,0],
+"classeditor_1_1Engine_1_1ToastEngine.html":[11,0,0,5,3],
+"classeditor_1_1Engine_1_1ToastEngine.html":[13,0,3,5,3],
+"classeditor_1_1Engine_1_1ToastEngine.html#a177a7f91cebf748bc947db5d0142f0cb":[11,0,0,5,3,1],
+"classeditor_1_1Engine_1_1ToastEngine.html#a177a7f91cebf748bc947db5d0142f0cb":[13,0,3,5,3,1],
+"classeditor_1_1Engine_1_1ToastEngine.html#aa3b969341da261d45df45f9ee04e2060":[11,0,0,5,3,0],
+"classeditor_1_1Engine_1_1ToastEngine.html#aa3b969341da261d45df45f9ee04e2060":[13,0,3,5,3,0],
+"classeditor_1_1Git_1_1ArtworkFolder.html":[11,0,0,6,0],
+"classeditor_1_1Git_1_1ArtworkFolder.html":[13,0,3,6,0],
+"classeditor_1_1Git_1_1ArtworkRow.html":[11,0,0,6,1],
+"classeditor_1_1Git_1_1ArtworkRow.html":[13,0,3,6,1],
+"classeditor_1_1Git_1_1CommitView.html":[11,0,0,6,2],
 "classeditor_1_1Git_1_1CommitView.html":[13,0,3,6,2],
 "classeditor_1_1Git_1_1CommitViewModel.html":[11,0,0,6,3],
 "classeditor_1_1Git_1_1CommitViewModel.html":[13,0,3,6,3],
@@ -237,17 +249,5 @@ var NAVTREEINDEX3 =
 "classeditor_1_1Workspace_1_1DockFactory.html#a219268b51406a634e05d7221891fcc90":[13,0,3,11,6,0],
 "classeditor_1_1Workspace_1_1EditorHostWindow.html":[11,0,0,12,7],
 "classeditor_1_1Workspace_1_1EditorHostWindow.html":[13,0,3,11,7],
-"classeditor_1_1Workspace_1_1EnumSettingRow.html":[11,0,0,12,8],
-"classeditor_1_1Workspace_1_1EnumSettingRow.html":[13,0,3,11,8],
-"classeditor_1_1Workspace_1_1FieldVM.html":[11,0,0,12,9],
-"classeditor_1_1Workspace_1_1FieldVM.html":[13,0,3,11,9],
-"classeditor_1_1Workspace_1_1FloatSettingRow.html":[11,0,0,12,10],
-"classeditor_1_1Workspace_1_1FloatSettingRow.html":[13,0,3,11,10],
-"classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff":[11,0,0,12,10,0],
-"classeditor_1_1Workspace_1_1FloatSettingRow.html#af57b27d4b815f84ca8e39ed92f703bff":[13,0,3,11,10,0],
-"classeditor_1_1Workspace_1_1GroupVM.html":[11,0,0,12,11],
-"classeditor_1_1Workspace_1_1GroupVM.html":[13,0,3,11,11],
-"classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html":[11,0,0,12,12],
-"classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html":[13,0,3,11,12],
-"classeditor_1_1Workspace_1_1HierarchyElement.html":[11,0,0,12,13]
+"classeditor_1_1Workspace_1_1EnumSettingRow.html":[11,0,0,12,8]
 };

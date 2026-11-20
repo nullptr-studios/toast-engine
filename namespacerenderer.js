@@ -87,7 +87,7 @@ var namespacerenderer =
     [ "TonemapPass", "classrenderer_1_1TonemapPass.html", "classrenderer_1_1TonemapPass" ],
     [ "TracedShadowPass", "classrenderer_1_1TracedShadowPass.html", "classrenderer_1_1TracedShadowPass" ],
     [ "TracedSpecularPass", "classrenderer_1_1TracedSpecularPass.html", "classrenderer_1_1TracedSpecularPass" ],
-    [ "TrackedVolume", "structrenderer_1_1TrackedVolume.html", null ],
+    [ "TrackedVolume", "structrenderer_1_1TrackedVolume.html", "structrenderer_1_1TrackedVolume" ],
     [ "TransformGizmoDraw", "structrenderer_1_1TransformGizmoDraw.html", null ],
     [ "UIWorldPanelProxy", "structrenderer_1_1UIWorldPanelProxy.html", null ],
     [ "Vertex", "structrenderer_1_1Vertex.html", null ],
