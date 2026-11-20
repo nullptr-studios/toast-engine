@@ -378,10 +378,19 @@ struct ProtoTraits<SetFocusedNode> {
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
 		p.set_node(e.node);
+		for (const auto& extra : e.extra_nodes) {
+			p.add_extra_nodes(extra);
+		}
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node())}; }
+	static auto fromProto(const Proto& p) -> Event {
+		std::vector<toast::UID> extra;
+		for (const auto& uid : p.extra_nodes()) {
+			extra.push_back(toast::UID::fromString(uid));
+		}
+		return {toast::UID::fromString(p.node()), std::move(extra)};
+	}
 };
 
 TOAST_PROTO_EVENT(SetFocusedNode);

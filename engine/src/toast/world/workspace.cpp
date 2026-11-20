@@ -1409,6 +1409,44 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 }
 
 void Workspace::gizmoUpdateDrag() {
+	auto primary = m_focused_node.as<Node3D>();
+	if (m_gizmo_drag == GizmoHandle::none || not primary.exists() || m_extra_selected.empty()) {
+		gizmoUpdateDragPrimary();
+		return;
+	}
+
+	primary->syncTransform();
+	const glm::vec3 before_position = primary->world_position;
+	const glm::quat before_rotation = primary->world_rotation;
+	const glm::vec3 before_scale = primary->world_scale;
+
+	gizmoUpdateDragPrimary();
+
+	primary->syncTransform();
+	const glm::vec3 moved = primary->world_position - before_position;
+	const glm::quat turned = primary->world_rotation * glm::inverse(before_rotation);
+	glm::vec3 ratio {1.0f};
+	for (int axis = 0; axis < 3; ++axis) {
+		if (std::abs(before_scale[axis]) > 0.0001f) {
+			ratio[axis] = primary->world_scale[axis] / before_scale[axis];
+		}
+	}
+
+	for (const auto& extra : m_extra_selected) {
+		auto node = extra.as<Node3D>();
+		if (not node.exists() || node == primary) {
+			continue;
+		}
+		node->syncTransform();
+		node->world_position += moved;
+		node->world_rotation = glm::normalize(turned * node->world_rotation);
+		node->world_scale *= ratio;
+		node->syncTransform();
+		node->onEditorTransformChanged();
+	}
+}
+
+void Workspace::gizmoUpdateDragPrimary() {
 	if (m_gizmo_drag == GizmoHandle::none) {
 		return;
 	}
@@ -2105,6 +2143,12 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_focused_node = findFrom(m_root_node, e.node);
+		m_extra_selected.clear();
+		for (const auto& uid : e.extra_nodes) {
+			if (auto extra = findFrom(m_root_node, uid); extra.exists() && extra != m_focused_node) {
+				m_extra_selected.push_back(extra);
+			}
+		}
 		return false;
 	});
 
@@ -2112,14 +2156,24 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		toast::Box<Node> target = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
-		if (not target.exists()) {
+		toast::Box<Node> primary = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
+		if (not primary.exists()) {
 			return false;
 		}
+		const bool from_focus = primary == m_focused_node;
 
+		// secondary targets get the same value
+		const auto apply = [&](toast::Box<Node> target, bool secondary) -> bool {
 		const auto* field = target->info()->search(e.parameter);
 		if (field == nullptr) {
-			TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
+			if (not secondary) {
+				TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
+			}
+			return true;
+		}
+		if (secondary && (field->name == "position" || field->name == "rotation" || field->name == "scale" ||
+		                  field->name == "world_position" || field->name == "world_rotation" ||
+		                  field->name == "world_scale" || field->name == "m_scripts")) {
 			return true;
 		}
 
@@ -2166,6 +2220,17 @@ void Workspace::eventSubscriptions() {
 
 		if (field->name == "m_scripts") {
 			event::send<event::RequestHierarchyUpdate>();
+		}
+		return true;
+		};
+
+		apply(primary, false);
+		if (from_focus) {
+			for (const auto& extra : m_extra_selected) {
+				if (extra.exists() && extra != primary) {
+					apply(extra, true);
+				}
+			}
 		}
 		return true;
 	});

@@ -45,6 +45,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 			m_vm.HierarchyChanged -= RefreshConnector;
 			m_vm.PropertyChanged -= OnVmPropertyChanged;
 			m_vm.RenameStarted -= OnRenameStarted;
+			m_vm.SelectionSetChanged -= RefreshConnector;
 		}
 
 		m_vm = DataContext as HierarchyViewModel;
@@ -53,6 +54,7 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 			m_vm.HierarchyChanged += RefreshConnector;
 			m_vm.PropertyChanged += OnVmPropertyChanged;
 			m_vm.RenameStarted += OnRenameStarted;
+			m_vm.SelectionSetChanged += RefreshConnector;
 		}
 
 		RefreshConnector();
@@ -67,13 +69,15 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		if (Vm is not { } vm) return;
 		Connector.Rows = vm.Rows;
 		var selected = -1;
+		var extra = new List<int>();
 		for (var i = 0; i < vm.Rows.Count; i++) {
 			var el = vm.Rows[i];
-			var isSel = ReferenceEquals(el, vm.SelectedNode);
-			el.IsSelected = isSel;
-			if (isSel) selected = i;
+			el.IsSelected = vm.IsInSelection(el);
+			if (ReferenceEquals(el, vm.SelectedNode)) selected = i;
+			else if (el.IsSelected) extra.Add(i);
 		}
 
+		Connector.ExtraSelected = extra;
 		Connector.SelectedIndex = selected;
 		Connector.HoveredIndex = m_hoveredItem is null ? -1 : vm.Rows.IndexOf(m_hoveredItem);
 	}
@@ -121,9 +125,21 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 
 		// remember the press so a small move can promote to a drag, and a click
 		// can fall through to fold/unfold on release
-		var wasSelected = ReferenceEquals(el, vm.SelectedNode);
+		if (e.KeyModifiers.HasFlag(KeyModifiers.Control)) {
+			vm.ToggleInSelection(el);
+			Focus();
+			return;
+		}
+
+		if (e.KeyModifiers.HasFlag(KeyModifiers.Shift)) {
+			vm.SelectRange(el);
+			Focus();
+			return;
+		}
+
+		var wasSelected = ReferenceEquals(el, vm.SelectedNode) && vm.SelectionCount == 1;
 		if (!el.IsInsidePrefab) m_rowPress.Begin(el, e, this, wasSelected);
-		if (!wasSelected) vm.SelectedNode = el;
+		if (!vm.IsInSelection(el)) vm.SelectOnly(el);
 		Focus();
 	}
 
@@ -138,7 +154,9 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 	}
 
 	private void OnItemPointerReleased(object? sender, PointerReleasedEventArgs e) {
-		if (m_rowPress.TakeClick(e) is { WasSelected: true } click) AnimateToggle(click.Row);
+		if (m_rowPress.TakeClick(e) is not { } click || Vm is not { } vm) return;
+		if (click.WasSelected) AnimateToggle(click.Row);
+		else if (vm.SelectionCount > 1) vm.SelectOnly(click.Row);
 	}
 
 	private void OnRenameStarted(HierarchyElement element) {
@@ -203,7 +221,8 @@ public partial class HierarchyView : UserControl, IWorkspaceShortcutTarget {
 		}
 		var dragged = e.DataTransfer.TryGetValue(NodeDragData.Format);
 		if (dragged is not null) dragged = vm.Find(dragged.Uid);
-		if (dragged is null || dragged.IsRoot || dragged.IsInsidePrefab || HierarchyViewModel.IsSelfOrDescendant(dragged, target))
+		if (dragged is null || dragged.IsRoot || dragged.IsInsidePrefab ||
+		    vm.GetDragSet(dragged).Any(node => HierarchyViewModel.IsSelfOrDescendant(node, target)))
 			return (DropMode.None, null);
 
 		if (target.IsRoot) return target.CanAddChildren ? (DropMode.Into, target) : (DropMode.None, null);

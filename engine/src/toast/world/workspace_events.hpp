@@ -341,8 +341,9 @@ struct SetShowOthers : Event<SetShowOthers> {
 
 struct SetFocusedNode : Event<SetFocusedNode> {
 	toast::UID node;
+	std::vector<toast::UID> extra_nodes;
 
-	SetFocusedNode(toast::UID n) : node(n) { }
+	SetFocusedNode(toast::UID n, std::vector<toast::UID> extra = {}) : node(n), extra_nodes(std::move(extra)) { }
 };
 
 struct NodeChangeParam : Event<NodeChangeParam> {

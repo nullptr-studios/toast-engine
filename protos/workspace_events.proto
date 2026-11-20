@@ -93,6 +93,7 @@ message WorkspaceMoveNodeTo {
 
 message SetFocusedNode {
   string node = 1;
+  repeated string extra_nodes = 2;
 }
 
 message NodeChangeParam {
