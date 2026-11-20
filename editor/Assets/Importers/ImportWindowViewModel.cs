@@ -307,8 +307,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 		if (!ProjectContext.IsInitialized) return;
 
-		var artworkDbPath = ProjectContext.Resolve("cache://artwork_database.json");
-		var importedFiles = LoadImportedFiles(artworkDbPath);
+		var importedFiles = LoadImportedFiles();
 
 		var artworkPath = ProjectContext.ArtworkPath;
 		if (Directory.Exists(artworkPath)) {
@@ -593,19 +592,11 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		}
 	}
 
-	private static HashSet<string> LoadImportedFiles(string dbPath) {
+	private static HashSet<string> LoadImportedFiles() {
 		var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		if (!File.Exists(dbPath)) return result;
-		try {
-			using var doc = JsonDocument.Parse(File.ReadAllText(dbPath));
-			if (doc.RootElement.TryGetProperty("type", out var t) && t.GetString() == "artwork_database")
-				foreach (var prop in doc.RootElement.EnumerateObject())
-					if (prop.Name is not ("type" or "version"))
-						result.Add(Path.GetFullPath(ProjectContext.Resolve(prop.Name)));
-		} catch (Exception e) {
-			Log.Error(e.Message);
-		}
-
+		AssetStore.Sync();
+		foreach (var artwork in AssetStore.AllArtwork())
+			result.Add(Path.GetFullPath(ProjectContext.Resolve(artwork.Uri)));
 		return result;
 	}
 
