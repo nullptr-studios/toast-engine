@@ -29,6 +29,24 @@ public static partial class ThumbnailService {
 		return destPath;
 	}
 
+	public static string GenerateFromHdr(string hdrPath, string uid) {
+		var destDir = Path.Combine(ProjectContext.CachePath, "thumbnails");
+		var destPath = Path.Combine(destDir, uid + ".png");
+		Directory.CreateDirectory(destDir);
+
+		using var image = new MagickImage(hdrPath);
+		image.Resize(new MagickGeometry(Size, Size) { FillArea = true });
+		image.Crop(Size, Size, Gravity.Center);
+		image.ResetPage();
+
+		image.Evaluate(Channels.RGB, EvaluateOperator.Multiply, 0.5);
+		image.Evaluate(Channels.RGB, EvaluateOperator.Pow, 1.0 / 2.2);
+
+		image.Write(destPath, MagickFormat.Png);
+		Updated?.Invoke(uid);
+		return destPath;
+	}
+
 	public static string GenerateFromKtx2(string ktx2Path, string uid) {
 		var destDir = Path.Combine(ProjectContext.CachePath, "thumbnails");
 		var destPath = Path.Combine(destDir, uid + ".png");

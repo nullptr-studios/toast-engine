@@ -43,7 +43,8 @@ auto pairType(ShapeType a, ShapeType b) -> NarrowPhasePairType {
 
 }
 
-auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates) const -> ManifoldQueue {
+auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const BroadPhasePair> candidates, bool time_pairs) const
+    -> ManifoldQueue {
 	ZoneScopedN("physics::RecordManifoldQueue");
 	ZoneValue(static_cast<uint64_t>(candidates.size()));
 
@@ -61,11 +62,13 @@ auto NarrowPhase::generateManifolds(CollisionWorldView world, std::span<const Br
 		}
 
 		pair_manifolds.clear();
-		const auto pair_start = std::chrono::steady_clock::now();
-		collide(world, pair, pair_manifolds);
-		if (type) {
+		if (time_pairs && type) {
+			const auto pair_start = std::chrono::steady_clock::now();
+			collide(world, pair, pair_manifolds);
 			queue.pair_time_ms[*type] +=
 			    std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - pair_start).count();
+		} else {
+			collide(world, pair, pair_manifolds);
 		}
 
 		accumulate(pair_manifolds, world, queue);
@@ -87,9 +90,6 @@ void NarrowPhase::accumulate(std::span<Manifold> manifolds, CollisionWorldView w
 }
 
 auto NarrowPhase::validate(CollisionWorldView world, Manifold& manifold) const -> bool {
-	ZoneScopedN("physics::ValidateManifold");
-	ZoneValue((static_cast<uint64_t>(manifold.pair.a.shape.slot) << 32) | static_cast<uint64_t>(manifold.pair.b.shape.slot));
-
 	const Body* body_a = world.body(manifold.pair.a.body);
 	const Body* body_b = world.body(manifold.pair.b.body);
 	const Shape* shape_a = world.shape(manifold.pair.a.shape);
@@ -132,9 +132,6 @@ void NarrowPhase::flip(Manifold& manifold) {
 }
 
 void NarrowPhase::collide(CollisionWorldView world, BroadPhasePair pair, std::vector<Manifold>& output) const {
-	ZoneScopedN("physics::DispatchCollisionPair");
-	ZoneValue((static_cast<uint64_t>(pair.a.shape.slot) << 32) | static_cast<uint64_t>(pair.b.shape.slot));
-
 	const Shape* shape_a = world.shape(pair.a.shape);
 	const Shape* shape_b = world.shape(pair.b.shape);
 	const Body* body_a = world.body(pair.a.body);

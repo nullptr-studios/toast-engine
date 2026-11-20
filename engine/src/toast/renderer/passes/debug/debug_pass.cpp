@@ -831,7 +831,11 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 						ImGui::TableNextColumn();
 						ImGui::TextDisabled("%zu", phys.narrow_pair_candidates[static_cast<size_t>(type)]);
 						ImGui::TableNextColumn();
-						ImGui::TextDisabled("%.2f ms", phys.narrow_pair_time_ms[static_cast<size_t>(type)]);
+						if (physics::tunables().time_narrow_pairs) {
+							ImGui::TextDisabled("%.2f ms", phys.narrow_pair_time_ms[static_cast<size_t>(type)]);
+						} else {
+							ImGui::TextDisabled("timing off");
+						}
 					}
 					ImGui::EndTable();
 				}

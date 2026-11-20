@@ -485,10 +485,19 @@ auto World::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 	const TreeReadLock lock(this);
 
 	// Resolve the starting scope from the namespace keyword
+	// Same as Workspace::findFrom (editor play): "root" is the top of the tree, not the nearest prefab instance, and the
+	// search goes into instances. Otherwise find("root/NavGrid") from inside an enemy prefab only searched the enemy
 	std::vector<Node*> origins;
 	switch (pq.root) {
 		case QueryRoot::self: origins.push_back(const_cast<Node*>(&origin)); break;
-		case QueryRoot::prefab_root: origins.push_back(&*origin.rootUnlocked()); break;
+		case QueryRoot::prefab_root: {
+			const Node* top = &origin;
+			while (top->m_parent.exists()) {
+				top = &*top->m_parent;
+			}
+			origins.push_back(const_cast<Node*>(top));
+			break;
+		}
 		case QueryRoot::world_root:
 			if (trees.root.exists()) {
 				origins.push_back(&*trees.root);
@@ -510,12 +519,24 @@ auto World::findFrom(const Node& origin, std::string_view query) -> Box<Node> {
 		return origins.empty() ? Box<Node> {} : origins.front()->box();
 	}
 
+	auto find_in = [](this auto&& self, Node& n, std::string_view seg) -> Box<Node> {
+		if (n.name() == seg) {
+			return n.box();
+		}
+		for (auto& child : n.m_children) {
+			if (auto found = self(*child, seg)) {
+				return found;
+			}
+		}
+		return {};
+	};
+
 	for (Node* start : origins) {
 		Node* scope = start;
 		Box<Node> current;
 		bool ok = true;
 		for (std::string_view seg : pq.segments) {
-			current = findScoped(*scope, seg);
+			current = find_in(*scope, seg);
 			if (not current.exists()) {
 				ok = false;
 				break;

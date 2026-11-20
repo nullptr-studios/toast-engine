@@ -2,6 +2,7 @@
 
 #include "node.hpp"
 #include "toast/physics/simulator.hpp"
+#include "toast/thread_pool.hpp"
 #include "workspace_events.hpp"
 
 namespace toast {
@@ -51,6 +52,8 @@ PlayWorkspace::PlayWorkspace(UID handle, assets::Prefab& prefab) : Workspace(han
 }
 
 PlayWorkspace::~PlayWorkspace() {
+	// Game jobs (pathfinding) walk nodes and register dependencies; let them finish before the scheduler and tree die
+	ThreadPool::waitLowPriorityIdle();
 	s_instances.fetch_sub(1, std::memory_order_release);
 	physics::clearDebris();    // need to clear when paused
 	if (not m_root_node.exists()) {

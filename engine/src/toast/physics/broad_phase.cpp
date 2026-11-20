@@ -345,7 +345,6 @@ void BroadPhase::updateTree(CollisionWorldView world, std::span<const ShapeBound
 }
 
 auto BroadPhase::queryBounds(const AABB& bounds) const -> std::vector<ShapeID> {
-	ZoneScopedN("physics::QueryBounds");
 	return m_tree.query(bounds);
 }
 

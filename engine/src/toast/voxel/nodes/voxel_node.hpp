@@ -75,12 +75,26 @@ struct VoxelPart {
 	bool split_pending = false;
 	physics::BodyID body;
 	physics::ShapeID shape;
-	std::unique_ptr<voxel::Volume> highlight;
+	std::vector<uint64_t> outline_rids;
 
 	bool has_pose = false;
 	glm::vec3 pose_position {0.0f};
 	glm::quat pose_rotation {1.0f, 0.0f, 0.0f, 0.0f};
 	float mass = 0.0f;
+
+	[[nodiscard]]
+	auto localTransform() const -> glm::mat4 {
+		return glm::translate(glm::mat4(1.0f), glm::vec3(origin) * voxel::k_voxel_size);
+	}
+};
+
+struct VoxelOutlineGhost {
+	uint64_t piece_rid = 0;
+	std::unique_ptr<voxel::Volume> volume;
+	glm::ivec3 origin {0};
+	const void* source = nullptr;
+	glm::ivec3 source_offset {0};
+	uint32_t generation = 0;
 
 	[[nodiscard]]
 	auto localTransform() const -> glm::mat4 {
@@ -336,6 +350,8 @@ public:
 	signals::Signal<> went_to_sleep;                           ///< Sent when the body falls asleep
 	signals::Signal<> woke_up;                                 ///< Sent when the body wakes up
 
+	signals::Signal<> grabbed;                                 ///< Triggered when an object is grabbed
+
 	/** Puts the physics body to sleep */
 	[[Reflect]]
 	void sleep();
@@ -394,6 +410,11 @@ public:
 	[[nodiscard]]
 	auto partsRevision() const noexcept -> uint32_t {
 		return m_parts_revision;
+	}
+
+	[[nodiscard]]
+	auto outlineGhosts() const noexcept -> const std::vector<VoxelOutlineGhost>& {
+		return m_outline_ghosts;
 	}
 
 	[[nodiscard]]
@@ -652,6 +673,7 @@ protected:
 	std::vector<std::unique_ptr<voxel::Volume>> m_retired_volumes;
 	std::vector<VoxelPart> m_parts;
 	uint32_t m_parts_revision = 0;
+	std::vector<VoxelOutlineGhost> m_outline_ghosts;
 	bool m_warned_part_edit = false;
 	glm::ivec3 m_voxel_origin {0};
 	uint32_t m_revision = 0;

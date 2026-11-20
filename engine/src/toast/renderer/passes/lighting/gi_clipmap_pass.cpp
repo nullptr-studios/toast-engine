@@ -62,11 +62,11 @@ constexpr uint32_t k_bounce_set = 1;
 constexpr uint32_t k_bounce_ambient_binding = 0;
 constexpr uint32_t k_bounce_list_binding = 1;
 /// Mirrors gi_clip_bounce kFaceListCapacity and kFaceListHeader
-constexpr uint32_t k_bounce_capacity = 1u << 17;
+constexpr uint32_t k_bounce_capacity = 1u << 19;
 constexpr uint32_t k_bounce_header = 4;
 /// Mirrors gi_clip_bounce bounceMain numthreads
 constexpr uint32_t k_bounce_group = 64;
-constexpr uint32_t k_inject_period = 8;
+constexpr uint32_t k_inject_period = 4;
 constexpr uint32_t k_near_bounce_period = 2;
 
 /// Mirrors gi_clip_fill numthreads

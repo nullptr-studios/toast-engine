@@ -6,6 +6,7 @@
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
+#include <toast/assets/asset_manager.hpp>
 #include <toast/settings/settings.hpp>
 
 namespace renderer {
@@ -22,6 +23,8 @@ struct PresetKnobs {
 	bool traced_specular = true;
 	float specular_roughness = 0.6f;
 	float specular_reach = 32.0f;
+	/// Off screen traced specular hits take a local light and its shadow ray
+	bool specular_hit_lights = true;
 	uint32_t light_candidates = 8;
 	bool ambient_rays = true;
 	bool glass_shadows = true;
@@ -42,7 +45,7 @@ struct PresetKnobs {
 	float glass_reflection_reach = 32.0f;
 };
 
-/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT
+/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT. Radiance cascades run in every tier
 constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
   {
    // Without ray tracing
@@ -56,7 +59,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 		 .glass_shadows = false,
 		 .volumetric_quality = 0,
 		 .gi_quality = 0,
-		 .gi_enabled = false,
+		 .gi_enabled = true,
 		 .render_scale = 0.65f,
 		 .shadow_distance = 60.0f,
 		 .spot_budget = 4,
@@ -74,7 +77,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .glass_shadows = false,
 	   .volumetric_quality = 0,
 	   .gi_quality = 0,
-	   .gi_enabled = false,
+	   .gi_enabled = true,
 	   .render_scale = 0.75f,
 	   .shadow_distance = 100.0f,
 	   .spot_budget = 6,
@@ -93,7 +96,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .ambient_rays = false,
 	   .glass_shadows = true,
 	   .volumetric_quality = 1,
-	   .gi_quality = 0,
+	   .gi_quality = 1,
 	   .gi_enabled = true,
 	   .render_scale = 0.85f,
 	   .shadow_distance = 150.0f,
@@ -114,7 +117,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .ambient_rays = false,
 	   .glass_shadows = true,
 	   .volumetric_quality = 1,
-	   .gi_quality = 1,
+	   .gi_quality = 2,
 	   .gi_enabled = true,
 	   .render_scale = 1.0f,
 	   .shadow_distance = 250.0f,
@@ -137,9 +140,12 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 		 .glass_shadows = false,
 		 .volumetric_quality = 0,
 		 .gi_quality = 0,
+		 .gi_enabled = true,
+		 .render_scale = 0.75f,
 		 .shadow_distance = 60.0f,
 		 .spot_budget = 4,
 		 .point_budget = 2,
+		 .shadow_maps_only = true,
 		 .glass_lit_surfaces = 1,
 		 .glass_reflection_reach = 8.0f},
    {.ssr = true,
@@ -152,6 +158,8 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .glass_shadows = true,
 	   .volumetric_quality = 1,
 	   .gi_quality = 1,
+	   .gi_enabled = true,
+	   .render_scale = 0.85f,
 	   .shadow_distance = 100.0f,
 	   .spot_budget = 8,
 	   .point_budget = 4,
@@ -162,13 +170,15 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
    {.ssr = true,
 	   .ssao = true,
 	   .traced_specular = true,
-	   .specular_roughness = 0.5f,
-	   .specular_reach = 32.0f,
+	   .specular_roughness = 0.45f,
+	   .specular_reach = 24.0f,
+	   .specular_hit_lights = false,
 	   .light_candidates = 8,
 	   .ambient_rays = true,
 	   .glass_shadows = true,
 	   .volumetric_quality = 2,
 	   .gi_quality = 2,
+	   .gi_enabled = true,
 	   .shadow_distance = 150.0f,
 	   .spot_budget = 16,
 	   .point_budget = 8,
@@ -181,12 +191,13 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .ssao = true,
 	   .traced_specular = true,
 	   .specular_roughness = 0.6f,
-	   .specular_reach = 48.0f,
+	   .specular_reach = 32.0f,
 	   .light_candidates = 16,
 	   .ambient_rays = true,
 	   .glass_shadows = true,
 	   .volumetric_quality = 3,
 	   .gi_quality = 3,
+	   .gi_enabled = true,
 	   .shadow_distance = 250.0f,
 	   .spot_budget = shadows::k_max_spot_shadows,
 	   .point_budget = shadows::k_max_point_shadows,
@@ -238,6 +249,7 @@ void applyPreset() {
 	renderer.setVoxelTracedSpecular(knobs.traced_specular);
 	renderer.setVoxelSpecularRoughness(knobs.specular_roughness);
 	renderer.setVoxelSpecularReach(knobs.specular_reach);
+	renderer.setVoxelSpecularHitLights(knobs.specular_hit_lights);
 	renderer.setVoxelLightCandidates(knobs.light_candidates);
 	renderer.setVoxelAmbientRays(knobs.ambient_rays);
 	renderer.setVoxelGlassShadows(knobs.glass_shadows);
@@ -257,7 +269,7 @@ struct DrivenSetting {
 	Value (*get)(const PresetKnobs&);
 };
 
-const std::array<DrivenSetting, 21> k_driven {
+const std::array<DrivenSetting, 22> k_driven {
   {
    {"renderer.voxels.shadow_maps_only", [](const PresetKnobs& k) { return Value {k.shadow_maps_only}; }},
    {"renderer.quality.ssr_reach", [](const PresetKnobs& k) { return Value {static_cast<double>(k.ssr_reach)}; }},
@@ -270,6 +282,7 @@ const std::array<DrivenSetting, 21> k_driven {
    {"renderer.voxels.specular_roughness",
 	   [](const PresetKnobs& k) { return Value {static_cast<double>(k.specular_roughness)}; }},
    {"renderer.voxels.specular_reach", [](const PresetKnobs& k) { return Value {static_cast<double>(k.specular_reach)}; }},
+   {"renderer.voxels.specular_hit_lights", [](const PresetKnobs& k) { return Value {k.specular_hit_lights}; }},
    {"renderer.voxels.light_candidates", [](const PresetKnobs& k) { return Value {static_cast<int64_t>(k.light_candidates)}; }},
    {"renderer.voxels.ambient_rays", [](const PresetKnobs& k) { return Value {k.ambient_rays}; }},
    {"renderer.voxels.glass_shadows", [](const PresetKnobs& k) { return Value {k.glass_shadows}; }},
@@ -886,6 +899,16 @@ void registerVoxels(VulkanRenderer& renderer) {
 	)
 	    .onChange(presetKnob<float, double>(&PresetKnobs::specular_reach, k_to_float));
 
+	toast::settings::declareBool(
+	    "renderer.voxels.specular_hit_lights",
+	    true,
+	    {.label = "Traced specular hit lights",
+			 .category = "Voxels",
+			 .description = "Reflection rays that hit off screen take a local light and its shadow ray on top of the sun and GI. "
+			                "Preset Custom only"}
+	)
+	    .onChange(presetKnob<bool, bool>(&PresetKnobs::specular_hit_lights, k_same_bool));
+
 	toast::settings::declareInt(
 	    "renderer.voxels.glass_lit_surfaces",
 	    4,
@@ -1096,6 +1119,27 @@ void registerVoxels(VulkanRenderer& renderer) {
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {
+	toast::settings::declareString(
+	    "renderer.environment.map",
+	    "",
+	    {.label = "Environment map",
+			 .category = "Environment",
+			 .description = "A Radiance .hdr equirectangular image used as the sky and image-based lighting. "
+			                "None keeps the generated sky",
+			 .asset_type = "environment_map"}
+	)
+	    .onChange([&renderer](const std::string& v) {
+		    auto* pass = renderer.getEnvironmentPassMutable();
+		    if (pass == nullptr) {
+			    return;
+		    }
+		    if (v.empty() || v.contains("://")) {
+			    pass->setEnvironmentMap(v);
+		    } else {
+			    pass->setEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
+		    }
+	    });
+
 	toast::settings::declareFloat(
 	    "renderer.environment.sky_intensity",
 	    1.0,

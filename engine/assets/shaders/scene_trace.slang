@@ -286,14 +286,11 @@ float3 traceVisibility(float3 origin, float3 segment, float coneSlope, bool tint
         ray.Direction = segment;
         ray.TMin = 0.0;
         ray.TMax = 1.0;
-        RayQuery<RAY_FLAG_NONE> query;
+        // Voxels are AABBs only so triangle instances under the mask never become candidates
+        RayQuery<RAY_FLAG_SKIP_TRIANGLES> query;
         query.TraceRayInline(gScene, RAY_FLAG_NONE, tinted ? kTraceMaskVolume | kTraceMaskGlass : kTraceMaskVolume, ray);
         while (query.Proceed())
         {
-            if (query.CandidateType() != CANDIDATE_PROCEDURAL_PRIMITIVE)
-            {
-                continue;
-            }
             const uint custom = query.CandidateInstanceID();
             const uint v = custom & kTraceInstanceVolume;
             bool blocked = false;
@@ -336,14 +333,11 @@ float3 traceGlassFilter(float3 origin, float3 segment, float coneSlope)
         ray.Direction = segment;
         ray.TMin = 0.0;
         ray.TMax = 1.0;
-        RayQuery<RAY_FLAG_NONE> query;
+        // Voxels are AABBs only so triangle instances under the mask never become candidates
+        RayQuery<RAY_FLAG_SKIP_TRIANGLES> query;
         query.TraceRayInline(gScene, RAY_FLAG_NONE, kTraceMaskGlass, ray);
         while (query.Proceed())
         {
-            if (query.CandidateType() != CANDIDATE_PROCEDURAL_PRIMITIVE)
-            {
-                continue;
-            }
             const uint custom = query.CandidateInstanceID();
             const uint v = custom & kTraceInstanceVolume;
             if ((custom & kTraceInstanceBricks) != 0u)
@@ -417,14 +411,11 @@ SceneHit traceScene(float3 origin, float3 direction, float tMin, float tMax, flo
         ray.Direction = direction;
         ray.TMin = tMin;
         ray.TMax = tMax;
-        RayQuery<RAY_FLAG_NONE> query;
+        // Voxels are AABBs only so triangle instances under the mask never become candidates
+        RayQuery<RAY_FLAG_SKIP_TRIANGLES> query;
         query.TraceRayInline(gScene, RAY_FLAG_NONE, kTraceMaskVolume, ray);
         while (query.Proceed())
         {
-            if (query.CandidateType() != CANDIDATE_PROCEDURAL_PRIMITIVE)
-            {
-                continue;
-            }
             const uint custom = query.CandidateInstanceID();
             const uint v = custom & kTraceInstanceVolume;
             const RayHit hit = (custom & kTraceInstanceBricks) != 0u

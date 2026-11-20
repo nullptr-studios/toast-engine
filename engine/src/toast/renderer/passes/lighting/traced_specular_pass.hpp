@@ -9,6 +9,7 @@
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
+#include "toast/renderer/resources/hiz_pyramid.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
 #include "toast/renderer/resources/scene_descriptor_set.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
@@ -52,6 +53,9 @@ private:
 		glm::vec4 tracing {0.0f};
 		/// x 1 when binding 10 holds last frame resolve
 		glm::vec4 resolve {0.0f};
+		/// x levels of the closest depth pyramid y most screen march steps with 0 off z SSR thickness w 1 when off screen
+		/// hits take local lights
+		glm::vec4 march {0.0f};
 	};
 
 	/// rgb radiance a hit distance then history and -1 where nothing was traced
@@ -64,7 +68,7 @@ private:
 	/// Mirrors voxel_specular.slang kPyramidLevels
 	static constexpr uint32_t k_pyramid_levels = 6;
 
-	static constexpr uint32_t k_image_bindings = 14;
+	static constexpr uint32_t k_image_bindings = 16;
 
 	void createSets(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -85,6 +89,7 @@ private:
 	VulkanPipeline m_temporal_pipeline;
 	VulkanPipeline m_composite_pipeline;
 	VulkanPipeline m_pyramid_pipeline;
+	VulkanPipeline m_filter_pipeline;
 	SceneDescriptorSets m_scene_sets;
 	bool m_instances_bound = false;
 
@@ -104,7 +109,11 @@ private:
 	PostProcessTarget m_resolved;
 	/// The temporal pass reads one and writes the other
 	std::array<PostProcessTarget, 2> m_history;
+	/// Footprint filtered history at half resolution so the full resolution composite only upsamples it
+	PostProcessTarget m_filtered;
 	PostProcessTarget m_target;
+	/// Closest depth so a ray the screen shows skips the voxel trace
+	HiZPyramid m_hiz;
 
 	std::optional<vma::raii::Image> m_pyramid;
 	/// Every level for sampling and level 0 alone for drawing

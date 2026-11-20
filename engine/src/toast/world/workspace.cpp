@@ -2105,8 +2105,6 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_focused_node = findFrom(m_root_node, e.node);
-		// The VoxelEditor tints the selected piece
-		renderer::editorOverlays().selected = m_focused_node.exists() ? m_focused_node->uid() : UID {};
 		return false;
 	});
 
@@ -2727,7 +2725,7 @@ void Workspace::tick() {
 		tickActiveCameraController();
 		if (m_root_node.exists()) {
 			tickAnimationPreviews(*m_root_node);
-			if (receivesEvents()) {
+			if (receivesEvents() && isActiveWorkspace()) {
 				m_root_node->propagateCallTick(m_root_node->info(), TickFunctionList::editor_tick);
 			}
 		}

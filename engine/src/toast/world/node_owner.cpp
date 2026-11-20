@@ -8,6 +8,7 @@
 #include "wave_executor.hpp"
 #include "workspace.hpp"
 
+#include <algorithm>
 #include <charconv>
 #include <future>
 #include <toast/assets/asset_manager.hpp>
@@ -955,8 +956,20 @@ auto INodeOwner::instantiate(const assets::Handle<assets::Prefab>& file, Instant
 			continue;
 		}
 
+		const std::vector<assets::Handle<assets::Script>> prefab_scripts = sub_root->m_scripts;
 		applyFields(*sub_root, *chunk);
 		applyInteriorOverrides(*sub_root, *chunk);
+
+		// applyFields only writes m_scripts; an instance that overrides its root's scripts needs that runtime built here,
+		// or its scripts never run and buildTree has nowhere to put its lua overrides
+		const bool scripts_overridden =
+		    !std::ranges::equal(prefab_scripts, sub_root->m_scripts, [](const auto& lhs, const auto& rhs) {
+			    return lhs.uid().data() == rhs.uid().data();
+		    });
+		if (scripts_overridden) {
+			// catches the new scripts up to the node's lifecycle, so their load() runs without repeating the native one
+			sub_root->reloadScripts();
+		}
 		sub_root->m_source_prefab = sub;
 
 		// Everything below an instance root is interior to that instance

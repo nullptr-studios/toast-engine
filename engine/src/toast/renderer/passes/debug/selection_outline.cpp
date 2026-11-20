@@ -103,6 +103,18 @@ auto unite(const vk::Rect2D& a, const vk::Rect2D& b) -> vk::Rect2D {
 	};
 }
 
+template<typename Visit>
+void forEachOutlinedVolume(const RenderFrame& frame, Visit&& visit) {
+	for (const VoxelVolumeProxy& proxy : frame.voxel_instances) {
+		if (proxy.outlined && proxy.visible) {
+			visit(proxy);
+		}
+	}
+	for (const VoxelVolumeProxy& proxy : frame.voxel_outline_only) {
+		visit(proxy);
+	}
+}
+
 auto outlinedMesh(const MeshInstanceProxy& proxy) -> bool {
 	return proxy.outlined && proxy.visible && proxy.mesh != nullptr && proxy.mesh->isReady();
 }
@@ -346,19 +358,16 @@ auto SelectionOutline::prepareVolumes(uint32_t frame_index) -> uint32_t {
 	}
 
 	uint32_t count = 0;
-	for (const auto& proxy : frame->voxel_instances) {
-		if (!proxy.outlined || !proxy.visible) {
-			continue;
-		}
+	forEachOutlinedVolume(*frame, [&](const VoxelVolumeProxy& proxy) {
 		if (count == k_max_volumes) {
-			break;
+			return;
 		}
 		instances[count] = makeVoxelInstance(proxy.model, proxy.inverse_model, proxy.model, true, proxy.record_index);
 		if (proxy.mirrored) {
 			instances[count].flags |= k_voxel_instance_mirrored;
 		}
 		++count;
-	}
+	});
 	if (count == 0) {
 		return 0;
 	}
@@ -393,11 +402,9 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 	}
 	const uint32_t volumes = prepareVolumes(frame_index);
 	if (volumes > 0) {
-		for (const auto& proxy : frame->voxel_instances) {
-			if (proxy.outlined && proxy.visible) {
-				rect = unite(rect, sphereRect(view_projection, proxy.bounds_center, proxy.bounds_radius, m_extent));
-			}
-		}
+		forEachOutlinedVolume(*frame, [&](const VoxelVolumeProxy& proxy) {
+			rect = unite(rect, sphereRect(view_projection, proxy.bounds_center, proxy.bounds_radius, m_extent));
+		});
 	}
 	if ((!any_mesh && volumes == 0) || rect.extent.width == 0 || rect.extent.height == 0) {
 		m_history_valid = false;
@@ -411,11 +418,7 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 			models.push_back(proxy.model);
 		}
 	}
-	for (const auto& proxy : frame->voxel_instances) {
-		if (proxy.outlined && proxy.visible) {
-			models.push_back(proxy.model);
-		}
-	}
+	forEachOutlinedVolume(*frame, [&](const VoxelVolumeProxy& proxy) { models.push_back(proxy.model); });
 	const bool reset = !m_history_valid || !frame->taa_active || frame->frame_data.view_projection != m_history_view_projection ||
 	                   models != m_history_models;
 	m_history_view_projection = frame->frame_data.view_projection;
@@ -443,12 +446,19 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 	stencil_info.storeOp = vk::AttachmentStoreOp::eStore;
 	stencil_info.clearValue = vk::ClearValue(vk::ClearDepthStencilValue {0.0f, 0});
 
-	const vk::Rect2D full {
-	  {0, 0},
-    m_extent
+	// The resolve reads the mask up to k_outline_reach past the rect, outside that the stale mask is never read
+	const int32_t mask_x0 = std::max(rect.offset.x - k_outline_reach, 0);
+	const int32_t mask_y0 = std::max(rect.offset.y - k_outline_reach, 0);
+	const int32_t mask_x1 =
+	    std::min(rect.offset.x + static_cast<int32_t>(rect.extent.width) + k_outline_reach, static_cast<int32_t>(m_extent.width));
+	const int32_t mask_y1 =
+	    std::min(rect.offset.y + static_cast<int32_t>(rect.extent.height) + k_outline_reach, static_cast<int32_t>(m_extent.height));
+	const vk::Rect2D mask_rect {
+	  {                                 mask_x0,                                  mask_y0},
+    {static_cast<uint32_t>(mask_x1 - mask_x0), static_cast<uint32_t>(mask_y1 - mask_y0)}
 	};
 	vk::RenderingInfo rendering_info {};
-	rendering_info.renderArea = full;
+	rendering_info.renderArea = mask_rect;
 	rendering_info.layerCount = 1;
 	rendering_info.pStencilAttachment = &stencil_info;
 
@@ -457,7 +467,7 @@ void SelectionOutline::recordMask(vk::CommandBuffer cmd, uint32_t frame_index, v
 	    0,
 	    std::array {vk::Viewport(0.0f, 0.0f, static_cast<float>(m_extent.width), static_cast<float>(m_extent.height), 0.0f, 1.0f)}
 	);
-	cmd.setScissor(0, std::array {full});
+	cmd.setScissor(0, std::array {mask_rect});
 
 	const vk::PipelineLayout layout = *m_mask_layout.getPipelineLayout();
 	cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, 0, std::array {*m_mask_sets[frame_index]}, {});

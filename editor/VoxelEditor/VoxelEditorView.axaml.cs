@@ -12,7 +12,7 @@ public partial class VoxelEditorView : UserControl {
 
 	public VoxelEditorView() {
 		InitializeComponent();
-		AddHandler(KeyDownEvent, OnShortcut, RoutingStrategies.Tunnel, true);
+		AddHandler(KeyDownEvent, OnShortcut, RoutingStrategies.Tunnel);
 		AddHandler(PointerPressedEvent, (_, _) => m_vm?.EnsureEngine(), RoutingStrategies.Tunnel, true);
 		DataContextChanged += (_, _) => Bind(DataContext as VoxelEditorViewModel);
 	}

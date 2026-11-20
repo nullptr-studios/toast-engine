@@ -14,7 +14,7 @@ RWStructuredBuffer<uint> gFaceList;
 
 static const uint kFaceListHeader = 4u;
 /// Mirrors GiClipmapPass k_bounce_capacity and faces past it wait for the next round
-static const uint kFaceListCapacity = 1u << 17;
+static const uint kFaceListCapacity = 1u << 19;
 
 /// Mirrors gi_clip_fill GiClipFillPush
 struct GiClipBouncePush
