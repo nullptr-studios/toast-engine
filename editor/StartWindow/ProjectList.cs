@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using editor.Install;
 using Tomlyn;
 using Tomlyn.Model;
 
@@ -21,12 +22,19 @@ public record struct ProjectListItem {
 public class ProjectList {
 	private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
-	private static readonly string m_dir = Path.Combine(
-		Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-		"ToastEngine"
-	);
+	private static readonly string m_dir = AppPaths.EngineDir;
 
 	private static readonly string m_path = Path.Combine(m_dir, "project_list.json");
+
+	private static void MigrateLegacyList() {
+		var legacy = Path.Combine(AppPaths.LegacyEngineDir, "project_list.json");
+		if (File.Exists(m_path) || !File.Exists(legacy)) return;
+		try {
+			File.Move(legacy, m_path);
+		} catch {
+			// ...
+		}
+	}
 
 	[JsonConstructor]
 	private ProjectList() { }
@@ -35,6 +43,7 @@ public class ProjectList {
 
 	public static ProjectList LoadList() {
 		if (!Directory.Exists(m_dir)) Directory.CreateDirectory(m_dir);
+		MigrateLegacyList();
 
 		var loaded = File.Exists(m_path) ? LoadFromJson() : new ProjectList();
 

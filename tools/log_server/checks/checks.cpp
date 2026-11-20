@@ -69,7 +69,7 @@ struct TempConfigDir {
 #ifdef _WIN32
 		setEnv("APPDATA", root.string());
 #else
-		setEnv("XDG_CONFIG_HOME", root.string());
+		setEnv("XDG_DATA_HOME", root.string());
 #endif
 	}
 	~TempConfigDir() {
