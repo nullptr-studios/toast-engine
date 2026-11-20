@@ -221,6 +221,29 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 	}
 
 	public ObservableCollection<AssetTagFilter> TagFilters { get; } = [];
+	private bool m_showTagsView;
+	private AssetTag? m_selectedTag;
+	public ObservableCollection<AssetTag> Tags => AssetBrowserSettings.Tags;
+	public bool ShowTagsView => m_showTagsView;
+	public bool ShowFoldersView => !m_showTagsView;
+	public string SidebarTitle => m_showTagsView ? "Tags" : "Folders";
+	public IRelayCommand ToggleTagsViewCommand => new RelayCommand(() => {
+		m_showTagsView = !m_showTagsView;
+		if (!m_showTagsView) SelectedTag = null;
+		Notify(nameof(ShowTagsView));
+		Notify(nameof(ShowFoldersView));
+		Notify(nameof(SidebarTitle));
+	});
+
+	public AssetTag? SelectedTag {
+		get => m_selectedTag;
+		set {
+			if (m_selectedTag == value) return;
+			m_selectedTag = value;
+			Notify();
+			SearchText = value is null ? "" : $"Tag=\"{value.Name}\"";
+		}
+	}
 
 	public bool HasTags => AssetBrowserSettings.Tags.Count > 0;
 
