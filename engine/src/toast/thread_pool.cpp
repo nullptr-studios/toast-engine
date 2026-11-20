@@ -69,6 +69,14 @@ namespace {
 thread_local bool t_thread_pool_worker = false;
 }
 
+void ThreadPool::waitLowPriorityIdle() {
+	if (!instance || onWorkerThread()) {
+		return;
+	}
+	std::unique_lock lock(instance->m.queue_mutex);
+	instance->m.all_done.wait(lock, [] { return instance->m.low_jobs.empty() && instance->m.active_low_jobs == 0; });
+}
+
 auto ThreadPool::onWorkerThread() noexcept -> bool {
 	return t_thread_pool_worker;
 }
@@ -130,6 +138,8 @@ void ThreadPool::threadLoop() {
 				--m.active_low_jobs;
 				if (!m.low_jobs.empty()) {
 					m.job_available.notify_one();
+				} else if (m.active_low_jobs == 0) {
+					m.all_done.notify_all();
 				}
 			}
 			if (active == 0 && m.jobs.empty() && m.low_jobs.empty()) {

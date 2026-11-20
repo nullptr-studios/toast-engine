@@ -114,6 +114,9 @@ public:
 	 */
 	void waitIdle();
 
+	/// Blocks until no low-priority job is queued or running; no-op on a worker thread or without a pool
+	static void waitLowPriorityIdle();
+
 	static auto workerCount() -> size_t;
 
 	/** @returns how many workers are waiting for a job right now */
@@ -146,11 +149,11 @@ private:
 	auto lowPriorityRunnable() const -> bool;
 
 	struct {
-		std::atomic<int> active_jobs = 0;                        ///< Number of jobs currently executing
-		int active_low_jobs = 0;                                 ///< Low priority jobs currently executing
-		std::queue<std::move_only_function<void()>> low_jobs;    ///< Pending low priority jobs
-		std::atomic<int> idle_workers = 0;                       ///< Number of workers waiting for a job
-		bool should_stop = false;                                ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;                               ///< Number of jobs currently executing
+		int active_low_jobs = 0;                                        ///< Low priority jobs currently executing
+		std::queue<std::move_only_function<void()>> low_jobs;           ///< Pending low priority jobs
+		std::atomic<int> idle_workers = 0;                              ///< Number of workers waiting for a job
+		bool should_stop = false;                                       ///< Flag to signal workers to stop
 
 		TOAST_LOCKABLE(std::mutex, queue_mutex, "Thread pool jobs");    ///< Mutex protecting the job queue
 		ConditionVariable job_available;                                ///< Notified when a job is enqueued or stop is requested
