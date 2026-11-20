@@ -458,20 +458,20 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 
 	[RelayCommand(CanExecute = nameof(CanTogglePlay))]
 	private async Task TogglePlay() {
-		if (PlayState == PlayState.Stopped) await StartPlay(PlayState.Playing);
-		else StopPlay();
+		if (PlayState == PlayState.Stopped) await WithLoader("Starting play mode", () => StartPlay(PlayState.Playing));
+		else await StopPlayWithLoader();
 	}
 
 	[RelayCommand(CanExecute = nameof(CanToggleSimulate))]
 	private async Task ToggleSimulate() {
-		if (PlayState == PlayState.Stopped) await StartPlay(PlayState.Simulating);
-		else StopPlay();
+		if (PlayState == PlayState.Stopped) await WithLoader("Starting play mode", () => StartPlay(PlayState.Simulating));
+		else await StopPlayWithLoader();
 	}
 
 	[RelayCommand(CanExecute = nameof(CanTogglePlayExternal))]
 	private async Task TogglePlayExternal() {
-		if (PlayState == PlayState.Stopped) await StartPlay(PlayState.PlayingExternal);
-		else StopPlay();
+		if (PlayState == PlayState.Stopped) await WithLoader("Starting play mode", () => StartPlay(PlayState.PlayingExternal));
+		else await StopPlayWithLoader();
 	}
 
 	private async Task StartPlay(PlayState mode) {
@@ -484,7 +484,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 			await WriteAutosaveAsync(virtualPath);
 		}
 
-		var res = Engine.PlayWorkspace(Handle);
+		var engine = Engine;
+		var res = await Task.Run(() => engine.PlayWorkspace(Handle));
 		if (res.Uid == 0) return;
 		PlayHandle = res.Uid;
 		OnPropertyChanged(nameof(EffectiveHandle));
@@ -526,9 +527,28 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	// closing the play window by hand behaves like pressing stop
-	private void OnPlayWindowClosed(object? sender, EventArgs e) {
+	private async void OnPlayWindowClosed(object? sender, EventArgs e) {
 		m_playWindow = null;
+		await StopPlayWithLoader();
+	}
+
+	// The engine destroys the play workspace on the tick thread and may wait there for game jobs to finish
+	private async Task StopPlayWithLoader() {
+		if (PlayState == PlayState.Stopped) return;
 		StopPlay();
+		// Two tick round trips: the queued WorkspaceDestroy is handled by the toast_tick between them
+		await WithLoader("Stopping play mode", () => Task.Run(() => {
+			ToastEngine.OnTickThread(() => { });
+			ToastEngine.OnTickThread(() => { });
+		}));
+	}
+
+	private static async Task WithLoader(string label, Func<Task> work) {
+		if (App.MainWindow is not { } owner) {
+			await work();
+			return;
+		}
+		await new SplashLoaderWindow(new LoaderViewModel([LoaderTask.Do(label, _ => work())])).ShowDialog(owner);
 	}
 
 	// shows the save-changes dialog and handles save/discard/cancel

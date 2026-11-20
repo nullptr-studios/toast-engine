@@ -367,7 +367,9 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 		std::vector<TrackedVolume> tracked;
 		tracked.reserve(gathered.size());
 		for (const Gathered& entry : gathered) {
-			tracked.push_back({.node_rid = entry.id, .volume = entry.volume});
+			tracked.push_back(
+			    {.node_rid = entry.id, .volume = entry.volume, .palette = entry.palette, .palette_revision = entry.palette->revision}
+			);
 		}
 		std::vector<VolumeDelta> deltas;
 		m_voxel_change_tracker.observe(

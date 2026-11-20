@@ -108,7 +108,13 @@ void VoxelChangeTracker::observe(
 		delta.node_rid = tracked.node_rid;
 
 		const voxel::Volume& volume = *tracked.volume;
-		const Seen current {.node_rid = tracked.node_rid, .volume_id = volume.id(), .content = volume.revision()};
+		const Seen current {
+		  .node_rid = tracked.node_rid,
+		  .volume_id = volume.id(),
+		  .content = volume.revision(),
+		  .palette = tracked.palette,
+		  .palette_revision = tracked.palette_revision,
+		};
 		now.push_back(current);
 
 		// New volumes are covered by the caster set of each group
@@ -130,6 +136,11 @@ void VoxelChangeTracker::observe(
 					dims = glm::max(dims, *old_dims);
 				}
 				m_unpublished.push_back({.node_rid = tracked.node_rid, .min = glm::vec3(0.0f), .max = voxel::localExtent(dims)});
+			} else if (previous->palette != current.palette || previous->palette_revision != current.palette_revision) {
+				// No brick changed but every voxel may now light or tint differently, and the patcher repacks the record itself
+				m_unpublished.push_back(
+				    {.node_rid = tracked.node_rid, .min = glm::vec3(0.0f), .max = voxel::localExtent(volume.brickDims())}
+				);
 			} else if (dirty.has_value() && !dirty->empty()) {
 				appendBrickRegions(m_unpublished, tracked.node_rid, volume, *dirty);
 				delta.bricks.assign(dirty->begin(), dirty->end());

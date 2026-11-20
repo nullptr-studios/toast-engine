@@ -11,7 +11,6 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
-#include <toast/voxel/voxel_constants.hpp>
 #include <utility>
 
 namespace renderer {
@@ -78,7 +77,8 @@ void GiDirtyBoxes::gather(const RenderFrame& frame, std::optional<float> motion_
 		if (generation != m_region_generation && m_region_generation != 0) {
 			m_models.clear();
 			for (const auto& proxy : frame.voxel_instances) {
-				m_models.emplace(proxy.node_rid, proxy.model * glm::scale(glm::mat4(1.0f), glm::vec3(voxel::k_voxel_size)));
+				// Regions are in model-local meters like localExtent, which the proxy model already maps to world
+				m_models.emplace(proxy.node_rid, proxy.model);
 			}
 			known = frame.voxel_storage->changeHistory().forEachSince(m_region_generation, [&](const VoxelRegion& region) {
 				const auto found = m_models.find(region.node_rid);

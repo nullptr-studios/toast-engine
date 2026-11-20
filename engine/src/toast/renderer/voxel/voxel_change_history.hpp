@@ -14,6 +14,7 @@
 #include <memory>
 #include <optional>
 #include <span>
+#include <toast/voxel/palette.hpp>
 #include <toast/voxel/voxel_volume.hpp>
 #include <vector>
 
@@ -62,6 +63,9 @@ private:
 struct TrackedVolume {
 	uint64_t node_rid = 0;
 	const voxel::Volume* volume = nullptr;
+	/// A swapped palette is a new object that may share the old one's revision, so both are compared
+	const voxel::Palette* palette = nullptr;
+	uint32_t palette_revision = 0;
 };
 
 /// Brick dims of a volume in the storage frames use or nullopt when it is not in there
@@ -99,6 +103,8 @@ private:
 		uint64_t node_rid = 0;
 		uint64_t volume_id = 0;
 		uint32_t content = 0;
+		const voxel::Palette* palette = nullptr;
+		uint32_t palette_revision = 0;
 	};
 
 	std::vector<Seen> m_seen;

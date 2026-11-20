@@ -48,6 +48,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		new GltfImporter(new GltfImporter.Settings(), new TextureImporter.Settings()),
 		new FontImporter(),
 		new UIImageImporter(),
+		new HdrImporter(),
 		new VoxImporter(new VoxImporter.Settings()),
 		new AudioBankImporter(),
 		new AudioStringImporter(new AudioStringImporter.Settings())
