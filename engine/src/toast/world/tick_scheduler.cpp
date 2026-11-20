@@ -240,15 +240,20 @@ auto TickScheduler::registerDependency(Node& from, Node& to) -> bool {
 	std::scoped_lock lock(graph_mutex);
 
 	// don't store duplicates
-	auto& edges = graph.connections[from];
-	if (std::ranges::contains(edges, Box<Node>(to))) {
+	try {
+		auto& edges = graph.connections[from];
+		if (std::ranges::contains(edges, Box<Node>(to))) {
+			return false;
+		}
+
+		edges.emplace_back(to);
+		graph.inverse_connections[to].emplace_back(from);
+		TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
+		return true;
+	} catch (...) {
+		TOAST_ERROR("World", "HOLY SHIT SOMETHING REALLY BAD JUST HAPPENED");
 		return false;
 	}
-
-	edges.emplace_back(to);
-	graph.inverse_connections[to].emplace_back(from);
-	TOAST_TRACE("World", "Added dependency from {} to {}", from.name(), from.uid());
-	return true;
 }
 
 auto TickScheduler::registerInteraction(Node& first, Node& second) -> bool {
