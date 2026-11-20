@@ -2165,64 +2165,65 @@ void Workspace::eventSubscriptions() {
 
 		// secondary targets get the same value
 		const auto apply = [&](toast::Box<Node> target, bool secondary) -> bool {
-		const auto* field = target->info()->search(e.parameter);
-		if (field == nullptr) {
-			if (not secondary) {
-				TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
-			}
-			return true;
-		}
-		if (secondary && (field->name == "position" || field->name == "rotation" || field->name == "scale" ||
-		                  field->name == "world_position" || field->name == "world_rotation" ||
-		                  field->name == "world_scale" || field->name == "m_scripts")) {
-			return true;
-		}
-
-		std::any value;
-		if (field->value_type == FieldType::quaternion_t && not field->is_array) {
-			// the inspector edits rotation as euler degrees "x y z"; store it back as a quaternion
-			glm::vec3 deg {0.0f, 0.0f, 0.0f};
-			std::istringstream ss(e.value);
-			ss >> deg.x >> deg.y >> deg.z;
-			value = std::any {glm::quat(glm::radians(deg))};
-		} else if (field->isNodeReference()) {
-			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
-			if (not parsed.has_value()) {
-				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+			const auto* field = target->info()->search(e.parameter);
+			if (field == nullptr) {
+				if (not secondary) {
+					TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
+				}
 				return true;
 			}
-			value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
-		} else {
-			auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
-			if (not parsed.has_value()) {
-				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+			if (secondary &&
+			    (field->name == "position" || field->name == "rotation" || field->name == "scale" || field->name == "world_position" ||
+			     field->name == "world_rotation" || field->name == "world_scale" || field->name == "m_scripts")) {
 				return true;
 			}
-			value = std::move(*parsed);
-		}
 
-		const std::string previous = inspectorValue(*target, *field);
-		auto context =
-		    historyContext(event::HistoryOperation::change_value, target, std::format("{} changed", e.parameter), previous, e.value);
-		recordHistory(std::move(context), [&] {
-			field->set(&*target, value);
-			target->onReflectedFieldChanged(field->name);
+			std::any value;
+			if (field->value_type == FieldType::quaternion_t && not field->is_array) {
+				// the inspector edits rotation as euler degrees "x y z"; store it back as a quaternion
+				glm::vec3 deg {0.0f, 0.0f, 0.0f};
+				std::istringstream ss(e.value);
+				ss >> deg.x >> deg.y >> deg.z;
+				value = std::any {glm::quat(glm::radians(deg))};
+			} else if (field->isNodeReference()) {
+				auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
+				if (not parsed.has_value()) {
+					TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+					return true;
+				}
+				value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
+			} else {
+				auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
+				if (not parsed.has_value()) {
+					TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+					return true;
+				}
+				value = std::move(*parsed);
+			}
+
+			const std::string previous = inspectorValue(*target, *field);
+			auto context = historyContext(
+			    event::HistoryOperation::change_value, target, std::format("{} changed", e.parameter), previous, e.value
+			);
+			recordHistory(std::move(context), [&] {
+				field->set(&*target, value);
+				target->onReflectedFieldChanged(field->name);
+				if (field->name == "m_scripts") {
+					target->reloadScripts();
+				}
+			});
+
+			if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
+			    field->name == "world_rotation") {
+				if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
+					node3d->onEditorTransformChanged();
+				}
+			}
+
 			if (field->name == "m_scripts") {
-				target->reloadScripts();
+				event::send<event::RequestHierarchyUpdate>();
 			}
-		});
-
-		if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
-		    field->name == "world_rotation") {
-			if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
-				node3d->onEditorTransformChanged();
-			}
-		}
-
-		if (field->name == "m_scripts") {
-			event::send<event::RequestHierarchyUpdate>();
-		}
-		return true;
+			return true;
 		};
 
 		apply(primary, false);

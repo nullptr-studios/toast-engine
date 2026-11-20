@@ -469,8 +469,7 @@ struct SetEditorCameraSettings : Event<SetEditorCameraSettings> {
 	uint64_t workspace_handle;
 	bool horizontal_movement;
 
-	SetEditorCameraSettings(
-	  EditorCameraMode mode, float speed, uint64_t workspace_handle = 0, bool horizontal_movement = false)
+	SetEditorCameraSettings(EditorCameraMode mode, float speed, uint64_t workspace_handle = 0, bool horizontal_movement = false)
 	    : mode(mode),
 	      speed(speed),
 	      workspace_handle(workspace_handle),
