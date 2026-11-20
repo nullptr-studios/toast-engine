@@ -80,6 +80,11 @@ public:
 	/// Queues a job with no std::future the caller synchronizes completion itself same queue and workers as push()
 	static void pushRaw(std::move_only_function<void()>&& job);
 
+	template<typename T>
+	static auto lpPush(T&& job) -> std::future<std::invoke_result_t<T>>;
+
+	static void lpPushRaw(std::move_only_function<void()>&& job);
+
 	/**
 	 * @brief Destroys the thread pool and waits for all workers to finish.
 	 *
@@ -136,12 +141,16 @@ private:
 	static auto get() noexcept -> ThreadPool&;
 
 	void threadLoop();
-	static void enqueue(std::move_only_function<void()>&& job);
+	static void enqueue(std::move_only_function<void()>&& job, bool low_priority);
+	[[nodiscard]]
+	auto lowPriorityRunnable() const -> bool;
 
 	struct {
-		std::atomic<int> active_jobs = 0;                               ///< Number of jobs currently executing
-		std::atomic<int> idle_workers = 0;                              ///< Number of workers waiting for a job
-		bool should_stop = false;                                       ///< Flag to signal workers to stop
+		std::atomic<int> active_jobs = 0;                        ///< Number of jobs currently executing
+		int active_low_jobs = 0;                                 ///< Low priority jobs currently executing
+		std::queue<std::move_only_function<void()>> low_jobs;    ///< Pending low priority jobs
+		std::atomic<int> idle_workers = 0;                       ///< Number of workers waiting for a job
+		bool should_stop = false;                                ///< Flag to signal workers to stop
 
 		TOAST_LOCKABLE(std::mutex, queue_mutex, "Thread pool jobs");    ///< Mutex protecting the job queue
 		ConditionVariable job_available;                                ///< Notified when a job is enqueued or stop is requested
@@ -157,7 +166,17 @@ auto ThreadPool::push(T&& job) -> std::future<std::invoke_result_t<T>> {
 
 	std::packaged_task<result_t()> task(std::forward<T>(job));
 	auto future = task.get_future();
-	enqueue([task = std::move(task)]() mutable { task(); });
+	enqueue([task = std::move(task)]() mutable { task(); }, false);
+	return future;
+}
+
+template<typename T>
+auto ThreadPool::lpPush(T&& job) -> std::future<std::invoke_result_t<T>> {
+	using result_t = std::invoke_result_t<T>;
+
+	std::packaged_task<result_t()> task(std::forward<T>(job));
+	auto future = task.get_future();
+	enqueue([task = std::move(task)]() mutable { task(); }, true);
 	return future;
 }
 

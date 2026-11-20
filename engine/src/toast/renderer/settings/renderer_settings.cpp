@@ -6,6 +6,7 @@
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
+#include <toast/assets/asset_manager.hpp>
 #include <toast/settings/settings.hpp>
 
 namespace renderer {
@@ -1118,6 +1119,27 @@ void registerVoxels(VulkanRenderer& renderer) {
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {
+	toast::settings::declareString(
+	    "renderer.environment.map",
+	    "",
+	    {.label = "Environment map",
+			 .category = "Environment",
+			 .description = "A Radiance .hdr equirectangular image used as the sky and image-based lighting. "
+			                "None keeps the generated sky",
+			 .asset_type = "environment_map"}
+	)
+	    .onChange([&renderer](const std::string& v) {
+		    auto* pass = renderer.getEnvironmentPassMutable();
+		    if (pass == nullptr) {
+			    return;
+		    }
+		    if (v.empty() || v.contains("://")) {
+			    pass->setEnvironmentMap(v);
+		    } else {
+			    pass->setEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
+		    }
+	    });
+
 	toast::settings::declareFloat(
 	    "renderer.environment.sky_intensity",
 	    1.0,
