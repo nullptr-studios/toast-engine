@@ -356,7 +356,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 			Mode = CameraMode == CameraMode.Orbit
 				? SetEditorCameraSettings.Types.Mode.Orbit
 				: SetEditorCameraSettings.Types.Mode.Free,
-			WorkspaceHandle = Handle,
+			WorkspaceHandle = EffectiveHandle,
 			Speed = (float)CameraSpeed
 		});
 	}
@@ -489,6 +489,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		if (res.Uid == 0) return;
 		PlayHandle = res.Uid;
 		OnPropertyChanged(nameof(EffectiveHandle));
+		SendCameraSettings();
 
 		// clear focus while this workspace is still the active one
 		Events.Send(new SetFocusedNode { Node = "" });
@@ -518,6 +519,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 		Events.Send(new WorkspaceDestroy { Handle = PlayHandle });
 		PlayHandle = 0;
 		OnPropertyChanged(nameof(EffectiveHandle));
+		SendCameraSettings();
 		IsPaused = false;
 		PlayState = PlayState.Stopped;
 
