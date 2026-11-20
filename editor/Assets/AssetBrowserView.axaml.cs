@@ -79,8 +79,12 @@ public partial class AssetBrowserView : UserControl {
 	private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e) {
 		var point = e.GetCurrentPoint(this);
 		if (point.Properties.IsRightButtonPressed) {
-			if (GetCardItem(e.Source) is AssetFile rightClickedFile)
-				PrepareFileContextMenu(e.Source, rightClickedFile);
+			if (GetCardItem(e.Source) is { } rightClicked) {
+				if (!Vm.SelectedItems.Contains(rightClicked)) Vm.SelectItem(rightClicked, KeyModifiers.None);
+				if (rightClicked is AssetFile rightClickedFile) PrepareFileContextMenu(e.Source, rightClickedFile);
+				e.Handled = true;
+			}
+
 			return;
 		}
 
