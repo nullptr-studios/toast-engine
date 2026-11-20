@@ -167,80 +167,78 @@
 					</Grid>
 				</Border>
 				<!-- Tree -->
-				<ScrollViewer Margin="-6"
-				              Padding="6"
-				              HorizontalScrollBarVisibility="Disabled">
-					<TreeView Classes="folder-tree" ItemsSource="{Binding Folders}"
-					          DragDrop.AllowDrop="True"
-					          DragDrop.DragOver="OnFolderTargetDragOver"
-					          DragDrop.Drop="OnFolderTargetDrop"
-					          SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
-					          SelectionMode="Single"
-					          Margin="0,4,0,0"
-					          Background="Transparent">
-						<TreeView.Styles>
-							<Style Selector="TreeViewItem">
-								<Setter Property="IsExpanded"
-								        Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
-								<Setter Property="CornerRadius"
-								        Value="6" />
-							</Style>
-						</TreeView.Styles>
-						<TreeView.ItemTemplate>
-							<TreeDataTemplate x:DataType="vm:AssetFolder"
-							                  ItemsSource="{Binding SubFolders}">
-								<TextBlock Text="{Binding Name}"
-								           TextTrimming="CharacterEllipsis" Classes="compact-text">
-									<TextBlock.ContextMenu>
-										<ContextMenu x:DataType="vm:AssetFolder">
-											<MenuItem Command="{Binding Owner.RenameCommand}"
-											          CommandParameter="{Binding}"
-											          InputGesture="F2"
-											          IsEnabled="{Binding CanModify}">
-												<MenuItem.Header>
-													<StackPanel Orientation="Horizontal"
-													            Spacing="8">
-														<LucideIcon Kind="Pencil"
-														            StrokeWidth="2.5"
-														            Size="16" />
-														<TextBlock Text="Rename" />
-													</StackPanel>
-												</MenuItem.Header>
-											</MenuItem>
-											<MenuItem Command="{Binding Owner.CreateFolderCommand}"
-											          CommandParameter="{Binding}">
-												<MenuItem.Header>
-													<StackPanel Orientation="Horizontal"
-													            Spacing="8">
-														<LucideIcon Kind="FolderPlus"
-														            StrokeWidth="2.5"
-														            Size="16" />
-														<TextBlock Text="New Folder" />
-													</StackPanel>
-												</MenuItem.Header>
-											</MenuItem>
-											<Separator />
-											<MenuItem Command="{Binding Owner.DeleteCommand}"
-											          CommandParameter="{Binding}"
-											          InputGesture="Delete"
-											          IsEnabled="{Binding CanModify}">
-												<MenuItem.Header>
-													<StackPanel Orientation="Horizontal"
-													            Spacing="8">
-														<LucideIcon Kind="Shredder"
-														            StrokeWidth="2.5"
-														            Size="16" />
-														<TextBlock Text="Delete" />
-													</StackPanel>
-												</MenuItem.Header>
-											</MenuItem>
-										</ContextMenu>
-									</TextBlock.ContextMenu>
-								</TextBlock>
-							</TreeDataTemplate>
-						</TreeView.ItemTemplate>
-					</TreeView>
-				</ScrollViewer>
+				<TreeView Classes="folder-tree" ItemsSource="{Binding Folders}"
+				          DragDrop.AllowDrop="True"
+				          DragDrop.DragOver="OnFolderTargetDragOver"
+				          DragDrop.Drop="OnFolderTargetDrop"
+				          SelectedItem="{Binding SelectedFolder, Mode=TwoWay}"
+				          SelectionMode="Single"
+				          Margin="-6,0,-6,0"
+				          Padding="6,4,6,6"
+				          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+				          Background="Transparent">
+					<TreeView.Styles>
+						<Style Selector="TreeViewItem">
+							<Setter Property="IsExpanded"
+							        Value="{ReflectionBinding IsExpanded, Mode=TwoWay}" />
+							<Setter Property="CornerRadius"
+							        Value="6" />
+						</Style>
+					</TreeView.Styles>
+					<TreeView.ItemTemplate>
+						<TreeDataTemplate x:DataType="vm:AssetFolder"
+						                  ItemsSource="{Binding SubFolders}">
+							<TextBlock Text="{Binding Name}"
+							           TextTrimming="CharacterEllipsis" Classes="compact-text">
+								<TextBlock.ContextMenu>
+									<ContextMenu x:DataType="vm:AssetFolder">
+										<MenuItem Command="{Binding Owner.RenameCommand}"
+										          CommandParameter="{Binding}"
+										          InputGesture="F2"
+										          IsEnabled="{Binding CanModify}">
+											<MenuItem.Header>
+												<StackPanel Orientation="Horizontal"
+												            Spacing="8">
+													<LucideIcon Kind="Pencil"
+													            StrokeWidth="2.5"
+													            Size="16" />
+													<TextBlock Text="Rename" />
+												</StackPanel>
+											</MenuItem.Header>
+										</MenuItem>
+										<MenuItem Command="{Binding Owner.CreateFolderCommand}"
+										          CommandParameter="{Binding}">
+											<MenuItem.Header>
+												<StackPanel Orientation="Horizontal"
+												            Spacing="8">
+													<LucideIcon Kind="FolderPlus"
+													            StrokeWidth="2.5"
+													            Size="16" />
+													<TextBlock Text="New Folder" />
+												</StackPanel>
+											</MenuItem.Header>
+										</MenuItem>
+										<Separator />
+										<MenuItem Command="{Binding Owner.DeleteCommand}"
+										          CommandParameter="{Binding}"
+										          InputGesture="Delete"
+										          IsEnabled="{Binding CanModify}">
+											<MenuItem.Header>
+												<StackPanel Orientation="Horizontal"
+												            Spacing="8">
+													<LucideIcon Kind="Shredder"
+													            StrokeWidth="2.5"
+													            Size="16" />
+													<TextBlock Text="Delete" />
+												</StackPanel>
+											</MenuItem.Header>
+										</MenuItem>
+									</ContextMenu>
+								</TextBlock.ContextMenu>
+							</TextBlock>
+						</TreeDataTemplate>
+					</TreeView.ItemTemplate>
+				</TreeView>
 			</DockPanel>
 		</Border>
 
