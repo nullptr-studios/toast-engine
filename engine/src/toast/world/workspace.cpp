@@ -2111,6 +2111,7 @@ void Workspace::eventSubscriptions() {
 					}
 				};
 				refresh(node, refresh);
+				node->inheritedEnabled(dest_parent->enabled());
 			}
 
 			// Insert at the position requested by the predecessor uid
