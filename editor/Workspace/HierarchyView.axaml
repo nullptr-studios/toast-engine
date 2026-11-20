@@ -269,7 +269,8 @@
 				</StackPanel>
 
 				<!-- tree -->
-				<ScrollViewer HorizontalScrollBarVisibility="Disabled"
+				<ScrollViewer x:Name="RowsScroll"
+				              HorizontalScrollBarVisibility="Disabled"
 				              Background="Transparent"
 				              IsVisible="{Binding HasNodes}">
 					<ScrollViewer.ContextMenu>
@@ -607,10 +608,10 @@
                                                      Classes.node-disabled="{Binding !Enabled}"
                                                      IsEnabled="{Binding !IsInsidePrefab}"
                                                      Command="{Binding Owner.ToggleEnabledCommand}"
-                                                     CommandParameter="{Binding}" ToolTip.Tip="Toggle visibility">
+                                                     CommandParameter="{Binding}" ToolTip.Tip="Toggle enabled">
                                                 <Panel>
-                                                    <LucideIcon Kind="Eye" Size="16" IsVisible="{Binding Enabled}" />
-                                                    <LucideIcon Kind="EyeOff" Size="16" IsVisible="{Binding !Enabled}" />
+                                                    <LucideIcon Kind="Circle" Size="16" StrokeWidth="2.5" IsVisible="{Binding Enabled}" />
+                                                    <LucideIcon Kind="CircleX" Size="16" StrokeWidth="2.5" IsVisible="{Binding !Enabled}" />
                                                 </Panel>
                                             </Button>
 										</Grid>

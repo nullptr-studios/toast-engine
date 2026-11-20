@@ -282,8 +282,17 @@ void Engine::init() {
 
 		std::filesystem::path user_file;
 		const std::string app_name {ProjectSettings::name().empty() ? "Toast" : ProjectSettings::name()};
-		if (char* pref_path = SDL_GetPrefPath("Nullptr Studios", app_name.c_str())) {
+		if (char* pref_path = SDL_GetPrefPath("nullptr-studios", app_name.c_str())) {
 			user_file = std::filesystem::path(pref_path) / "settings.toml";
+			auto game_dir = std::filesystem::path(pref_path);
+			if (!game_dir.has_filename()) {
+				game_dir = game_dir.parent_path();
+			}
+			const auto legacy_file = game_dir.parent_path().parent_path() / "Nullptr Studios" / app_name / "settings.toml";
+			std::error_code ec;
+			if (std::filesystem::exists(legacy_file, ec) && !std::filesystem::exists(user_file, ec)) {
+				std::filesystem::copy_file(legacy_file, user_file, ec);
+			}
 			SDL_free(pref_path);
 		}
 

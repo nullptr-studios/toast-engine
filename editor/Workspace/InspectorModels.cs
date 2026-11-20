@@ -883,19 +883,14 @@ public partial class FieldVM : ObservableObject {
 			return true;
 		}
 
-		var q = query.Trim();
-		var idx = DisplayName.IndexOf(q, StringComparison.OrdinalIgnoreCase);
-		if (idx >= 0) {
-			if (idx > 0) Segments.Add(new TextSegment(DisplayName[..idx], false));
-			Segments.Add(new TextSegment(DisplayName.Substring(idx, q.Length), true));
-			if (idx + q.Length < DisplayName.Length) Segments.Add(new TextSegment(DisplayName[(idx + q.Length)..], false));
-			Visible = true;
-		} else {
-			Segments.Add(new TextSegment(DisplayName, false));
-			// space-insensitive fallback
-			Visible = DisplayName.Replace(" ", "").Contains(q.Replace(" ", ""), StringComparison.OrdinalIgnoreCase);
+		var matched = FuzzyMatcher.Segments(DisplayName, query);
+		Segments.Add(new TextSegment(DisplayName, false));
+		if (matched is not null) {
+			Segments.Clear();
+			foreach (var segment in matched) Segments.Add(segment);
 		}
 
+		Visible = matched is not null;
 		return Visible;
 	}
 }

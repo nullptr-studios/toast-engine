@@ -159,7 +159,7 @@ public sealed class EnumBox : TemplatedControl {
 		if (m_list is null) return;
 		var all = Options?.ToList() ?? [];
 		var query = m_search?.Text?.Trim() ?? "";
-		var matching = all.Where(o => query.Length == 0 || o.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+		var matching = all.Where(o => query.Length == 0 || FuzzyMatcher.Matches(o, query)).ToList();
 		var items = new List<object>();
 		if (Groups is { } groups) {
 			var searching = query.Length > 0;

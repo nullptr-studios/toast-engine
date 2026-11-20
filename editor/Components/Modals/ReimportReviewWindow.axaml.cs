@@ -119,8 +119,8 @@ public partial class ReimportReviewWindow : Window {
 		public override LucideIconKind AcceptIconKind => LucideIconKind.Replace;
 		public override IEnumerable Items => m_filtered;
 
-		public override void UpdateFilter(string query, bool caseSensitive) =>
-			m_filtered = m_all.Where(item => item.UpdateSegments(query, caseSensitive)).ToList();
+		public override void UpdateFilter(string query) =>
+			m_filtered = m_all.Where(item => item.UpdateSegments(query)).ToList();
 
 		public override string? GetResult(object? selected) => (selected as AssetPickerItem)?.Uid;
 	}

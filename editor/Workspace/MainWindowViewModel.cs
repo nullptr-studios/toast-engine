@@ -69,6 +69,8 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		Current = this;
 		m_toast = toast;
 		VoxelEditor.VoxelEditorActions.Register();
+		m_showDebugWindows = LoadShowDebugWindows();
+		if (!m_showDebugWindows) ToastEngine.SetShowDebugWindows(false);
 
 		GitState = new GitViewModel(GitService.Start(ProjectContext.ProjectPath));
 		GitState.PropertyChanged += (_, e) => {
@@ -398,6 +400,22 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 
 	partial void OnShowDebugWindowsChanged(bool value) {
 		ToastEngine.SetShowDebugWindows(value);
+		try {
+			var path = ProjectContext.Resolve("cache://tools/show_debug_windows");
+			Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+			File.WriteAllText(path, value ? "1" : "0");
+		} catch {
+			// ...
+		}
+	}
+
+	private static bool LoadShowDebugWindows() {
+		try {
+			var path = ProjectContext.Resolve("cache://tools/show_debug_windows");
+			return !File.Exists(path) || File.ReadAllText(path).Trim() != "0";
+		} catch {
+			return true;
+		}
 	}
 
 	partial void OnTableEditorVisibleChanged(bool value) {

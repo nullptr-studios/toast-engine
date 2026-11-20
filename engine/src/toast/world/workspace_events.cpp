@@ -378,10 +378,19 @@ struct ProtoTraits<SetFocusedNode> {
 	static auto toProto(const Event& e) -> Proto {
 		Proto p;
 		p.set_node(e.node);
+		for (const auto& extra : e.extra_nodes) {
+			p.add_extra_nodes(extra);
+		}
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {toast::UID::fromString(p.node())}; }
+	static auto fromProto(const Proto& p) -> Event {
+		std::vector<toast::UID> extra;
+		for (const auto& uid : p.extra_nodes()) {
+			extra.emplace_back(toast::UID::fromString(uid));
+		}
+		return {toast::UID::fromString(p.node()), std::move(extra)};
+	}
 };
 
 TOAST_PROTO_EVENT(SetFocusedNode);
@@ -670,10 +679,13 @@ struct ProtoTraits<SetEditorCameraSettings> {
 		p.set_mode(static_cast<Proto::Mode>(e.mode));
 		p.set_speed(e.speed);
 		p.set_workspace_handle(e.workspace_handle);
+		p.set_horizontal_movement(e.horizontal_movement);
 		return p;
 	}
 
-	static auto fromProto(const Proto& p) -> Event { return {static_cast<uint32_t>(p.mode()), p.speed(), p.workspace_handle()}; }
+	static auto fromProto(const Proto& p) -> Event {
+		return {static_cast<uint32_t>(p.mode()), p.speed(), p.workspace_handle(), p.horizontal_movement()};
+	}
 };
 
 TOAST_PROTO_EVENT(SetEditorCameraSettings);

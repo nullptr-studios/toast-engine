@@ -127,6 +127,7 @@ protected:
 	std::unique_ptr<assets::Prefab> m_owned_source_prefab;
 	Box<Node> m_root_node;
 	Box<Node> m_focused_node;
+	std::vector<Box<Node>> m_extra_selected;
 	event::Listener m_listener;
 
 	// mirrored editor toolbar state; defaults match the editor's
@@ -186,6 +187,7 @@ protected:
 	void gizmoUpdateHover();
 	void gizmoBeginDrag(GizmoHandle handle);
 	void gizmoUpdateDrag();
+	void gizmoUpdateDragPrimary();
 	void gizmoEndDrag();
 
 	void eventSubscriptions();

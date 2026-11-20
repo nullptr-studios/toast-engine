@@ -26,7 +26,7 @@ public partial class PickerWindow : Window {
 	private sealed class EmptyPickerViewModel : PickerViewModel {
 		public override string WindowTitle => "Select";
 		public override System.Collections.IEnumerable Items => Array.Empty<object>();
-		public override void UpdateFilter(string query, bool caseSensitive) { }
+		public override void UpdateFilter(string query) { }
 		public override string? GetResult(object? selected) => null;
 	}
 
@@ -79,7 +79,7 @@ public partial class PickerWindow : Window {
 
 	private void OnSearchChanged(object? sender, TextChangedEventArgs e) {
 		var query = SearchBox.Text ?? "";
-		ViewModel.UpdateFilter(query, query.Any(char.IsUpper));
+		ViewModel.UpdateFilter(query);
 		RebuildRows();
 	}
 

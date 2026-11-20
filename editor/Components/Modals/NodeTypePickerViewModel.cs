@@ -62,8 +62,8 @@ public class NodeTypePickerViewModel : PickerViewModel {
 	public override string AcceptLabel => "Create";
 	public override LucideIconKind AcceptIconKind => LucideIconKind.Plus;
 
-	public override void UpdateFilter(string query, bool caseSensitive) {
-		m_root?.UpdateFilter(query, caseSensitive);
+	public override void UpdateFilter(string query) {
+		m_root?.UpdateFilter(query);
 	}
 
 	public override bool IsSelectable(object? item) {

@@ -11,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.ComponentModel;
+using editor.Components.Elements;
 using editor.Engine;
 using Proto.Events;
 
@@ -55,6 +56,12 @@ public sealed class SignalFunctionViewModel {
 public sealed record SignalConnectionResult(
 	string TargetUid, SignalFunctionViewModel Function, IReadOnlyList<ParamBinding> Bindings);
 
+public sealed class SignalNodeRow(HierarchyElement element, IReadOnlyList<TextSegment> segments, IReadOnlyList<SignalNodeRow> children) {
+	public HierarchyElement Element { get; } = element;
+	public IReadOnlyList<TextSegment> Segments { get; } = segments;
+	public IReadOnlyList<SignalNodeRow> Children { get; } = children;
+}
+
 public partial class SignalConnectionDialogViewModel : ObservableObject, IDisposable {
 	private static ulong s_request;
 	private readonly Listener? m_listener;
@@ -63,6 +70,8 @@ public partial class SignalConnectionDialogViewModel : ObservableObject, IDispos
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
 	[ObservableProperty] private SignalFunctionViewModel? m_selectedFunction;
+	[ObservableProperty] private string m_searchText = "";
+	[ObservableProperty] private SignalNodeRow? m_selectedRow;
 	[ObservableProperty] private string m_emptyMessage = "Select a node to see its functions";
 
 	public SignalConnectionDialogViewModel(HierarchyViewModel hierarchy, SignalItemViewModel signal) {
@@ -72,11 +81,13 @@ public partial class SignalConnectionDialogViewModel : ObservableObject, IDispos
 		Nodes = hierarchy.Root;
 		SignalArgs = signal.Arguments.Select((type, index) => new SignalArgChip(index, type)).ToArray();
 		m_listener.SubscribeOnUiThread<SignalCallables>(ApplyCallables);
+		RebuildRows();
 	}
 
 	public string SignalText { get; }
 
 	public ObservableCollection<HierarchyElement> Nodes { get; }
+	public ObservableCollection<SignalNodeRow> NodeRows { get; } = [];
 	public ObservableCollection<SignalFunctionViewModel> Functions { get; } = [];
 	public ObservableCollection<SignalParameterViewModel> Parameters { get; } = [];
 	public IReadOnlyList<SignalArgChip> SignalArgs { get; }
@@ -90,6 +101,37 @@ public partial class SignalConnectionDialogViewModel : ObservableObject, IDispos
 			var missing = Parameters.Where(p => !p.IsBound).Select(p => p.Name).ToArray();
 			return missing.Length == 0 ? "" : $"Bind {string.Join(", ", missing)} to continue";
 		}
+	}
+
+	partial void OnSearchTextChanged(string value) => RebuildRows();
+
+	partial void OnSelectedRowChanged(SignalNodeRow? value) {
+		if (value is not null) SelectedNode = value.Element;
+	}
+
+	private void RebuildRows() {
+		NodeRows.Clear();
+		foreach (var node in Nodes)
+			if (BuildRow(node) is { } row)
+				NodeRows.Add(row);
+
+		SelectedRow = SelectedNode is null ? null : FindRow(NodeRows, SelectedNode);
+	}
+
+	private SignalNodeRow? BuildRow(HierarchyElement element) {
+		var children = element.PickerChildren.Select(BuildRow).OfType<SignalNodeRow>().ToList();
+		var own = string.IsNullOrWhiteSpace(SearchText) ? null : FuzzyMatcher.Segments(element.Name, SearchText);
+		if (!string.IsNullOrWhiteSpace(SearchText) && own is null && children.Count == 0) return null;
+		return new SignalNodeRow(element, own ?? [new TextSegment(element.Name, false)], children);
+	}
+
+	private static SignalNodeRow? FindRow(IEnumerable<SignalNodeRow> rows, HierarchyElement element) {
+		foreach (var row in rows) {
+			if (row.Element == element) return row;
+			if (FindRow(row.Children, element) is { } found) return found;
+		}
+
+		return null;
 	}
 
 	partial void OnSelectedNodeChanged(HierarchyElement? value) {

@@ -79,8 +79,12 @@ public partial class AssetBrowserView : UserControl {
 	private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e) {
 		var point = e.GetCurrentPoint(this);
 		if (point.Properties.IsRightButtonPressed) {
-			if (GetCardItem(e.Source) is AssetFile rightClickedFile)
-				PrepareFileContextMenu(e.Source, rightClickedFile);
+			if (GetCardItem(e.Source) is { } rightClicked) {
+				if (!Vm.SelectedItems.Contains(rightClicked)) Vm.SelectItem(rightClicked, KeyModifiers.None);
+				if (rightClicked is AssetFile rightClickedFile) PrepareFileContextMenu(e.Source, rightClickedFile);
+				e.Handled = true;
+			}
+
 			return;
 		}
 
@@ -382,7 +386,8 @@ public partial class AssetBrowserView : UserControl {
 		if (!Vm.CanWriteToSelectedFolder) return;
 		var owner = TopLevel.GetTopLevel(this) as Window;
 		if (owner is null) return;
-		var importWindow = new ImportWindow();
+		var destination = Vm.SelectedFolder is { } folder ? ProjectContext.ToVirtual(folder.Filepath) : null;
+		var importWindow = new ImportWindow(destination);
 		await importWindow.ShowDialog(owner);
 	}
 

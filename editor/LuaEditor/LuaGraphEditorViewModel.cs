@@ -22,6 +22,7 @@ using editor.Assets;
 using editor.Assets.Types;
 using editor.Components.Modals;
 using editor.Editors;
+using editor.Components.Elements;
 
 namespace editor.LuaEditor;
 
@@ -83,7 +84,7 @@ public sealed partial class LuaGraphEditorViewModel : Tool, IToastZoneEditor, Wo
 		var filter = FilterText.Trim();
 		var matching = new HashSet<VariableRow>();
 		if (filter.Length > 0) {
-			foreach (var row in m_allRows.Where(r => r.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)))
+			foreach (var row in m_allRows.Where(r => FuzzyMatcher.Matches(r.Name, filter)))
 				for (var ancestor = row; ancestor is not null; ancestor = ancestor.Parent) matching.Add(ancestor);
 		}
 		bool Visible(VariableRow row) => row.Parent is null || row.Parent.IsExpanded && Visible(row.Parent);

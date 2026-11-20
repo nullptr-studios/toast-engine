@@ -236,18 +236,18 @@ std::vector<fs::path> candidateLogDirs() {
 	std::vector<fs::path> dirs;
 
 #ifdef _WIN32
-	const std::optional<fs::path> config_dir = envPath("APPDATA");
+	const std::optional<fs::path> data_dir = envPath("APPDATA");
 #else
-	std::optional<fs::path> config_dir = envPath("XDG_CONFIG_HOME");
-	if (!config_dir) {
+	std::optional<fs::path> data_dir = envPath("XDG_DATA_HOME");
+	if (!data_dir) {
 		if (const auto home = envPath("HOME")) {
-			config_dir = *home / ".config";
+			data_dir = *home / ".local" / "share";
 		}
 	}
 #endif
 
-	if (config_dir) {
-		dirs.push_back(*config_dir / "ToastEngine" / "logs");
+	if (data_dir) {
+		dirs.push_back(*data_dir / "nullptr-studios" / "toast-engine" / "logs");
 	}
 	dirs.emplace_back("./logs");
 	std::error_code ec;
@@ -255,7 +255,7 @@ std::vector<fs::path> candidateLogDirs() {
 	if (ec) {
 		temp = ".";
 	}
-	dirs.push_back(temp / "ToastEngine" / "logs");
+	dirs.push_back(temp / "nullptr-studios" / "toast-engine" / "logs");
 	return dirs;
 }
 
