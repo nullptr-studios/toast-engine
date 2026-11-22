@@ -833,6 +833,7 @@ void Simulator::tick() {
 
 	solveIslands(islands);
 	breakOverloadedJoints(dt);
+	syncLevitationExclusions();
 	const auto after_solve = std::chrono::steady_clock::now();
 	m_profile.island_solve_ms = elapsed_ms(after_islands, after_solve);
 
@@ -3914,6 +3915,7 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 		made_joint.voxel_end_a = voxelEndOf(made.body_a, made_joint.frame_a, made.voxel_anchor);
 	}
 	made_joint.voxel_end_b = voxelEndOf(made.body_b, made_joint.frame_b, made.voxel_anchor);
+	made_joint.exclusion_active = made.exclude_collision && not holds_world && made_joint.levitating;
 	JointSlot joint_slot {.joint = made_joint, .occupied = true};
 	JointID id;
 	if (not m_free_joint_slots.empty()) {
@@ -3928,7 +3930,7 @@ auto Simulator::createJoint(const JointDescriptor& descriptor) -> JointID {
 	id.generation = m_joints[id.slot].generation;
 	++m_joint_count;
 
-	if (made.exclude_collision && not holds_world) {
+	if (made_joint.exclusion_active) {
 		addExclusion(made.body_a, made.body_b);
 	}
 	wakeBody(made.body_a);
@@ -3944,6 +3946,7 @@ void Simulator::destroyJoint(JointID joint) {
 
 	JointSlot& slot = m_joints[joint.slot];
 	const JointDescriptor descriptor = slot.joint.descriptor;
+	const bool held_exclusion = slot.joint.exclusion_active;
 	slot.occupied = false;
 	slot.joint = {};
 	++slot.generation;
@@ -3953,7 +3956,7 @@ void Simulator::destroyJoint(JointID joint) {
 	m_free_joint_slots.emplace_back(joint.slot);
 	--m_joint_count;
 
-	if (descriptor.exclude_collision && valid(descriptor.body_a) && valid(descriptor.body_b)) {
+	if (held_exclusion && valid(descriptor.body_a) && valid(descriptor.body_b)) {
 		removeExclusion(descriptor.body_a, descriptor.body_b);
 	}
 	// What hung from it falls

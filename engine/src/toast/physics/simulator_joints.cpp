@@ -170,6 +170,8 @@ void Simulator::publishJoints() {
 			      .position = joint.slider_position,
 			      .force = joint.last_force,
 			      .torque = joint.last_torque,
+			      .levitating = joint.levitating,
+			      .offset = joint.levitation_offset,
 			    }
 			);
 		}
@@ -217,12 +219,37 @@ void Simulator::breakOverloadedJoints(float dt) {
 		const _detail::JointReaction reaction = _detail::jointReaction(joint);
 		joint.last_force = reaction.linear / dt;
 		joint.last_torque = reaction.angular / dt;
+		if (std::holds_alternative<LevitationParams>(joint.descriptor.params)) {
+			joint.last_force = joint.levitating ? joint.levitation_force : 0.0f;
+		}
 
 		const JointID id {.slot = index, .generation = m_joints[index].generation};
 		if (joint.descriptor.break_force > 0.0f && joint.last_force > joint.descriptor.break_force) {
 			breakJoint(id, JointBreakReason::force);
 		} else if (joint.descriptor.break_torque > 0.0f && joint.last_torque > joint.descriptor.break_torque) {
 			breakJoint(id, JointBreakReason::torque);
+		}
+	}
+}
+
+void Simulator::syncLevitationExclusions() {
+	if (m_joint_count == 0) {
+		return;
+	}
+
+	for (JointSlot& slot : m_joints) {
+		Joint& joint = slot.joint;
+		if (not slot.occupied || not std::holds_alternative<LevitationParams>(joint.descriptor.params) ||
+		    not joint.descriptor.exclude_collision || not valid(joint.descriptor.body_a) || not valid(joint.descriptor.body_b)) {
+			continue;
+		}
+
+		if (joint.levitating && not joint.exclusion_active) {
+			addExclusion(joint.descriptor.body_a, joint.descriptor.body_b);
+			joint.exclusion_active = true;
+		} else if (not joint.levitating && joint.exclusion_active) {
+			removeExclusion(joint.descriptor.body_a, joint.descriptor.body_b);
+			joint.exclusion_active = false;
 		}
 	}
 }
