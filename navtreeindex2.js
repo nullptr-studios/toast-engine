@@ -1,5 +1,9 @@
 var NAVTREEINDEX2 =
 {
+"classeditor_1_1Assets_1_1Types_1_1ScriptAsset.html":[13,0,3,0,1,27],
+"classeditor_1_1Assets_1_1Types_1_1ShaderAsset.html":[11,0,0,0,1,28],
+"classeditor_1_1Assets_1_1Types_1_1ShaderAsset.html":[13,0,3,0,1,28],
+"classeditor_1_1Assets_1_1Types_1_1SkeletonAsset.html":[11,0,0,0,1,29],
 "classeditor_1_1Assets_1_1Types_1_1SkeletonAsset.html":[13,0,3,0,1,29],
 "classeditor_1_1Assets_1_1Types_1_1TextureAsset.html":[11,0,0,0,1,30],
 "classeditor_1_1Assets_1_1Types_1_1TextureAsset.html":[13,0,3,0,1,30],
@@ -245,9 +249,5 @@ var NAVTREEINDEX2 =
 "classeditor_1_1Engine_1_1NodeTreeItem.html":[13,0,3,5,1],
 "classeditor_1_1Engine_1_1SettingDescriptor.html":[11,0,0,5,2],
 "classeditor_1_1Engine_1_1SettingDescriptor.html":[13,0,3,5,2],
-"classeditor_1_1Engine_1_1SettingDescriptor.html#a2a694a4f729c21fa13d365ed2ec11296":[11,0,0,5,2,2],
-"classeditor_1_1Engine_1_1SettingDescriptor.html#a2a694a4f729c21fa13d365ed2ec11296":[13,0,3,5,2,2],
-"classeditor_1_1Engine_1_1SettingDescriptor.html#a4f39034d31e65daa9fb1eaebf1fc7f65":[11,0,0,5,2,1],
-"classeditor_1_1Engine_1_1SettingDescriptor.html#a4f39034d31e65daa9fb1eaebf1fc7f65":[13,0,3,5,2,1],
-"classeditor_1_1Engine_1_1SettingDescriptor.html#a646a957d0f9185f9d8dca532055fecb1":[11,0,0,5,2,0]
+"classeditor_1_1Engine_1_1SettingDescriptor.html#a2a694a4f729c21fa13d365ed2ec11296":[11,0,0,5,2,2]
 };

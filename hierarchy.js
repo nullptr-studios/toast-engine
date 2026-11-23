@@ -117,6 +117,7 @@ var hierarchy =
     [ "debug::Billboard", "structdebug_1_1Billboard.html", null ],
     [ "input::Bind", "classinput_1_1Bind.html", null ],
     [ "editor.LuaEditor.Graph.Binding", "classeditor_1_1LuaEditor_1_1Graph_1_1Binding.html", null ],
+    [ "ui::BindValue", "classui_1_1BindValue.html", null ],
     [ "editor.LuaEditor.Graph.Block", "classeditor_1_1LuaEditor_1_1Graph_1_1Block.html", null ],
     [ "renderer::PostProcessSettings::Bloom", "structrenderer_1_1PostProcessSettings_1_1Bloom.html", null ],
     [ "physics::Body", "structphysics_1_1Body.html", null ],

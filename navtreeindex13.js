@@ -1,5 +1,12 @@
 var NAVTREEINDEX13 =
 {
+"interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html":[11,0,0,1,4,12],
+"interfaceeditor_1_1Components_1_1Modals_1_1IPickerNode.html":[13,0,3,1,3,12],
+"interfaceeditor_1_1Editors_1_1IToastZoneEditor.html":[11,0,0,4,9],
+"interfaceeditor_1_1Editors_1_1IToastZoneEditor.html":[13,0,3,4,9],
+"interfaceeditor_1_1LuaEditor_1_1Layout_1_1INodeMeasure.html":[11,0,0,9,4,5],
+"interfaceeditor_1_1LuaEditor_1_1Layout_1_1INodeMeasure.html":[13,0,3,8,4,5],
+"interfaceeditor_1_1Workspace_1_1IAutosavable.html":[11,0,0,12,24],
 "interfaceeditor_1_1Workspace_1_1IAutosavable.html":[13,0,3,11,24],
 "interfaceeditor_1_1Workspace_1_1IHierarchyRow.html":[11,0,0,12,25],
 "interfaceeditor_1_1Workspace_1_1IHierarchyRow.html":[13,0,3,11,25],
@@ -49,8 +56,8 @@ var NAVTREEINDEX13 =
 "listener_8inl_source.html":[14,0,2,0,0,2,4],
 "localization_8hpp.html":[14,0,2,0,0,9,0,2],
 "localization_8hpp_source.html":[14,0,2,0,0,9,0,2],
-"localization__apply_8hpp.html":[14,0,2,0,0,9,6],
-"localization__apply_8hpp_source.html":[14,0,2,0,0,9,6],
+"localization__apply_8hpp.html":[14,0,2,0,0,9,8],
+"localization__apply_8hpp_source.html":[14,0,2,0,0,9,8],
 "lock__profiling_8hpp.html":[14,0,2,0,0,21],
 "lock__profiling_8hpp_source.html":[14,0,2,0,0,21],
 "log_8hpp.html":[14,0,2,0,0,22],
@@ -242,12 +249,5 @@ var NAVTREEINDEX13 =
 "namespaceeditor_1_1VoxelEditor.html":[11,0,0,11],
 "namespaceeditor_1_1Workspace.html":[11,0,0,12],
 "namespacemembers.html":[11,1,0],
-"namespacemembers_enum.html":[11,1,4],
-"namespacemembers_func.html":[11,1,1],
-"namespacemembers_type.html":[11,1,3],
-"namespacemembers_vars.html":[11,1,2],
-"namespacerenderer.html":[11,0,1],
-"namespacerenderer.html#a0d9650875754896fa95f1a9978d34458":[11,0,1,123],
-"namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069":[11,0,1,126],
-"namespacerenderer.html#a1cd58175ea99f1b98645eeb4e37289d0":[11,0,1,150]
+"namespacemembers_enum.html":[11,1,4]
 };

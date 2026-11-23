@@ -1,5 +1,9 @@
 var NAVTREEINDEX3 =
 {
+"classeditor_1_1Engine_1_1SettingDescriptor.html#a2a694a4f729c21fa13d365ed2ec11296":[13,0,3,5,2,2],
+"classeditor_1_1Engine_1_1SettingDescriptor.html#a4f39034d31e65daa9fb1eaebf1fc7f65":[11,0,0,5,2,1],
+"classeditor_1_1Engine_1_1SettingDescriptor.html#a4f39034d31e65daa9fb1eaebf1fc7f65":[13,0,3,5,2,1],
+"classeditor_1_1Engine_1_1SettingDescriptor.html#a646a957d0f9185f9d8dca532055fecb1":[11,0,0,5,2,0],
 "classeditor_1_1Engine_1_1SettingDescriptor.html#a646a957d0f9185f9d8dca532055fecb1":[13,0,3,5,2,0],
 "classeditor_1_1Engine_1_1ToastEngine.html":[11,0,0,5,3],
 "classeditor_1_1Engine_1_1ToastEngine.html":[13,0,3,5,3],
@@ -245,9 +249,5 @@ var NAVTREEINDEX3 =
 "classeditor_1_1Workspace_1_1ClassCardVM.html":[13,0,3,11,5],
 "classeditor_1_1Workspace_1_1DockFactory.html":[11,0,0,12,6],
 "classeditor_1_1Workspace_1_1DockFactory.html":[13,0,3,11,6],
-"classeditor_1_1Workspace_1_1DockFactory.html#a219268b51406a634e05d7221891fcc90":[11,0,0,12,6,0],
-"classeditor_1_1Workspace_1_1DockFactory.html#a219268b51406a634e05d7221891fcc90":[13,0,3,11,6,0],
-"classeditor_1_1Workspace_1_1EditorHostWindow.html":[11,0,0,12,7],
-"classeditor_1_1Workspace_1_1EditorHostWindow.html":[13,0,3,11,7],
-"classeditor_1_1Workspace_1_1EnumSettingRow.html":[11,0,0,12,8]
+"classeditor_1_1Workspace_1_1DockFactory.html#a219268b51406a634e05d7221891fcc90":[11,0,0,12,6,0]
 };

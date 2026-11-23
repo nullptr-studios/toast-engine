@@ -1,0 +1,9 @@
+<map id="engine/src/toast/ui/bind_value.hpp" name="engine/src/toast/ui/bind_value.hpp">
+<area shape="rect" id="Node000001" title="Tree value behind a Panel bind." alt="" coords="222,5,363,50"/>
+<area shape="rect" id="Node000002" href="$ui__bind__convert_8hpp.html" title=" " alt="" coords="5,98,191,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="235,56,146,100,144,95,230,58"/>
+<area shape="rect" id="Node000003" href="$bind__definitions_8hpp.html" title="RmlUi data&#45;model definitions that expose BindValue trees (arrays and objects) to data&#45;for and {{a...." alt="" coords="214,98,371,143"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="295,64,295,99,290,96,291,68"/>
+<area shape="rect" id="Node000004" href="$ui__binds_8hpp.html" title="Panel data model owner, scripting shit." alt="" coords="395,98,537,143"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="348,55,427,98,422,98,347,60"/>
+</map>

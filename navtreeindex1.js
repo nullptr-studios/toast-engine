@@ -1,5 +1,9 @@
 var NAVTREEINDEX1 =
 {
+"classassets_1_1Volume.html#a6b98f7c9bd8e5dd40496fa711652082d":[13,0,0,65,10],
+"classassets_1_1Volume.html#a776e93b263d2d247ec00340184651e24":[13,0,0,65,9],
+"classassets_1_1Volume.html#ab77bc934f85e593735929fabb5a72780":[13,0,0,65,4],
+"classassets_1_1Volume.html#ae0c3a651fca88a9ba47815e32959f70c":[13,0,0,65,12],
 "classassets_1_1Volume.html#ae8fb61d3ee89c914f68fbf7e21f636da":[13,0,0,65,11],
 "classassets_1_1Volume.html#af4c13acda0d889fd2ae1cbc09a235897":[13,0,0,65,3],
 "classassets_1_1Volume.html#af73f7ddf6b2455dfdc36ce8201e1e329":[13,0,0,65,5],
@@ -245,9 +249,5 @@ var NAVTREEINDEX1 =
 "classeditor_1_1Assets_1_1Types_1_1ProjectSettingsAsset.html":[13,0,3,0,1,25],
 "classeditor_1_1Assets_1_1Types_1_1SchemaAsset.html":[11,0,0,0,1,26],
 "classeditor_1_1Assets_1_1Types_1_1SchemaAsset.html":[13,0,3,0,1,26],
-"classeditor_1_1Assets_1_1Types_1_1ScriptAsset.html":[11,0,0,0,1,27],
-"classeditor_1_1Assets_1_1Types_1_1ScriptAsset.html":[13,0,3,0,1,27],
-"classeditor_1_1Assets_1_1Types_1_1ShaderAsset.html":[11,0,0,0,1,28],
-"classeditor_1_1Assets_1_1Types_1_1ShaderAsset.html":[13,0,3,0,1,28],
-"classeditor_1_1Assets_1_1Types_1_1SkeletonAsset.html":[11,0,0,0,1,29]
+"classeditor_1_1Assets_1_1Types_1_1ScriptAsset.html":[11,0,0,0,1,27]
 };

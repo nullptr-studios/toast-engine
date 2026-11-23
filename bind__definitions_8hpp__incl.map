@@ -1,0 +1,23 @@
+<map id="engine/src/toast/ui/bind_definitions.hpp" name="engine/src/toast/ui/bind_definitions.hpp">
+<area shape="rect" id="Node000001" title="RmlUi data&#45;model definitions that expose BindValue trees (arrays and objects) to data&#45;for and {{a...." alt="" coords="530,5,686,50"/>
+<area shape="rect" id="Node000002" href="$bind__value_8hpp.html" title="Tree value behind a Panel bind." alt="" coords="366,98,487,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="562,50,470,94,469,89,557,51"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="510,98,706,126"/>
+<area shape="poly" id="edge9_Node000001_Node000010" title=" " alt="" coords="610,48,610,84,606,81,606,52"/>
+<area shape="rect" id="Node000011" href="$export_8hpp.html" title=" " alt="" coords="729,98,858,126"/>
+<area shape="poly" id="edge10_Node000001_Node000011" title=" " alt="" coords="658,48,753,92,747,91,657,53"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="5,174,163,201"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="367,129,161,172,160,167,366,123"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="187,174,272,201"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="394,126,279,171,278,165,389,127"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="296,174,354,201"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="411,125,357,167,354,162,406,127"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="378,174,475,201"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="429,124,429,160,425,156,425,128"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="498,174,558,201"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="446,124,500,165,495,164,444,129"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="582,174,650,201"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="461,124,571,168,566,168,460,129"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="674,174,736,201"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="479,124,662,173,657,173,479,129"/>
+</map>

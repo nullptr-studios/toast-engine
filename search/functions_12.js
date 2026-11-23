@@ -81,7 +81,7 @@ var searchData=
   ['settracedspecularpass_78',['setTracedSpecularPass',['../classrenderer_1_1VulkanRenderer.html#adf845632dabde8cc9d22f0b450f42b3e',1,'renderer::VulkanRenderer']]],
   ['settracerayquery_79',['setTraceRayQuery',['../classrenderer_1_1ShaderCompiler.html#a26d1cf9e62ab4d25667239296e8b0bec',1,'renderer::ShaderCompiler']]],
   ['setusage_80',['setUsage',['../classrenderer_1_1CubemapTarget.html#a1fc4d5ad706de9d0f023c87cd00c8cab',1,'renderer::CubemapTarget']]],
-  ['setvalue_81',['setValue',['../classtoast_1_1settings_1_1Settings.html#aeaf20e82afd5f51df893e546b61d7f16',1,'toast::settings::Settings']]],
+  ['setvalue_81',['setValue',['../classtoast_1_1settings_1_1Settings.html#aeaf20e82afd5f51df893e546b61d7f16',1,'toast::settings::Settings::setValue()'],['../classui_1_1UIBinds.html#a5d00fc36bdf0e2f28d9466ea2fac4ce9',1,'ui::UIBinds::setValue()']]],
   ['setvar_82',['setVar',['../classscripting_1_1ScriptInstance.html#a3d51f657ad4769692ffcbcb1dd41a159',1,'scripting::ScriptInstance::setVar()'],['../classscripting_1_1ScriptRuntime.html#ada7db9b5af14e687342683c436ff4a7a',1,'scripting::ScriptRuntime::setVar()']]],
   ['setvarbypath_83',['setVarByPath',['../classscripting_1_1ScriptInstance.html#ac648794a9e391f04fef47d3ca33342ed',1,'scripting::ScriptInstance::setVarByPath()'],['../classscripting_1_1ScriptRuntime.html#aa6eb5e254cfb5e68dac8620116c46a7d',1,'scripting::ScriptRuntime::setVarByPath()']]],
   ['setvolumetricdistance_84',['setVolumetricDistance',['../classrenderer_1_1VulkanRenderer.html#a3e662594611274c05c48a895f680a258',1,'renderer::VulkanRenderer']]],

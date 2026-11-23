@@ -1,5 +1,9 @@
 var NAVTREEINDEX7 =
 {
+"classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b":[11,0,1,116,69],
+"classrenderer_1_1VulkanRenderer.html#a120cf6370a11c4437602c00f05b5679b":[13,0,9,121,69],
+"classrenderer_1_1VulkanRenderer.html#a121139fc596c480941a235425f596218":[11,0,1,116,72],
+"classrenderer_1_1VulkanRenderer.html#a121139fc596c480941a235425f596218":[13,0,9,121,72],
 "classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6":[11,0,1,116,50],
 "classrenderer_1_1VulkanRenderer.html#a1a3dfdfec4e97886e890fe4a303c78e6":[13,0,9,121,50],
 "classrenderer_1_1VulkanRenderer.html#a1b77b7999b5d36c2198343748f1a47bd":[11,0,1,116,6],
@@ -245,9 +249,5 @@ var NAVTREEINDEX7 =
 "classtoast_1_1AudioCapsuleEmitter.html#af07aaad3654347c344fc17bbead9e290":[11,0,2,7,2],
 "classtoast_1_1AudioCapsuleEmitter.html#af07aaad3654347c344fc17bbead9e290":[13,0,14,11,2],
 "classtoast_1_1AudioContext.html":[11,0,2,8],
-"classtoast_1_1AudioContext.html":[13,0,14,12],
-"classtoast_1_1AudioEmitter.html":[11,0,2,9],
-"classtoast_1_1AudioEmitter.html":[13,0,14,13],
-"classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c":[11,0,2,9,3],
-"classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c":[13,0,14,13,3]
+"classtoast_1_1AudioContext.html":[13,0,14,12]
 };

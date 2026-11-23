@@ -138,6 +138,10 @@ auto&#160;</td><td class="memItemRight"><b>handle</b> () -&gt; Rml::DataModelHan
 <tr class="memitem:a48f3900c8ecc634ea9702836af6892d3" id="r_a48f3900c8ecc634ea9702836af6892d3"><td class="memItemLeft"><a id="a48f3900c8ecc634ea9702836af6892d3" name="a48f3900c8ecc634ea9702836af6892d3"></a>
 void&#160;</td><td class="memItemRight"><b>set</b> (std::string_view name, Rml::Variant value)</td></tr>
 <tr class="memdesc:a48f3900c8ecc634ea9702836af6892d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes <span class="tt">name</span> from script and notifies the data model to refresh the UI. <br /></td></tr>
+<tr class="memitem:a010da67c875812d45f563c797ee9b27e" id="r_a010da67c875812d45f563c797ee9b27e"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a010da67c875812d45f563c797ee9b27e">getValue</a> (std::string_view name) const -&gt; const <a class="el" href="classui_1_1BindValue.html">BindValue</a> *</td></tr>
+<tr class="memitem:a5d00fc36bdf0e2f28d9466ea2fac4ce9" id="r_a5d00fc36bdf0e2f28d9466ea2fac4ce9"><td class="memItemLeft"><a id="a5d00fc36bdf0e2f28d9466ea2fac4ce9" name="a5d00fc36bdf0e2f28d9466ea2fac4ce9"></a>
+void&#160;</td><td class="memItemRight"><b>setValue</b> (std::string_view name, <a class="el" href="classui_1_1BindValue.html">BindValue</a> value)</td></tr>
+<tr class="memdesc:a5d00fc36bdf0e2f28d9466ea2fac4ce9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes a whole array/object/scalar tree. <br /></td></tr>
 <tr class="memitem:a6c981cae8ea8b1e3522416f0f0599e30" id="r_a6c981cae8ea8b1e3522416f0f0599e30"><td class="memItemLeft"><a id="a6c981cae8ea8b1e3522416f0f0599e30" name="a6c981cae8ea8b1e3522416f0f0599e30"></a>
 void&#160;</td><td class="memItemRight"><b>flushDirty</b> ()</td></tr>
 </table><table class="memberdecls">
@@ -218,6 +222,41 @@ Here is the caller graph for this function:</div>
 <map name="aclassui_1_1UIBinds_a9b0846c9d820512e42338f45056fe1c0_icgraph" id="aclassui_1_1UIBinds_a9b0846c9d820512e42338f45056fe1c0_icgraph">
 <area shape="rect" title=" " alt="" coords="5,29,126,57"/>
 <area shape="poly" title=" " alt="" coords="84,14,78,10,65,8,54,10,47,14,46,20,49,29,43,28,40,20,43,11,52,5,66,3,80,5,89,14"/>
+</map>
+</div>
+
+</div>
+</div>
+<a id="a010da67c875812d45f563c797ee9b27e" name="a010da67c875812d45f563c797ee9b27e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a010da67c875812d45f563c797ee9b27e">&#9670;&#160;</a></span>getValue()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto ui::UIBinds::getValue </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td> const -&gt; const <a class="el" href="classui_1_1BindValue.html">BindValue</a> *</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>the value tree of <span class="tt">name</span> </dd></dl>
+<div class="dynheader">
+Here is the caller graph for this function:</div>
+<div class="dyncontent">
+<div class="center"><img src="classui_1_1UIBinds_a010da67c875812d45f563c797ee9b27e_icgraph.png" border="0" usemap="#aclassui_1_1UIBinds_a010da67c875812d45f563c797ee9b27e_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassui_1_1UIBinds_a010da67c875812d45f563c797ee9b27e_icgraph" id="aclassui_1_1UIBinds_a010da67c875812d45f563c797ee9b27e_icgraph">
+<area shape="rect" title=" " alt="" coords="5,29,162,57"/>
+<area shape="poly" title=" " alt="" coords="108,14,100,10,83,8,68,10,59,14,57,20,61,29,56,28,52,20,55,11,66,5,84,3,102,5,113,14"/>
 </map>
 </div>
 

@@ -1,5 +1,12 @@
 var NAVTREEINDEX17 =
 {
+"structphysics_1_1FractureValues.html":[13,0,8,51],
+"structphysics_1_1FragmentPush.html":[13,0,8,52],
+"structphysics_1_1HingeParams.html":[13,0,8,54],
+"structphysics_1_1Joint.html":[13,0,8,55],
+"structphysics_1_1JointDescriptor.html":[13,0,8,57],
+"structphysics_1_1JointFrame.html":[13,0,8,58],
+"structphysics_1_1JointID.html":[13,0,8,59],
 "structphysics_1_1JointImpulses.html":[13,0,8,60],
 "structphysics_1_1JointSlot.html":[13,0,8,61],
 "structphysics_1_1JointState.html":[13,0,8,62],
@@ -242,12 +249,5 @@ var NAVTREEINDEX17 =
 "structrenderer_1_1InstanceData.html":[11,0,1,35],
 "structrenderer_1_1InstanceData.html":[13,0,9,40],
 "structrenderer_1_1IrradianceVolumeData.html":[11,0,1,38],
-"structrenderer_1_1IrradianceVolumeData.html":[13,0,9,43],
-"structrenderer_1_1IrradianceVolumeData.html#a3445c9dac53ec38579681fe5330a5471":[11,0,1,38,1],
-"structrenderer_1_1IrradianceVolumeData.html#a3445c9dac53ec38579681fe5330a5471":[13,0,9,43,1],
-"structrenderer_1_1IrradianceVolumeData.html#a6e205bf36462893edc99310ed7ce66ce":[11,0,1,38,0],
-"structrenderer_1_1IrradianceVolumeData.html#a6e205bf36462893edc99310ed7ce66ce":[13,0,9,43,0],
-"structrenderer_1_1IrradianceVolumeData.html#ac8bd58d0345ec8f68da4fa455f3027c3":[11,0,1,38,2],
-"structrenderer_1_1IrradianceVolumeData.html#ac8bd58d0345ec8f68da4fa455f3027c3":[13,0,9,43,2],
-"structrenderer_1_1IrradianceVolumeData.html#adcd601a09c2b9f6df6cf99e6c9676b55":[11,0,1,38,3]
+"structrenderer_1_1IrradianceVolumeData.html":[13,0,9,43]
 };

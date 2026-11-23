@@ -1307,6 +1307,7 @@ var annotated_dup =
       [ "World", "classtoast_1_1World.html", "classtoast_1_1World" ]
     ] ],
     [ "ui", null, [
+      [ "BindValue", "classui_1_1BindValue.html", null ],
       [ "DocumentScan", "structui_1_1DocumentScan.html", null ],
       [ "PreprocessContext", "structui_1_1PreprocessContext.html", null ],
       [ "TextFormatContext", "structui_1_1TextFormatContext.html", null ],

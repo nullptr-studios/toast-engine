@@ -14,5 +14,6 @@ var dir_659cd8cc942ea13f42942a5af3df800f =
     [ "script_runtime.hpp", "script__runtime_8hpp.html", "script__runtime_8hpp" ],
     [ "script_schema.hpp", "script__schema_8hpp.html", "script__schema_8hpp" ],
     [ "signal_proxy.hpp", "signal__proxy_8hpp_source.html", null ],
+    [ "ui_bind_convert.hpp", "ui__bind__convert_8hpp.html", null ],
     [ "ui_binds_proxy.hpp", "ui__binds__proxy_8hpp.html", "ui__binds__proxy_8hpp" ]
 ];

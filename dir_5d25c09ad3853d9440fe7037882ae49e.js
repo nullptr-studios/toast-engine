@@ -4,6 +4,8 @@ var dir_5d25c09ad3853d9440fe7037882ae49e =
     [ "nodes", "dir_3258f660aa804423f55904d2d47488b3.html", "dir_3258f660aa804423f55904d2d47488b3" ],
     [ "render", "dir_bb1bd5e21a24e1d0eda5792b611532ac.html", "dir_bb1bd5e21a24e1d0eda5792b611532ac" ],
     [ "assets.hpp", "ui_2assets_8hpp.html", null ],
+    [ "bind_definitions.hpp", "bind__definitions_8hpp.html", null ],
+    [ "bind_value.hpp", "bind__value_8hpp.html", "bind__value_8hpp" ],
     [ "csv.hpp", "csv_8hpp.html", null ],
     [ "document_preprocess.hpp", "document__preprocess_8hpp.html", "document__preprocess_8hpp" ],
     [ "localization_apply.hpp", "localization__apply_8hpp.html", null ],
