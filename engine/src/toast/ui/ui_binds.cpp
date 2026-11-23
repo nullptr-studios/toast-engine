@@ -1,5 +1,6 @@
 #include "ui_binds.hpp"
 
+#include "bind_definitions.hpp"
 #include "document_preprocess.hpp"
 
 #include <RmlUi/Core/Context.h>
@@ -20,11 +21,37 @@ void UIBindStore::reconcile(const DocumentScan& scan) {
 
 	std::erase_if(m_values, [&](const auto& entry) { return !active.contains(entry.first); });
 
+	const auto contains = [](const std::vector<std::string>& list, const std::string& name) {
+		return std::ranges::find(list, name) != list.end();
+	};
+
 	for (const auto& name : scan.binds) {
-		const bool is_bool = std::ranges::find(scan.bool_binds, name) != scan.bool_binds.end();
-		auto [it, inserted] = m_values.try_emplace(name, is_bool ? Rml::Variant(false) : Rml::Variant(Rml::String()));
-		if (!inserted && is_bool && it->second.GetType() != Rml::Variant::BOOL) {
-			it->second = Rml::Variant(false);
+		const bool is_bool = contains(scan.bool_binds, name);
+		const bool is_array = contains(scan.array_binds, name);
+		const bool is_object = !is_array && contains(scan.object_binds, name);
+
+		auto make_default = [&]() {
+			if (is_array) {
+				return BindValue::array();
+			}
+			if (is_object) {
+				return BindValue::object();
+			}
+			return BindValue::scalar(is_bool ? Rml::Variant(false) : Rml::Variant(Rml::String()));
+		};
+
+		auto [it, inserted] = m_values.try_emplace(name, make_default());
+		if (inserted) {
+			continue;
+		}
+
+		// a bind that changed kind between reloads
+		const BindValue& current = it->second;
+		const bool kind_matches = is_array ? current.isArray() : is_object ? current.isObject() : current.isScalar();
+		const bool bool_mismatch =
+		    is_bool && !is_array && !is_object && current.isScalar() && current.value().GetType() != Rml::Variant::BOOL;
+		if (!kind_matches || bool_mismatch) {
+			it->second = make_default();
 		}
 	}
 }
@@ -35,10 +62,27 @@ auto UIBindStore::has(std::string_view name) const -> bool {
 
 auto UIBindStore::get(std::string_view name) const -> Rml::Variant {
 	const auto it = m_values.find(std::string(name));
-	return it != m_values.end() ? it->second : Rml::Variant();
+	if (it == m_values.end() || !it->second.isScalar()) {
+		return {};
+	}
+	return it->second.value();
 }
 
 void UIBindStore::set(std::string_view name, Rml::Variant value) {
+	m_values[std::string(name)] = BindValue::scalar(std::move(value));
+}
+
+auto UIBindStore::getValue(std::string_view name) -> BindValue* {
+	const auto it = m_values.find(std::string(name));
+	return it != m_values.end() ? &it->second : nullptr;
+}
+
+auto UIBindStore::getValue(std::string_view name) const -> const BindValue* {
+	const auto it = m_values.find(std::string(name));
+	return it != m_values.end() ? &it->second : nullptr;
+}
+
+void UIBindStore::setValue(std::string_view name, BindValue value) {
 	m_values[std::string(name)] = std::move(value);
 }
 
@@ -75,11 +119,21 @@ UIBinds::UIBinds(Rml::Context* context, toast::Node* owner, const DocumentScan& 
 
 	// Two-way value binds
 	for (const auto& name : scan.binds) {
-		constructor.BindFunc(
-		    name,
-		    [this, name](Rml::Variant& out) { out = m_store.get(name); },
-		    [this, name](const Rml::Variant& in) { set(name, in); }
-		);
+		const bool is_array = std::ranges::find(scan.array_binds, name) != scan.array_binds.end();
+		const bool is_object = !is_array && std::ranges::find(scan.object_binds, name) != scan.object_binds.end();
+		BindValue* tree = (is_array || is_object) ? m_store.getValue(name) : nullptr;
+		if (tree != nullptr) {
+			// arrays and objects are read in place from the store
+			constructor.BindCustomDataVariable(
+			    name, Rml::DataVariable(is_array ? bindArrayDefinition() : bindObjectDefinition(), tree)
+			);
+		} else {
+			constructor.BindFunc(
+			    name,
+			    [this, name](Rml::Variant& out) { out = m_store.get(name); },
+			    [this, name](const Rml::Variant& in) { set(name, in); }
+			);
+		}
 		m_dirty_names.emplace(name);
 	}
 
@@ -112,6 +166,16 @@ auto UIBinds::get(std::string_view name) const -> Rml::Variant {
 void UIBinds::set(std::string_view name, Rml::Variant value) {
 	const std::string key(name);
 	m_store.set(key, std::move(value));
+	m_dirty_names.emplace(key);
+}
+
+auto UIBinds::getValue(std::string_view name) const -> const BindValue* {
+	return m_store.getValue(name);
+}
+
+void UIBinds::setValue(std::string_view name, BindValue value) {
+	const std::string key(name);
+	m_store.setValue(key, std::move(value));
 	m_dirty_names.emplace(key);
 }
 

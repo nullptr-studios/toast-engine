@@ -7,6 +7,8 @@
  */
 
 #pragma once
+#include "bind_value.hpp"
+
 #include <RmlUi/Core/DataModelHandle.h>
 #include <RmlUi/Core/Variant.h>
 #include <string>
@@ -45,8 +47,15 @@ public:
 
 	void set(std::string_view name, Rml::Variant value);
 
+	[[nodiscard]]
+	auto getValue(std::string_view name) -> BindValue*;
+	[[nodiscard]]
+	auto getValue(std::string_view name) const -> const BindValue*;
+
+	void setValue(std::string_view name, BindValue value);
+
 private:
-	std::unordered_map<std::string, Rml::Variant> m_values;
+	std::unordered_map<std::string, BindValue> m_values;
 };
 
 class UIBinds {
@@ -74,6 +83,13 @@ public:
 
 	/// Writes `name` from script and notifies the data model to refresh the UI
 	void set(std::string_view name, Rml::Variant value);
+
+	/// @returns the value tree of `name`
+	[[nodiscard]]
+	auto getValue(std::string_view name) const -> const BindValue*;
+
+	/// Writes a whole array/object/scalar tree
+	void setValue(std::string_view name, BindValue value);
 
 	void flushDirty();
 	static void flushAllDirty();
