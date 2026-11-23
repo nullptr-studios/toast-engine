@@ -71,12 +71,14 @@ void EditorCameraController::copyViewFrom(const EditorCameraController& other) n
 	m_orbit_elevation = other.m_orbit_elevation;
 	m_orbit_radius = other.m_orbit_radius;
 	m_speed = other.m_speed;
+	m_horizontal_movement = other.m_horizontal_movement;
 	m_mode = other.m_mode;
 }
 
-void EditorCameraController::configure(event::EditorCameraMode mode, float speed) {
+void EditorCameraController::configure(event::EditorCameraMode mode, float speed, bool horizontal_movement) {
 	setMode(mode);
 	m_speed = std::clamp(speed, k_min_speed, k_max_speed);
+	m_horizontal_movement = horizontal_movement;
 }
 
 void EditorCameraController::setMode(event::EditorCameraMode mode) {
@@ -183,12 +185,18 @@ void EditorCameraController::tick(float dt, Camera* target) {
 	const glm::vec3 forward = rot * Camera::world_forward;
 	const glm::vec3 right = glm::normalize(glm::cross(forward, Camera::world_up));
 
+	glm::vec3 walk = forward;
+	if (m_horizontal_movement) {
+		walk -= Camera::world_up * glm::dot(forward, Camera::world_up);
+		walk = glm::length(walk) > 0.0001f ? glm::normalize(walk) : glm::vec3(0.0f);
+	}
+
 	glm::vec3 move(0.0f);
 	if (m_move_forward) {
-		move += forward;
+		move += walk;
 	}
 	if (m_move_back) {
-		move -= forward;
+		move -= walk;
 	}
 	if (m_move_right) {
 		move += right;

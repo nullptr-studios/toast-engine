@@ -22,6 +22,7 @@ using editor.Components.Modals;
 using editor.Engine;
 using editor.Install;
 using Lucide.Avalonia;
+using editor.Components.Elements;
 
 namespace editor.StartWindow;
 
@@ -89,10 +90,9 @@ public partial class StartWindowViewModel : ViewModelBase {
 	private void RebuildFilteredProjects() {
 		FilteredProjects.Clear();
 
-		var tokens = SearchText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-		var matches = tokens.Length == 0
+		var matches = string.IsNullOrWhiteSpace(SearchText)
 			? Projects
-			: Projects.Where(p => tokens.All(t => p.Title.Contains(t, StringComparison.OrdinalIgnoreCase)));
+			: Projects.Where(p => FuzzyMatcher.Matches(p.Title, SearchText));
 
 		foreach (var project in matches) FilteredProjects.Add(project);
 	}

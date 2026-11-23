@@ -11,6 +11,7 @@ public partial class SignalConnectionDialogViewModel {
 
 		Nodes = [DesignNodes()];
 		m_selectedNode = Nodes[0].Children[0].Children[1];
+		RebuildRows();
 
 		Replace([
 			Callable("Lua", "applyHit",

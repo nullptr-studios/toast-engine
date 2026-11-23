@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using System;
 using Avalonia;
@@ -30,6 +31,7 @@ public sealed class HierarchyConnectorLayer : Control {
 
 	private IReadOnlyList<IHierarchyRow> m_rows = [];
 	private int m_selectedIndex = -1;
+	private IReadOnlyList<int> m_extraSelected = [];
 	private int m_hoveredIndex = -1;
 	private double[] m_offsets = [0];
 	public int HoveredIndex {
@@ -52,6 +54,15 @@ public sealed class HierarchyConnectorLayer : Control {
 		set {
 			m_rows = value;
 			RefreshGeometry();
+		}
+	}
+
+	// the other nodes of a multi selection, drawn like the primary one
+	public IReadOnlyList<int> ExtraSelected {
+		get => m_extraSelected;
+		set {
+			m_extraSelected = value;
+			InvalidateVisual();
 		}
 	}
 
@@ -103,33 +114,42 @@ public sealed class HierarchyConnectorLayer : Control {
 	}
 
 	private void DrawSelection(DrawingContext ctx) {
-		if (m_selectedIndex < 0 || m_selectedIndex >= m_rows.Count) return;
+		var selected = m_extraSelected.Append(m_selectedIndex)
+			.Where(i => i >= 0 && i < m_rows.Count).Distinct().Order().ToList();
+		if (selected.Count == 0) return;
 
 		var bg3 = Resolve("Bg3", "#2b2a2a");
 		var bg4 = Resolve("Bg4", "#383637");
 
-		var selDepth = m_rows[m_selectedIndex].Depth;
+		// touching or nested selections share one box
+		var boxes = new List<(int First, int Last, int Depth)>();
+		foreach (var index in selected) {
+			var last = LastDescendant(index);
+			var depth = m_rows[index].Depth;
+			if (boxes.Count > 0 && index <= boxes[^1].Last + 1)
+				boxes[^1] = (boxes[^1].First, Math.Max(boxes[^1].Last, last), Math.Min(boxes[^1].Depth, depth));
+			else
+				boxes.Add((index, last, depth));
+		}
 
-		var lastDesc = m_selectedIndex;
-		for (var i = m_selectedIndex + 1; i < m_rows.Count && m_rows[i].Depth > selDepth; i++)
-			lastDesc = i;
-
-		// selection box
-		var box = new Rect(
-			ContentX(selDepth) - BoxLeftPad,
-			GetRowTop(m_selectedIndex),
-			Bounds.Width - (ContentX(selDepth) - BoxLeftPad) - BoxRightPad,
-			GetRowTop(lastDesc + 1) - GetRowTop(m_selectedIndex));
-		ctx.DrawRectangle(bg3, null, new RoundedRect(box, BoxCorner));
+		foreach (var (first, last, depth) in boxes) {
+			var x = ContentX(depth) - BoxLeftPad;
+			var box = new Rect(x, GetRowTop(first), Bounds.Width - x - BoxRightPad, GetRowTop(last + 1) - GetRowTop(first));
+			ctx.DrawRectangle(bg3, null, new RoundedRect(box, BoxCorner));
+		}
 
 		// descendant connectors
 		var descPen = new Pen(bg4, DescendantWidth) {
 			LineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round
 		};
-		for (var p = m_selectedIndex; p <= lastDesc; p++)
-			DrawChildConnectors(ctx, descPen, p, lastDesc);
+		foreach (var index in selected) {
+			var last = LastDescendant(index);
+			for (var p = index; p <= last; p++)
+				DrawChildConnectors(ctx, descPen, p, last);
+		}
 
 		// -ancestor path
+		if (m_selectedIndex < 0 || m_selectedIndex >= m_rows.Count) return;
 		var ancPen = new Pen(bg3, AncestorWidth) {
 			LineCap = PenLineCap.Round, LineJoin = PenLineJoin.Round
 		};
@@ -139,6 +159,12 @@ public sealed class HierarchyConnectorLayer : Control {
 			DrawElbow(ctx, ancPen, parent, child);
 			child = parent;
 		}
+	}
+
+	private int LastDescendant(int index) {
+		var last = index;
+		for (var i = index + 1; i < m_rows.Count && m_rows[i].Depth > m_rows[index].Depth; i++) last = i;
+		return last;
 	}
 
 	// Red insertion line shown while dragging to reorder

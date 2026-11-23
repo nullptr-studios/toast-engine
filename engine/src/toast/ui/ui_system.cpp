@@ -41,6 +41,7 @@ UISystem::UISystem() noexcept {
 	m_asset_listener.subscribe<event::UIAssetReloaded>([this](const event::UIAssetReloaded& e) {
 		m_documents_reload_pending = true;
 		m_stylesheet_cache_dirty = m_stylesheet_cache_dirty || e.type == "ui_style" || e.type == "color_scheme";
+		m_template_cache_dirty = m_template_cache_dirty || e.type == "ui_element";
 		TOAST_INFO("UI", "Queued document reload after {} changed ({})", e.type, e.uid);
 	});
 
@@ -207,6 +208,10 @@ void UISystem::tick() noexcept {
 			Rml::Factory::ClearStyleSheetCache();
 			m_stylesheet_cache_dirty = false;
 		}
+		if (m_template_cache_dirty) {
+			Rml::Factory::ClearTemplateCache();
+			m_template_cache_dirty = false;
+		}
 		reloadAllDocuments();
 	}
 
@@ -317,6 +322,25 @@ void UISystem::unregisterGlobalStyle(const assets::Handle<assets::UIStyle>& styl
 		m_global_style_refs.erase(it);
 		std::erase(m_global_styles, style);
 	}
+}
+
+auto UISystem::loadTemplateSource(std::string_view referrer, std::string_view href) -> std::optional<TemplateSource> {
+	Rml::SystemInterface* system = Rml::GetSystemInterface();
+	if (system == nullptr) {
+		return std::nullopt;
+	}
+
+	Rml::String uri;
+	system->JoinPath(uri, Rml::String(referrer), Rml::String(href));
+	if (!uri.contains("://")) {
+		return std::nullopt;
+	}
+
+	auto bytes = assets::AssetManager::get().tryLoadBytes(uri);
+	if (!bytes) {
+		return std::nullopt;
+	}
+	return TemplateSource {.uri = std::move(uri), .source = std::string(bytes->begin(), bytes->end())};
 }
 
 auto UISystem::globalStyleUris() const -> std::vector<std::string> {

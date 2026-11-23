@@ -17,6 +17,7 @@ using editor.Assets;
 using editor.Components.Modals;
 using editor.Engine;
 using Proto.Events;
+using editor.Components.Elements;
 
 namespace editor.Workspace;
 
@@ -228,7 +229,7 @@ public class HierarchyElement : INotifyPropertyChanged, IHierarchyRow {
 			if (child.ApplyFilter(query))
 				FilteredChildren.Add(child);
 
-		return Name.Contains(query, StringComparison.OrdinalIgnoreCase) || FilteredChildren.Count > 0;
+		return FuzzyMatcher.Matches(Name, query) || FilteredChildren.Count > 0;
 	}
 }
 
@@ -255,6 +256,9 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	private readonly Func<WorkspaceViewModel?>? m_workspaceProvider;
 
 	[ObservableProperty] private HierarchyElement? m_selectedNode;
+
+	private readonly HashSet<string> m_selection = [];
+	private bool m_editingSelection;
 
 	[ObservableProperty] private bool m_showPrefabChildren;
 
@@ -329,6 +333,7 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 				if (!ReferenceEquals(restored, SelectedNode)) SelectedNode = restored;
 				else if (otherWorkspace && restored is not null) Events.Send(new SetFocusedNode { Node = restored.Uid });
 				if (Root.Count > 0 && e.WorkspaceHandle == workspace.Handle) workspace.SetRootNode(Root[0].Uid, Root[0].Type);
+				m_selection.RemoveWhere(uid => Find(uid) is null);
 				ApplyFilterToRoot();
 				RebuildRows();
 				HierarchyChanged?.Invoke();
@@ -398,6 +403,18 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 
 	// raised whenever the selected node changes
 	public static event Action<HierarchyElement?>? SelectionChanged;
+
+	public event Action? SelectionSetChanged;
+	public static event Action? MultiSelectionChanged;
+
+	public List<string> SelectionTypes() {
+		return m_selection.Select(uid => Find(uid)?.Type).OfType<string>().ToList();
+	}
+
+	private void RaiseSelectionSetChanged() {
+		SelectionSetChanged?.Invoke();
+		if (IsPrimary) MultiSelectionChanged?.Invoke();
+	}
 
 	// raised whenever this hierarchy selects another node
 	public event Action<HierarchyElement?>? SelectedChanged;
@@ -497,8 +514,10 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 	}
 
 	public void DropInto(HierarchyElement dragged, HierarchyElement target) {
-		if (dragged.Uid == target.Uid) return;
-		Events.Send(new WorkspaceMoveNodeTo { Target = dragged.Uid, NewParent = target.Uid, Predecessor = MoveToEnd });
+		foreach (var node in GetDragSet(dragged)) {
+			if (node.Uid == target.Uid) continue;
+			Events.Send(new WorkspaceMoveNodeTo { Target = node.Uid, NewParent = target.Uid, Predecessor = MoveToEnd });
+		}
 	}
 
 	public void DropBeside(HierarchyElement dragged, HierarchyElement target, bool after) {
@@ -506,14 +525,102 @@ public partial class HierarchyViewModel : Tool, IDisposable {
 		var siblings = parent.Children;
 		var idx = siblings.IndexOf(target);
 		if (idx < 0) return;
-		var predecessor = after ? target.Uid : idx - 1 >= 0 ? siblings[idx - 1].Uid : "";
-		if (predecessor == dragged.Uid) return; // already in place
-		Events.Send(new WorkspaceMoveNodeTo { Target = dragged.Uid, NewParent = parent.Uid, Predecessor = predecessor });
+
+		var moving = GetDragSet(dragged);
+		var predecessor = after ? target.Uid : "";
+		if (!after) {
+			for (var i = idx - 1; i >= 0; i--) {
+				if (moving.Any(node => node.Uid == siblings[i].Uid)) continue;
+				predecessor = siblings[i].Uid;
+				break;
+			}
+		}
+
+		var adjacent = after ? target.Uid : idx > 0 ? siblings[idx - 1].Uid : "";
+		if (moving.Count == 1 && moving[0].Uid == adjacent) return; // already in place
+		foreach (var node in moving) {
+			Events.Send(new WorkspaceMoveNodeTo { Target = node.Uid, NewParent = parent.Uid, Predecessor = predecessor });
+			predecessor = node.Uid;
+		}
+	}
+
+	public int SelectionCount => m_selection.Count;
+
+	public bool IsInSelection(HierarchyElement node) {
+		return m_selection.Contains(node.Uid);
+	}
+
+	public void SelectOnly(HierarchyElement node) {
+		m_selection.Clear();
+		m_selection.Add(node.Uid);
+		SetPrimary(node);
+		SendFocus();
+		RaiseSelectionSetChanged();
+	}
+
+	public void ToggleInSelection(HierarchyElement node) {
+		if (m_selection.Add(node.Uid)) {
+			SetPrimary(node);
+		} else {
+			m_selection.Remove(node.Uid);
+			if (ReferenceEquals(SelectedNode, node))
+				SetPrimary(m_selection.Select(uid => Find(uid)).FirstOrDefault(found => found is not null));
+		}
+
+		SendFocus();
+		RaiseSelectionSetChanged();
+	}
+
+	public void SelectRange(HierarchyElement node) {
+		var anchor = SelectedNode is { } primary ? Rows.IndexOf(primary) : -1;
+		var end = Rows.IndexOf(node);
+		if (anchor < 0 || end < 0) {
+			SelectOnly(node);
+			return;
+		}
+
+		m_selection.Clear();
+		for (var i = Math.Min(anchor, end); i <= Math.Max(anchor, end); i++) m_selection.Add(Rows[i].Uid);
+		SendFocus();
+		RaiseSelectionSetChanged();
+	}
+
+	private void SendFocus() {
+		var focus = new SetFocusedNode { Node = SelectedNode?.Uid ?? "" };
+		foreach (var uid in m_selection)
+			if (uid != SelectedNode?.Uid) focus.ExtraNodes.Add(uid);
+		Events.Send(focus);
+	}
+
+	private void SetPrimary(HierarchyElement? node) {
+		m_editingSelection = true;
+		SelectedNode = node;
+		m_editingSelection = false;
+	}
+
+	public List<HierarchyElement> GetDragSet(HierarchyElement dragged) {
+		var set = new List<HierarchyElement>();
+		if (m_selection.Count > 1 && m_selection.Contains(dragged.Uid)) {
+			foreach (var root in Root) Collect(root, false);
+		}
+
+		void Collect(HierarchyElement node, bool underSelected) {
+			var selected = !node.IsRoot && m_selection.Contains(node.Uid);
+			if (selected && !underSelected && !node.IsInsidePrefab) set.Add(node);
+			foreach (var child in node.Children) Collect(child, underSelected || selected);
+		}
+
+		return set.Count > 0 ? set : [dragged];
 	}
 
 	partial void OnSelectedNodeChanged(HierarchyElement? value) {
+		if (!m_editingSelection) {
+			m_selection.Clear();
+			if (value is not null) m_selection.Add(value.Uid);
+		}
+
 		// tell the engine which node to stream inspector data for ("" clears the focus)
-		Events.Send(new SetFocusedNode { Node = value?.Uid ?? "" });
+		SendFocus();
 		SelectedChanged?.Invoke(value);
 		if (IsPrimary) SelectionChanged?.Invoke(value);
 	}

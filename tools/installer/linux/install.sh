@@ -3,7 +3,8 @@
 set -eu
 
 src="$(cd "$(dirname "$0")" && pwd)"
-dest="${XDG_DATA_HOME:-$HOME/.local/share}/toast-engine"
+dest="${XDG_DATA_HOME:-$HOME/.local/share}/nullptr-studios/toast-engine"
+legacy="${XDG_DATA_HOME:-$HOME/.local/share}/toast-engine"
 
 if [ "$src" != "$dest" ]; then
 	rm -rf "$dest.old"
@@ -12,6 +13,9 @@ if [ "$src" != "$dest" ]; then
 	cp -r "$src" "$dest"
 	rm -rf "$dest.old"
 fi
+
+# new one replaces legacy
+if [ -d "$legacy" ] && [ "$legacy" != "$src" ]; then rm -rf "$legacy"; fi
 
 rm -f "$dest/install.sh"
 chmod +x "$dest/editor/editor" 2>/dev/null || true

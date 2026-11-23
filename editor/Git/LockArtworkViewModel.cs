@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using editor.Assets;
+using editor.Components.Elements;
 
 namespace editor.Git;
 
@@ -129,13 +130,12 @@ public partial class LockArtworkViewModel : ObservableObject {
 	private void BuildTree() {
 		m_building = true;
 		var searching = SearchText.Length > 0;
-		var terms = SearchText.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 		var root = new ArtworkFolder("", "", OnFolderExpanded);
 		var folders = new Dictionary<string, ArtworkFolder>(StringComparer.OrdinalIgnoreCase) { [""] = root };
 		var ancestors = new Dictionary<ArtworkRow, List<ArtworkFolder>>();
 
 		foreach (var row in m_all) {
-			if (!terms.All(t => row.RelPath.Contains(t, StringComparison.OrdinalIgnoreCase))) continue;
+			if (!FuzzyMatcher.Matches(row.RelPath, SearchText)) continue;
 
 			var relative = Path.GetRelativePath(ProjectContext.ArtworkPath, row.Key);
 			var parts = relative.Split(Path.DirectorySeparatorChar, StringSplitOptions.RemoveEmptyEntries);

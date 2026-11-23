@@ -12,7 +12,8 @@ AppId={{6B0F2C1E-5D8A-4E3B-9C41-7A2F8E5D1B30}
 AppName=Toast Engine
 AppVersion={#AppVersion}
 AppPublisher=nullptr Studios
-DefaultDirName={localappdata}\Programs\Toast Engine
+DefaultDirName={userappdata}\nullptr-studios\toast-engine
+UsePreviousAppDir=no
 DefaultGroupName=Toast Engine
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
@@ -32,6 +33,8 @@ WizardStyle=modern
 Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
 
 [InstallDelete]
+; The old install location, everything lives under nullptr-studios now
+Type: filesandordirs; Name: "{localappdata}\Programs\Toast Engine"
 ; Do not leave files of the previous version behind
 Type: filesandordirs; Name: "{app}\editor"
 Type: filesandordirs; Name: "{app}\toast_engine"

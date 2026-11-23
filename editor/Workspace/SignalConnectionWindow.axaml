@@ -27,6 +27,12 @@
 	</Window.Resources>
 
 	<Window.Styles>
+		<Style Selector="TextBlock.highlighted">
+			<Setter Property="FontWeight"
+			        Value="Bold" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Red}" />
+		</Style>
 		<Style Selector="ItemsControl.params > ContentPresenter"
 		       x:DataType="vm:SignalParameterViewModel">
 			<Setter Property="elements:SpanPanel.Span"
@@ -132,27 +138,54 @@
 			<Border Background="{StaticResource Bg1}"
 			        CornerRadius="8"
 			        Padding="8">
-				<Grid RowDefinitions="Auto,*"
+				<Grid RowDefinitions="Auto,Auto,*"
 				      RowSpacing="8">
 					<TextBlock Text="Workspace nodes"
 					           FontWeight="SemiBold" />
-					<TreeView Grid.Row="1"
+					<TextBox Grid.Row="1"
+					         Text="{Binding SearchText, Mode=TwoWay}"
+					         BorderThickness="0"
+					         Background="{StaticResource Bg3}"
+					         CornerRadius="6"
+					         VerticalContentAlignment="Center"
+					         PlaceholderText="Search...">
+						<TextBox.InnerLeftContent>
+							<LucideIcon Kind="Search"
+							            Foreground="{StaticResource TextMuted}"
+							            Size="16"
+							            Margin="8,0,0,0"
+							            StrokeWidth="3" />
+						</TextBox.InnerLeftContent>
+					</TextBox>
+					<TreeView Grid.Row="2"
 					          Classes="connection-workspace"
-					          ItemsSource="{Binding Nodes}"
-					          SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+					          ItemsSource="{Binding NodeRows}"
+					          SelectedItem="{Binding SelectedRow, Mode=TwoWay}">
 						<TreeView.ItemTemplate>
-							<TreeDataTemplate ItemsSource="{Binding PickerChildren}"
-							                  x:DataType="vm:HierarchyElement">
+							<TreeDataTemplate ItemsSource="{Binding Children}"
+							                  x:DataType="vm:SignalNodeRow">
 								<StackPanel Orientation="Horizontal"
 								            Spacing="6">
 									<Border Width="16"
 									        Height="16"
-									        Background="{Binding Color, Converter={StaticResource BrushFromKey}}">
+									        Background="{Binding Element.Color, Converter={StaticResource BrushFromKey}}">
 										<Border.OpacityMask>
-											<ImageBrush Source="{Binding SmallIcon}" />
+											<ImageBrush Source="{Binding Element.SmallIcon}" />
 										</Border.OpacityMask>
 									</Border>
-									<TextBlock Text="{Binding Name}" />
+									<ItemsControl ItemsSource="{Binding Segments}">
+										<ItemsControl.ItemsPanel>
+											<ItemsPanelTemplate>
+												<StackPanel Orientation="Horizontal" />
+											</ItemsPanelTemplate>
+										</ItemsControl.ItemsPanel>
+										<ItemsControl.ItemTemplate>
+											<DataTemplate x:DataType="elements:TextSegment">
+												<TextBlock Text="{Binding Text}"
+												           Classes.highlighted="{Binding IsHighlighted}" />
+											</DataTemplate>
+										</ItemsControl.ItemTemplate>
+									</ItemsControl>
 								</StackPanel>
 							</TreeDataTemplate>
 						</TreeView.ItemTemplate>

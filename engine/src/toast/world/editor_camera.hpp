@@ -29,7 +29,7 @@ public:
 	 * looked through should consume input
 	 */
 	void setEnabled(bool enabled) noexcept;
-	void configure(event::EditorCameraMode mode, float speed);
+	void configure(event::EditorCameraMode mode, float speed, bool horizontal_movement = false);
 
 	void copyViewFrom(const EditorCameraController& other) noexcept;
 
@@ -78,6 +78,7 @@ private:
 	float m_orbit_radius = 0.0f;
 
 	float m_speed = 5.0f;
+	bool m_horizontal_movement = false;
 	event::EditorCameraMode m_mode = event::EditorCameraMode::free;
 
 	static constexpr float k_min_speed = 0.5f;

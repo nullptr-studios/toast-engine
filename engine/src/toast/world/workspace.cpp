@@ -1409,6 +1409,44 @@ void Workspace::gizmoBeginDrag(GizmoHandle handle) {
 }
 
 void Workspace::gizmoUpdateDrag() {
+	auto primary = m_focused_node.as<Node3D>();
+	if (m_gizmo_drag == GizmoHandle::none || not primary.exists() || m_extra_selected.empty()) {
+		gizmoUpdateDragPrimary();
+		return;
+	}
+
+	primary->syncTransform();
+	const glm::vec3 before_position = primary->world_position;
+	const glm::quat before_rotation = primary->world_rotation;
+	const glm::vec3 before_scale = primary->world_scale;
+
+	gizmoUpdateDragPrimary();
+
+	primary->syncTransform();
+	const glm::vec3 moved = primary->world_position - before_position;
+	const glm::quat turned = primary->world_rotation * glm::inverse(before_rotation);
+	glm::vec3 ratio {1.0f};
+	for (int axis = 0; axis < 3; ++axis) {
+		if (std::abs(before_scale[axis]) > 0.0001f) {
+			ratio[axis] = primary->world_scale[axis] / before_scale[axis];
+		}
+	}
+
+	for (const auto& extra : m_extra_selected) {
+		auto node = extra.as<Node3D>();
+		if (not node.exists() || node == primary) {
+			continue;
+		}
+		node->syncTransform();
+		node->world_position += moved;
+		node->world_rotation = glm::normalize(turned * node->world_rotation);
+		node->world_scale *= ratio;
+		node->syncTransform();
+		node->onEditorTransformChanged();
+	}
+}
+
+void Workspace::gizmoUpdateDragPrimary() {
 	if (m_gizmo_drag == GizmoHandle::none) {
 		return;
 	}
@@ -2073,6 +2111,7 @@ void Workspace::eventSubscriptions() {
 					}
 				};
 				refresh(node, refresh);
+				node->inheritedEnabled(dest_parent->enabled());
 			}
 
 			// Insert at the position requested by the predecessor uid
@@ -2105,6 +2144,12 @@ void Workspace::eventSubscriptions() {
 			return false;
 		}
 		m_focused_node = findFrom(m_root_node, e.node);
+		m_extra_selected.clear();
+		for (const auto& uid : e.extra_nodes) {
+			if (auto extra = findFrom(m_root_node, uid); extra.exists() && extra != m_focused_node) {
+				m_extra_selected.push_back(extra);
+			}
+		}
 		return false;
 	});
 
@@ -2112,60 +2157,82 @@ void Workspace::eventSubscriptions() {
 		if (m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		toast::Box<Node> target = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
-		if (not target.exists()) {
+		toast::Box<Node> primary = e.node.data() != 0 ? findFrom(m_root_node, e.node) : m_focused_node;
+		if (not primary.exists()) {
 			return false;
 		}
+		const bool from_focus = primary == m_focused_node;
 
-		const auto* field = target->info()->search(e.parameter);
-		if (field == nullptr) {
-			TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
-			return true;
-		}
-
-		std::any value;
-		if (field->value_type == FieldType::quaternion_t && not field->is_array) {
-			// the inspector edits rotation as euler degrees "x y z"; store it back as a quaternion
-			glm::vec3 deg {0.0f, 0.0f, 0.0f};
-			std::istringstream ss(e.value);
-			ss >> deg.x >> deg.y >> deg.z;
-			value = std::any {glm::quat(glm::radians(deg))};
-		} else if (field->isNodeReference()) {
-			auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
-			if (not parsed.has_value()) {
-				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+		// secondary targets get the same value
+		const auto apply = [&](toast::Box<Node> target, bool secondary) -> bool {
+			const auto* field = target->info()->search(e.parameter);
+			if (field == nullptr) {
+				if (not secondary) {
+					TOAST_WARN("World", "NodeChangeParam: unknown parameter '{}'", e.parameter);
+				}
 				return true;
 			}
-			value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
-		} else {
-			auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
-			if (not parsed.has_value()) {
-				TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+			if (secondary &&
+			    (field->name == "position" || field->name == "rotation" || field->name == "scale" || field->name == "world_position" ||
+			     field->name == "world_rotation" || field->name == "world_scale" || field->name == "m_scripts")) {
 				return true;
 			}
-			value = std::move(*parsed);
-		}
 
-		const std::string previous = inspectorValue(*target, *field);
-		auto context =
-		    historyContext(event::HistoryOperation::change_value, target, std::format("{} changed", e.parameter), previous, e.value);
-		recordHistory(std::move(context), [&] {
-			field->set(&*target, value);
-			target->onReflectedFieldChanged(field->name);
+			std::any value;
+			if (field->value_type == FieldType::quaternion_t && not field->is_array) {
+				// the inspector edits rotation as euler degrees "x y z"; store it back as a quaternion
+				glm::vec3 deg {0.0f, 0.0f, 0.0f};
+				std::istringstream ss(e.value);
+				ss >> deg.x >> deg.y >> deg.z;
+				value = std::any {glm::quat(glm::radians(deg))};
+			} else if (field->isNodeReference()) {
+				auto parsed = assets::Prefab::valueFromString(field->value_type, false, e.value);
+				if (not parsed.has_value()) {
+					TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+					return true;
+				}
+				value = std::any {findFrom(*m_root_node, std::any_cast<UID>(*parsed))};
+			} else {
+				auto parsed = assets::Prefab::valueFromString(field->value_type, field->is_array, e.value);
+				if (not parsed.has_value()) {
+					TOAST_WARN("World", "NodeChangeParam: couldn't parse '{}' for parameter '{}'", e.value, e.parameter);
+					return true;
+				}
+				value = std::move(*parsed);
+			}
+
+			const std::string previous = inspectorValue(*target, *field);
+			auto context = historyContext(
+			    event::HistoryOperation::change_value, target, std::format("{} changed", e.parameter), previous, e.value
+			);
+			recordHistory(std::move(context), [&] {
+				field->set(&*target, value);
+				target->onReflectedFieldChanged(field->name);
+				if (field->name == "m_scripts") {
+					target->reloadScripts();
+				}
+			});
+
+			if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
+			    field->name == "world_rotation") {
+				if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
+					node3d->onEditorTransformChanged();
+				}
+			}
+
 			if (field->name == "m_scripts") {
-				target->reloadScripts();
+				event::send<event::RequestHierarchyUpdate>();
 			}
-		});
+			return true;
+		};
 
-		if (field->name == "position" || field->name == "rotation" || field->name == "world_position" ||
-		    field->name == "world_rotation") {
-			if (auto node3d = target.template as<Node3D>(); node3d.exists()) {
-				node3d->onEditorTransformChanged();
+		apply(primary, false);
+		if (from_focus) {
+			for (const auto& extra : m_extra_selected) {
+				if (extra.exists() && extra != primary) {
+					apply(extra, true);
+				}
 			}
-		}
-
-		if (field->name == "m_scripts") {
-			event::send<event::RequestHierarchyUpdate>();
 		}
 		return true;
 	});
@@ -2519,7 +2586,7 @@ void Workspace::eventSubscriptions() {
 		if (e.workspace_handle == 0 && m_handle.data() != Engine::get()->activeWorkspace().data()) {
 			return false;
 		}
-		m_editor_camera_controller.configure(e.mode, e.speed);
+		m_editor_camera_controller.configure(e.mode, e.speed, e.horizontal_movement);
 		return true;
 	});
 

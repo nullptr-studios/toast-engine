@@ -71,18 +71,7 @@ public abstract partial class ImportNodeViewModel : ViewModelBase {
 			return;
 		}
 
-		var idx = Name.IndexOf(filter, StringComparison.OrdinalIgnoreCase);
-		if (idx < 0) {
-			NameSegments = [new TextSegment(Name, false)];
-			return;
-		}
-
-		var segs = new List<TextSegment>();
-		if (idx > 0) segs.Add(new TextSegment(Name[..idx], false));
-		segs.Add(new TextSegment(Name[idx..(idx + filter.Length)], true));
-		if (idx + filter.Length < Name.Length)
-			segs.Add(new TextSegment(Name[(idx + filter.Length)..], false));
-		NameSegments = segs;
+		NameSegments = FuzzyMatcher.Segments(Name, filter) ?? [new TextSegment(Name, false)];
 	}
 }
 
@@ -142,10 +131,10 @@ public class ImportFileViewModel : ImportNodeViewModel {
 	public void ApplyFilter(string filter, bool showImported) {
 		if (IsImported)
 			IsVisible = showImported && (string.IsNullOrWhiteSpace(filter) ||
-				Name.Contains(filter, StringComparison.OrdinalIgnoreCase));
+				FuzzyMatcher.Matches(Name, filter));
 		else
 			IsVisible = string.IsNullOrWhiteSpace(filter) ||
-				Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
+				FuzzyMatcher.Matches(Name, filter);
 		BuildNameSegments(filter);
 	}
 
@@ -265,7 +254,7 @@ public class ImportFolderViewModel : ImportNodeViewModel {
 			// When no search text, hide the folder if all its children are hidden
 			IsVisible = anyVisible;
 		} else {
-			IsVisible = anyVisible || Name.Contains(filter, StringComparison.OrdinalIgnoreCase);
+			IsVisible = anyVisible || FuzzyMatcher.Matches(Name, filter);
 			if (IsVisible) IsExpanded = true;
 		}
 
@@ -297,8 +286,9 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 	private Window? m_window;
 
-	public ImportWindowViewModel() {
+	public ImportWindowViewModel(string? destination = null) {
 		m_state = ImportTreeState.Load();
+		if (destination is not null) m_locationPath = destination;
 
 		m_importers = [
 			new TextureImporter(TextureSettings),
@@ -317,8 +307,7 @@ public partial class ImportWindowViewModel : ViewModelBase {
 
 		if (!ProjectContext.IsInitialized) return;
 
-		var artworkDbPath = ProjectContext.Resolve("cache://artwork_database.json");
-		var importedFiles = LoadImportedFiles(artworkDbPath);
+		var importedFiles = LoadImportedFiles();
 
 		var artworkPath = ProjectContext.ArtworkPath;
 		if (Directory.Exists(artworkPath)) {
@@ -603,19 +592,11 @@ public partial class ImportWindowViewModel : ViewModelBase {
 		}
 	}
 
-	private static HashSet<string> LoadImportedFiles(string dbPath) {
+	private static HashSet<string> LoadImportedFiles() {
 		var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-		if (!File.Exists(dbPath)) return result;
-		try {
-			using var doc = JsonDocument.Parse(File.ReadAllText(dbPath));
-			if (doc.RootElement.TryGetProperty("type", out var t) && t.GetString() == "artwork_database")
-				foreach (var prop in doc.RootElement.EnumerateObject())
-					if (prop.Name is not ("type" or "version"))
-						result.Add(Path.GetFullPath(ProjectContext.Resolve(prop.Name)));
-		} catch (Exception e) {
-			Log.Error(e.Message);
-		}
-
+		AssetStore.Sync();
+		foreach (var artwork in AssetStore.AllArtwork())
+			result.Add(Path.GetFullPath(ProjectContext.Resolve(artwork.Uri)));
 		return result;
 	}
 

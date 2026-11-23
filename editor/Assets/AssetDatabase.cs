@@ -273,6 +273,26 @@ public static class AssetDatabase {
 			if (artwork.Hash == hash) continue;
 
 			log($"Artwork changed: {sourceVirtual}");
+			var (choice, _) = await ShowChoiceEx(new ModalConfig(
+				"Artwork changed",
+				$"{sourceVirtual} changed since it was imported. Reimport it?",
+				ModalButtons.OkNoCancel,
+				LucideIconKind.FileExclamationPoint,
+				Application.Current!.TryGetResource("Yellow", null, out var r) ? r as SolidColorBrush : null,
+				"Ok",
+				"Don't import",
+				"Skip",
+				LucideIconKind.RefreshCw,
+				LucideIconKind.X,
+				LucideIconKind.SkipForward));
+
+			// skip leaves the old hash so it asks again next time
+			if (choice is null) continue;
+			if (choice == false) {
+				AssetStore.SetArtworkHash(sourceVirtual, hash);
+				continue;
+			}
+
 			await Reimport(sourceVirtual, log);
 			reimported = true;
 		}

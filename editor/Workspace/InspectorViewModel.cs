@@ -319,9 +319,11 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 
 		if (m_follow is not null) {
 			m_follow.SelectedChanged += OnSelectionChanged;
+			m_follow.SelectionSetChanged += OnMultiSelectionChanged;
 			if (m_follow.SelectedNode is { } followed) OnSelectionChanged(followed);
 		} else {
 			HierarchyViewModel.SelectionChanged += OnSelectionChanged;
+			HierarchyViewModel.MultiSelectionChanged += OnMultiSelectionChanged;
 			if (HierarchyViewModel.Current?.SelectedNode is { } sel) OnSelectionChanged(sel);
 		}
 	}
@@ -339,8 +341,13 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 
 	public void Dispose() {
 		CommitFieldEdit();
-		if (m_follow is not null) m_follow.SelectedChanged -= OnSelectionChanged;
-		else HierarchyViewModel.SelectionChanged -= OnSelectionChanged;
+		if (m_follow is not null) {
+			m_follow.SelectedChanged -= OnSelectionChanged;
+			m_follow.SelectionSetChanged -= OnMultiSelectionChanged;
+		} else {
+			HierarchyViewModel.SelectionChanged -= OnSelectionChanged;
+			HierarchyViewModel.MultiSelectionChanged -= OnMultiSelectionChanged;
+		}
 		if (!Design.IsDesignMode) m_listener.Dispose();
 		GC.SuppressFinalize(this);
 	}
@@ -414,6 +421,37 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		});
 	}
 
+	private HierarchyViewModel? SelectionSource => m_follow ?? HierarchyViewModel.Current;
+	private bool IsMultiSelection => SelectionSource is { SelectionCount: > 1 };
+
+	private void OnMultiSelectionChanged() {
+		Dispatcher.UIThread.Post(() => {
+			if (m_selected is { } node && HasSelection) Rebuild(node);
+		});
+	}
+
+	private void ShowCommonClassesOnly() {
+		if (SelectionSource is not { SelectionCount: > 1 } source) return;
+		HashSet<string>? common = null;
+		foreach (var type in source.SelectionTypes()) {
+			var chain = new HashSet<string>();
+			var current = Bare(type);
+			while (ReflectionDatabase.Nodes!.TryGetValue(current, out var info)) {
+				chain.Add(info.Name);
+				if (info.Parent is null) break;
+				current = Bare(info.Parent.Name);
+			}
+
+			if (common is null) common = chain;
+			else common.IntersectWith(chain);
+		}
+
+		if (common is null) return;
+		for (var i = Cards.Count - 1; i >= 0; i--)
+			if (!Cards[i].IsPlain && !common.Contains(Cards[i].TypeName))
+				Cards.RemoveAt(i);
+	}
+
 	private void Rebuild(HierarchyElement node) {
 		Rebuild(node.Uid, node.Type, InspectorState.Load(node.Uid));
 	}
@@ -446,6 +484,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 			current = Bare(info.Parent.Name);
 		}
 
+		ShowCommonClassesOnly();
 		m_builtUid = uid;
 		m_builtType = type;
 		ApplyFilter();
@@ -618,6 +657,8 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		m_luaCards.Clear();
 		// lua paths always contain ':', reflected C++ names never do
 		foreach (var key in m_fieldByParam.Keys.Where(k => k.Contains(':')).ToList()) m_fieldByParam.Remove(key);
+		// scripts belong to one node
+		if (IsMultiSelection) return;
 
 		var insertAt = 0;
 		var colorCounter = 0;
