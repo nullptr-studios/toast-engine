@@ -14,7 +14,7 @@ struct lua_State;
 
 namespace scripting {
 
-enum class BindKindHint {
+enum class BindKindHint : uint8_t {
 	any,
 	array,
 	object

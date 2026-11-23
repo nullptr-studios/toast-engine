@@ -9,7 +9,7 @@ auto asValue(void* ptr) -> BindValue* {
 }
 
 auto childOf(BindValue& value) -> Rml::DataVariable {
-	return Rml::DataVariable(bindDefinitionFor(value), &value);
+	return {bindDefinitionFor(value), &value};
 }
 
 class ScalarDefinition final : public Rml::VariableDefinition {

@@ -47,8 +47,16 @@ void UIBindStore::reconcile(const DocumentScan& scan) {
 
 		// a bind that changed kind between reloads
 		const BindValue& current = it->second;
-		const bool kind_matches = is_array ? current.isArray() : is_object ? current.isObject() : current.isScalar();
-		const bool bool_mismatch =
+		bool kind_matches = false;
+		if (is_array) {
+			kind_matches = current.isArray();
+		} else if (is_object) {
+			kind_matches = current.isObject();
+		} else {
+			kind_matches = current.isScalar();
+		}
+
+		bool bool_mismatch =
 		    is_bool && !is_array && !is_object && current.isScalar() && current.value().GetType() != Rml::Variant::BOOL;
 		if (!kind_matches || bool_mismatch) {
 			it->second = make_default();

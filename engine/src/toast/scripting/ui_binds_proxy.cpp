@@ -73,7 +73,12 @@ auto assignBind(lua_State* l, ui::UIBinds& binds, const std::string& name, const
 	}
 
 	value.push(l);
-	const BindKindHint hint = wants_array ? BindKindHint::array : wants_object ? BindKindHint::object : BindKindHint::any;
+	BindKindHint hint = BindKindHint::any;
+	if (wants_array) {
+		hint = BindKindHint::array;
+	} else if (wants_object) {
+		hint = BindKindHint::object;
+	}
 	auto converted = luaToBindValue(l, -1, hint);
 	lua_pop(l, 1);
 	if (!converted) {

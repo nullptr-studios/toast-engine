@@ -2,6 +2,7 @@
 
 #include <format>
 #include <lua.hpp>
+#include <utility>
 
 namespace scripting {
 
@@ -71,14 +72,14 @@ auto convert(lua_State* l, int index, BindKindHint hint, int depth, const std::s
 	if (count > 0 && string_keys > 0 && integer_keys > 0) {
 		return std::unexpected(std::format("mixed array/object table at {}", where(path)));
 	}
-	if (is_array && count > 0 && static_cast<size_t>(max_index) != integer_keys) {
+	if (is_array && count > 0 && std::cmp_not_equal(max_index, integer_keys)) {
 		return std::unexpected(std::format("sparse array at {}", where(path)));
 	}
 
 	if (is_array) {
 		ui::BindValue out = ui::BindValue::array();
 		out.items().reserve(count);
-		for (lua_Integer i = 1; i <= static_cast<lua_Integer>(count); ++i) {
+		for (lua_Integer i = 1; std::cmp_less_equal(i, count); ++i) {
 			lua_rawgeti(l, index, i);
 			auto child = convert(l, -1, BindKindHint::any, depth + 1, std::format("{}[{}]", path, i));
 			lua_pop(l, 1);
