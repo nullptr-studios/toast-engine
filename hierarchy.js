@@ -1631,6 +1631,7 @@ var hierarchy =
       [ "editor.Components.Elements.NodeBox", "classeditor_1_1Components_1_1Elements_1_1NodeBox.html", null ],
       [ "editor.Components.Elements.StringBox", "classeditor_1_1Components_1_1Elements_1_1StringBox.html", null ]
     ] ],
+    [ "ui::TemplateSource", "structui_1_1TemplateSource.html", null ],
     [ "editor.LuaEditor.Syntax.TextEdit", "structeditor_1_1LuaEditor_1_1Syntax_1_1TextEdit.html", null ],
     [ "ui::TextFormatContext", "structui_1_1TextFormatContext.html", null ],
     [ "editor.Assets.TextureSectionDto", "classeditor_1_1Assets_1_1TextureSectionDto.html", null ],

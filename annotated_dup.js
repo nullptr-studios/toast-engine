@@ -1310,6 +1310,7 @@ var annotated_dup =
       [ "BindValue", "classui_1_1BindValue.html", null ],
       [ "DocumentScan", "structui_1_1DocumentScan.html", null ],
       [ "PreprocessContext", "structui_1_1PreprocessContext.html", null ],
+      [ "TemplateSource", "structui_1_1TemplateSource.html", null ],
       [ "TextFormatContext", "structui_1_1TextFormatContext.html", null ],
       [ "TgaImage", "structui_1_1TgaImage.html", null ],
       [ "UIBinds", "classui_1_1UIBinds.html", "classui_1_1UIBinds" ],

@@ -209,7 +209,7 @@ var NAVTREEINDEX =
 "structrenderer_1_1IrradianceVolumeData.html#a3445c9dac53ec38579681fe5330a5471",
 "structrenderer_1_1VulkanPipeline_1_1Config.html#a885cd3ffc0e9a9bf141f4ff62f9533a4",
 "structtoast_1_1Workspace_1_1GizmoRenderState.html#a4b5753f8c37c79574276711c44129fbc",
-"ui__style_8hpp_source.html"
+"ui__style_8hpp.html"
 ];
 
 const SYNCONMSG = 'click to disable panel synchronization';

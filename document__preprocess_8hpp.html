@@ -147,11 +147,22 @@ Include dependency graph for document_preprocess.hpp:</div>
 <area shape="poly" title=" " alt="" coords="378,48,557,97,551,98,378,53"/>
 </map>
 </div>
+</div><div class="textblock"><div class="dynheader">
+This graph shows which files directly or indirectly include this file:</div>
+<div class="dyncontent">
+<div class="center"><img src="document__preprocess_8hpp__dep__incl.png" border="0" usemap="#aengine_2src_2toast_2ui_2document__preprocess_8hppdep" loading="lazy" alt=""/></div>
+<map name="aengine_2src_2toast_2ui_2document__preprocess_8hppdep" id="aengine_2src_2toast_2ui_2document__preprocess_8hppdep">
+<area shape="rect" title="Prepares .rml text before it reaches RmlUi." alt="" coords="5,5,202,50"/>
+<area shape="rect" href="ui__system_8hpp.html" title="Singleton owning the RmlUi library." alt="" coords="33,98,174,143"/>
+<area shape="poly" title=" " alt="" coords="105,64,106,99,101,97,102,68"/>
+</map>
+</div>
 </div>
 <p><a href="document__preprocess_8hpp_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-nested-classes" class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
+<tr class="memitem:ui_3A_3ATemplateSource" id="r_ui_3A_3ATemplateSource"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structui_1_1TemplateSource.html">ui::TemplateSource</a></td></tr>
 <tr class="memitem:ui_3A_3APreprocessContext" id="r_ui_3A_3APreprocessContext"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structui_1_1PreprocessContext.html">ui::PreprocessContext</a></td></tr>
 <tr class="memitem:ui_3A_3ADocumentScan" id="r_ui_3A_3ADocumentScan"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structui_1_1DocumentScan.html">ui::DocumentScan</a></td></tr>
 </table><table class="memberdecls">
@@ -159,6 +170,8 @@ Classes</h2></td></tr>
 Typedefs</h2></td></tr>
 <tr class="memitem:aedb9af1d69a948b1fc7e423db1be3115" id="r_aedb9af1d69a948b1fc7e423db1be3115"><td class="memItemLeft"><a id="aedb9af1d69a948b1fc7e423db1be3115" name="aedb9af1d69a948b1fc7e423db1be3115"></a>
 using&#160;</td><td class="memItemRight"><b>ui::ColorResolver</b> = std::function&lt;std::optional&lt;std::string&gt;(std::string_view)&gt;</td></tr>
+<tr class="memitem:aaa7f7280b9ce2b75c27ca384aab726c4" id="r_aaa7f7280b9ce2b75c27ca384aab726c4"><td class="memItemLeft"><a id="aaa7f7280b9ce2b75c27ca384aab726c4" name="aaa7f7280b9ce2b75c27ca384aab726c4"></a>
+using&#160;</td><td class="memItemRight"><b>ui::TemplateLoader</b> = std::function&lt;std::optional&lt;<a class="el" href="structui_1_1TemplateSource.html">TemplateSource</a>&gt;(std::string_view referrer, std::string_view href)&gt;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>

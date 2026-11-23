@@ -109,9 +109,10 @@ var NAVTREEINDEX20 =
 "structtoast_1_1settings_1_1Meta.html#af9fb668ef1bcf2e69e5a3a46b663aaa8":[13,0,14,4,0,5],
 "structui_1_1DocumentScan.html":[13,0,15,1],
 "structui_1_1PreprocessContext.html":[13,0,15,2],
-"structui_1_1TextFormatContext.html":[13,0,15,3],
-"structui_1_1TgaImage.html":[13,0,15,4],
-"structui_1_1UISystem_1_1LocalizationScope.html":[13,0,15,10,0],
+"structui_1_1TemplateSource.html":[13,0,15,3],
+"structui_1_1TextFormatContext.html":[13,0,15,4],
+"structui_1_1TgaImage.html":[13,0,15,5],
+"structui_1_1UISystem_1_1LocalizationScope.html":[13,0,15,11,0],
 "structvoxel_1_1BrickCoord.html":[13,0,16,1],
 "structvoxel_1_1BrickEntry.html":[13,0,16,2],
 "structvoxel_1_1BrickEntry.html#a7321fad3bd20e6dab8089130becd96ea":[13,0,16,2,0],
@@ -248,6 +249,5 @@ var NAVTREEINDEX20 =
 "ui__key__map_8hpp.html":[14,0,2,0,0,9,15],
 "ui__key__map_8hpp_source.html":[14,0,2,0,0,9,15],
 "ui__pass_8hpp.html":[14,0,2,0,0,9,2,2],
-"ui__pass_8hpp_source.html":[14,0,2,0,0,9,2,2],
-"ui__style_8hpp.html":[14,0,2,0,0,9,0,5]
+"ui__pass_8hpp_source.html":[14,0,2,0,0,9,2,2]
 };

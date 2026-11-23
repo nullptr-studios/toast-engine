@@ -1,0 +1,5 @@
+<map id="engine/src/toast/ui/document_preprocess.hpp" name="engine/src/toast/ui/document_preprocess.hpp">
+<area shape="rect" id="Node000001" title="Prepares .rml text before it reaches RmlUi." alt="" coords="5,5,202,50"/>
+<area shape="rect" id="Node000002" href="$ui__system_8hpp.html" title="Singleton owning the RmlUi library." alt="" coords="33,98,174,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="105,64,106,99,101,97,102,68"/>
+</map>
