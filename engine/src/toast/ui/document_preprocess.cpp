@@ -225,13 +225,16 @@ auto resolveColorReferences(std::string_view source, const ColorResolver& resolv
 	return result;
 }
 
-auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> DocumentScan {
-	ZoneScoped;
-	DocumentScan scan;
+namespace {
+
+struct ScanState {
+	DocumentScan& scan;
 	std::vector<std::string> aliases;             // data-for loop variables, locals of the document
 	std::vector<std::string> member_roots;        // identifiers read through . or [
 	std::vector<std::string> array_candidates;    // plain containers of data-for
+};
 
+void scanMarkup(std::string_view rml, ScanState& state, std::vector<std::string>& template_links) {
 	// can attributes and {{ }} expressions
 	size_t i = 0;
 	while (i < rml.size()) {
@@ -246,7 +249,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 			if (end == std::string_view::npos) {
 				break;
 			}
-			collectIdentifiers(rml.substr(i + 2, end - i - 2), scan.binds, &member_roots);
+			collectIdentifiers(rml.substr(i + 2, end - i - 2), state.scan.binds, &state.member_roots);
 			i = end + 2;
 			continue;
 		}
@@ -255,6 +258,14 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 			// scan attributes inside the tag
 			const size_t tag_end = rml.find('>', i);
 			const std::string_view tag = rml.substr(i, tag_end == std::string_view::npos ? rml.size() - i : tag_end - i);
+
+			if (tag.size() > 5 && findCaseInsensitive(tag.substr(0, 5), "<link") == 0) {
+				const auto type = attributeValue(tag, "type");
+				const auto href = attributeValue(tag, "href");
+				if (type && href && !href->empty() && *type == "text/template") {
+					template_links.emplace_back(*href);
+				}
+			}
 
 			size_t a = tag.find_first_of(" \t\r\n");
 			if (a == std::string_view::npos) {
@@ -302,21 +313,21 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 				}
 
 				if (name.starts_with("data-event-") || (name.starts_with("on") && value.contains('('))) {
-					collectEventName(value, scan.events);
+					collectEventName(value, state.scan.events);
 				} else if (name == "data-for") {
 					// "item : items" or "item, index : items" binds the container
 					std::string_view container;
-					parseDataFor(value, aliases, container);
+					parseDataFor(value, state.aliases, container);
 					if (!container.empty()) {
-						collectIdentifiers(container, scan.binds, &member_roots);
+						collectIdentifiers(container, state.scan.binds, &state.member_roots);
 						if (const auto plain = asPlainIdentifier(container); !plain.empty()) {
-							pushUnique(array_candidates, std::string(plain));
+							pushUnique(state.array_candidates, std::string(plain));
 						}
 					}
 				} else if (name.starts_with("data-") && name != "data-model" && !name.starts_with("data-loc-")) {
-					collectIdentifiers(value, scan.binds, &member_roots);
+					collectIdentifiers(value, state.scan.binds, &state.member_roots);
 					if (name == "data-checked") {
-						collectIdentifiers(value, scan.bool_binds);
+						collectIdentifiers(value, state.scan.bool_binds);
 					}
 				}
 			}
@@ -327,6 +338,58 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 
 		i++;
 	}
+}
+
+void scanTemplates(const PreprocessContext& ctx, ScanState& state, const std::vector<std::string>& document_links) {
+	if (!ctx.template_loader) {
+		return;
+	}
+
+	struct Pending {
+		std::string referrer;
+		std::string href;
+	};
+
+	std::vector<Pending> pending;
+	pending.reserve(document_links.size());
+	for (const auto& href : document_links) {
+		pending.push_back({ctx.document_uri, href});
+	}
+
+	std::vector<std::string> visited {ctx.document_uri};
+	for (size_t i = 0; i < pending.size(); ++i) {
+		const Pending link = pending[i];    // copied, the vector grows below
+		const auto loaded = ctx.template_loader(link.referrer, link.href);
+		if (!loaded) {
+			TOAST_WARN("UI", "Template '{}' linked from '{}' could not be read, its binds are not bound", link.href, link.referrer);
+			continue;
+		}
+		if (std::ranges::find(visited, loaded->uri) != visited.end()) {
+			continue;
+		}
+		visited.push_back(loaded->uri);
+
+		std::vector<std::string> nested;
+		scanMarkup(loaded->source, state, nested);
+		for (auto& href : nested) {
+			pending.push_back({loaded->uri, std::move(href)});
+		}
+	}
+}
+
+}
+
+auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> DocumentScan {
+	ZoneScoped;
+	DocumentScan scan;
+	ScanState state {.scan = scan};
+	std::vector<std::string> template_links;
+	scanMarkup(rml, state, template_links);
+	scanTemplates(ctx, state, template_links);
+
+	auto& aliases = state.aliases;
+	auto& member_roots = state.member_roots;
+	auto& array_candidates = state.array_candidates;
 
 	// loop variables are locals of their `data-for`
 	const auto is_alias = [&](const std::string& name) { return std::ranges::find(aliases, name) != aliases.end(); };

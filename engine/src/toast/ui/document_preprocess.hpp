@@ -18,10 +18,20 @@ namespace ui {
 
 using ColorResolver = std::function<std::optional<std::string>(std::string_view)>;
 
+struct TemplateSource {
+	std::string uri;
+	std::string source;
+};
+
+using TemplateLoader = std::function<std::optional<TemplateSource>(std::string_view referrer, std::string_view href)>;
+
 struct PreprocessContext {
 	std::vector<std::string> style_uris;
 	ColorResolver color_resolver;
 	bool inject_data_model = false;
+
+	std::string document_uri;
+	TemplateLoader template_loader;
 };
 
 struct DocumentScan {

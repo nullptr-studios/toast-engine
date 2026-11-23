@@ -8,6 +8,7 @@
 
 #pragma once
 #include "assets.hpp"
+#include "document_preprocess.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -107,6 +108,9 @@ public:
 	void reloadAllDocuments();
 
 	[[nodiscard]]
+	static auto loadTemplateSource(std::string_view referrer, std::string_view href) -> std::optional<TemplateSource>;
+
+	[[nodiscard]]
 	auto translate(std::string_view input) const -> std::optional<std::string>;
 	[[nodiscard]]
 	auto lookupLocalizationRaw(std::string_view id) const -> std::optional<std::string>;
@@ -169,6 +173,7 @@ private:
 
 	bool m_documents_reload_pending = false;
 	bool m_stylesheet_cache_dirty = false;
+	bool m_template_cache_dirty = false;
 
 	uint64_t m_next_context_id = 1;    ///< context names must be unique
 	uint64_t m_frame_counter = 0;
