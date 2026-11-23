@@ -13,7 +13,9 @@ auto isIdentChar(char c) -> bool {
 }
 
 auto isExpressionKeyword(std::string_view word) -> bool {
-	static constexpr std::array keywords {"true", "false", "and", "or", "not", "it", "it_index", "ev"};
+	static constexpr std::array keywords {
+	  "true", "false", "and", "or", "not", "it", "it_index", "it_size", "it_first", "it_last", "ev"
+	};
 	return std::ranges::find(keywords, word) != keywords.end();
 }
 
@@ -23,7 +25,47 @@ void pushUnique(std::vector<std::string>& out, std::string value) {
 	}
 }
 
-void collectIdentifiers(std::string_view expression, std::vector<std::string>& out) {
+void parseDataFor(std::string_view value, std::vector<std::string>& aliases, std::string_view& container) {
+	const size_t colon = value.find(':');
+	if (colon == std::string_view::npos) {
+		container = {};
+		return;
+	}
+	container = value.substr(colon + 1);
+
+	std::string_view head = value.substr(0, colon);
+	while (!head.empty()) {
+		const size_t comma = head.find(',');
+		std::string_view part = head.substr(0, comma);
+		while (!part.empty() && (std::isspace(static_cast<unsigned char>(part.front())) != 0)) {
+			part.remove_prefix(1);
+		}
+		while (!part.empty() && (std::isspace(static_cast<unsigned char>(part.back())) != 0)) {
+			part.remove_suffix(1);
+		}
+		if (!part.empty()) {
+			aliases.emplace_back(part);
+		}
+		head = comma == std::string_view::npos ? std::string_view {} : head.substr(comma + 1);
+	}
+}
+
+auto asPlainIdentifier(std::string_view expression) -> std::string_view {
+	while (!expression.empty() && (std::isspace(static_cast<unsigned char>(expression.front())) != 0)) {
+		expression.remove_prefix(1);
+	}
+	while (!expression.empty() && (std::isspace(static_cast<unsigned char>(expression.back())) != 0)) {
+		expression.remove_suffix(1);
+	}
+	if (expression.empty() || (std::isalpha(static_cast<unsigned char>(expression.front())) == 0 && expression.front() != '_')) {
+		return {};
+	}
+	return std::ranges::all_of(expression, isIdentChar) ? expression : std::string_view {};
+}
+
+void collectIdentifiers(
+    std::string_view expression, std::vector<std::string>& out, std::vector<std::string>* member_roots = nullptr
+) {
 	size_t i = 0;
 	while (i < expression.size()) {
 		const char c = expression[i];
@@ -49,6 +91,9 @@ void collectIdentifiers(std::string_view expression, std::vector<std::string>& o
 			}
 			if (!isExpressionKeyword(word) && (std::isdigit(static_cast<unsigned char>(word[0])) == 0)) {
 				pushUnique(out, std::string(word));
+				if (member_roots != nullptr && i < expression.size() && (expression[i] == '.' || expression[i] == '[')) {
+					pushUnique(*member_roots, std::string(word));
+				}
 			}
 			// skip the member chain
 			while (i < expression.size() && (isIdentChar(expression[i]) || expression[i] == '.')) {
@@ -183,6 +228,9 @@ auto resolveColorReferences(std::string_view source, const ColorResolver& resolv
 auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> DocumentScan {
 	ZoneScoped;
 	DocumentScan scan;
+	std::vector<std::string> aliases;             // data-for loop variables, locals of the document
+	std::vector<std::string> member_roots;        // identifiers read through . or [
+	std::vector<std::string> array_candidates;    // plain containers of data-for
 
 	// can attributes and {{ }} expressions
 	size_t i = 0;
@@ -198,7 +246,7 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 			if (end == std::string_view::npos) {
 				break;
 			}
-			collectIdentifiers(rml.substr(i + 2, end - i - 2), scan.binds);
+			collectIdentifiers(rml.substr(i + 2, end - i - 2), scan.binds, &member_roots);
 			i = end + 2;
 			continue;
 		}
@@ -257,12 +305,16 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 					collectEventName(value, scan.events);
 				} else if (name == "data-for") {
 					// "item : items" or "item, index : items" binds the container
-					const size_t colon = value.find(':');
-					if (colon != std::string_view::npos) {
-						collectIdentifiers(value.substr(colon + 1), scan.binds);
+					std::string_view container;
+					parseDataFor(value, aliases, container);
+					if (!container.empty()) {
+						collectIdentifiers(container, scan.binds, &member_roots);
+						if (const auto plain = asPlainIdentifier(container); !plain.empty()) {
+							pushUnique(array_candidates, std::string(plain));
+						}
 					}
 				} else if (name.starts_with("data-") && name != "data-model" && !name.starts_with("data-loc-")) {
-					collectIdentifiers(value, scan.binds);
+					collectIdentifiers(value, scan.binds, &member_roots);
 					if (name == "data-checked") {
 						collectIdentifiers(value, scan.bool_binds);
 					}
@@ -274,6 +326,21 @@ auto preprocessDocument(std::string_view rml, const PreprocessContext& ctx) -> D
 		}
 
 		i++;
+	}
+
+	// loop variables are locals of their `data-for`
+	const auto is_alias = [&](const std::string& name) { return std::ranges::find(aliases, name) != aliases.end(); };
+	std::erase_if(scan.binds, is_alias);
+	std::erase_if(scan.bool_binds, is_alias);
+	for (const auto& name : array_candidates) {
+		if (!is_alias(name)) {
+			pushUnique(scan.array_binds, name);
+		}
+	}
+	for (const auto& name : member_roots) {
+		if (!is_alias(name) && std::ranges::find(scan.array_binds, name) == scan.array_binds.end()) {
+			pushUnique(scan.object_binds, name);
+		}
 	}
 
 	// inject style links and the data model

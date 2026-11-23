@@ -1,5 +1,7 @@
 #include "ui_binds_proxy.hpp"
 
+#include "ui_bind_convert.hpp"
+
 #include <RmlUi/Core/Variant.h>
 #include <lua.hpp>
 #include <luabridge3/LuaBridge/LuaBridge.h>
@@ -46,6 +48,55 @@ auto luaRefToVariant(lua_State* l, const luabridge::LuaRef& v) -> Rml::Variant {
 	return {};
 }
 
+auto bindToLuaRef(lua_State* l, ui::UIBinds& binds, std::string_view name) -> luabridge::LuaRef {
+	const ui::BindValue* tree = binds.getValue(name);
+	if (tree == nullptr) {
+		return {l};
+	}
+	if (tree->isScalar()) {
+		return variantToLuaRef(l, tree->value());
+	}
+	pushBindValue(l, *tree);
+	auto ref = luabridge::LuaRef::fromStack(l, -1);
+	lua_pop(l, 1);
+	return ref;
+}
+
+auto assignBind(lua_State* l, ui::UIBinds& binds, const std::string& name, const luabridge::LuaRef& value) -> std::string {
+	const ui::BindValue* current = binds.getValue(name);
+	const bool wants_array = current != nullptr && current->isArray();
+	const bool wants_object = current != nullptr && current->isObject();
+
+	if (!wants_array && !wants_object && !value.isTable()) {
+		binds.set(name, luaRefToVariant(l, value));
+		return {};
+	}
+
+	value.push(l);
+	BindKindHint hint = BindKindHint::any;
+	if (wants_array) {
+		hint = BindKindHint::array;
+	} else if (wants_object) {
+		hint = BindKindHint::object;
+	}
+	auto converted = luaToBindValue(l, -1, hint);
+	lua_pop(l, 1);
+	if (!converted) {
+		return converted.error();
+	}
+	if (wants_array && !converted->isArray()) {
+		return "expects an array (a list used by data-for)";
+	}
+	if (wants_object && !converted->isObject()) {
+		return "expects an object (a table with string keys)";
+	}
+	if (!wants_array && !wants_object) {
+		return "is a plain value in the document, it cannot hold a table (use data-for or {{name.field}} to make it one)";
+	}
+	binds.setValue(name, std::move(*converted));
+	return {};
+}
+
 auto resolveBinds(const toast::Node* node) -> ui::UIBinds* {
 	return node != nullptr ? ui::UIBinds::forNode(node) : nullptr;
 }
@@ -72,7 +123,7 @@ auto uiBindsProxyIndex(UIBindsProxy& proxy, const luabridge::LuaRef& key, lua_St
 	if (binds == nullptr || !binds->has(name)) {
 		return {l};
 	}
-	return variantToLuaRef(l, binds->get(name));
+	return bindToLuaRef(l, *binds, name);
 }
 
 auto uiBindsProxyNewindex(UIBindsProxy& proxy, const luabridge::LuaRef& key, const luabridge::LuaRef& value, lua_State* l)
@@ -98,7 +149,9 @@ auto uiBindsProxyNewindex(UIBindsProxy& proxy, const luabridge::LuaRef& key, con
 		return {l};
 	}
 
-	binds->set(name, luaRefToVariant(l, value));
+	if (const std::string error = assignBind(l, *binds, name, value); !error.empty()) {
+		luaL_error(l, "ui_binds: '%s' %s", name.c_str(), error.c_str());
+	}
 	return {l};
 }
 
@@ -112,7 +165,7 @@ auto uiBindsGet(const toast::Node* node, std::string_view name, lua_State* l) ->
 	if (binds == nullptr || !binds->has(name)) {
 		return {l};
 	}
-	return variantToLuaRef(l, binds->get(name));
+	return bindToLuaRef(l, *binds, name);
 }
 
 auto uiBindsSet(toast::Node* node, std::string_view name, const luabridge::LuaRef& value, lua_State* l) -> bool {
@@ -120,7 +173,10 @@ auto uiBindsSet(toast::Node* node, std::string_view name, const luabridge::LuaRe
 	if (binds == nullptr || !binds->has(name)) {
 		return false;
 	}
-	binds->set(name, luaRefToVariant(l, value));
+	const std::string key(name);
+	if (const std::string error = assignBind(l, *binds, key, value); !error.empty()) {
+		luaL_error(l, "ui_binds: '%s' %s", key.c_str(), error.c_str());
+	}
 	return true;
 }
 
