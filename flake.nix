@@ -103,6 +103,7 @@
 				grpc
 				pkg-config
 				vcpkg
+				nasm
 				dotnet-sdk
 				clang-tools
 				buf
