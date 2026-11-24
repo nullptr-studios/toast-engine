@@ -208,8 +208,7 @@ internal static unsafe class StackWalker {
 		return frames;
 	}
 
-	/// An export ships the game DLL and its PDB next to the exe, which the PDB path baked into the DLL does not point to
-	/// on another machine; a non-null path replaces the default one, so the environment paths are added back
+	/// Exports ship the PDB next to the exe; a non-null path replaces the default, so the environment paths are added back
 	private static string SymbolSearchPath(CrashTarget target) {
 		var parts = new List<string>();
 		var exe = stackalloc char[1024];

@@ -4,6 +4,7 @@
 
 #include "../tga_decode.hpp"
 #include "shaders_compiled_spv.h"
+#include "toast/renderer/passes/game/game_view_texture.hpp"
 
 #include <RmlUi/Core/Core.h>
 #include <RmlUi/Core/FileInterface.h>
@@ -166,7 +167,11 @@ void RenderInterface_VK::RenderGeometry(
 	}
 
 	VkDescriptorImageInfo info_descriptor_image = {};
-	if (p_texture && p_texture->m_p_vk_descriptor_set == nullptr) {
+	if (p_texture && !p_texture->m_view_name.empty()) {
+		if (!BindViewTexture(*p_texture)) {
+			return;
+		}
+	} else if (p_texture && p_texture->m_p_vk_descriptor_set == nullptr) {
 		VkDescriptorSet p_texture_set = nullptr;
 		if (!m_manager_descriptors.Alloc_Descriptor(m_p_device, &m_p_descriptor_set_layout_texture, &p_texture_set)) {
 			Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to allocate an RmlUi texture descriptor set.");
@@ -222,7 +227,8 @@ void RenderInterface_VK::RenderGeometry(
 	VkDescriptorSet p_texture_descriptor_set = nullptr;
 
 	if (p_texture) {
-		p_texture_descriptor_set = p_texture->m_p_vk_descriptor_set;
+		p_texture_descriptor_set =
+		    p_texture->m_view_binding ? p_texture->m_view_binding->m_p_vk_descriptor_set : p_texture->m_p_vk_descriptor_set;
 	}
 
 	VkDescriptorSet p_sets[] = {p_current_descriptor_set, p_texture_descriptor_set};
@@ -328,6 +334,11 @@ void RenderInterface_VK::SetScissorRegion(Rml::Rectanglei region) {
 }
 
 Rml::TextureHandle RenderInterface_VK::LoadTexture(Rml::Vector2i& texture_dimensions, const Rml::String& source) {
+	constexpr std::string_view view_scheme = "view://";
+	if (source.starts_with(view_scheme)) {
+		return LoadViewTexture(texture_dimensions, source.substr(view_scheme.size()));
+	}
+
 	Rml::FileInterface* file_interface = Rml::GetFileInterface();
 	Rml::FileHandle file_handle = file_interface->Open(source);
 	if (!file_handle) {
@@ -368,6 +379,68 @@ Rml::TextureHandle RenderInterface_VK::LoadTexture(Rml::Vector2i& texture_dimens
 	texture_dimensions.y = int(decoded->height);
 
 	return GenerateTexture({pixels, pixel_count * 4}, texture_dimensions);
+}
+
+// toast-engine adaptation: view://<name> samples a renderer::GameView, the handle survives a missing or recreated view
+Rml::TextureHandle RenderInterface_VK::LoadViewTexture(Rml::Vector2i& texture_dimensions, const Rml::String& view_name) {
+	const auto view = renderer::findGameViewTexture(view_name);
+	if (view) {
+		texture_dimensions = {int(view->extent.width), int(view->extent.height)};
+	} else {
+		Rml::Log::Message(Rml::Log::LT_WARNING, "Game view '%s' does not exist yet, it draws once created.", view_name.c_str());
+		texture_dimensions = {1, 1};
+	}
+
+	auto texture = std::make_unique<texture_data_t>();
+	texture->m_view_name = view_name;
+	auto owner = std::shared_ptr<texture_data_t>(texture.release(), [this](texture_data_t* resource) {
+		Destroy_Texture(*resource);
+		delete resource;
+	});
+	texture_data_t* handle = owner.get();
+	m_live_resources.emplace(handle, std::move(owner));
+	return reinterpret_cast<Rml::TextureHandle>(handle);
+}
+
+bool RenderInterface_VK::BindViewTexture(texture_data_t& texture) {
+	auto view = renderer::findGameViewTexture(texture.m_view_name);
+	if (!view) {
+		return false;
+	}
+
+	if (!texture.m_view_binding || texture.m_view_binding->m_keepalive != view->keepalive) {
+		VkDescriptorSet p_set = nullptr;
+		if (!m_manager_descriptors.Alloc_Descriptor(m_p_device, &m_p_descriptor_set_layout_texture, &p_set)) {
+			Rml::Log::Message(Rml::Log::LT_ERROR, "Failed to allocate an RmlUi view texture descriptor set.");
+			return false;
+		}
+
+		VkDescriptorImageInfo info_image = {};
+		info_image.imageView = static_cast<VkImageView>(view->view);
+		info_image.sampler = m_p_sampler_linear;
+		info_image.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		VkWriteDescriptorSet info_write = {};
+		info_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		info_write.dstSet = p_set;
+		info_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		info_write.dstBinding = 2;
+		info_write.pImageInfo = &info_image;
+		info_write.descriptorCount = 1;
+		vkUpdateDescriptorSets(m_p_device, 1, &info_write, 0, nullptr);
+
+		// The old binding stays alive in the command buffers still using it
+		texture.m_view_binding = std::shared_ptr<view_binding_t>(
+		    new view_binding_t {.m_p_vk_descriptor_set = p_set, .m_keepalive = std::move(view->keepalive)},
+		    [this](view_binding_t* binding) {
+			    m_manager_descriptors.Free_Descriptors(m_p_device, &binding->m_p_vk_descriptor_set);
+			    delete binding;
+		    }
+		);
+	}
+
+	m_command_buffer_ring.AddCurrentSlotResource(texture.m_view_binding);
+	return true;
 }
 
 Rml::TextureHandle RenderInterface_VK::GenerateTexture(Rml::Span<const Rml::byte> source_data, Rml::Vector2i source_dimensions) {

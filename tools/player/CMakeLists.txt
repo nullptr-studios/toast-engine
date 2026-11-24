@@ -27,7 +27,7 @@ add_custom_target(player ALL
         -DSRC_DIR=$<TARGET_FILE_DIR:dummy_game>
         -DDST_DIR=${OUTPUT_ROOT}/$<CONFIG>/player
         -P "${CMAKE_SOURCE_DIR}/cmake/link_or_copy_dir.cmake"
-        # The crash handler looks in crash_reporter/ next to toast_engine.dll; recursive since runtimes/ holds native libs
+        # The crash handler looks for crash_reporter/ next to toast_engine.dll
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${OUTPUT_ROOT}/$<CONFIG>/crash_reporter"
         "${OUTPUT_ROOT}/$<CONFIG>/player/crash_reporter"

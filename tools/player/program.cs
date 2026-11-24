@@ -11,7 +11,7 @@ internal class Program {
 		[MarshalAs(UnmanagedType.LPUTF8Str)] string message, IntPtr window);
 
 	public static void Main() {
-		// Read by the mimalloc inside slang-compiler.dll when the engine loads, so it hands freed compile memory back at once
+		// Makes slang's mimalloc return freed compile memory at once
 		if (Environment.GetEnvironmentVariable("MIMALLOC_PURGE_DELAY") is null) Environment.SetEnvironmentVariable("MIMALLOC_PURGE_DELAY", "0");
 		var engine = new ToastEngine();
 		var game = new ApplicationLayer();

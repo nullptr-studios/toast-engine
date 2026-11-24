@@ -409,7 +409,7 @@ Engine::~Engine() noexcept {
 		m->input_system.reset();
 		m->physics_simulator.reset();
 		m->audio_system.reset();
-		// lua_close runs userdata finalizers, and an Asset proxy releases its asset, which must still exist
+		// lua_close finalizers release assets, which must still exist
 		m->lua_state.reset();
 		m->renderer.reset();
 		m->asset_manager.reset();

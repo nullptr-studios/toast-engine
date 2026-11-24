@@ -45,8 +45,7 @@ internal sealed class CrashArgs {
 		return new CrashArgs { Pid = pid.Value, Tid = tid.Value, Pointers = pointers.Value, Message = message.Value, Kind = kind.Value, DumpDir = dumpDir };
 	}
 
-	/// The engine starts this process suspended before any crash and resumes it with ReporterHandoff filled in
-	/// (engine/src/toast/crash_handler.cpp): tid u32, kind i32, pointers u64, message u64, dump directory wchar[260]
+	/// Resumed by the engine with ReporterHandoff filled in (crash_handler.cpp)
 	private static unsafe CrashArgs? ReadHandoff(uint pid, ulong address) {
 		const int size = 24 + 260 * sizeof(char);
 		var process = Native.OpenProcess(Native.ProcessVmRead | Native.ProcessQueryInformation, false, pid);

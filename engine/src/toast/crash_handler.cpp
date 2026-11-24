@@ -45,7 +45,7 @@ SharedState g_shared;
 Kind g_kind = Kind::exception;
 DWORD g_crashed_thread = 0;
 
-/// Read by the reporter started ahead of time, layout mirrored by CrashArgs.ReadHandoff in tools/crash_reporter
+/// Read by the pre-started reporter, mirrors CrashArgs.ReadHandoff
 struct ReporterHandoff {
 	DWORD tid = 0;
 	int32_t kind = 0;
@@ -57,7 +57,7 @@ struct ReporterHandoff {
 static_assert(offsetof(ReporterHandoff, dump_directory) == 24);
 
 ReporterHandoff g_handoff;
-/// Started suspended at install, since a crash can hold the heap lock CreateProcess needs
+/// Started suspended, since a crash can hold the heap lock CreateProcess needs
 PROCESS_INFORMATION g_standby {};
 
 std::array<wchar_t, MAX_PATH> g_reporter_path {};
@@ -116,7 +116,6 @@ auto resolveReporter() noexcept -> bool {
 	}
 
 	std::array<wchar_t, MAX_PATH> candidate {};
-	// Dev layout, the player and exports, then older exports that put it flat next to the engine
 	for (const wchar_t* relative :
 	     {L"\\..\\..\\crash_reporter\\crash_reporter.exe", L"\\crash_reporter\\crash_reporter.exe", L"\\crash_reporter.exe"}) {
 		if (swprintf_s(candidate.data(), candidate.size(), L"%ls%ls", directory.data(), relative) < 0) {
@@ -126,7 +125,7 @@ auto resolveReporter() noexcept -> bool {
 		    !fileExists(g_reporter_path.data())) {
 			continue;
 		}
-		// Old exports copied only the exe and dll, and without its runtimeconfig .NET shows an install dialog instead
+		// Old exports lack the runtimeconfig, so .NET shows an install dialog
 		std::array<wchar_t, MAX_PATH> config {};
 		const size_t stem = wcslen(g_reporter_path.data()) - 4;
 		if (swprintf_s(config.data(), config.size(), L"%.*ls.runtimeconfig.json", static_cast<int>(stem), g_reporter_path.data()) >
@@ -168,7 +167,7 @@ auto WINAPI launchReporter(LPVOID) -> DWORD {
 	return 0;
 }
 
-/// The job kills the waiting reporter with this process when nothing crashed
+/// Kills the waiting reporter with this process when nothing crashed
 void startStandbyReporter() noexcept {
 	g_handoff.pointers = reinterpret_cast<std::uintptr_t>(&g_shared.pointers);
 	g_handoff.message = reinterpret_cast<std::uintptr_t>(g_shared.message.data());
@@ -201,7 +200,6 @@ void startStandbyReporter() noexcept {
 		return;
 	}
 	if (!AssignProcessToJobObject(job, process.hProcess)) {
-		// Without the job it would outlive this process, so report the old way instead
 		TerminateProcess(process.hProcess, 0);
 		CloseHandle(process.hThread);
 		CloseHandle(process.hProcess);
@@ -279,7 +277,7 @@ void report(Kind kind, const EXCEPTION_POINTERS* pointers, const char* message) 
 
 	flushLogs(pointers, message);
 
-	// Resuming allocates nothing, so this works while the crash holds the heap lock
+	// Resuming allocates nothing, so it works under the heap lock
 	if (g_standby.hProcess != nullptr) {
 		g_handoff.tid = g_crashed_thread;
 		g_handoff.kind = static_cast<int32_t>(g_kind);
@@ -287,7 +285,7 @@ void report(Kind kind, const EXCEPTION_POINTERS* pointers, const char* message) 
 		ResumeThread(g_standby.hThread);
 		WaitForSingleObject(g_standby.hProcess, INFINITE);
 	} else if (HANDLE thread = CreateThread(nullptr, 256 * 1024, launchReporter, nullptr, 0, nullptr)) {
-		// Fresh thread since after a stack overflow this one has too little stack to start a process
+		// Fresh thread, a stack overflow leaves this one too little stack
 		WaitForSingleObject(thread, INFINITE);
 		CloseHandle(thread);
 	}

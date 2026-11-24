@@ -963,6 +963,12 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	{
 		const GpuScope offscreen_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Off-screen");
 		std::lock_guard lock(m_pass_mutex);
+		// Game views first since UIPass::recordPre executes the UI that samples them
+		for (auto& pass : m_render_passes) {
+			if (pass->isEnabled() && pass->stage() == RenderStage::view) {
+				pass->record(*frame.command_buffer, m_current_frame, image_index);
+			}
+		}
 		for (auto& pass : m_render_passes) {
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
