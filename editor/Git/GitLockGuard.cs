@@ -19,6 +19,13 @@ public readonly record struct OpenLockState(OpenLockKind Kind, string? Owner);
 public static class GitLockGuard {
 	private static GitService? Usable => GitService.Current is { IsAvailable: true, HasLfs: true } git ? git : null;
 
+	private static readonly TimeSpan s_serverWait = TimeSpan.FromSeconds(8);
+
+	// false when the lock server did not answer in time; the git call keeps running in the background
+	private static async Task<bool> WithinAsync(Task work) {
+		return await Task.WhenAny(work, Task.Delay(s_serverWait)) == work;
+	}
+
 	public static async Task LockOnOpenAsync(string realPath) {
 		await AcquireOnOpenAsync(realPath);
 	}
@@ -28,8 +35,9 @@ public static class GitLockGuard {
 
 		var held = git.GetLock(realPath);
 		if (held is null) {
-			var result = await git.LockAsync(realPath);
-			if (!result.Ok) Log.Warn($"Git: could not lock {Path.GetFileName(realPath)} on open ({result.Message})");
+			var lockTask = git.LockAsync(realPath);
+			if (!await WithinAsync(lockTask)) Log.Warn($"Git: lock server too slow, opened {Path.GetFileName(realPath)} without a lock");
+			else if (!(await lockTask).Ok) Log.Warn($"Git: could not lock {Path.GetFileName(realPath)} on open ({(await lockTask).Message})");
 			held = git.GetLock(realPath);
 		}
 
@@ -46,7 +54,14 @@ public static class GitLockGuard {
 		if (held is null) {
 			if (!git.IsLockable(realPath)) return LockedSaveChoice.Proceed;
 
-			var result = await git.LockAsync(realPath);
+			var lockTask = git.LockAsync(realPath);
+			// A hung server keeps Save disabled until the command ends, so never wait long on it
+			if (!await WithinAsync(lockTask)) {
+				Log.Warn($"Git: lock server too slow, saving {Path.GetFileName(realPath)} without a lock");
+				return LockedSaveChoice.Proceed;
+			}
+
+			var result = await lockTask;
 			if (result.Ok) return LockedSaveChoice.Proceed;
 
 			// The cached locks may be old
@@ -60,7 +75,7 @@ public static class GitLockGuard {
 			if (held.OwnedByMe) return LockedSaveChoice.Proceed;
 		} else {
 			// It may have been released since the last poll
-			await git.RefreshLocksAsync();
+			await WithinAsync(git.RefreshLocksAsync()); // on timeout the cached lock stands
 			held = git.GetLock(realPath);
 			if (held is null) return await CheckSaveAsync(realPath);
 			if (held.OwnedByMe) return LockedSaveChoice.Proceed;

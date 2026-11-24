@@ -5,6 +5,7 @@
 #include "toast/renderer/core/vulkan_core.hpp"
 
 #include "toast/renderer/shaders/shader_compiler.hpp"
+#include "toast/renderer/upscale/dlss_upscaler.hpp"
 
 #include <cctype>
 #include <cstdlib>
@@ -271,6 +272,12 @@ auto selectQueueFamilies(const vk::PhysicalDevice& device) -> QueueFamilySelecti
 	return selection;
 }
 
+void appendExtension(std::vector<const char*>& extensions, const char* name) {
+	if (std::ranges::none_of(extensions, [name](const char* enabled) { return std::string_view(enabled) == name; })) {
+		extensions.push_back(name);
+	}
+}
+
 auto joinRequiredExtensions(std::span<const char* const> extensions) -> std::string {
 	std::string out;
 	for (size_t i = 0; i < extensions.size(); ++i) {
@@ -455,6 +462,21 @@ void VulkanCore::createInstance(std::span<const char* const> required_instance_e
 
 	if (checkInstanceExtensionSupport(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME)) {
 		extensions.push_back(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
+	}
+
+	// Requested on every GPU since vkCreateInstance runs before the device is picked; the device step drops DLSS off NVIDIA
+	m_dlss_reason.clear();
+	const auto dlss_extensions = DlssUpscaler::instanceExtensions();
+	for (const char* name : dlss_extensions) {
+		if (!checkInstanceExtensionSupport(name)) {
+			m_dlss_reason = std::format("the Vulkan loader lacks instance extension {}", name);
+			break;
+		}
+	}
+	if (m_dlss_reason.empty()) {
+		for (const char* name : dlss_extensions) {
+			appendExtension(extensions, name);
+		}
 	}
 
 	vk::InstanceCreateInfo instance_ci({}, &app_info, layers, extensions);
@@ -797,6 +819,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    supported_vulkan12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
 	    "Vulkan 1.2 shaderSampledImageArrayNonUniformIndexing"
 	);
+	// Some compiled shaders declare StorageBufferArrayNonUniformIndexing, undefined behaviour without the feature
+	require_feature(
+	    supported_vulkan12.shaderStorageBufferArrayNonUniformIndexing == VK_TRUE,
+	    "Vulkan 1.2 shaderStorageBufferArrayNonUniformIndexing"
+	);
 	// eDepthAttachmentOptimal and eDepthReadOnlyOptimal are only legal with this enabled
 	require_feature(supported_vulkan12.separateDepthStencilLayouts == VK_TRUE, "Vulkan 1.2 separateDepthStencilLayouts");
 	// AsyncCompute tickets are timeline values
@@ -953,6 +980,30 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	}
 
+	if (m_dlss_reason.empty()) {
+		constexpr uint32_t k_vendor_nvidia = 0x10DE;
+		const auto props = m_physical_device.getProperties();
+		if (props.vendorID != k_vendor_nvidia) {
+			m_dlss_reason = std::format("{} is not an NVIDIA GPU", props.deviceName.data());
+		} else {
+			const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+			const auto dlss_extensions = DlssUpscaler::deviceExtensions(*m_instance, *m_physical_device);
+			const auto missing = std::ranges::find_if(dlss_extensions, [&available](std::string_view name) {
+				return std::ranges::none_of(available, [name](const vk::ExtensionProperties& ext) {
+					return std::string_view(ext.extensionName.data()) == name;
+				});
+			});
+			if (missing != dlss_extensions.end()) {
+				m_dlss_reason = std::format("the device lacks extension {}", *missing);
+			} else {
+				for (const char* name : dlss_extensions) {
+					appendExtension(device_extensions, name);
+				}
+			}
+		}
+	}
+	m_dlss_extensions_enabled = m_dlss_reason.empty();
+
 	vk::DeviceCreateInfo device_ci({}, queue_create_infos, {}, device_extensions, &enabled_features);
 
 	vk::PhysicalDeviceMeshShaderFeaturesEXT mesh_shader_features {};
@@ -984,6 +1035,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	vulkan12_features.bufferDeviceAddress = VK_TRUE;
 	vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vulkan12_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
 	vulkan12_features.separateDepthStencilLayouts = VK_TRUE;
 	vulkan12_features.timelineSemaphore = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;

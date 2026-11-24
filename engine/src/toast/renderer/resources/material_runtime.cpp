@@ -1,5 +1,7 @@
 #include "toast/renderer/resources/material_runtime.hpp"
 
+#include "toast/renderer/vulkan_renderer.hpp"
+
 namespace renderer {
 
 using assets::DataType;
@@ -426,8 +428,9 @@ auto MaterialRuntime::samplerFor(const DataValue* params, std::string_view debug
 		anisotropy = (*params)["anisotropy"].value<bool>().value_or(true);
 	}
 
-	const std::string state =
-	    repeat_u + "|" + repeat_v + "|" + min_filter + "|" + mag_filter + "|" + mipmap_mode + "|" + (anisotropy ? "1" : "0");
+	const float mip_bias = VulkanRenderer::instance->materialMipBias();
+	const std::string state = repeat_u + "|" + repeat_v + "|" + min_filter + "|" + mag_filter + "|" + mipmap_mode + "|" +
+	                          (anisotropy ? "1" : "0") + "|" + std::to_string(mip_bias);
 	const uint64_t key = ShaderCache::fnv1a(state.data(), state.size());
 
 	if (const auto it = m_samplers.find(key); it != m_samplers.end()) {
@@ -446,7 +449,7 @@ auto MaterialRuntime::samplerFor(const DataValue* params, std::string_view debug
 	info.compareEnable = vk::False;
 	info.compareOp = vk::CompareOp::eAlways;
 	info.unnormalizedCoordinates = vk::False;
-	info.mipLodBias = 0.0f;
+	info.mipLodBias = mip_bias;
 	info.minLod = 0.0f;
 	info.maxLod = VK_LOD_CLAMP_NONE;
 

@@ -9,11 +9,6 @@ namespace {
 constexpr int32_t k_dim = static_cast<int32_t>(k_brick_dim);
 
 [[nodiscard]]
-auto brickOf(glm::ivec3 voxel) noexcept -> glm::ivec3 {
-	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
-}
-
-[[nodiscard]]
 auto centreOf(glm::ivec3 voxel) noexcept -> glm::vec3 {
 	return glm::vec3(voxel) + 0.5f;
 }
@@ -220,33 +215,41 @@ auto boundsUnion(const EditBounds& a, const EditBounds& b) noexcept -> EditBound
 }
 
 auto occupiedBounds(const Volume& volume) -> std::optional<EditBounds> {
+	const auto solid_occupancy = [&](glm::ivec3 brick) -> const BrickOccupancy* {
+		return volume.brickSolidCount(brick) != 0 ? volume.occupancyPointer(brick) : nullptr;
+	};
+
+	// Brick-level bounds first: the voxel extreme on each axis can only come from the brick plane at that extreme
+	glm::ivec3 brick_min {std::numeric_limits<int32_t>::max()};
+	glm::ivec3 brick_max {std::numeric_limits<int32_t>::min()};
+	volume.forEachSolidBrick([&](glm::ivec3 brick, uint32_t) {
+		brick_min = glm::min(brick_min, brick);
+		brick_max = glm::max(brick_max, brick);
+	});
+	if (glm::any(glm::greaterThan(brick_min, brick_max))) {
+		return std::nullopt;
+	}
+
+	// Refine on the six faces of the brick box only, interior bricks cannot move the bounds
 	EditBounds out {glm::ivec3(std::numeric_limits<int32_t>::max()), glm::ivec3(std::numeric_limits<int32_t>::min())};
-	bool any = false;
-	for (uint32_t index = 0; index < volume.brickCount(); ++index) {
-		const glm::ivec3 brick = volume.brickAtIndex(index);
-		const BrickOccupancy* occupancy = volume.occupancyPointer(brick);
-		if (occupancy == nullptr || isEmpty(*occupancy)) {
-			continue;
-		}
-		const glm::ivec3 origin = brick * k_dim;
-		if (isFull(*occupancy)) {
-			out.min = glm::min(out.min, origin);
-			out.max = glm::max(out.max, origin + (k_dim - 1));
-			any = true;
-			continue;
-		}
-		for (uint32_t i = 0; i < k_brick_voxel_count; ++i) {
-			if (!isSolid(*occupancy, i)) {
-				continue;
+	for (int32_t z = brick_min.z; z <= brick_max.z; ++z) {
+		for (int32_t y = brick_min.y; y <= brick_max.y; ++y) {
+			const bool yz_face = z == brick_min.z || z == brick_max.z || y == brick_min.y || y == brick_max.y;
+			const int32_t x_step = yz_face ? 1 : std::max(1, brick_max.x - brick_min.x);
+			for (int32_t x = brick_min.x; x <= brick_max.x; x += x_step) {
+				const glm::ivec3 brick {x, y, z};
+				const BrickOccupancy* occupancy = solid_occupancy(brick);
+				if (occupancy == nullptr) {
+					continue;
+				}
+				const BrickExtent extent = occupiedExtent(*occupancy);
+				const glm::ivec3 origin = brick * k_dim;
+				out.min = glm::min(out.min, origin + glm::ivec3(extent.min.x, extent.min.y, extent.min.z));
+				out.max = glm::max(out.max, origin + glm::ivec3(extent.max.x, extent.max.y, extent.max.z));
 			}
-			const BrickCoord local = localFromIndex(i);
-			const glm::ivec3 voxel = origin + glm::ivec3(local.x, local.y, local.z);
-			out.min = glm::min(out.min, voxel);
-			out.max = glm::max(out.max, voxel);
-			any = true;
 		}
 	}
-	return any ? std::optional {out} : std::nullopt;
+	return out;
 }
 
 auto fillBox(Volume& volume, glm::ivec3 a, glm::ivec3 b, const WriteBrush& brush) -> EditResult {
@@ -1135,21 +1138,17 @@ auto raycast(const Volume& volume, glm::vec3 origin, glm::vec3 direction, float 
 
 auto idHistogram(const Volume& volume) -> std::array<uint32_t, k_palette_size> {
 	std::array<uint32_t, k_palette_size> counts {};
-	for (uint32_t index = 0; index < volume.brickCount(); ++index) {
-		const glm::ivec3 brick = volume.brickAtIndex(index);
+	volume.forEachSolidBrick([&](glm::ivec3 brick, uint32_t) {
 		const BrickEntry entry = volume.entryAt(brick);
-		if (entry.tag() == BrickTag::empty) {
-			continue;
-		}
 		if (entry.tag() == BrickTag::uniform) {
 			counts[entry.payload() & 0xFFu] += k_brick_voxel_count;
-			continue;
+			return;
 		}
 		const auto material = volume.pool()->material(entry.payload());
 		for (uint32_t i = 0; i < k_brick_voxel_count; ++i) {
 			++counts[material[i]];
 		}
-	}
+	});
 	counts[k_empty_palette_index] = 0;
 	return counts;
 }

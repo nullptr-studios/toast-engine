@@ -158,7 +158,7 @@ GiClipmapPass::GiClipmapPass(const VulkanCore& core, vk::Format scene_format, vk
 	for (uint32_t i = 0; i < VulkanRenderer::k_frames_in_flight; ++i) {
 		vk::BufferCreateInfo buffer_ci {};
 		buffer_ci.size = sizeof(FrameData);
-		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+		buffer_ci.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferSrc;
 		vma::AllocationCreateInfo alloc_ci {};
 		alloc_ci.usage = vma::MemoryUsage::eAuto;
 		alloc_ci.flags = vma::AllocationCreateFlagBits::eMapped | vma::AllocationCreateFlagBits::eHostAccessSequentialWrite;

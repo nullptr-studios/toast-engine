@@ -251,7 +251,7 @@ void voxelDebugProbeText(const RenderFrame& frame, const std::optional<ProbeResu
 	if (result->hit.has_value()) {
 		const Probe& probe = *result->hit;
 		const glm::ivec3 voxel = probe.hit.voxel;
-		const glm::ivec3 brick = voxel / static_cast<int32_t>(voxel::k_brick_dim);
+		const glm::ivec3 brick = voxel::brickOf(voxel);
 		const glm::ivec3 local = voxel - brick * static_cast<int32_t>(voxel::k_brick_dim);
 		const glm::ivec3 coarse = brick / static_cast<int32_t>(voxel::gpu::k_coarse_bricks);
 		const std::string_view name = voxelDebugNodeName(frame, probe.proxy.record_index);
@@ -402,7 +402,7 @@ auto probe(const RenderFrame& frame, glm::vec2 cursor) -> std::optional<ProbeRes
 
 		const voxel::gpu::VolumeRecord& record = packed.scene.records[proxy.record_index];
 		const glm::uvec3 dims(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
-		const glm::uvec3 brick(hit.voxel / static_cast<int32_t>(voxel::k_brick_dim));
+		const glm::uvec3 brick(voxel::brickOf(hit.voxel));
 
 		Probe out {.proxy = proxy, .hit = hit};
 		out.world_position = near_point + direction * hit.t;

@@ -2,6 +2,11 @@
   "name": "engine",
   "version-string": "1.0.0",
   "builtin-baseline": "e06564091c10e0b042900800c9fd48aad7f00643",
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "./cmake/vcpkg-ports"
+    ]
+  },
   "dependencies": [
     {
       "name": "asio",
@@ -140,6 +145,10 @@
         }
       ],
       "version>=": "1.0.4"
+    },
+    {
+      "name": "nvidia-dlss",
+      "platform": "windows & x64"
     }
   ],
   "overrides": [

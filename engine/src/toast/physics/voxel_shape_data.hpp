@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <toast/voxel/connectivity.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/palette.hpp>
 #include <toast/voxel/runtime_pool.hpp>
@@ -39,6 +40,8 @@ struct VoxelShapeData {
 	std::optional<FragmentPush> pending_push;
 	std::vector<DetachedComponent> detached_components;
 	std::unique_ptr<voxel::Volume> owned_volume;
+	/// The last connectivity analysis so the next one skips the bricks a carve did not touch
+	std::unique_ptr<voxel::ConnectivityCache> connectivity_cache;
 	BodyID fragment_origin;
 	uint64_t fragment_sequence = 0;
 	float fragment_sleep_seconds = 0.0f;

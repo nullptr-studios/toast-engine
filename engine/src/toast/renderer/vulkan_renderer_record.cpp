@@ -523,6 +523,10 @@ auto VulkanRenderer::recordVoxelScopes(
 	    m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
+		// SSAO binds it every frame, so it must leave the undefined layout even when no voxel scope records
+		if (m_voxel_denoised_indirect.view.has_value()) {
+			sync::transition(*frame.command_buffer, m_voxel_denoised_indirect.state, sync::Usage::fragment_sampled);
+		}
 		return false;
 	}
 	// Decided once since voxel lighting and the post pass must agree on which pixels lost their environment specular
@@ -959,6 +963,12 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	{
 		const GpuScope offscreen_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Off-screen");
 		std::lock_guard lock(m_pass_mutex);
+		// Game views first since UIPass::recordPre executes the UI that samples them
+		for (auto& pass : m_render_passes) {
+			if (pass->isEnabled() && pass->stage() == RenderStage::view) {
+				pass->record(*frame.command_buffer, m_current_frame, image_index);
+			}
+		}
 		for (auto& pass : m_render_passes) {
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
@@ -1188,6 +1198,9 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			to_nearest.image(m_glass_mask.state, sync::Usage::color_attachment);
 			to_nearest.image(m_glass_nearest_normal.state, sync::Usage::color_attachment);
 			to_nearest.image(m_glass_nearest_motion.state, sync::Usage::color_attachment);
+			// The nearest pipeline binds the storage set that holds the backdrop just copied
+			to_nearest.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
+			to_nearest.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
 			to_nearest.flush(cmd);
 
 			vk::RenderingAttachmentInfo nearest_mask {};
@@ -1384,7 +1397,24 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	const vk::Image image = m_output_target->getColorImage(image_index);
 	sync::Usage& output_usage = m_output_image_usage.at(image_index);
-	barriers.image(image, colorSubresourceRange(), output_usage, sync::Usage::color_attachment);
+	if (output_usage == sync::Usage::none) {
+		// A fresh image has no tracked stage, but its transition must still wait for the acquire, which waits at color output
+		const vk::ImageMemoryBarrier2 first_use(
+		    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		    vk::AccessFlagBits2::eNone,
+		    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		    vk::AccessFlagBits2::eColorAttachmentWrite,
+		    vk::ImageLayout::eUndefined,
+		    vk::ImageLayout::eColorAttachmentOptimal,
+		    VK_QUEUE_FAMILY_IGNORED,
+		    VK_QUEUE_FAMILY_IGNORED,
+		    image,
+		    colorSubresourceRange()
+		);
+		frame.command_buffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, first_use));
+	} else {
+		barriers.image(image, colorSubresourceRange(), output_usage, sync::Usage::color_attachment);
+	}
 	output_usage = sync::Usage::color_attachment;
 	barriers.flush(*frame.command_buffer);
 

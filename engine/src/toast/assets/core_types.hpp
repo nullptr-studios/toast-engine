@@ -56,6 +56,9 @@ public:
 	[[nodiscard]]
 	virtual auto type() const -> std::string_view = 0;
 
+	/// Set while the AssetManager frees assets that still have handles, so those handles leave the freed assets alone
+	static void setFreeingAll(bool freeing) noexcept;
+
 protected:
 	void addRef() noexcept;
 	void release() noexcept;
@@ -63,6 +66,9 @@ protected:
 	friend class HandleBase;
 
 private:
+	[[nodiscard]]
+	static auto freeingAll() noexcept -> bool;
+
 	std::atomic<uint32_t> m_ref_count {0};    ///< starts at 0; HandleBase increments on copy and decrements on destroy
 };
 

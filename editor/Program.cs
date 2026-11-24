@@ -26,6 +26,8 @@ internal sealed class Program {
 		}
 
 		Task.Run(ShellIntegration.Apply);
+		// Read by the mimalloc inside slang-compiler.dll when the engine loads, so it hands freed compile memory back at once
+		if (Environment.GetEnvironmentVariable("MIMALLOC_PURGE_DELAY") is null) Environment.SetEnvironmentVariable("MIMALLOC_PURGE_DELAY", "0");
 
 		return BuildAvaloniaApp()
 			.StartWithClassicDesktopLifetime(args);

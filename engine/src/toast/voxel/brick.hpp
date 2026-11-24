@@ -131,6 +131,19 @@ constexpr auto popCount(const BrickOccupancy& brick) noexcept -> uint32_t {
 	return total;
 }
 
+/// Calls visit(local_index, x, y, z) for every set bit in ascending index order
+template<typename Visit>
+constexpr void forEachSetVoxel(const BrickOccupancy& mask, Visit&& visit) {
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		uint64_t word = mask[z];
+		while (word != 0ull) {
+			const auto bit = static_cast<uint32_t>(std::countr_zero(word));
+			word &= word - 1ull;
+			visit((z * k_brick_dim * k_brick_dim) + bit, bit & 7u, bit >> 3u, z);
+		}
+	}
+}
+
 struct BrickExtent {
 	BrickCoord min;
 	BrickCoord max;
@@ -290,16 +303,18 @@ constexpr auto dilate(const BrickOccupancy& brick) noexcept -> BrickOccupancy {
 	       neighboursNegZ(brick) | neighboursPosZ(brick);
 }
 
+/// Packs the x == 0 column bits of a slice (bit y * 8) into the low byte with bit y, one multiply instead of 8 tests
+[[nodiscard]]
+constexpr auto gatherColumn(uint64_t slice) noexcept -> uint64_t {
+	return ((slice & k_column_x_min) * 0x0102040810204080ull) >> 56;
+}
+
 /// @brief x == 0 plane with bit z * 8 + y
 [[nodiscard]]
 constexpr auto faceNegX(const BrickOccupancy& brick) noexcept -> uint64_t {
 	uint64_t out = 0;
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
-		for (uint32_t y = 0; y < k_brick_dim; ++y) {
-			if (((brick[z] >> sliceBit(0, y)) & 1ull) != 0ull) {
-				out |= 1ull << ((z * k_brick_dim) + y);
-			}
-		}
+		out |= gatherColumn(brick[z]) << (z * k_brick_dim);
 	}
 	return out;
 }
@@ -309,14 +324,12 @@ constexpr auto faceNegX(const BrickOccupancy& brick) noexcept -> uint64_t {
 constexpr auto facePosX(const BrickOccupancy& brick) noexcept -> uint64_t {
 	uint64_t out = 0;
 	for (uint32_t z = 0; z < k_brick_dim; ++z) {
-		for (uint32_t y = 0; y < k_brick_dim; ++y) {
-			if (((brick[z] >> sliceBit(k_brick_dim - 1, y)) & 1ull) != 0ull) {
-				out |= 1ull << ((z * k_brick_dim) + y);
-			}
-		}
+		out |= gatherColumn(brick[z] >> (k_brick_dim - 1)) << (z * k_brick_dim);
 	}
 	return out;
 }
+
+static_assert(gatherColumn(0x0100000000000001ull) == 0x81ull && gatherColumn(0x8080808080808080ull >> 7) == 0xFFull);
 
 /// @brief y == 0 plane with bit z * 8 + x
 [[nodiscard]]

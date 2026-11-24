@@ -1214,6 +1214,17 @@ void PerfWindow::drawQualityTab() {
 		const vk::Extent2D render = renderer->renderExtent();
 		const vk::Extent2D output = renderer->getOutputTarget().getExtent();
 		ImGui::TextDisabled("%ux%u of %ux%u", render.width, render.height, output.width, output.height);
+
+		const std::string dlss_reason = renderer->dlssFailureReason();
+		if (renderer->dlssActive()) {
+			ImGui::TextDisabled("AA: DLSS");
+		} else if (!renderer->taaEnabled()) {
+			ImGui::TextDisabled("AA: off");
+		} else if (!dlss_reason.empty()) {
+			ImGui::TextDisabled("AA: TAA (DLSS unavailable: %s)", dlss_reason.c_str());
+		} else {
+			ImGui::TextDisabled("AA: TAA");
+		}
 	}
 
 	ImGui::SeparatorText(custom ? "Preset Custom" : "Set by the preset, editing one switches to Custom");
@@ -1245,6 +1256,7 @@ void PerfWindow::drawQualityTab() {
 	    "##perf_quality_always",
 	    {"renderer.quality.bloom",
 			 "renderer.quality.taa",
+			 "renderer.quality.antialiasing",
 			 "renderer.quality.taa_history",
 			 "renderer.quality.fxaa",
 			 "renderer.quality.lens_flare",

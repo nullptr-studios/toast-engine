@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <format>
+#include <toast/renderer/settings/post_process_profile.hpp>
 #include <vector>
 
 namespace assets {
@@ -86,6 +87,9 @@ void AssetRegistry::init() {
 	s_schema_toml["destruction_material"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<DestructionMaterial>(t, std::move(s));
 	};
+	s_schema_toml["post_process_profile"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<PostProcessProfile>(t, std::move(s));
+	};
 
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";
@@ -121,6 +125,7 @@ void AssetRegistry::init() {
 	s_lua_names["detail_texture"] = "DetailTexture";
 	s_lua_names["animation"] = "Animation";
 	s_lua_names["physics_material"] = "PhysicsMaterial";
+	s_lua_names["post_process_profile"] = "PostProcessProfile";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {

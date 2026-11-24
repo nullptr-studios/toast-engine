@@ -571,6 +571,18 @@ void registerQuality(VulkanRenderer& renderer) {
 	)
 	    .onChange([&renderer](bool enabled) { renderer.setTaaEnabled(enabled); });
 
+	toast::settings::declareInt(
+	    "renderer.quality.antialiasing",
+	    1,
+	    {
+	      .label = "Anti-aliasing",
+	      .category = "Quality",
+	      .description = "DLSS on NVIDIA RTX GPUs, TAA everywhere else. Needs TAA on.",
+	      .options = {"TAA", "DLSS"}
+	}
+	)
+	    .onChange([&renderer](int64_t mode) { renderer.setDlssRequested(mode == 1); });
+
 	toast::settings::declareFloat(
 	    "renderer.quality.taa_history",
 	    0.9,
