@@ -11,5 +11,7 @@ var brick_8hpp =
     [ "voxel::facePosX", "brick_8hpp.html#aac4a718af432290ccd0ee2c0ce6c108b", null ],
     [ "voxel::facePosY", "brick_8hpp.html#ad7b2b5e6557071d5b2531c151c1ef64f", null ],
     [ "voxel::facePosZ", "brick_8hpp.html#ac5f3ff69929db464ded46744f7e42aa1", null ],
+    [ "voxel::forEachSetVoxel", "brick_8hpp.html#a6f7d4feb0174ff8a933e729a0c58826c", null ],
+    [ "voxel::gatherColumn", "brick_8hpp.html#aa316401add795dd077a56c477d61fc4b", null ],
     [ "voxel::occupiedExtent", "brick_8hpp.html#aa9c3417ae90efd9935607405470d7d27", null ]
 ];

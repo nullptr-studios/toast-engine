@@ -1,0 +1,36 @@
+<map id="engine/src/toast/renderer/upscale/dlss_upscaler.hpp" name="engine/src/toast/renderer/upscale/dlss_upscaler.hpp">
+<area shape="rect" id="Node000001" title=" " alt="" coords="505,5,700,50"/>
+<area shape="rect" id="Node000002" href="$vulkan__common_8hpp_source.html" title=" " alt="" coords="464,98,624,143"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="591,49,568,87,564,83,587,52"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="465,283,527,311"/>
+<area shape="poly" id="edge19_Node000001_Node000007" title=" " alt="" coords="503,42,373,65,225,96,155,116,95,139,47,164,17,192,8,214,10,223,16,233,38,244,79,255,200,271,451,291,448,296,199,277,78,260,36,249,13,237,5,225,3,213,12,189,44,160,93,134,154,111,223,91,372,59,507,40"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="27,199,130,227"/>
+<area shape="poly" id="edge15_Node000001_Node000009" title=" " alt="" coords="542,53,131,196,129,191,540,48"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="902,199,965,227"/>
+<area shape="poly" id="edge16_Node000001_Node000010" title=" " alt="" coords="614,48,644,96,664,120,688,140,714,155,738,165,781,172,827,176,883,188,893,193,887,193,882,193,826,181,780,177,736,170,712,160,685,145,660,124,639,99,612,53"/>
+<area shape="rect" id="Node000014" title=" " alt="" coords="699,106,757,134"/>
+<area shape="poly" id="edge17_Node000001_Node000014" title=" " alt="" coords="633,48,700,97,695,97,632,53"/>
+<area shape="rect" id="Node000015" title=" " alt="" coords="781,106,877,134"/>
+<area shape="poly" id="edge18_Node000001_Node000015" title=" " alt="" coords="657,48,785,100,780,101,657,53"/>
+<area shape="rect" id="Node000003" href="$gpu__sync_8hpp.html" title=" " alt="" coords="681,191,826,235"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="595,141,692,184,687,184,594,146"/>
+<area shape="poly" id="edge11_Node000002_Node000007" title=" " alt="" coords="578,141,602,162,620,190,627,214,620,237,608,248,589,260,543,281,541,276,586,255,604,244,615,234,622,213,615,192,598,166,576,146"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="870,283,1037,311"/>
+<area shape="poly" id="edge14_Node000002_Node000008" title=" " alt="" coords="625,137,840,188,931,273,926,272,837,193,624,143"/>
+<area shape="poly" id="edge8_Node000002_Node000009" title=" " alt="" coords="461,133,314,158,143,193,131,196,129,192,142,188,313,153,466,131"/>
+<area shape="poly" id="edge9_Node000002_Node000010" title=" " alt="" coords="625,136,643,140,764,160,817,170,883,188,893,194,888,193,882,193,816,176,763,166,642,145,625,142"/>
+<area shape="rect" id="Node000011" title=" " alt="" coords="155,199,229,227"/>
+<area shape="poly" id="edge10_Node000002_Node000011" title=" " alt="" coords="461,137,358,161,242,193,235,196,233,191,241,188,356,156,466,135"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="253,191,459,235"/>
+<area shape="poly" id="edge12_Node000002_Node000012" title=" " alt="" coords="501,142,415,186,413,181,496,144"/>
+<area shape="rect" id="Node000013" title=" " alt="" coords="482,199,606,227"/>
+<area shape="poly" id="edge13_Node000002_Node000013" title=" " alt="" coords="546,141,546,185,542,182,542,145"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="781,283,846,311"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="770,233,797,272,792,270,768,238"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="551,283,603,311"/>
+<area shape="poly" id="edge4_Node000003_Node000005" title=" " alt="" coords="709,235,619,280,617,275,704,237"/>
+<area shape="rect" id="Node000006" href="$export_8hpp.html" title=" " alt="" coords="628,283,756,311"/>
+<area shape="poly" id="edge5_Node000003_Node000006" title=" " alt="" coords="740,235,712,273,710,268,735,237"/>
+<area shape="poly" id="edge6_Node000003_Node000007" title=" " alt="" coords="688,236,542,284,541,279,682,236"/>
+<area shape="poly" id="edge7_Node000003_Node000008" title=" " alt="" coords="807,233,910,277,905,277,806,239"/>
+</map>

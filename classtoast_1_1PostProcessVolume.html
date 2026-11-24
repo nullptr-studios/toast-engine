@@ -162,7 +162,17 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:ab8b3fe0500373f3d18ee9a2087cb2d4f" id="r_ab8b3fe0500373f3d18ee9a2087cb2d4f"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ab8b3fe0500373f3d18ee9a2087cb2d4f">extents</a> () const noexcept -&gt; const glm::vec3 &amp;</td></tr>
 <tr class="memitem:a3251ca77c5fb6631f17773b68f4ce305" id="r_a3251ca77c5fb6631f17773b68f4ce305"><td class="memItemLeft"><a id="a3251ca77c5fb6631f17773b68f4ce305" name="a3251ca77c5fb6631f17773b68f4ce305"></a>
 auto&#160;</td><td class="memItemRight"><b>isEnabled</b> () const noexcept -&gt; bool</td></tr>
-<tr class="memitem:a36f42b3465c8847222b8da62bc3d516c" id="r_a36f42b3465c8847222b8da62bc3d516c"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a36f42b3465c8847222b8da62bc3d516c">settings</a> () const -&gt; const <a class="el" href="structrenderer_1_1PostProcessSettings.html">renderer::PostProcessSettings</a> &amp;</td></tr>
+<tr class="memitem:a274f4e1a069e77d620ad4d1274a8e52d" id="r_a274f4e1a069e77d620ad4d1274a8e52d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a274f4e1a069e77d620ad4d1274a8e52d">params</a> () const -&gt; const <a class="el" href="classrenderer_1_1PostProcessParams.html">renderer::PostProcessParams</a> &amp;</td></tr>
+<tr class="memitem:aa270368261be7a03d5d04cacd86b128d" id="r_aa270368261be7a03d5d04cacd86b128d"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aa270368261be7a03d5d04cacd86b128d">setParam</a> (std::string_view name, float value) -&gt; bool</td></tr>
+<tr class="memitem:a32ea52db88f90452edf8e937860fa719" id="r_a32ea52db88f90452edf8e937860fa719"><td class="memItemLeft"><a id="a32ea52db88f90452edf8e937860fa719" name="a32ea52db88f90452edf8e937860fa719"></a>
+auto&#160;</td><td class="memItemRight"><b>setParamColor</b> (std::string_view name, glm::vec3 value) -&gt; bool</td></tr>
+<tr class="memitem:ad75693912fa0a11eb3f04e46e3aa44f3" id="r_ad75693912fa0a11eb3f04e46e3aa44f3"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ad75693912fa0a11eb3f04e46e3aa44f3">setParamOption</a> (std::string_view name, std::string_view option) -&gt; bool</td></tr>
+<tr class="memitem:a47271fcafb203179f5819741a9f03a26" id="r_a47271fcafb203179f5819741a9f03a26"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a47271fcafb203179f5819741a9f03a26">getParam</a> (std::string_view name) const -&gt; float</td></tr>
+<tr class="memitem:abbb4522155cd4d7ba8c27990b950dec8" id="r_abbb4522155cd4d7ba8c27990b950dec8"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#abbb4522155cd4d7ba8c27990b950dec8">getParamColor</a> (std::string_view name) const -&gt; glm::vec3</td></tr>
+<tr class="memitem:ad7e58b1dd749e1e3885f77cdfe07a1bd" id="r_ad7e58b1dd749e1e3885f77cdfe07a1bd"><td class="memItemLeft"><a id="ad7e58b1dd749e1e3885f77cdfe07a1bd" name="ad7e58b1dd749e1e3885f77cdfe07a1bd"></a>
+auto&#160;</td><td class="memItemRight"><b>hasParam</b> (std::string_view name) const -&gt; bool</td></tr>
+<tr class="memitem:acf25f370be5e1c0a167863c7e5437d28" id="r_acf25f370be5e1c0a167863c7e5437d28"><td class="memItemLeft"><a id="acf25f370be5e1c0a167863c7e5437d28" name="acf25f370be5e1c0a167863c7e5437d28"></a>
+void&#160;</td><td class="memItemRight"><b>resetParams</b> ()</td></tr>
 <tr class="memitem:a747269caa20f50df14f8dd42a828eb63" id="r_a747269caa20f50df14f8dd42a828eb63"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a747269caa20f50df14f8dd42a828eb63">influenceAt</a> (const glm::vec3 &amp;camera_position) const -&gt; float</td></tr>
 <tr class="memdesc:a747269caa20f50df14f8dd42a828eb63"><td class="mdescLeft">&#160;</td><td class="mdescRight">How strongly this volume applies with the camera at <code class="param">camera_position</code>.  <br /></td></tr>
 <tr class="memitem:aeef18f09babe2f5dc01b695d071dff99" id="r_aeef18f09babe2f5dc01b695d071dff99"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#aeef18f09babe2f5dc01b695d071dff99">evaluateTarget</a> (const <a class="el" href="structtoast_1_1VolumeTarget.html">VolumeTarget</a> &amp;target, float weight=1.0f) -&gt; bool override</td></tr>
@@ -464,6 +474,42 @@ INodeOwner *&#160;</td><td class="memItemRight"><b>m_owner</b> = nullptr</td></t
 
 </div>
 </div>
+<a id="a47271fcafb203179f5819741a9f03a26" name="a47271fcafb203179f5819741a9f03a26"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a47271fcafb203179f5819741a9f03a26">&#9670;&#160;</a></span>getParam()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::PostProcessVolume::getParam </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td> const -&gt; float</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>0 when the name is unknown, see hasParam() </dd></dl>
+
+</div>
+</div>
+<a id="abbb4522155cd4d7ba8c27990b950dec8" name="abbb4522155cd4d7ba8c27990b950dec8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abbb4522155cd4d7ba8c27990b950dec8">&#9670;&#160;</a></span>getParamColor()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::PostProcessVolume::getParamColor </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span></td><td>)</td>
+          <td> const -&gt; glm::vec3</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>black when the name is unknown, see hasParam() </dd></dl>
+
+</div>
+</div>
 <a id="a747269caa20f50df14f8dd42a828eb63" name="a747269caa20f50df14f8dd42a828eb63"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a747269caa20f50df14f8dd42a828eb63">&#9670;&#160;</a></span>influenceAt()</h2>
 
@@ -503,6 +549,32 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
+<a id="a274f4e1a069e77d620ad4d1274a8e52d" name="a274f4e1a069e77d620ad4d1274a8e52d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a274f4e1a069e77d620ad4d1274a8e52d">&#9670;&#160;</a></span>params()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::PostProcessVolume::params </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; const <a class="el" href="classrenderer_1_1PostProcessParams.html">renderer::PostProcessParams</a> &amp;</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<dl class="section return"><dt>Returns</dt><dd>the grade this volume contributes, at full weight </dd></dl>
+
+</div>
+</div>
 <a id="ab77ea8b499d4935f381cb79f22f4a5ec" name="ab77ea8b499d4935f381cb79f22f4a5ec"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab77ea8b499d4935f381cb79f22f4a5ec">&#9670;&#160;</a></span>resetAccumulators()</h2>
 
@@ -530,30 +602,47 @@ Here is the caller graph for this function:</div>
 
 </div>
 </div>
-<a id="a36f42b3465c8847222b8da62bc3d516c" name="a36f42b3465c8847222b8da62bc3d516c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a36f42b3465c8847222b8da62bc3d516c">&#9670;&#160;</a></span>settings()</h2>
+<a id="aa270368261be7a03d5d04cacd86b128d" name="aa270368261be7a03d5d04cacd86b128d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa270368261be7a03d5d04cacd86b128d">&#9670;&#160;</a></span>setParam()</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">auto toast::PostProcessVolume::settings </td>
+          <td class="memname">auto toast::PostProcessVolume::setParam </td>
           <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
-          <td> const -&gt; const <a class="el" href="structrenderer_1_1PostProcessSettings.html">renderer::PostProcessSettings</a> &amp;</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;) -&gt; bool</td>
         </tr>
       </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span></span>  </td>
-  </tr>
-</table>
 </div><div class="memdoc">
-<dl class="section return"><dt>Returns</dt><dd>the grade this volume contributes, at full weight</dd></dl>
-<p>Rebuilt from the reflected fields on each call, so an inspector edit is visible on the next frame without the node needing to know it was edited </p>
+<dl class="section return"><dt>Returns</dt><dd>false when the name is unknown or not a scalar </dd></dl>
+
+</div>
+</div>
+<a id="ad75693912fa0a11eb3f04e46e3aa44f3" name="ad75693912fa0a11eb3f04e46e3aa44f3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad75693912fa0a11eb3f04e46e3aa44f3">&#9670;&#160;</a></span>setParamOption()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto toast::PostProcessVolume::setParamOption </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>option</em></span>&#160;) -&gt; bool</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Sets an enumeration by option name, like setParamOption("tonemap.mode", "ACES") </p><dl class="section return"><dt>Returns</dt><dd>false when the name is unknown, not an enumeration, or the option does not exist </dd></dl>
 
 </div>
 </div>

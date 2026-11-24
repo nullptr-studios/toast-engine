@@ -1,29 +1,30 @@
 <map id="engine/src/toast/voxel/brick_pool.hpp" name="engine/src/toast/voxel/brick_pool.hpp">
-<area shape="rect" id="Node000001" title=" " alt="" coords="470,5,634,50"/>
-<area shape="rect" id="Node000002" href="$brick_8hpp.html" title=" " alt="" coords="264,98,346,126"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="484,52,360,95,358,90,489,49"/>
-<area shape="rect" id="Node000003" href="$voxel__constants_8hpp.html" title=" " alt="" coords="5,174,160,201"/>
-<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="467,43,365,67,253,100,179,133,118,168,115,163,177,129,251,96,364,62,472,41"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="164,249,230,277"/>
-<area shape="poly" id="edge11_Node000001_Node000004" title=" " alt="" coords="539,49,509,99,496,129,489,155,479,179,458,203,433,220,406,234,350,252,294,262,246,265,245,260,293,256,348,247,404,229,430,216,454,199,475,177,484,154,491,128,504,97,535,52"/>
-<area shape="rect" id="Node000006" title=" " alt="" coords="406,174,444,201"/>
-<area shape="poly" id="edge10_Node000001_Node000006" title=" " alt="" coords="518,49,490,74,465,100,447,129,435,161,431,157,442,127,460,96,486,70,513,52"/>
-<area shape="rect" id="Node000008" title=" " alt="" coords="519,98,585,126"/>
-<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="553,48,554,84,550,81,550,53"/>
-<area shape="rect" id="Node000009" title=" " alt="" coords="610,98,686,126"/>
-<area shape="poly" id="edge12_Node000001_Node000009" title=" " alt="" coords="578,48,623,88,618,87,576,53"/>
-<area shape="rect" id="Node000010" title=" " alt="" coords="710,98,762,126"/>
-<area shape="poly" id="edge13_Node000001_Node000010" title=" " alt="" coords="601,48,698,92,693,93,600,53"/>
-<area shape="rect" id="Node000011" href="$export_8hpp.html" title=" " alt="" coords="786,98,915,126"/>
-<area shape="poly" id="edge14_Node000001_Node000011" title=" " alt="" coords="631,48,791,93,785,94,631,53"/>
-<area shape="rect" id="Node000012" title=" " alt="" coords="939,98,1002,126"/>
-<area shape="poly" id="edge15_Node000001_Node000012" title=" " alt="" coords="634,39,767,62,927,98,922,98,766,68,635,45"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="264,128,138,171,136,166,267,124"/>
-<area shape="poly" id="edge7_Node000002_Node000004" title=" " alt="" coords="281,125,251,148,225,175,211,204,203,235,198,232,206,203,220,172,248,144,277,128"/>
-<area shape="rect" id="Node000005" title=" " alt="" coords="235,174,290,201"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="300,125,280,162,276,158,295,128"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="327,124,395,166,390,167,326,129"/>
-<area shape="rect" id="Node000007" title=" " alt="" coords="314,174,382,201"/>
-<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="314,124,335,161,330,160,312,129"/>
-<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="104,199,167,240,162,242,102,204"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="354,5,518,50"/>
+<area shape="rect" id="Node000002" href="$brick_8hpp.html" title=" " alt="" coords="231,98,313,126"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="390,52,313,93,311,88,395,49"/>
+<area shape="rect" id="Node000003" href="$voxel__constants_8hpp.html" title=" " alt="" coords="23,174,177,201"/>
+<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="351,50,288,72,221,100,170,132,128,165,124,161,167,128,219,96,286,67,356,47"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="67,249,133,277"/>
+<area shape="poly" id="edge12_Node000001_Node000004" title=" " alt="" coords="351,30,268,40,220,49,172,63,125,81,82,106,44,137,13,175,9,193,17,210,35,226,58,241,53,243,32,230,13,213,4,194,8,173,40,133,79,101,123,77,170,58,219,44,267,35,356,27"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="332,174,370,201"/>
+<area shape="poly" id="edge10_Node000001_Node000006" title=" " alt="" coords="427,49,367,161,363,158,422,52"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="394,174,462,201"/>
+<area shape="poly" id="edge11_Node000001_Node000007" title=" " alt="" coords="434,48,429,98,429,126,430,160,425,157,424,126,424,98,431,52"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="439,98,505,126"/>
+<area shape="poly" id="edge9_Node000001_Node000008" title=" " alt="" coords="447,48,463,84,458,83,445,53"/>
+<area shape="rect" id="Node000009" title=" " alt="" coords="530,98,606,126"/>
+<area shape="poly" id="edge13_Node000001_Node000009" title=" " alt="" coords="472,48,537,90,532,90,471,53"/>
+<area shape="rect" id="Node000010" title=" " alt="" coords="630,98,682,126"/>
+<area shape="poly" id="edge14_Node000001_Node000010" title=" " alt="" coords="495,48,618,95,613,96,494,53"/>
+<area shape="rect" id="Node000011" href="$export_8hpp.html" title=" " alt="" coords="707,98,835,126"/>
+<area shape="poly" id="edge15_Node000001_Node000011" title=" " alt="" coords="519,46,705,93,700,94,519,52"/>
+<area shape="rect" id="Node000012" title=" " alt="" coords="860,98,922,126"/>
+<area shape="poly" id="edge16_Node000001_Node000012" title=" " alt="" coords="519,37,667,61,847,97,842,98,666,66,519,43"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="239,128,146,170,144,165,243,124"/>
+<area shape="poly" id="edge7_Node000002_Node000004" title=" " alt="" coords="264,124,233,163,191,203,137,243,134,238,188,199,229,159,260,128"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="252,174,308,201"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="275,124,279,159,275,157,272,128"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="287,124,328,163,323,163,285,129"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="300,124,389,166,384,167,300,129"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="102,200,103,235,98,233,98,204"/>
 </map>

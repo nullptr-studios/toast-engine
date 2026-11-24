@@ -10,6 +10,7 @@ var dir_b34aee48f901bd6f5bafc675781e59d3 =
     [ "resources", "dir_7dff9ac57925b04405d87c382be25e7c.html", "dir_7dff9ac57925b04405d87c382be25e7c" ],
     [ "settings", "dir_d00fd37e11f5f1abee106017b3acfb00.html", "dir_d00fd37e11f5f1abee106017b3acfb00" ],
     [ "shaders", "dir_d23f0715925b521b992e9cdf9f6f2d82.html", "dir_d23f0715925b521b992e9cdf9f6f2d82" ],
+    [ "upscale", "dir_6ca56766bebd58d5014cf3c11803c5fb.html", "dir_6ca56766bebd58d5014cf3c11803c5fb" ],
     [ "voxel", "dir_c4cfd1d93f5bf54ac8950fb275f46377.html", "dir_c4cfd1d93f5bf54ac8950fb275f46377" ],
     [ "gpu_types.hpp", "gpu__types_8hpp.html", "gpu__types_8hpp" ],
     [ "render_events.hpp", "render__events_8hpp.html", "render__events_8hpp" ],

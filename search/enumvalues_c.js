@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['overlay_0',['overlay',['../namespacerenderer.html#ae9bb563c3061694add431731831277c0a380e537acdaedd487ca1adb49d020f7e',1,'renderer']]]
+  ['none_0',['none',['../gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a334c4a4c42fdb79d7ebc3e73b517e6f8',1,'renderer::sync']]]
 ];

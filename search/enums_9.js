@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['phase_0',['Phase',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4',1,'toast::Workspace::VoxelToolState']]],
-  ['piecekind_1',['PieceKind',['../voxel__piece_8hpp.html#a888e11004f9432df810994ca7c1ae404',1,'toast']]]
+  ['nodestate_0',['NodeState',['../node_8hpp.html#a98d11435d9b92e9901a40a71793fd680',1,'toast']]],
+  ['nodetype_1',['NodeType',['../node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73fa',1,'toast']]]
 ];

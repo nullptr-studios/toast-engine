@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['world_0',['world',['../namespacerenderer.html#ae9bb563c3061694add431731831277c0a7d793037a0760186574b0282f2f435e7',1,'renderer']]],
-  ['world_5froot_1',['world_root',['../node_8hpp.html#aea15e3db2fb9b67d5f99b3436f6a73faa139ff2c4fb5263e1ab4247457c03400e',1,'toast']]]
+  ['vertex_5finput_0',['vertex_input',['../gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a430a47bc6196323c4c9cd660cfb3eed4',1,'renderer::sync']]],
+  ['vertex_5fstorage_5fread_1',['vertex_storage_read',['../gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a548f467d4e83e81ec25f5e473cc9a0a4',1,'renderer::sync']]]
 ];

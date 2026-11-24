@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('classvoxel_1_1
 Public Member Functions</h2></td></tr>
 <tr class="memitem:adb4f5efca2fbadc257e865f9586108cb" id="r_adb4f5efca2fbadc257e865f9586108cb"><td class="memItemLeft"><a id="adb4f5efca2fbadc257e865f9586108cb" name="adb4f5efca2fbadc257e865f9586108cb"></a>
 &#160;</td><td class="memItemRight"><b>BrickPool</b> (uint32_t capacity)</td></tr>
-<tr class="memitem:a82e0e02cf564f507f804eb5874fe5a45" id="r_a82e0e02cf564f507f804eb5874fe5a45"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a82e0e02cf564f507f804eb5874fe5a45">allocate</a> () -&gt; uint32_t</td></tr>
+<tr class="memitem:ab5334487e375580aab6e4b2d9f5c1a97" id="r_ab5334487e375580aab6e4b2d9f5c1a97"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#ab5334487e375580aab6e4b2d9f5c1a97">allocate</a> (bool cleared=true) -&gt; uint32_t</td></tr>
 <tr class="memitem:acdacfa8a9bafb51dfc2a9837977f305e" id="r_acdacfa8a9bafb51dfc2a9837977f305e"><td class="memItemLeft"><a id="acdacfa8a9bafb51dfc2a9837977f305e" name="acdacfa8a9bafb51dfc2a9837977f305e"></a>
 void&#160;</td><td class="memItemRight"><b>free</b> (uint32_t id)</td></tr>
 <tr class="memdesc:acdacfa8a9bafb51dfc2a9837977f305e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The id must come from allocate and not already be freed. <br /></td></tr>
@@ -156,8 +156,8 @@ auto&#160;</td><td class="memItemRight"><b>isValid</b> (uint32_t id) const noexc
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section note"><dt>Note</dt><dd>Allocate and free are thread safe, rest is not </dd></dl>
 </div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
-<a id="a82e0e02cf564f507f804eb5874fe5a45" name="a82e0e02cf564f507f804eb5874fe5a45"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a82e0e02cf564f507f804eb5874fe5a45">&#9670;&#160;</a></span>allocate()</h2>
+<a id="ab5334487e375580aab6e4b2d9f5c1a97" name="ab5334487e375580aab6e4b2d9f5c1a97"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5334487e375580aab6e4b2d9f5c1a97">&#9670;&#160;</a></span>allocate()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -168,7 +168,7 @@ auto&#160;</td><td class="memItemRight"><b>isValid</b> (uint32_t id) const noexc
         <tr>
           <td class="memname">auto voxel::BrickPool::allocate </td>
           <td>(</td>
-          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td class="paramtype">bool</td>          <td class="paramname"><span class="paramname"><em>cleared</em></span><span class="paramdefsep"> = </span><span class="paramdefval">true</span></td><td>)</td>
           <td> -&gt; uint32_t</td>
         </tr>
       </table>
@@ -178,12 +178,18 @@ auto&#160;</td><td class="memItemRight"><b>isValid</b> (uint32_t id) const noexc
   </tr>
 </table>
 </div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">cleared</td><td>false leaves stale contents for a caller that overwrites the whole brick </td></tr>
+  </table>
+  </dd>
+</dl>
 <dl class="section return"><dt>Returns</dt><dd>k_invalid_brick when the pool is exhausted </dd></dl>
 <div class="dynheader">
 Here is the caller graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><img src="classvoxel_1_1BrickPool_a82e0e02cf564f507f804eb5874fe5a45_icgraph.png" border="0" usemap="#aclassvoxel_1_1BrickPool_a82e0e02cf564f507f804eb5874fe5a45_icgraph" loading="lazy" alt=""/></div>
-<map name="aclassvoxel_1_1BrickPool_a82e0e02cf564f507f804eb5874fe5a45_icgraph" id="aclassvoxel_1_1BrickPool_a82e0e02cf564f507f804eb5874fe5a45_icgraph">
+<div class="center"><img src="classvoxel_1_1BrickPool_ab5334487e375580aab6e4b2d9f5c1a97_icgraph.png" border="0" usemap="#aclassvoxel_1_1BrickPool_ab5334487e375580aab6e4b2d9f5c1a97_icgraph" loading="lazy" alt=""/></div>
+<map name="aclassvoxel_1_1BrickPool_ab5334487e375580aab6e4b2d9f5c1a97_icgraph" id="aclassvoxel_1_1BrickPool_ab5334487e375580aab6e4b2d9f5c1a97_icgraph">
 <area shape="rect" title=" " alt="" coords="5,29,191,57"/>
 <area shape="poly" title=" " alt="" coords="128,14,118,10,98,8,79,10,69,15,66,20,71,29,66,28,61,20,65,11,78,5,98,3,120,5,133,14"/>
 </map>

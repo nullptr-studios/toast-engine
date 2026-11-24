@@ -136,6 +136,9 @@ auto&#160;</td><td class="memItemRight"><b>operator=</b> (const Volume &amp;) -&
 &#160;</td><td class="memItemRight"><b>Volume</b> (Volume &amp;&amp;other) noexcept</td></tr>
 <tr class="memitem:ae5197f534b5abb5e0aea0baee995e2d4" id="r_ae5197f534b5abb5e0aea0baee995e2d4"><td class="memItemLeft"><a id="ae5197f534b5abb5e0aea0baee995e2d4" name="ae5197f534b5abb5e0aea0baee995e2d4"></a>
 auto&#160;</td><td class="memItemRight"><b>operator=</b> (Volume &amp;&amp;other) noexcept -&gt; Volume &amp;</td></tr>
+<tr class="memitem:ab528bfb1766e04afca1a2857be6c56c7" id="r_ab528bfb1766e04afca1a2857be6c56c7"><td class="memItemLeft"><a id="ab528bfb1766e04afca1a2857be6c56c7" name="ab528bfb1766e04afca1a2857be6c56c7"></a>
+void&#160;</td><td class="memItemRight"><b>reshareFrom</b> (const Volume &amp;source)</td></tr>
+<tr class="memdesc:ab528bfb1766e04afca1a2857be6c56c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Same result as assigning instanceOf(source) but only retains and frees the bricks that differ. <br /></td></tr>
 <tr class="memitem:a438dd69fd5c91a7b8dd78dbd8ee79a88" id="r_a438dd69fd5c91a7b8dd78dbd8ee79a88"><td class="memItemLeft"><a id="a438dd69fd5c91a7b8dd78dbd8ee79a88" name="a438dd69fd5c91a7b8dd78dbd8ee79a88"></a>
 auto&#160;</td><td class="memItemRight"><b>brickDims</b> () const noexcept -&gt; glm::uvec3</td></tr>
 <tr class="memitem:ae0c3a651fca88a9ba47815e32959f70c" id="r_ae0c3a651fca88a9ba47815e32959f70c"><td class="memItemLeft"><a id="ae0c3a651fca88a9ba47815e32959f70c" name="ae0c3a651fca88a9ba47815e32959f70c"></a>
@@ -181,8 +184,13 @@ auto&#160;</td><td class="memItemRight"><b>occupancyPointer</b> (glm::ivec3 bric
 <tr class="memdesc:a45bdb135fa7d2963cd27bd2c5a188637"><td class="mdescLeft">&#160;</td><td class="mdescRight">Null when the brick holds nothing. <br /></td></tr>
 <tr class="memitem:aef81a15bc0087cd00adfe49574a80e5b" id="r_aef81a15bc0087cd00adfe49574a80e5b"><td class="memItemLeft"><a id="aef81a15bc0087cd00adfe49574a80e5b" name="aef81a15bc0087cd00adfe49574a80e5b"></a>
 auto&#160;</td><td class="memItemRight"><b>neighbourhoodOf</b> (glm::ivec3 brick) const noexcept -&gt; <a class="el" href="structvoxel_1_1BrickNeighbourhood.html">BrickNeighbourhood</a></td></tr>
-<tr class="memitem:afaf78b1c83df232a4dd4370e5066d43d" id="r_afaf78b1c83df232a4dd4370e5066d43d"><td class="memItemLeft"><a id="afaf78b1c83df232a4dd4370e5066d43d" name="afaf78b1c83df232a4dd4370e5066d43d"></a>
-auto&#160;</td><td class="memItemRight"><b>solidVoxelCount</b> () const -&gt; uint32_t</td></tr>
+<tr class="memitem:a7360026419aeba2a2460be849f7e6fe0" id="r_a7360026419aeba2a2460be849f7e6fe0"><td class="memItemLeft"><a id="a7360026419aeba2a2460be849f7e6fe0" name="a7360026419aeba2a2460be849f7e6fe0"></a>
+auto&#160;</td><td class="memItemRight"><b>solidVoxelCount</b> () const noexcept -&gt; uint32_t</td></tr>
+<tr class="memitem:a9d104addf6c088520b8134c12e074dc9" id="r_a9d104addf6c088520b8134c12e074dc9"><td class="memItemLeft"><a id="a9d104addf6c088520b8134c12e074dc9" name="a9d104addf6c088520b8134c12e074dc9"></a>
+auto&#160;</td><td class="memItemRight"><b>brickSolidCount</b> (glm::ivec3 brick) const noexcept -&gt; uint32_t</td></tr>
+<tr class="memdesc:a9d104addf6c088520b8134c12e074dc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Solid voxels of one brick, 0 outside the volume. <br /></td></tr>
+<tr class="memitem:a43444499f9c766daf16641df592669d9" id="r_a43444499f9c766daf16641df592669d9"><td class="memTemplParams" colspan="2">template&lt;typename Visit&gt; </td></tr>
+<tr class="memitem:a43444499f9c766daf16641df592669d9 template"><td class="memItemLeft">void&#160;</td><td class="memItemRight"><a class="el" href="#a43444499f9c766daf16641df592669d9">forEachSolidBrick</a> (Visit &amp;&amp;visit) const</td></tr>
 <tr class="memitem:a1769aedd83a8486e1bee287fd95c87bc" id="r_a1769aedd83a8486e1bee287fd95c87bc"><td class="memItemLeft"><a id="a1769aedd83a8486e1bee287fd95c87bc" name="a1769aedd83a8486e1bee287fd95c87bc"></a>
 auto&#160;</td><td class="memItemRight"><b>ownedBrickCount</b> () const -&gt; uint32_t</td></tr>
 <tr class="memitem:ac7150162c199083b6c2bf5969c76f6ac" id="r_ac7150162c199083b6c2bf5969c76f6ac"><td class="memItemLeft"><a id="ac7150162c199083b6c2bf5969c76f6ac" name="ac7150162c199083b6c2bf5969c76f6ac"></a>
@@ -277,6 +285,34 @@ Here is the caller graph for this function:</div>
 <area shape="poly" title=" " alt="" coords="150,14,139,10,114,8,92,10,79,15,76,20,82,29,77,28,71,20,76,11,91,5,115,3,140,5,156,14"/>
 </map>
 </div>
+
+</div>
+</div>
+<a id="a43444499f9c766daf16641df592669d9" name="a43444499f9c766daf16641df592669d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a43444499f9c766daf16641df592669d9">&#9670;&#160;</a></span>forEachSolidBrick()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Visit&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void voxel::Volume::forEachSolidBrick </td>
+          <td>(</td>
+          <td class="paramtype">Visit &amp;&amp;</td>          <td class="paramname"><span class="paramname"><em>visit</em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Calls visit(brick, slot) for every brick that holds a solid voxel in slot order, which is z then y then x </p><dl class="section note"><dt>Note</dt><dd>Skips empty space 64 bricks at a time so a sparse volume costs what is in it </dd></dl>
 
 </div>
 </div>

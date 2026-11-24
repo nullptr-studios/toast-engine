@@ -246,8 +246,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__smash_8
 <div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  }</div>
 <div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span> </div>
 <div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <span class="keyword">const</span> <span class="keyword">auto</span> brick_dim = <span class="keyword">static_cast&lt;</span>int32_t<span class="keyword">&gt;</span>(voxel::k_brick_dim);</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="keyword">const</span> glm::ivec3 first_brick = first / brick_dim;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keyword">const</span> glm::ivec3 last_brick = last / brick_dim;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  <span class="keyword">const</span> glm::ivec3 first_brick = <a class="code hl_function" href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a>(first);</div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  <span class="keyword">const</span> glm::ivec3 last_brick = <a class="code hl_function" href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a>(last);</div>
 <div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
 <div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>  <span class="keywordflow">for</span> (int32_t bz = first_brick.z; bz &lt;= last_brick.z; ++bz) {</div>
 <div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>    <span class="keywordflow">for</span> (int32_t by = first_brick.y; by &lt;= last_brick.y; ++by) {</div>
@@ -344,8 +344,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__smash_8
 <div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>  std::vector&lt;std::pair&lt;uint32_t, voxel::BrickOccupancy&gt;&gt; cells;</div>
 <div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span> </div>
 <div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>  <span class="keyword">const</span> <span class="keyword">auto</span> brick_dim = <span class="keyword">static_cast&lt;</span>int32_t<span class="keyword">&gt;</span>(voxel::k_brick_dim);</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keyword">const</span> glm::ivec3 first_brick = first / brick_dim;</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  <span class="keyword">const</span> glm::ivec3 last_brick = last / brick_dim;</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>  <span class="keyword">const</span> glm::ivec3 first_brick = <a class="code hl_function" href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a>(first);</div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>  <span class="keyword">const</span> glm::ivec3 last_brick = <a class="code hl_function" href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a>(last);</div>
 <div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>  <span class="keywordflow">for</span> (int32_t bz = first_brick.z; bz &lt;= last_brick.z; ++bz) {</div>
 <div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>    <span class="keywordflow">for</span> (int32_t by = first_brick.y; by &lt;= last_brick.y; ++by) {</div>
 <div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>      <span class="keywordflow">for</span> (int32_t bx = first_brick.x; bx &lt;= last_brick.x; ++bx) {</div>
@@ -390,7 +390,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__smash_8
 <div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span> </div>
 <div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span>        <span class="keyword">const</span> <span class="keywordtype">size_t</span> first_part = parts.size();</div>
 <div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span>        <span class="keywordflow">for</span> (<span class="keyword">const</span> <span class="keyword">auto</span>&amp; [cell, mask] : cells) {</div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>          <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1BrickOccupancy.html">voxel::BrickOccupancy</a>&amp; region : <a class="code hl_function" href="connectivity_8hpp.html#a8ee9df726019653aab82608ab3357832">voxel::brickComponents</a>(mask)) {</div>
+<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>          <span class="keywordflow">for</span> (<span class="keyword">const</span> <a class="code hl_struct" href="structvoxel_1_1BrickOccupancy.html">voxel::BrickOccupancy</a>&amp; region : voxel::brickComponents(mask)) {</div>
 <div class="line"><a id="l00274" name="l00274"></a><span class="lineno">  274</span>            parts.push_back(Part {.brick = brick, .cell = cell, .voxels = region, .faces = voxel::computeFaces(region)});</div>
 <div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>          }</div>
 <div class="line"><a id="l00276" name="l00276"></a><span class="lineno">  276</span>        }</div>
@@ -486,18 +486,17 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__smash_8
 <div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span> </div>
 <div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>}</div>
 <div class="ttc" id="abrick_8hpp_html"><div class="ttname"><a href="brick_8hpp.html">brick.hpp</a></div></div>
-<div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
+<div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:36</div></div>
 <div class="ttc" id="acomponent__classification_8hpp_html"><div class="ttname"><a href="component__classification_8hpp.html">component_classification.hpp</a></div><div class="ttdoc">TODO: Brief description of the file&#39;s purpose.</div></div>
 <div class="ttc" id="aconnectivity_8hpp_html"><div class="ttname"><a href="connectivity_8hpp.html">connectivity.hpp</a></div></div>
-<div class="ttc" id="aconnectivity_8hpp_html_a8ee9df726019653aab82608ab3357832"><div class="ttname"><a href="connectivity_8hpp.html#a8ee9df726019653aab82608ab3357832">voxel::brickComponents</a></div><div class="ttdeci">auto brickComponents(const BrickOccupancy &amp;brick) -&gt; std::vector&lt; BrickOccupancy &gt;</div><div class="ttdoc">Edge or corner contact does not connect.</div><div class="ttdef"><b>Definition</b> connectivity.hpp:23</div></div>
 <div class="ttc" id="apalette_8hpp_html"><div class="ttname"><a href="palette_8hpp.html">palette.hpp</a></div></div>
 <div class="ttc" id="apalette_8hpp_html_a7aa5050da71e23fb06c2e4ce736c7618"><div class="ttname"><a href="palette_8hpp.html#a7aa5050da71e23fb06c2e4ce736c7618">voxel::resolveMaterialIndex</a></div><div class="ttdeci">auto resolveMaterialIndex(const Palette &amp;palette, const MaterialLibrary &amp;library, uint8_t palette_index) noexcept -&gt; uint32_t</div><div class="ttdoc">The library must not be empty.</div><div class="ttdef"><b>Definition</b> palette.hpp:187</div></div>
 <div class="ttc" id="astructphysics_1_1DetachedComponent_html"><div class="ttname"><a href="structphysics_1_1DetachedComponent.html">physics::DetachedComponent</a></div><div class="ttdef"><b>Definition</b> component_classification.hpp:26</div></div>
 <div class="ttc" id="astructphysics_1_1SmashPieces_html"><div class="ttname"><a href="structphysics_1_1SmashPieces.html">physics::SmashPieces</a></div><div class="ttdef"><b>Definition</b> voxel_smash.hpp:101</div></div>
 <div class="ttc" id="astructphysics_1_1SmashVolume_html"><div class="ttname"><a href="structphysics_1_1SmashVolume.html">physics::SmashVolume</a></div><div class="ttdef"><b>Definition</b> voxel_smash.hpp:52</div></div>
-<div class="ttc" id="astructvoxel_1_1BrickFaces_html"><div class="ttname"><a href="structvoxel_1_1BrickFaces.html">voxel::BrickFaces</a></div><div class="ttdef"><b>Definition</b> brick.hpp:353</div></div>
+<div class="ttc" id="astructvoxel_1_1BrickFaces_html"><div class="ttname"><a href="structvoxel_1_1BrickFaces.html">voxel::BrickFaces</a></div><div class="ttdef"><b>Definition</b> brick.hpp:366</div></div>
 <div class="ttc" id="astructvoxel_1_1BrickOccupancy_html"><div class="ttname"><a href="structvoxel_1_1BrickOccupancy.html">voxel::BrickOccupancy</a></div><div class="ttdoc">One 64-bit word per z-slice with bit y * 8 + x.</div><div class="ttdef"><b>Definition</b> brick.hpp:18</div></div>
-<div class="ttc" id="astructvoxel_1_1BrickPiece_html"><div class="ttname"><a href="structvoxel_1_1BrickPiece.html">voxel::BrickPiece</a></div><div class="ttdef"><b>Definition</b> connectivity.hpp:57</div></div>
+<div class="ttc" id="astructvoxel_1_1BrickPiece_html"><div class="ttname"><a href="structvoxel_1_1BrickPiece.html">voxel::BrickPiece</a></div><div class="ttdef"><b>Definition</b> connectivity.hpp:60</div></div>
 <div class="ttc" id="astructvoxel_1_1MaterialLibrary_html"><div class="ttname"><a href="structvoxel_1_1MaterialLibrary.html">voxel::MaterialLibrary</a></div><div class="ttdef"><b>Definition</b> palette.hpp:181</div></div>
 <div class="ttc" id="astructvoxel_1_1Palette_html"><div class="ttname"><a href="structvoxel_1_1Palette.html">voxel::Palette</a></div><div class="ttdoc">Entry 0 is the empty voxel and must stay all zero.</div><div class="ttdef"><b>Definition</b> palette.hpp:97</div></div>
 <div class="ttc" id="astructvoxel_1_1PhysicalMaterial_html"><div class="ttname"><a href="structvoxel_1_1PhysicalMaterial.html">voxel::PhysicalMaterial</a></div><div class="ttdef"><b>Definition</b> palette.hpp:132</div></div>
@@ -505,6 +504,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('voxel__smash_8
 <div class="ttc" id="avoxel__constants_8hpp_html"><div class="ttname"><a href="voxel__constants_8hpp.html">voxel_constants.hpp</a></div></div>
 <div class="ttc" id="avoxel__smash_8hpp_html_afbd501d7613a9c930ca59581acc5976f"><div class="ttname"><a href="voxel__smash_8hpp.html#afbd501d7613a9c930ca59581acc5976f">physics::collectCellPieces</a></div><div class="ttdeci">auto collectCellPieces(const voxel::Volume &amp;volume, const voxel::Palette &amp;palette, const voxel::MaterialLibrary &amp;materials, const glm::vec3 &amp;low, const glm::vec3 &amp;high, Breaks &amp;&amp;breaks, CellOf &amp;&amp;cell_of) -&gt; SmashPieces</div><div class="ttdoc">Unlike collectBrokenPieces a piece crosses bricks and only cell_of splits it.</div><div class="ttdef"><b>Definition</b> voxel_smash.hpp:192</div></div>
 <div class="ttc" id="avoxel__volume_8hpp_html"><div class="ttname"><a href="voxel__volume_8hpp.html">voxel_volume.hpp</a></div></div>
+<div class="ttc" id="avoxel__volume_8hpp_html_acf94ad27ae1a71d3c1a98e4d0914cf3e"><div class="ttname"><a href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a></div><div class="ttdeci">auto brickOf(glm::ivec3 voxel) noexcept -&gt; glm::ivec3</div><div class="ttdoc">Arithmetic shift so voxel -1 lands in brick -1.</div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:27</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['raytracingmode_0',['RayTracingMode',['../namespacerenderer.html#a0d9650875754896fa95f1a9978d34458',1,'renderer']]],
-  ['reduction_1',['Reduction',['../classrenderer_1_1HiZPyramid.html#a6e2db7acc999d57e1939bae164c3144b',1,'renderer::HiZPyramid']]]
+  ['phase_0',['Phase',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a9a4ac7d1868da1be2ab383525d812de4',1,'toast::Workspace::VoxelToolState']]],
+  ['piecekind_1',['PieceKind',['../voxel__piece_8hpp.html#a888e11004f9432df810994ca7c1ae404',1,'toast']]]
 ];

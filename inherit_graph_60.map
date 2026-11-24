@@ -1,17 +1,17 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
 <area shape="rect" id="Node000000" title=" " alt="" coords="5,222,74,250"/>
 <area shape="rect" id="Node000001" href="$classeditor_1_1Components_1_1CurveCanvas_1_1CurveCanvas.html" title=" " alt="" coords="122,5,360,50"/>
-<area shape="poly" id="edge64_Node000000_Node000001" title=" " alt="" coords="44,207,53,173,68,134,90,94,120,60,140,48,137,53,123,64,95,97,73,136,58,174,49,208"/>
+<area shape="poly" id="edge66_Node000000_Node000001" title=" " alt="" coords="44,207,53,173,68,134,90,94,120,60,140,48,137,53,123,64,95,97,73,136,58,174,49,208"/>
 <area shape="rect" id="Node000002" href="$classeditor_1_1Logger_1_1ScrollMarkerOverlay.html" title=" " alt="" coords="146,75,336,119"/>
-<area shape="poly" id="edge65_Node000000_Node000002" title=" " alt="" coords="53,207,81,167,99,147,120,129,147,117,143,121,123,134,103,150,85,170,58,209"/>
+<area shape="poly" id="edge67_Node000000_Node000002" title=" " alt="" coords="53,207,81,167,99,147,120,129,147,117,143,121,123,134,103,150,85,170,58,209"/>
 <area shape="rect" id="Node000003" href="$classeditor_1_1LuaEditor_1_1Canvas_1_1GraphCanvas.html" title=" " alt="" coords="152,144,330,189"/>
-<area shape="poly" id="edge66_Node000000_Node000003" title=" " alt="" coords="84,213,121,198,159,187,155,191,123,204,88,217"/>
+<area shape="poly" id="edge68_Node000000_Node000003" title=" " alt="" coords="84,213,121,198,159,187,155,191,123,204,88,217"/>
 <area shape="rect" id="Node000004" href="$classeditor_1_1LuaEditor_1_1Controls_1_1PinShapeIcon.html" title=" " alt="" coords="149,213,333,258"/>
-<area shape="poly" id="edge67_Node000000_Node000004" title=" " alt="" coords="88,233,150,234,146,237,90,238"/>
+<area shape="poly" id="edge69_Node000000_Node000004" title=" " alt="" coords="88,233,150,234,146,237,90,238"/>
 <area shape="rect" id="Node000005" href="$classeditor_1_1VoxelEditor_1_1VoxelOrthoView.html" title=" " alt="" coords="154,283,328,327"/>
-<area shape="poly" id="edge68_Node000000_Node000005" title=" " alt="" coords="85,254,123,268,160,281,155,283,121,273,87,259"/>
+<area shape="poly" id="edge70_Node000000_Node000005" title=" " alt="" coords="85,254,123,268,160,281,155,283,121,273,87,259"/>
 <area shape="rect" id="Node000006" href="$classeditor_1_1Workspace_1_1HierarchyConnectorLayer.html" title=" " alt="" coords="141,352,341,397"/>
-<area shape="poly" id="edge69_Node000000_Node000006" title=" " alt="" coords="56,261,85,301,103,321,123,337,145,351,140,352,120,342,99,325,81,305,56,266"/>
+<area shape="poly" id="edge71_Node000000_Node000006" title=" " alt="" coords="56,261,85,301,103,321,123,337,145,351,140,352,120,342,99,325,81,305,56,266"/>
 <area shape="rect" id="Node000007" href="$classeditor_1_1Workspace_1_1HistoryGraphCell.html" title=" " alt="" coords="149,421,333,466"/>
-<area shape="poly" id="edge70_Node000000_Node000007" title=" " alt="" coords="47,262,58,297,73,336,95,374,123,407,151,426,146,426,120,411,90,377,68,338,53,299,46,267"/>
+<area shape="poly" id="edge72_Node000000_Node000007" title=" " alt="" coords="47,262,58,297,73,336,95,374,123,407,151,426,146,426,120,411,90,377,68,338,53,299,46,267"/>
 </map>

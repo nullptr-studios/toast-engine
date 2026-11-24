@@ -1,6 +1,8 @@
 var classrenderer_1_1VulkanCore =
 [
     [ "asyncCompute", "classrenderer_1_1VulkanCore.html#ab24eb6b60c88d405eb8696ce5993fcae", null ],
+    [ "dlssExtensionsEnabled", "classrenderer_1_1VulkanCore.html#a215962067ce303b69688d36728e8b338", null ],
+    [ "dlssReason", "classrenderer_1_1VulkanCore.html#afa12367bcd2fda57ae1bc31b63e56716", null ],
     [ "getAlignedScratchAddress", "classrenderer_1_1VulkanCore.html#a450bb1e0462bc345add949a516af99f5", null ],
     [ "getComputeQueue", "classrenderer_1_1VulkanCore.html#a6da949ca8a17d1180638b2266fe7d360", null ],
     [ "getPipelineCache", "classrenderer_1_1VulkanCore.html#ac3ead9ae912f90a07b4f43eee2ae169d", null ],

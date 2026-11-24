@@ -265,6 +265,8 @@ auto&#160;</td><td class="memItemRight"><b>ssrSettings</b> () const -&gt; <a cla
 auto&#160;</td><td class="memItemRight"><b>getSceneColorFormat</b> () const noexcept -&gt; vk::Format</td></tr>
 <tr class="memitem:aab5c6ded1804aba6be1598bf57f47739" id="r_aab5c6ded1804aba6be1598bf57f47739"><td class="memItemLeft"><a id="aab5c6ded1804aba6be1598bf57f47739" name="aab5c6ded1804aba6be1598bf57f47739"></a>
 auto&#160;</td><td class="memItemRight"><b>getSceneColorView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memitem:a0ae989d3db5925f97b340c4a4839a6f7" id="r_a0ae989d3db5925f97b340c4a4839a6f7"><td class="memItemLeft"><a id="a0ae989d3db5925f97b340c4a4839a6f7" name="a0ae989d3db5925f97b340c4a4839a6f7"></a>
+auto&#160;</td><td class="memItemRight"><b>getSceneColorImage</b> () const noexcept -&gt; vk::Image</td></tr>
 <tr class="memitem:ae6b492fbca27743d89b130cda9d7ed6b" id="r_ae6b492fbca27743d89b130cda9d7ed6b"><td class="memItemLeft"><a id="ae6b492fbca27743d89b130cda9d7ed6b" name="ae6b492fbca27743d89b130cda9d7ed6b"></a>
 void&#160;</td><td class="memItemRight"><b>setVoxelDetailTexture</b> (<a class="el" href="classassets_1_1Handle.html">assets::Handle</a>&lt; <a class="el" href="classassets_1_1DetailTexture.html">assets::DetailTexture</a> &gt; detail)</td></tr>
 <tr class="memdesc:ae6b492fbca27743d89b130cda9d7ed6b"><td class="mdescLeft">&#160;</td><td class="mdescRight">xyz world normal w roughness <br /></td></tr>
@@ -532,6 +534,11 @@ auto&#160;</td><td class="memItemRight"><b>voxelShadowInstances</b> () const noe
 <tr class="memitem:a1b77b7999b5d36c2198343748f1a47bd" id="r_a1b77b7999b5d36c2198343748f1a47bd"><td class="memItemLeft"><a id="a1b77b7999b5d36c2198343748f1a47bd" name="a1b77b7999b5d36c2198343748f1a47bd"></a>
 auto&#160;</td><td class="memItemRight"><b>getDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:a1b77b7999b5d36c2198343748f1a47bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Left in eDepthReadOnlyOptimal. <br /></td></tr>
+<tr class="memitem:a5b9aa86c9adabb22268c6b53593961e7" id="r_a5b9aa86c9adabb22268c6b53593961e7"><td class="memItemLeft"><a id="a5b9aa86c9adabb22268c6b53593961e7" name="a5b9aa86c9adabb22268c6b53593961e7"></a>
+auto&#160;</td><td class="memItemRight"><b>getDepthState</b> () const noexcept -&gt; const <a class="el" href="structrenderer_1_1sync_1_1ImageState.html">sync::ImageState</a> &amp;</td></tr>
+<tr class="memdesc:a5b9aa86c9adabb22268c6b53593961e7"><td class="mdescLeft">&#160;</td><td class="mdescRight">For a pass that needs another layout briefly and restores the tracked usage. <br /></td></tr>
+<tr class="memitem:afbf0eca049eb874c9dbb1eaf10bf10e6" id="r_afbf0eca049eb874c9dbb1eaf10bf10e6"><td class="memItemLeft"><a id="afbf0eca049eb874c9dbb1eaf10bf10e6" name="afbf0eca049eb874c9dbb1eaf10bf10e6"></a>
+auto&#160;</td><td class="memItemRight"><b>getDepthFormat</b> () const noexcept -&gt; vk::Format</td></tr>
 <tr class="memitem:a2c1be5d01e587821cd96114db6963e5c" id="r_a2c1be5d01e587821cd96114db6963e5c"><td class="memItemLeft"><a id="a2c1be5d01e587821cd96114db6963e5c" name="a2c1be5d01e587821cd96114db6963e5c"></a>
 auto&#160;</td><td class="memItemRight"><b>getOverlayDepthView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:ae4f5555b35689ade14d1d6a8767f41ef" id="r_ae4f5555b35689ade14d1d6a8767f41ef"><td class="memItemLeft"><a id="ae4f5555b35689ade14d1d6a8767f41ef" name="ae4f5555b35689ade14d1d6a8767f41ef"></a>
@@ -719,17 +726,30 @@ auto&#160;</td><td class="memItemRight"><b>renderScale</b> () const noexcept -&g
 auto&#160;</td><td class="memItemRight"><b>renderExtent</b> () const -&gt; vk::Extent2D</td></tr>
 <tr class="memitem:a615b3eae4d8f31eda35608e8400400a5" id="r_a615b3eae4d8f31eda35608e8400400a5"><td class="memItemLeft"><a id="a615b3eae4d8f31eda35608e8400400a5" name="a615b3eae4d8f31eda35608e8400400a5"></a>
 auto&#160;</td><td class="memItemRight"><b>taaEnabled</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:a20682bf86da953130fec7750df6abc97" id="r_a20682bf86da953130fec7750df6abc97"><td class="memItemLeft"><a id="a20682bf86da953130fec7750df6abc97" name="a20682bf86da953130fec7750df6abc97"></a>
+void&#160;</td><td class="memItemRight"><b>setDlssRequested</b> (bool requested) noexcept</td></tr>
+<tr class="memdesc:a20682bf86da953130fec7750df6abc97"><td class="mdescLeft">&#160;</td><td class="mdescRight">DLSS replaces the temporal resolve when it is available. <br /></td></tr>
+<tr class="memitem:ae0260a8117a6b910cd435dd59df4b822" id="r_ae0260a8117a6b910cd435dd59df4b822"><td class="memItemLeft"><a id="ae0260a8117a6b910cd435dd59df4b822" name="ae0260a8117a6b910cd435dd59df4b822"></a>
+auto&#160;</td><td class="memItemRight"><b>dlssRequested</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memitem:aa197dc6d4982371693c946305636ac23" id="r_aa197dc6d4982371693c946305636ac23"><td class="memItemLeft"><a id="aa197dc6d4982371693c946305636ac23" name="aa197dc6d4982371693c946305636ac23"></a>
+void&#160;</td><td class="memItemRight"><b>setDlssActive</b> (bool active) noexcept</td></tr>
+<tr class="memdesc:aa197dc6d4982371693c946305636ac23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set by <a class="el" href="classrenderer_1_1TaaPass.html">TaaPass</a> after each record. <br /></td></tr>
+<tr class="memitem:add6ade99ef07f0f0ed954a498fb41496" id="r_add6ade99ef07f0f0ed954a498fb41496"><td class="memItemLeft"><a id="add6ade99ef07f0f0ed954a498fb41496" name="add6ade99ef07f0f0ed954a498fb41496"></a>
+auto&#160;</td><td class="memItemRight"><b>dlssActive</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:add6ade99ef07f0f0ed954a498fb41496"><td class="mdescLeft">&#160;</td><td class="mdescRight">True while DLSS produced the last resolved frame. <br /></td></tr>
+<tr class="memitem:a0f499bf496567789c44c540b6906cb1d" id="r_a0f499bf496567789c44c540b6906cb1d"><td class="memItemLeft"><a id="a0f499bf496567789c44c540b6906cb1d" name="a0f499bf496567789c44c540b6906cb1d"></a>
+auto&#160;</td><td class="memItemRight"><b>dlssFailureReason</b> () const -&gt; std::string</td></tr>
+<tr class="memdesc:a0f499bf496567789c44c540b6906cb1d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Why DLSS cannot run, empty when it can. <br /></td></tr>
+<tr class="memitem:afea407079d4af63d2e38da474fe8e0d0" id="r_afea407079d4af63d2e38da474fe8e0d0"><td class="memItemLeft"><a id="afea407079d4af63d2e38da474fe8e0d0" name="afea407079d4af63d2e38da474fe8e0d0"></a>
+auto&#160;</td><td class="memItemRight"><b>materialMipBias</b> () const noexcept -&gt; float</td></tr>
+<tr class="memdesc:afea407079d4af63d2e38da474fe8e0d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sharper material mips offset the lower render resolution so the temporal resolve recovers detail. <br /></td></tr>
 <tr class="memitem:a009a2c73d8d145d354b54efed33b2f3d" id="r_a009a2c73d8d145d354b54efed33b2f3d"><td class="memItemLeft"><a id="a009a2c73d8d145d354b54efed33b2f3d" name="a009a2c73d8d145d354b54efed33b2f3d"></a>
 void&#160;</td><td class="memItemRight"><b>setTaaHistoryWeight</b> (float weight) noexcept</td></tr>
 <tr class="memitem:af2b89d133aee2bbbd13ea98103ec0034" id="r_af2b89d133aee2bbbd13ea98103ec0034"><td class="memItemLeft"><a id="af2b89d133aee2bbbd13ea98103ec0034" name="af2b89d133aee2bbbd13ea98103ec0034"></a>
 auto&#160;</td><td class="memItemRight"><b>taaHistoryWeight</b> () const noexcept -&gt; float</td></tr>
-<tr class="memitem:ae30d9912fae84b88734e7730b8c06cfc" id="r_ae30d9912fae84b88734e7730b8c06cfc"><td class="memItemLeft"><a id="ae30d9912fae84b88734e7730b8c06cfc" name="ae30d9912fae84b88734e7730b8c06cfc"></a>
-void&#160;</td><td class="memItemRight"><b>setPostProcessSettings</b> (const <a class="el" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a> &amp;settings) noexcept</td></tr>
-<tr class="memitem:ad7f899a9b18211746fd09fc324c3e382" id="r_ad7f899a9b18211746fd09fc324c3e382"><td class="memItemLeft"><a id="ad7f899a9b18211746fd09fc324c3e382" name="ad7f899a9b18211746fd09fc324c3e382"></a>
-auto&#160;</td><td class="memItemRight"><b>getPostProcessSettings</b> () const noexcept -&gt; const <a class="el" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a> &amp;</td></tr>
-<tr class="memitem:ab68b60d1454b0e6196089c80015764d2" id="r_ab68b60d1454b0e6196089c80015764d2"><td class="memItemLeft"><a id="ab68b60d1454b0e6196089c80015764d2" name="ab68b60d1454b0e6196089c80015764d2"></a>
-void&#160;</td><td class="memItemRight"><b>requestPostProcessSettings</b> (const <a class="el" href="structrenderer_1_1PostProcessSettings.html">PostProcessSettings</a> &amp;settings)</td></tr>
-<tr class="memdesc:ab68b60d1454b0e6196089c80015764d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Safe from any thread. <br /></td></tr>
+<tr class="memitem:a081c61aaea88d9afbefe0e8b9ecbac2e" id="r_a081c61aaea88d9afbefe0e8b9ecbac2e"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#a081c61aaea88d9afbefe0e8b9ecbac2e">setPostProcessNumber</a> (std::string_view name, float value) -&gt; bool</td></tr>
+<tr class="memitem:abf8c0aa821824291b5d77f6267d4b215" id="r_abf8c0aa821824291b5d77f6267d4b215"><td class="memItemLeft"><a id="abf8c0aa821824291b5d77f6267d4b215" name="abf8c0aa821824291b5d77f6267d4b215"></a>
+auto&#160;</td><td class="memItemRight"><b>setPostProcessColor</b> (std::string_view name, const glm::vec3 &amp;value) -&gt; bool</td></tr>
 <tr class="memitem:a31165884aa4a043743e459d974eabbc4" id="r_a31165884aa4a043743e459d974eabbc4"><td class="memItemLeft"><a id="a31165884aa4a043743e459d974eabbc4" name="a31165884aa4a043743e459d974eabbc4"></a>
 void&#160;</td><td class="memItemRight"><b>setRenderOwnerFilter</b> (const <a class="el" href="classtoast_1_1INodeOwner.html">toast::INodeOwner</a> *owner)</td></tr>
 <tr class="memdesc:a31165884aa4a043743e459d974eabbc4"><td class="mdescLeft">&#160;</td><td class="mdescRight">nullptr renders every owner. Main thread only <br /></td></tr>
@@ -840,6 +860,28 @@ static VulkanRenderer *&#160;</td><td class="memItemRight"><b>instance</b> = nul
 </table>
 </div><div class="memdoc">
 <dl class="section note"><dt>Note</dt><dd>Render thread only </dd></dl>
+
+</div>
+</div>
+<a id="a081c61aaea88d9afbefe0e8b9ecbac2e" name="a081c61aaea88d9afbefe0e8b9ecbac2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a081c61aaea88d9afbefe0e8b9ecbac2e">&#9670;&#160;</a></span>setPostProcessNumber()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::VulkanRenderer::setPostProcessNumber </td>
+          <td>(</td>
+          <td class="paramtype">std::string_view</td>          <td class="paramname"><span class="paramname"><em>name</em></span>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">float</td>          <td class="paramname"><span class="paramname"><em>value</em></span>&#160;) -&gt; bool</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Sets a knob of the base grade that post process volumes blend over, by its path in post_process.schema.json ("bloom.strength"), clamped to the schema range. Safe from any thread </p><dl class="section return"><dt>Returns</dt><dd>false when the name is unknown or not a scalar </dd></dl>
 
 </div>
 </div>

@@ -118,7 +118,10 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('mass__accumula
   <div class="headertitle"><div class="title">mass_accumulator.hpp File Reference</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="voxel__constants_8hpp_source.html">voxel_constants.hpp</a>&quot;</code><br />
+<div class="textblock"><code>#include &quot;<a class="el" href="brick_8hpp_source.html">brick.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="voxel__constants_8hpp_source.html">voxel_constants.hpp</a>&quot;</code><br />
+<code>#include &lt;array&gt;</code><br />
+<code>#include &lt;bit&gt;</code><br />
 <code>#include &lt;cassert&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
 <code>#include &lt;glm/glm.hpp&gt;</code><br />
@@ -127,16 +130,27 @@ Include dependency graph for mass_accumulator.hpp:</div>
 <div class="dyncontent">
 <div class="center"><img src="mass__accumulator_8hpp__incl.png" border="0" usemap="#aengine_2src_2toast_2voxel_2mass__accumulator_8hpp" loading="lazy" alt=""/></div>
 <map name="aengine_2src_2toast_2voxel_2mass__accumulator_8hpp" id="aengine_2src_2toast_2voxel_2mass__accumulator_8hpp">
-<area shape="rect" title=" " alt="" coords="146,5,321,50"/>
-<area shape="rect" href="voxel__constants_8hpp.html" title=" " alt="" coords="5,98,160,126"/>
-<area shape="poly" title=" " alt="" coords="191,52,121,93,118,88,195,49"/>
-<area shape="rect" title=" " alt="" coords="107,174,172,201"/>
-<area shape="poly" title=" " alt="" coords="223,50,157,162,153,158,218,51"/>
-<area shape="rect" title=" " alt="" coords="235,98,303,126"/>
-<area shape="poly" title=" " alt="" coords="244,48,260,84,255,83,242,53"/>
-<area shape="rect" title=" " alt="" coords="327,98,430,126"/>
-<area shape="poly" title=" " alt="" coords="272,48,345,90,339,90,271,53"/>
-<area shape="poly" title=" " alt="" coords="94,124,123,161,118,162,92,129"/>
+<area shape="rect" title=" " alt="" coords="195,5,370,50"/>
+<area shape="rect" href="brick_8hpp.html" title=" " alt="" coords="242,98,323,126"/>
+<area shape="poly" title=" " alt="" coords="284,48,285,83,280,81,281,53"/>
+<area shape="rect" href="voxel__constants_8hpp.html" title=" " alt="" coords="23,174,177,201"/>
+<area shape="poly" title=" " alt="" coords="258,53,128,166,124,161,257,48"/>
+<area shape="rect" title=" " alt="" coords="67,249,133,277"/>
+<area shape="poly" title=" " alt="" coords="193,52,146,71,95,97,49,131,29,152,13,175,9,193,18,210,35,226,58,241,53,243,32,230,13,214,4,194,8,173,25,149,45,127,92,92,144,66,197,48"/>
+<area shape="rect" title=" " alt="" coords="202,174,257,201"/>
+<area shape="poly" title=" " alt="" coords="263,49,246,74,233,99,228,129,228,159,223,157,222,128,228,97,241,71,259,52"/>
+<area shape="rect" title=" " alt="" coords="331,174,370,201"/>
+<area shape="poly" title=" " alt="" coords="304,48,323,71,338,97,348,128,352,159,347,157,343,129,333,99,319,74,303,53"/>
+<area shape="rect" title=" " alt="" coords="394,174,462,201"/>
+<area shape="poly" title=" " alt="" coords="309,48,360,96,413,161,407,161,357,100,308,53"/>
+<area shape="rect" title=" " alt="" coords="450,98,553,126"/>
+<area shape="poly" title=" " alt="" coords="341,48,454,91,449,93,340,53"/>
+<area shape="poly" title=" " alt="" coords="248,128,147,170,145,165,252,124"/>
+<area shape="poly" title=" " alt="" coords="286,124,287,163,282,184,271,203,245,227,213,243,180,254,149,260,148,255,179,249,211,238,242,222,267,200,277,182,282,162,283,128"/>
+<area shape="poly" title=" " alt="" coords="275,125,249,163,246,159,271,128"/>
+<area shape="poly" title=" " alt="" coords="295,124,331,162,326,162,294,129"/>
+<area shape="poly" title=" " alt="" coords="309,124,391,166,386,167,308,129"/>
+<area shape="poly" title=" " alt="" coords="102,200,102,235,97,233,98,204"/>
 </map>
 </div>
 </div><div class="textblock"><div class="dynheader">
@@ -193,6 +207,7 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 id="header-func-members" class="groupheader"><a id="func-members" name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:aacdca5cc39b14144406854f41e7d74d8" id="r_aacdca5cc39b14144406854f41e7d74d8"><td class="memItemLeft">constexpr auto&#160;</td><td class="memItemRight"><a class="el" href="#aacdca5cc39b14144406854f41e7d74d8">voxel::maskMoments</a> (const <a class="el" href="structvoxel_1_1BrickOccupancy.html">BrickOccupancy</a> &amp;mask) noexcept -&gt; <a class="el" href="structvoxel_1_1MassMoments.html">MassMoments</a></td></tr>
 <tr class="memitem:a4bbd428ad859a0808c7a0e9d99f9a107" id="r_a4bbd428ad859a0808c7a0e9d99f9a107"><td class="memItemLeft"><a id="a4bbd428ad859a0808c7a0e9d99f9a107" name="a4bbd428ad859a0808c7a0e9d99f9a107"></a>
 auto&#160;</td><td class="memItemRight"><b>voxel::resolveMass</b> (const <a class="el" href="structvoxel_1_1MassMoments.html">MassMoments</a> &amp;moments, float voxel_size=k_voxel_size) -&gt; float</td></tr>
 <tr class="memitem:a1103c3cb0913d042d944b2799e82a3db" id="r_a1103c3cb0913d042d944b2799e82a3db"><td class="memItemLeft"><a id="a1103c3cb0913d042d944b2799e82a3db" name="a1103c3cb0913d042d944b2799e82a3db"></a>
@@ -206,7 +221,34 @@ constexpr int64_t&#160;</td><td class="memItemRight"><b>voxel::k_moment_safe_lim
 <a name="details" id="details"></a><h2 id="header-details" class="groupheader">Detailed Description</h2>
 <div class="textblock"><dl class="section author"><dt>Author</dt><dd>dario </dd></dl>
 <dl class="section date"><dt>Date</dt><dd>08/09/2026 </dd></dl>
-</div></div><!-- contents -->
+</div><a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Function Documentation</h2>
+<a id="aacdca5cc39b14144406854f41e7d74d8" name="aacdca5cc39b14144406854f41e7d74d8"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aacdca5cc39b14144406854f41e7d74d8">&#9670;&#160;</a></span>maskMoments()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto voxel::maskMoments </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structvoxel_1_1BrickOccupancy.html">BrickOccupancy</a> &amp;</td>          <td class="paramname"><span class="paramname"><em>mask</em></span></td><td>)</td>
+          <td> -&gt; <a class="el" href="structvoxel_1_1MassMoments.html">MassMoments</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel nodiscard">nodiscard</span><span class="mlabel constexpr">constexpr</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Moments of the set voxels of a brick at density 1, in brick local coordinates </p><dl class="section note"><dt>Note</dt><dd>Sums of x, x * x and x * y come from popcounts of the bits of each coordinate so a dense mask costs no voxel walk </dd></dl>
+
+</div>
+</div>
+</div><!-- contents -->
 </div><!-- doc-content -->
 <div id="page-nav" class="page-nav-panel">
 <div id="page-nav-resize-handle"></div>

@@ -12,7 +12,7 @@ var searchData=
   ['deletion_5fqueue_9',['deletion_queue',['../structevent_1_1EventSystem.html#ab243df3d6617188e1fd9a00d39a27f58',1,'event::EventSystem']]],
   ['delta_10',['delta',['../structinput_1_1EvalContext.html#a3cf4dcd187cd58b30594123f26803f4e',1,'input::EvalContext']]],
   ['density_11',['density',['../structrenderer_1_1PostProcessSettings_1_1Fog.html#a35c9bfd3fd4150baba7b35a0eb17049d',1,'renderer::PostProcessSettings::Fog::density'],['../structvoxel_1_1PhysicalMaterial.html#a37636098c5585e2fa4027eb2c755f149',1,'voxel::PhysicalMaterial::density']]],
-  ['depth_12',['depth',['../structrenderer_1_1GiPass_1_1Stats.html#a06695c5408f11751cb817c3013efec0e',1,'renderer::GiPass::Stats']]],
+  ['depth_12',['depth',['../structrenderer_1_1GameViewDesc.html#a8e512a622bbc27f482bc5f085cf4f1b6',1,'renderer::GameViewDesc::depth'],['../structrenderer_1_1GiPass_1_1Stats.html#a06695c5408f11751cb817c3013efec0e',1,'renderer::GiPass::Stats::depth']]],
   ['depth_5fclamp_13',['depth_clamp',['../structrenderer_1_1VulkanPipeline_1_1Config.html#a953b43f580b56bbcff1d55ce5a5e3801',1,'renderer::VulkanPipeline::Config']]],
   ['depth_5fcompare_14',['depth_compare',['../structrenderer_1_1VulkanPipeline_1_1Config.html#aa7a6f1fb7e799b910e4faab4602e791c',1,'renderer::VulkanPipeline::Config']]],
   ['depth_5ffragment_15',['depth_fragment',['../structrenderer_1_1VulkanPipeline_1_1Config.html#aa1857fb19dd53b400d2ba9b729fc1e04',1,'renderer::VulkanPipeline::Config']]],

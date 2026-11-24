@@ -162,6 +162,12 @@ auto&#160;</td><td class="memItemRight"><b>isMeshShaderSupported</b> () const no
 <tr class="memitem:a2e28f6cbefb2a309156669595b55372b" id="r_a2e28f6cbefb2a309156669595b55372b"><td class="memItemLeft"><a id="a2e28f6cbefb2a309156669595b55372b" name="a2e28f6cbefb2a309156669595b55372b"></a>
 auto&#160;</td><td class="memItemRight"><b>isFragmentShadingRateSupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a2e28f6cbefb2a309156669595b55372b"><td class="mdescLeft">&#160;</td><td class="mdescRight">VK_KHR_fragment_shading_rate with a per pipeline rate, which always offers 2x2. <br /></td></tr>
+<tr class="memitem:a215962067ce303b69688d36728e8b338" id="r_a215962067ce303b69688d36728e8b338"><td class="memItemLeft"><a id="a215962067ce303b69688d36728e8b338" name="a215962067ce303b69688d36728e8b338"></a>
+auto&#160;</td><td class="memItemRight"><b>dlssExtensionsEnabled</b> () const noexcept -&gt; bool</td></tr>
+<tr class="memdesc:a215962067ce303b69688d36728e8b338"><td class="mdescLeft">&#160;</td><td class="mdescRight">Every instance and device extension NGX asked for is enabled, <a class="el" href="classrenderer_1_1DlssUpscaler.html" title="NVIDIA DLSS Super Resolution through NGX, every call is a no-op in builds without TOAST_DLSS.">DlssUpscaler</a> still has to initialise NGX. <br /></td></tr>
+<tr class="memitem:afa12367bcd2fda57ae1bc31b63e56716" id="r_afa12367bcd2fda57ae1bc31b63e56716"><td class="memItemLeft"><a id="afa12367bcd2fda57ae1bc31b63e56716" name="afa12367bcd2fda57ae1bc31b63e56716"></a>
+auto&#160;</td><td class="memItemRight"><b>dlssReason</b> () const noexcept -&gt; std::string_view</td></tr>
+<tr class="memdesc:afa12367bcd2fda57ae1bc31b63e56716"><td class="mdescLeft">&#160;</td><td class="mdescRight">Why the NGX extensions were left out. <br /></td></tr>
 <tr class="memitem:a7a834f82cb78454036f34882b94931c2" id="r_a7a834f82cb78454036f34882b94931c2"><td class="memItemLeft"><a id="a7a834f82cb78454036f34882b94931c2" name="a7a834f82cb78454036f34882b94931c2"></a>
 auto&#160;</td><td class="memItemRight"><b>isDepthClampSupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a9c61164d3919f7449ab261e00ac907f9" id="r_a9c61164d3919f7449ab261e00ac907f9"><td class="memItemLeft"><a id="a9c61164d3919f7449ab261e00ac907f9" name="a9c61164d3919f7449ab261e00ac907f9"></a>

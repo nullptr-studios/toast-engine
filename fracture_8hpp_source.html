@@ -272,8 +272,8 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('fracture_8hpp_
 <div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span> </div>
 <div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>  <span class="comment">// yeah this is O(n^6) 🥀</span></div>
 <div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>  <span class="keyword">const</span> <span class="keyword">auto</span> brick_dim = <span class="keyword">static_cast&lt;</span>int32_t<span class="keyword">&gt;</span>(voxel::k_brick_dim);</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keyword">const</span> glm::ivec3 first_brick = first / brick_dim;</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="keyword">const</span> glm::ivec3 last_brick = last / brick_dim;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>  <span class="keyword">const</span> glm::ivec3 first_brick = <a class="code hl_function" href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a>(first);</div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>  <span class="keyword">const</span> glm::ivec3 last_brick = <a class="code hl_function" href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a>(last);</div>
 <div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>  <span class="keywordflow">for</span> (int32_t bz = first_brick.z; bz &lt;= last_brick.z; ++bz) {</div>
 <div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>    <span class="keywordflow">for</span> (int32_t by = first_brick.y; by &lt;= last_brick.y; ++by) {</div>
 <div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>      <span class="keywordflow">for</span> (int32_t bx = first_brick.x; bx &lt;= last_brick.x; ++bx) {</div>
@@ -827,7 +827,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('fracture_8hpp_
 <div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>}</div>
 <div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span> </div>
 <div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>}</div>
-<div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:21</div></div>
+<div class="ttc" id="aclassvoxel_1_1Volume_html"><div class="ttname"><a href="classvoxel_1_1Volume.html">voxel::Volume</a></div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:36</div></div>
 <div class="ttc" id="afracture__profile_8hpp_html"><div class="ttname"><a href="fracture__profile_8hpp.html">fracture_profile.hpp</a></div><div class="ttdoc">How a material breaks: how the energy of a hit is spent and how coarse its cracks are.</div></div>
 <div class="ttc" id="afracture__random_8hpp_html"><div class="ttname"><a href="fracture__random_8hpp.html">fracture_random.hpp</a></div><div class="ttdoc">Deterministic randomness for destruction.</div></div>
 <div class="ttc" id="ahardness_8hpp_html"><div class="ttname"><a href="hardness_8hpp.html">hardness.hpp</a></div><div class="ttdoc">Tiers of how hard a material is to break.</div></div>
@@ -844,6 +844,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('fracture_8hpp_
 <div class="ttc" id="astructvoxel_1_1PhysicalMaterial_html_a4de68ddf70a8e0af9e4a51ee5d6b8aff"><div class="ttname"><a href="structvoxel_1_1PhysicalMaterial.html#a4de68ddf70a8e0af9e4a51ee5d6b8aff">voxel::PhysicalMaterial::toughness</a></div><div class="ttdeci">float toughness</div><div class="ttdoc">kJ/m³ it takes to break per m3</div><div class="ttdef"><b>Definition</b> palette.hpp:144</div></div>
 <div class="ttc" id="avoxel__constants_8hpp_html"><div class="ttname"><a href="voxel__constants_8hpp.html">voxel_constants.hpp</a></div></div>
 <div class="ttc" id="avoxel__volume_8hpp_html"><div class="ttname"><a href="voxel__volume_8hpp.html">voxel_volume.hpp</a></div></div>
+<div class="ttc" id="avoxel__volume_8hpp_html_acf94ad27ae1a71d3c1a98e4d0914cf3e"><div class="ttname"><a href="voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e">voxel::brickOf</a></div><div class="ttdeci">auto brickOf(glm::ivec3 voxel) noexcept -&gt; glm::ivec3</div><div class="ttdoc">Arithmetic shift so voxel -1 lands in brick -1.</div><div class="ttdef"><b>Definition</b> voxel_volume.hpp:27</div></div>
 </div><!-- fragment --></div><!-- contents -->
 </div><!-- doc-content -->
 </div><!-- container -->

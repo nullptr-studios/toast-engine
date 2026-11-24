@@ -25,6 +25,7 @@ var namespaceeditor_1_1Assets_1_1Types =
     [ "MeshAsset", "classeditor_1_1Assets_1_1Types_1_1MeshAsset.html", null ],
     [ "NodeAsset", "classeditor_1_1Assets_1_1Types_1_1NodeAsset.html", null ],
     [ "PhysicsMaterialAsset", "classeditor_1_1Assets_1_1Types_1_1PhysicsMaterialAsset.html", null ],
+    [ "PostProcessProfileAsset", "classeditor_1_1Assets_1_1Types_1_1PostProcessProfileAsset.html", null ],
     [ "ProjectSettingsAsset", "classeditor_1_1Assets_1_1Types_1_1ProjectSettingsAsset.html", null ],
     [ "SchemaAsset", "classeditor_1_1Assets_1_1Types_1_1SchemaAsset.html", null ],
     [ "ScriptAsset", "classeditor_1_1Assets_1_1Types_1_1ScriptAsset.html", null ],

@@ -1,0 +1,5 @@
+<map id="renderer::GameViewTarget" name="renderer::GameViewTarget">
+<area shape="rect" id="Node000001" title="Shared by the view pass, its draw passes and RmlUi textures." alt="" coords="6,128,202,156"/>
+<area shape="rect" id="Node000002" href="$structrenderer_1_1sync_1_1ImageState.html" title="Owned next to the image it describes." alt="" coords="5,5,203,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="106,47,107,128,101,127,102,50"/>
+</map>

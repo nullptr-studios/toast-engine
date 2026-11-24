@@ -1,0 +1,7 @@
+<map id="toast::Node::parent" name="toast::Node::parent">
+<area shape="rect" id="Node000001" title="The immediate parent of this node." alt="" coords="532,5,678,33"/>
+<area shape="rect" id="Node000002" href="$classtoast_1_1Workspace.html#ab5dbcd504b7eb244945401bdf1ec3319" title="Nearest voxel or mesh surface under the mouse." alt="" coords="258,5,484,33"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="514,19,485,22,485,17,519,19"/>
+<area shape="rect" id="Node000003" href="$classtoast_1_1Workspace.html#aa02c33f1ff71e2705407007535cd5a01" title="Surface point under the mouse or the ground plane, snapped like the translate tool." alt="" coords="5,5,210,33"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="239,19,210,22,210,17,245,19"/>
+</map>

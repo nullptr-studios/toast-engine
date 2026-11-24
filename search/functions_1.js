@@ -16,13 +16,14 @@ var searchData=
   ['boxextents_13',['boxExtents',['../classtoast_1_1ReflectionProbe.html#a67faede18b7f4e42e044d614baa8dc61',1,'toast::ReflectionProbe']]],
   ['boxtoucheslateralfrustum_14',['boxTouchesLateralFrustum',['../namespacerenderer.html#a9c134b43e7a09d4cc83511cc4b21718c',1,'renderer']]],
   ['brickbasebuffer_15',['brickBaseBuffer',['../classrenderer_1_1VoxelTraceScene.html#a3594f0f42856418e9d7b8909f9fc4bf1',1,'renderer::VoxelTraceScene']]],
-  ['brickcomponents_16',['brickComponents',['../connectivity_8hpp.html#a8ee9df726019653aab82608ab3357832',1,'voxel']]],
-  ['buffer_17',['buffer',['../classrenderer_1_1AsyncComputeTask_1_1FrameView.html#a0e148cc056131e68a8e6d424b7b7d5a5',1,'renderer::AsyncComputeTask::FrameView']]],
-  ['buildcount_18',['buildCount',['../classtoast_1_1VoxelPiece.html#afc5c29b4e19460444cde44819bbbda91',1,'toast::VoxelPiece']]],
-  ['buildsasync_19',['buildsAsync',['../classtoast_1_1ProceduralVoxel.html#a37a7f33602481202e064fd18cf172d99',1,'toast::ProceduralVoxel::buildsAsync()'],['../classtoast_1_1VoxelNode.html#acdaf573974faf85d4db966810c1a2dcc',1,'toast::VoxelNode::buildsAsync()']]],
-  ['buildshape_20',['buildShape',['../classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236',1,'toast::ProceduralVoxel::buildShape()'],['../classtoast_1_1VoxelNode.html#a0415831c01f4919f6bef3199f7351557',1,'toast::VoxelNode::buildShape()']]],
-  ['buildtree_21',['buildTree',['../classtoast_1_1INodeOwner.html#addb06c4741a900c39b5e745fd4538607',1,'toast::INodeOwner']]],
-  ['builtextent_22',['builtExtent',['../classrenderer_1_1HiZPyramid.html#a0fe14495388e119ccda9f29673cb405b',1,'renderer::HiZPyramid']]],
-  ['bumptargetgeneration_23',['bumpTargetGeneration',['../namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069',1,'renderer']]],
-  ['busy_24',['busy',['../classtoast_1_1ThreadPool.html#a47d1efa55a029660c9d834d93bc31093',1,'toast::ThreadPool']]]
+  ['brickof_16',['brickOf',['../voxel__volume_8hpp.html#acf94ad27ae1a71d3c1a98e4d0914cf3e',1,'voxel']]],
+  ['bricksolidcount_17',['brickSolidCount',['../classvoxel_1_1Volume.html#a9d104addf6c088520b8134c12e074dc9',1,'voxel::Volume::brickSolidCount()'],['../classassets_1_1Volume.html#a9d104addf6c088520b8134c12e074dc9',1,'assets::Volume::brickSolidCount()']]],
+  ['buffer_18',['buffer',['../classrenderer_1_1AsyncComputeTask_1_1FrameView.html#a0e148cc056131e68a8e6d424b7b7d5a5',1,'renderer::AsyncComputeTask::FrameView']]],
+  ['buildcount_19',['buildCount',['../classtoast_1_1VoxelPiece.html#afc5c29b4e19460444cde44819bbbda91',1,'toast::VoxelPiece']]],
+  ['buildsasync_20',['buildsAsync',['../classtoast_1_1ProceduralVoxel.html#a37a7f33602481202e064fd18cf172d99',1,'toast::ProceduralVoxel::buildsAsync()'],['../classtoast_1_1VoxelNode.html#acdaf573974faf85d4db966810c1a2dcc',1,'toast::VoxelNode::buildsAsync()']]],
+  ['buildshape_21',['buildShape',['../classtoast_1_1ProceduralVoxel.html#a7644a31907b63c7e0a5e6131db564236',1,'toast::ProceduralVoxel::buildShape()'],['../classtoast_1_1VoxelNode.html#a0415831c01f4919f6bef3199f7351557',1,'toast::VoxelNode::buildShape()']]],
+  ['buildtree_22',['buildTree',['../classtoast_1_1INodeOwner.html#addb06c4741a900c39b5e745fd4538607',1,'toast::INodeOwner']]],
+  ['builtextent_23',['builtExtent',['../classrenderer_1_1HiZPyramid.html#a0fe14495388e119ccda9f29673cb405b',1,'renderer::HiZPyramid']]],
+  ['bumptargetgeneration_24',['bumpTargetGeneration',['../namespacerenderer.html#a1354197c4f5fd460f03a5e8456998069',1,'renderer']]],
+  ['busy_25',['busy',['../classtoast_1_1ThreadPool.html#a47d1efa55a029660c9d834d93bc31093',1,'toast::ThreadPool']]]
 ];

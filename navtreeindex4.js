@@ -1,5 +1,12 @@
 var NAVTREEINDEX4 =
 {
+"classeditor_1_1Workspace_1_1ButtonVM.html":[11,0,0,12,4],
+"classeditor_1_1Workspace_1_1ButtonVM.html":[13,0,3,11,4],
+"classeditor_1_1Workspace_1_1ClassCardVM.html":[11,0,0,12,5],
+"classeditor_1_1Workspace_1_1ClassCardVM.html":[13,0,3,11,5],
+"classeditor_1_1Workspace_1_1DockFactory.html":[11,0,0,12,6],
+"classeditor_1_1Workspace_1_1DockFactory.html":[13,0,3,11,6],
+"classeditor_1_1Workspace_1_1DockFactory.html#a219268b51406a634e05d7221891fcc90":[11,0,0,12,6,0],
 "classeditor_1_1Workspace_1_1DockFactory.html#a219268b51406a634e05d7221891fcc90":[13,0,3,11,6,0],
 "classeditor_1_1Workspace_1_1EditorHostWindow.html":[11,0,0,12,7],
 "classeditor_1_1Workspace_1_1EditorHostWindow.html":[13,0,3,11,7],
@@ -242,12 +249,5 @@ var NAVTREEINDEX4 =
 "classphysics_1_1CapsuleCollider.html":[13,0,8,23],
 "classphysics_1_1Collider.html":[13,0,8,26],
 "classphysics_1_1DebrisSimulation.html":[13,0,8,39],
-"classphysics_1_1DynamicRigidbody.html":[13,0,8,43],
-"classphysics_1_1FixedJoint.html":[13,0,8,47],
-"classphysics_1_1HingeJoint.html":[13,0,8,53],
-"classphysics_1_1HingeJoint.html#a29017b60767390df5cea2777a888179e":[13,0,8,53,3],
-"classphysics_1_1HingeJoint.html#a56b56fb0306803a4fe9bb31e1be5be05":[13,0,8,53,2],
-"classphysics_1_1HingeJoint.html#a6e3971d201c598c4bc98255cb342998e":[13,0,8,53,4],
-"classphysics_1_1HingeJoint.html#a9d6b4ee438b053cb0aff4ce9df148ff1":[13,0,8,53,0],
-"classphysics_1_1HingeJoint.html#aac76869a0a31bca93887c6fa17c062c1":[13,0,8,53,1]
+"classphysics_1_1DynamicRigidbody.html":[13,0,8,43]
 };

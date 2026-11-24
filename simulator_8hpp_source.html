@@ -735,181 +735,186 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('simulator_8hpp
 <div class="line"><a id="l00653" name="l00653"></a><span class="lineno">  653</span>  [[nodiscard]]</div>
 <div class="line"><a id="l00654" name="l00654"></a><span class="lineno">  654</span>  auto correctPositions(std::span&lt;const <span class="keywordtype">size_t</span>&gt; manifold_indices) -&gt; <span class="keywordtype">size_t</span>;</div>
 <div class="line"><a id="l00655" name="l00655"></a><span class="lineno">  655</span>  <span class="keywordtype">void</span> publishProfile(std::span&lt;const SimulationIsland&gt; islands);</div>
-<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span> </div>
-<div class="line"><a id="l00657" name="l00657"></a><span class="lineno">  657</span>  <span class="keywordtype">void</span> clearFragmentFromSource(</div>
-<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>      ShapeID shape_id, VoxelShapeData&amp; data, voxel::Volume&amp; source, const DetachedComponent&amp; component,</div>
-<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>      const RemovedVoxels* already_removed = <span class="keywordtype">nullptr</span></div>
-<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>  );</div>
-<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span> </div>
-<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span>  <span class="keywordtype">void</span> emitDebris(</div>
-<div class="line"><a id="l00663" name="l00663"></a><span class="lineno">  663</span>      ShapeID shape_id, std::span&lt;const DebrisVoxel&gt; voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,</div>
-<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>      <span class="keywordtype">bool</span> together = false</div>
-<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span>  );</div>
-<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span> </div>
-<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>  <span class="keywordtype">void</span> emitComponentDebris(ShapeID shape_id, const DetachedComponent&amp; component, const FragmentPush* push);</div>
-<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span> </div>
-<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span>  auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent&amp; component, const FragmentPush* push = <span class="keywordtype">nullptr</span>) -&gt; <span class="keywordtype">bool</span>;</div>
-<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>  auto smashShape(ShapeID shape_id, const SmashVolume&amp; volume, const CapsuleSmash&amp; smash, <span class="keywordtype">bool</span> chunks) -&gt; uint32_t;</div>
-<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span>  auto explodeShape(ShapeID shape_id, const ExplosionDamage&amp; explosion) -&gt; uint32_t;</div>
+<div class="line"><a id="l00656" name="l00656"></a><span class="lineno">  656</span></div>
+<div class="line"><a id="l00658" name="l00658"></a><span class="lineno">  658</span>  <span class="keywordtype">void</span> clearFragmentFromSource(</div>
+<div class="line"><a id="l00659" name="l00659"></a><span class="lineno">  659</span>      ShapeID shape_id, VoxelShapeData&amp; data, voxel::Volume&amp; source, const DetachedComponent&amp; component,</div>
+<div class="line"><a id="l00660" name="l00660"></a><span class="lineno">  660</span>      const RemovedVoxels* already_removed = <span class="keywordtype">nullptr</span>, std::vector&lt;glm::ivec3&gt;* deferred_dirty = <span class="keywordtype">nullptr</span></div>
+<div class="line"><a id="l00661" name="l00661"></a><span class="lineno">  661</span>  );</div>
+<div class="line"><a id="l00662" name="l00662"></a><span class="lineno">  662</span></div>
+<div class="line"><a id="l00664" name="l00664"></a><span class="lineno">  664</span>  <span class="keywordtype">void</span> finishSourceCarve(ShapeID shape_id, VoxelShapeData&amp; data, voxel::Volume&amp; source, std::span&lt;const glm::ivec3&gt; dirty_bricks);</div>
+<div class="line"><a id="l00665" name="l00665"></a><span class="lineno">  665</span> </div>
+<div class="line"><a id="l00666" name="l00666"></a><span class="lineno">  666</span>  <span class="keywordtype">void</span> emitDebris(</div>
+<div class="line"><a id="l00667" name="l00667"></a><span class="lineno">  667</span>      ShapeID shape_id, std::span&lt;const DebrisVoxel&gt; voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,</div>
+<div class="line"><a id="l00668" name="l00668"></a><span class="lineno">  668</span>      <span class="keywordtype">bool</span> together = false</div>
+<div class="line"><a id="l00669" name="l00669"></a><span class="lineno">  669</span>  );</div>
+<div class="line"><a id="l00670" name="l00670"></a><span class="lineno">  670</span> </div>
+<div class="line"><a id="l00671" name="l00671"></a><span class="lineno">  671</span>  <span class="keywordtype">void</span> emitComponentDebris(ShapeID shape_id, const DetachedComponent&amp; component, const FragmentPush* push);</div>
+<div class="line"><a id="l00672" name="l00672"></a><span class="lineno">  672</span> </div>
 <div class="line"><a id="l00673" name="l00673"></a><span class="lineno">  673</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>  auto explosionPush(ShapeID shape_id, const DetachedComponent&amp; piece, const ExplosionDamage&amp; explosion)</div>
-<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>      -&gt; std::optional&lt;FragmentPush&gt;;</div>
-<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>  auto breakPieces(</div>
-<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>      ShapeID shape_id, SmashPieces&amp; picked, <span class="keywordtype">bool</span> chunks,</div>
-<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>      const std::function&lt;std::optional&lt;FragmentPush&gt;(const DetachedComponent&amp;)&gt;&amp; push_for, const AABB&amp; wake_bounds,</div>
-<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>      uint32_t max_spawns = 0</div>
-<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>  ) -&gt; uint32_t;</div>
-<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>  auto marchVoxelRay(const glm::vec3&amp; origin, const glm::vec3&amp; direction, <span class="keywordtype">float</span> max_distance) -&gt; std::optional&lt;VoxelRayHit&gt;;</div>
-<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>  auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent&amp; component) -&gt; <span class="keywordtype">bool</span>;</div>
-<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>  <span class="keywordtype">void</span> despawnSettledFragments(<span class="keywordtype">float</span> dt);</div>
-<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>  <span class="keywordtype">void</span> destroyFallenBodies();</div>
-<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>  <span class="keywordtype">void</span> retireVoxelBody(BodyID <span class="keywordtype">id</span>);</div>
-<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>  auto debrisIfSmall(ShapeID shape) -&gt; <span class="keywordtype">bool</span>;</div>
-<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>  <span class="keywordtype">void</span> destroyFragmentsOf(BodyID origin);</div>
-<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span> </div>
-<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>  auto voxelNodeFor(ShapeID shape) -&gt; toast::VoxelNode*;</div>
-<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span> </div>
-<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>  static auto partOf(const VoxelNodeBinding&amp; binding) -&gt; toast::VoxelPart*;</div>
-<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span> </div>
-<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span>  <span class="keywordtype">void</span> recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum);</div>
-<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>  <span class="keywordtype">void</span> noteVoxelShapeEmptied(ShapeID shape);</div>
-<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span> </div>
-<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span>  <span class="keywordtype">void</span> reapFragments();</div>
-<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  <span class="keywordtype">void</span> destroyFragmentRecord(BodyID <span class="keywordtype">id</span>);</div>
-<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>  <span class="keywordtype">void</span> queuePendingFragments(std::span&lt;const ConnectivityResult&gt; results);</div>
-<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span>  <span class="keywordtype">void</span> spawnBudgetedFragments();</div>
-<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>  [[nodiscard]]</div>
-<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>  auto reconcileComponent(const voxel::Volume&amp; volume, const DetachedComponent&amp; component) const -&gt; <span class="keywordtype">bool</span>;</div>
-<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span>  <span class="keywordtype">void</span> enforceFragmentBudget(<span class="keywordtype">float</span> dt);</div>
-<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>  <span class="keywordtype">void</span> unlockSleep(BodyID <span class="keywordtype">id</span>);</div>
-<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>  <span class="keywordtype">void</span> recheckNeighborsOf(BodyID <span class="keywordtype">id</span>);</div>
-<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>  <span class="keywordtype">void</span> rebuildFragmentIndex();</div>
-<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>  <span class="keywordtype">void</span> refreshPalette(uint64_t palette_uid);</div>
-<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>  <span class="keywordtype">void</span> refreshAllPalettes();</div>
-<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>  auto createVoxelShapeInternal(</div>
-<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>      BodyID owner, const VoxelShape&amp; shape, voxel::Volume* external, std::unique_ptr&lt;voxel::Volume&gt;&amp; owned,</div>
-<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>      const voxel::Palette&amp; palette, const voxel::MaterialLibrary&amp; materials, const voxel::MassMoments* known_moments = <span class="keywordtype">nullptr</span></div>
-<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>  ) -&gt; ShapeID;</div>
-<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span> </div>
-<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>  <span class="keywordtype">void</span> checkTriggers();</div>
-<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>  <span class="keywordtype">void</span> overlapShape(</div>
-<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>      BodyID ignored, LayerFilter layers, const Shape&amp; probe, const glm::vec3&amp; position, const glm::quat&amp; rotation,</div>
-<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>      std::vector&lt;BodyID&gt;&amp; bodies</div>
-<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>  ) const;</div>
-<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span> </div>
-<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span>  inline static Simulator* instance = <span class="keywordtype">nullptr</span>;</div>
-<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>  inline static std::atomic&lt;std::shared_ptr&lt;const QuerySnapshot&gt;&gt; published_query_snapshot;</div>
-<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span> </div>
-<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>  TOAST_LOCKABLE(std::mutex, m_wind_mutex, <span class="stringliteral">&quot;Physics wind&quot;</span>);</div>
-<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>  std::optional&lt;glm::vec3&gt; m_level_wind;</div>
-<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span> </div>
-<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span>  mutable std::thread::<span class="keywordtype">id</span> m_owner_thread;</div>
-<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>  std::atomic&lt;SimulationPhase&gt; m_phase = SimulationPhase::idle;</div>
-<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>  NarrowPhase m_narrow_phase;</div>
+<div class="line"><a id="l00674" name="l00674"></a><span class="lineno">  674</span>  auto spawnFragmentBody(</div>
+<div class="line"><a id="l00675" name="l00675"></a><span class="lineno">  675</span>      ShapeID source_shape_id, const DetachedComponent&amp; component, const FragmentPush* push = <span class="keywordtype">nullptr</span>,</div>
+<div class="line"><a id="l00676" name="l00676"></a><span class="lineno">  676</span>      std::vector&lt;glm::ivec3&gt;* deferred_dirty = <span class="keywordtype">nullptr</span></div>
+<div class="line"><a id="l00677" name="l00677"></a><span class="lineno">  677</span>  ) -&gt; <span class="keywordtype">bool</span>;</div>
+<div class="line"><a id="l00678" name="l00678"></a><span class="lineno">  678</span>  auto smashShape(ShapeID shape_id, const SmashVolume&amp; volume, const CapsuleSmash&amp; smash, <span class="keywordtype">bool</span> chunks) -&gt; uint32_t;</div>
+<div class="line"><a id="l00679" name="l00679"></a><span class="lineno">  679</span>  auto explodeShape(ShapeID shape_id, const ExplosionDamage&amp; explosion) -&gt; uint32_t;</div>
+<div class="line"><a id="l00680" name="l00680"></a><span class="lineno">  680</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00681" name="l00681"></a><span class="lineno">  681</span>  auto explosionPush(ShapeID shape_id, const DetachedComponent&amp; piece, const ExplosionDamage&amp; explosion)</div>
+<div class="line"><a id="l00682" name="l00682"></a><span class="lineno">  682</span>      -&gt; std::optional&lt;FragmentPush&gt;;</div>
+<div class="line"><a id="l00683" name="l00683"></a><span class="lineno">  683</span>  auto breakPieces(</div>
+<div class="line"><a id="l00684" name="l00684"></a><span class="lineno">  684</span>      ShapeID shape_id, SmashPieces&amp; picked, <span class="keywordtype">bool</span> chunks,</div>
+<div class="line"><a id="l00685" name="l00685"></a><span class="lineno">  685</span>      const std::function&lt;std::optional&lt;FragmentPush&gt;(const DetachedComponent&amp;)&gt;&amp; push_for, const AABB&amp; wake_bounds,</div>
+<div class="line"><a id="l00686" name="l00686"></a><span class="lineno">  686</span>      uint32_t max_spawns = 0</div>
+<div class="line"><a id="l00687" name="l00687"></a><span class="lineno">  687</span>  ) -&gt; uint32_t;</div>
+<div class="line"><a id="l00688" name="l00688"></a><span class="lineno">  688</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00689" name="l00689"></a><span class="lineno">  689</span>  auto marchVoxelRay(const glm::vec3&amp; origin, const glm::vec3&amp; direction, <span class="keywordtype">float</span> max_distance) -&gt; std::optional&lt;VoxelRayHit&gt;;</div>
+<div class="line"><a id="l00690" name="l00690"></a><span class="lineno">  690</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00691" name="l00691"></a><span class="lineno">  691</span>  auto spawnStaticSplitBody(ShapeID source_shape_id, const DetachedComponent&amp; component) -&gt; <span class="keywordtype">bool</span>;</div>
+<div class="line"><a id="l00692" name="l00692"></a><span class="lineno">  692</span>  <span class="keywordtype">void</span> despawnSettledFragments(<span class="keywordtype">float</span> dt);</div>
+<div class="line"><a id="l00693" name="l00693"></a><span class="lineno">  693</span>  <span class="keywordtype">void</span> destroyFallenBodies();</div>
+<div class="line"><a id="l00694" name="l00694"></a><span class="lineno">  694</span>  <span class="keywordtype">void</span> retireVoxelBody(BodyID <span class="keywordtype">id</span>);</div>
+<div class="line"><a id="l00695" name="l00695"></a><span class="lineno">  695</span>  auto debrisIfSmall(ShapeID shape) -&gt; <span class="keywordtype">bool</span>;</div>
+<div class="line"><a id="l00696" name="l00696"></a><span class="lineno">  696</span>  <span class="keywordtype">void</span> destroyFragmentsOf(BodyID origin);</div>
+<div class="line"><a id="l00697" name="l00697"></a><span class="lineno">  697</span> </div>
+<div class="line"><a id="l00698" name="l00698"></a><span class="lineno">  698</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00699" name="l00699"></a><span class="lineno">  699</span>  auto voxelNodeFor(ShapeID shape) -&gt; toast::VoxelNode*;</div>
+<div class="line"><a id="l00700" name="l00700"></a><span class="lineno">  700</span> </div>
+<div class="line"><a id="l00701" name="l00701"></a><span class="lineno">  701</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00702" name="l00702"></a><span class="lineno">  702</span>  static auto partOf(const VoxelNodeBinding&amp; binding) -&gt; toast::VoxelPart*;</div>
+<div class="line"><a id="l00703" name="l00703"></a><span class="lineno">  703</span> </div>
+<div class="line"><a id="l00704" name="l00704"></a><span class="lineno">  704</span>  <span class="keywordtype">void</span> recordVoxelDamage(ShapeID shape, uint32_t count, glm::vec3 index_sum);</div>
+<div class="line"><a id="l00705" name="l00705"></a><span class="lineno">  705</span>  <span class="keywordtype">void</span> noteVoxelShapeEmptied(ShapeID shape);</div>
+<div class="line"><a id="l00706" name="l00706"></a><span class="lineno">  706</span> </div>
+<div class="line"><a id="l00707" name="l00707"></a><span class="lineno">  707</span>  <span class="keywordtype">void</span> reapFragments();</div>
+<div class="line"><a id="l00708" name="l00708"></a><span class="lineno">  708</span>  <span class="keywordtype">void</span> destroyFragmentRecord(BodyID <span class="keywordtype">id</span>);</div>
+<div class="line"><a id="l00709" name="l00709"></a><span class="lineno">  709</span>  <span class="keywordtype">void</span> queuePendingFragments(std::span&lt;const ConnectivityResult&gt; results);</div>
+<div class="line"><a id="l00710" name="l00710"></a><span class="lineno">  710</span>  <span class="keywordtype">void</span> spawnBudgetedFragments();</div>
+<div class="line"><a id="l00711" name="l00711"></a><span class="lineno">  711</span>  [[nodiscard]]</div>
+<div class="line"><a id="l00712" name="l00712"></a><span class="lineno">  712</span>  auto reconcileComponent(const voxel::Volume&amp; volume, const DetachedComponent&amp; component) const -&gt; <span class="keywordtype">bool</span>;</div>
+<div class="line"><a id="l00713" name="l00713"></a><span class="lineno">  713</span>  <span class="keywordtype">void</span> enforceFragmentBudget(<span class="keywordtype">float</span> dt);</div>
+<div class="line"><a id="l00714" name="l00714"></a><span class="lineno">  714</span>  <span class="keywordtype">void</span> unlockSleep(BodyID <span class="keywordtype">id</span>);</div>
+<div class="line"><a id="l00715" name="l00715"></a><span class="lineno">  715</span>  <span class="keywordtype">void</span> recheckNeighborsOf(BodyID <span class="keywordtype">id</span>);</div>
+<div class="line"><a id="l00716" name="l00716"></a><span class="lineno">  716</span>  <span class="keywordtype">void</span> rebuildFragmentIndex();</div>
+<div class="line"><a id="l00717" name="l00717"></a><span class="lineno">  717</span>  <span class="keywordtype">void</span> refreshPalette(uint64_t palette_uid);</div>
+<div class="line"><a id="l00718" name="l00718"></a><span class="lineno">  718</span>  <span class="keywordtype">void</span> refreshAllPalettes();</div>
+<div class="line"><a id="l00719" name="l00719"></a><span class="lineno">  719</span>  auto createVoxelShapeInternal(</div>
+<div class="line"><a id="l00720" name="l00720"></a><span class="lineno">  720</span>      BodyID owner, const VoxelShape&amp; shape, voxel::Volume* external, std::unique_ptr&lt;voxel::Volume&gt;&amp; owned,</div>
+<div class="line"><a id="l00721" name="l00721"></a><span class="lineno">  721</span>      const voxel::Palette&amp; palette, const voxel::MaterialLibrary&amp; materials, const voxel::MassMoments* known_moments = <span class="keywordtype">nullptr</span></div>
+<div class="line"><a id="l00722" name="l00722"></a><span class="lineno">  722</span>  ) -&gt; ShapeID;</div>
+<div class="line"><a id="l00723" name="l00723"></a><span class="lineno">  723</span> </div>
+<div class="line"><a id="l00724" name="l00724"></a><span class="lineno">  724</span>  <span class="keywordtype">void</span> checkTriggers();</div>
+<div class="line"><a id="l00725" name="l00725"></a><span class="lineno">  725</span>  <span class="keywordtype">void</span> overlapShape(</div>
+<div class="line"><a id="l00726" name="l00726"></a><span class="lineno">  726</span>      BodyID ignored, LayerFilter layers, const Shape&amp; probe, const glm::vec3&amp; position, const glm::quat&amp; rotation,</div>
+<div class="line"><a id="l00727" name="l00727"></a><span class="lineno">  727</span>      std::vector&lt;BodyID&gt;&amp; bodies</div>
+<div class="line"><a id="l00728" name="l00728"></a><span class="lineno">  728</span>  ) const;</div>
+<div class="line"><a id="l00729" name="l00729"></a><span class="lineno">  729</span> </div>
+<div class="line"><a id="l00730" name="l00730"></a><span class="lineno">  730</span>  inline static Simulator* instance = <span class="keywordtype">nullptr</span>;</div>
+<div class="line"><a id="l00731" name="l00731"></a><span class="lineno">  731</span>  inline static std::atomic&lt;std::shared_ptr&lt;const QuerySnapshot&gt;&gt; published_query_snapshot;</div>
 <div class="line"><a id="l00732" name="l00732"></a><span class="lineno">  732</span> </div>
-<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>  std::vector&lt;BodySlot&gt; m_bodies;</div>
-<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>  std::deque&lt;uint32_t&gt; m_free_body_slots;</div>
+<div class="line"><a id="l00733" name="l00733"></a><span class="lineno">  733</span>  TOAST_LOCKABLE(std::mutex, m_wind_mutex, <span class="stringliteral">&quot;Physics wind&quot;</span>);</div>
+<div class="line"><a id="l00734" name="l00734"></a><span class="lineno">  734</span>  std::optional&lt;glm::vec3&gt; m_level_wind;</div>
 <div class="line"><a id="l00735" name="l00735"></a><span class="lineno">  735</span> </div>
-<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>  std::vector&lt;JointSlot&gt; m_joints;</div>
-<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  std::deque&lt;uint32_t&gt; m_free_joint_slots;</div>
-<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  <span class="keywordtype">size_t</span> m_joint_count = 0;</div>
-<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span>  std::vector&lt;_detail::JointRow&gt; m_joint_rows;</div>
-<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>  std::vector&lt;uint8_t&gt; m_joint_active;</div>
-<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>  std::vector&lt;uint32_t&gt; m_joint_next_free_batch;</div>
-<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span>  std::vector&lt;uint32_t&gt; m_joint_wave;</div>
-<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>  std::vector&lt;uint64_t&gt; m_excluded_pairs;</div>
-<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>  Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};</div>
-<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span> </div>
-<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  <span class="keyword">struct </span>JointBinding {</div>
-<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>    JointID joint;</div>
-<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>    toast::Box&lt;Joint3D&gt; node;</div>
-<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>    <span class="keywordtype">bool</span> broken = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>  };</div>
-<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span> </div>
-<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span>  <span class="keyword">struct </span>BrokenJoint {</div>
-<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>    JointID joint;</div>
-<div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span>    JointBreakReason reason = JointBreakReason::requested;</div>
-<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>  };</div>
-<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span> </div>
-<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>  std::vector&lt;JointBinding&gt; m_joint_bindings;</div>
-<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span>  std::vector&lt;BrokenJoint&gt; m_broken_joints;</div>
-<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>  std::vector&lt;NodeBinding&gt; m_node_bindings;</div>
-<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>  std::vector&lt;VoxelNodeBinding&gt; m_voxel_bindings;</div>
-<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span></div>
-<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span>  std::vector&lt;uint8_t&gt; m_body_supported;</div>
-<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>  std::vector&lt;uint8_t&gt; m_sleep_ready;</div>
-<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>  std::vector&lt;uint8_t&gt; m_sleep_moving;</div>
-<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>  std::vector&lt;uint8_t&gt; m_sleep_blocked;</div>
-<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span>  std::vector&lt;uint8_t&gt; m_contact_supported;</div>
-<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>  std::vector&lt;glm::vec3&gt; m_position_shift;</div>
-<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span></div>
-<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>  std::vector&lt;size_t&gt; m_island_parents;</div>
-<div class="line"><a id="l00774" name="l00774"></a><span class="lineno">  774</span>  std::vector&lt;bool&gt; m_island_participates;</div>
-<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>  std::vector&lt;size_t&gt; m_island_by_root;</div>
-<div class="line"><a id="l00776" name="l00776"></a><span class="lineno">  776</span>  std::vector&lt;uint64_t&gt; m_island_color_mask;</div>
-<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>  std::vector&lt;uint32_t&gt; m_island_next_free_batch;</div>
-<div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span>  std::vector&lt;uint32_t&gt; m_island_constraint_batch;</div>
-<div class="line"><a id="l00779" name="l00779"></a><span class="lineno">  779</span>  std::vector&lt;size_t&gt; m_island_batch_cursor;</div>
-<div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>  std::vector&lt;Constraint&gt; m_island_reordered_scratch;</div>
-<div class="line"><a id="l00782" name="l00782"></a><span class="lineno">  782</span>  std::vector&lt;const Manifold*&gt; m_prepare_active_manifolds;</div>
-<div class="line"><a id="l00783" name="l00783"></a><span class="lineno">  783</span>  std::vector&lt;std::vector&lt;Constraint&gt;&gt; m_prepare_chunks;</div>
-<div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>  std::vector&lt;size_t&gt; m_prepare_chunk_rejected;</div>
-<div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span>  std::vector&lt;Constraint&gt; m_constraints;</div>
-<div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span>  std::vector&lt;SimulationIsland&gt; m_islands;</div>
-<div class="line"><a id="l00788" name="l00788"></a><span class="lineno">  788</span>  std::vector&lt;SimulationIsland&gt; m_island_spares;</div>
-<div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span></div>
-<div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>  std::vector&lt;size_t&gt; m_wave_chunk_invalid_counts;</div>
-<div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span> </div>
-<div class="line"><a id="l00793" name="l00793"></a><span class="lineno">  793</span>  std::vector&lt;ShapeSlot&gt; m_shapes;</div>
-<div class="line"><a id="l00794" name="l00794"></a><span class="lineno">  794</span>  std::deque&lt;uint32_t&gt; m_free_shape_slots;</div>
-<div class="line"><a id="l00795" name="l00795"></a><span class="lineno">  795</span> </div>
-<div class="line"><a id="l00796" name="l00796"></a><span class="lineno">  796</span>  BroadPhase m_broad_phase;</div>
-<div class="line"><a id="l00797" name="l00797"></a><span class="lineno">  797</span>  std::vector&lt;Manifold&gt; m_manifolds;</div>
-<div class="line"><a id="l00798" name="l00798"></a><span class="lineno">  798</span>  std::vector&lt;CachedManifold&gt; m_cached_manifolds;</div>
-<div class="line"><a id="l00800" name="l00800"></a><span class="lineno">  800</span>  std::vector&lt;CachedManifold&gt; m_cached_manifolds_next;</div>
-<div class="line"><a id="l00801" name="l00801"></a><span class="lineno">  801</span>  <span class="keyword">mutable</span> PhysicsStepProfile m_profile;</div>
-<div class="line"><a id="l00802" name="l00802"></a><span class="lineno">  802</span>  PhysicsStepProfile m_published_profile;</div>
-<div class="line"><a id="l00803" name="l00803"></a><span class="lineno">  803</span> </div>
-<div class="line"><a id="l00804" name="l00804"></a><span class="lineno">  804</span>  std::vector&lt;VoxelShapeSlot&gt; m_voxel_shapes;</div>
-<div class="line"><a id="l00805" name="l00805"></a><span class="lineno">  805</span>  std::deque&lt;uint32_t&gt; m_free_voxel_shape_slots;</div>
-<div class="line"><a id="l00806" name="l00806"></a><span class="lineno">  806</span>  std::vector&lt;VoxelRenderRecord&gt; m_voxel_render_records;</div>
-<div class="line"><a id="l00807" name="l00807"></a><span class="lineno">  807</span>  std::vector&lt;DebrisSpawn&gt; m_debris_spawns;</div>
-<div class="line"><a id="l00808" name="l00808"></a><span class="lineno">  808</span> </div>
-<div class="line"><a id="l00809" name="l00809"></a><span class="lineno">  809</span>  TOAST_LOCKABLE(std::mutex, m_damage_mutex, <span class="stringliteral">&quot;Physics damage&quot;</span>);</div>
-<div class="line"><a id="l00810" name="l00810"></a><span class="lineno">  810</span>  std::vector&lt;DamageCommand&gt; m_damage_commands;</div>
-<div class="line"><a id="l00811" name="l00811"></a><span class="lineno">  811</span>  std::vector&lt;DebugDirtyBrick&gt; m_debug_dirty_bricks;</div>
-<div class="line"><a id="l00812" name="l00812"></a><span class="lineno">  812</span> </div>
-<div class="line"><a id="l00813" name="l00813"></a><span class="lineno">  813</span>  uint64_t m_next_fragment_sequence = 1;</div>
-<div class="line"><a id="l00814" name="l00814"></a><span class="lineno">  814</span>  uint64_t m_tick_index = 0;</div>
-<div class="line"><a id="l00815" name="l00815"></a><span class="lineno">  815</span>  <span class="keywordtype">void</span> publishQuerySnapshot();</div>
-<div class="line"><a id="l00817" name="l00817"></a><span class="lineno">  817</span>  std::shared_ptr&lt;QuerySnapshot&gt; m_spare_query_snapshot;</div>
-<div class="line"><a id="l00819" name="l00819"></a><span class="lineno">  819</span>  std::atomic&lt;bool&gt; m_query_snapshot_dirty = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00821" name="l00821"></a><span class="lineno">  821</span>  <span class="keywordtype">bool</span> m_query_voxels_stale = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00822" name="l00822"></a><span class="lineno">  822</span>  std::vector&lt;FragmentRecord&gt; m_fragments;</div>
-<div class="line"><a id="l00823" name="l00823"></a><span class="lineno">  823</span>  std::unordered_map&lt;uint32_t, size_t&gt; m_fragment_index;</div>
-<div class="line"><a id="l00824" name="l00824"></a><span class="lineno">  824</span>  std::vector&lt;PendingFragments&gt; m_pending_fragments;</div>
-<div class="line"><a id="l00825" name="l00825"></a><span class="lineno">  825</span>  std::vector&lt;BodyID&gt; m_doomed_fragments;</div>
-<div class="line"><a id="l00826" name="l00826"></a><span class="lineno">  826</span>  std::vector&lt;BodyID&gt; m_scheduled_kills;</div>
-<div class="line"><a id="l00827" name="l00827"></a><span class="lineno">  827</span></div>
-<div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span>  <span class="keywordtype">size_t</span> m_connectivity_cursor = 0;</div>
-<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span> </div>
-<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span>  <span class="keywordtype">float</span> m_interpolation_alpha = 0.0f;</div>
-<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span></div>
-<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span>  std::unordered_map&lt;uint64_t, BodyID&gt; m_render_body_of_node;</div>
-<div class="line"><a id="l00835" name="l00835"></a><span class="lineno">  835</span> </div>
-<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span>  event::Listener m_listener;</div>
+<div class="line"><a id="l00736" name="l00736"></a><span class="lineno">  736</span>  mutable std::thread::<span class="keywordtype">id</span> m_owner_thread;</div>
+<div class="line"><a id="l00737" name="l00737"></a><span class="lineno">  737</span>  std::atomic&lt;SimulationPhase&gt; m_phase = SimulationPhase::idle;</div>
+<div class="line"><a id="l00738" name="l00738"></a><span class="lineno">  738</span>  NarrowPhase m_narrow_phase;</div>
+<div class="line"><a id="l00739" name="l00739"></a><span class="lineno">  739</span> </div>
+<div class="line"><a id="l00740" name="l00740"></a><span class="lineno">  740</span>  std::vector&lt;BodySlot&gt; m_bodies;</div>
+<div class="line"><a id="l00741" name="l00741"></a><span class="lineno">  741</span>  std::deque&lt;uint32_t&gt; m_free_body_slots;</div>
+<div class="line"><a id="l00742" name="l00742"></a><span class="lineno">  742</span> </div>
+<div class="line"><a id="l00743" name="l00743"></a><span class="lineno">  743</span>  std::vector&lt;JointSlot&gt; m_joints;</div>
+<div class="line"><a id="l00744" name="l00744"></a><span class="lineno">  744</span>  std::deque&lt;uint32_t&gt; m_free_joint_slots;</div>
+<div class="line"><a id="l00745" name="l00745"></a><span class="lineno">  745</span>  <span class="keywordtype">size_t</span> m_joint_count = 0;</div>
+<div class="line"><a id="l00746" name="l00746"></a><span class="lineno">  746</span>  std::vector&lt;_detail::JointRow&gt; m_joint_rows;</div>
+<div class="line"><a id="l00747" name="l00747"></a><span class="lineno">  747</span>  std::vector&lt;uint8_t&gt; m_joint_active;</div>
+<div class="line"><a id="l00748" name="l00748"></a><span class="lineno">  748</span>  std::vector&lt;uint32_t&gt; m_joint_next_free_batch;</div>
+<div class="line"><a id="l00749" name="l00749"></a><span class="lineno">  749</span>  std::vector&lt;uint32_t&gt; m_joint_wave;</div>
+<div class="line"><a id="l00750" name="l00750"></a><span class="lineno">  750</span>  std::vector&lt;uint64_t&gt; m_excluded_pairs;</div>
+<div class="line"><a id="l00751" name="l00751"></a><span class="lineno">  751</span>  Body m_world_body {.type = BodyType::static_body, .inverse_mass = 0.0f};</div>
+<div class="line"><a id="l00752" name="l00752"></a><span class="lineno">  752</span> </div>
+<div class="line"><a id="l00753" name="l00753"></a><span class="lineno">  753</span>  <span class="keyword">struct </span>JointBinding {</div>
+<div class="line"><a id="l00754" name="l00754"></a><span class="lineno">  754</span>    JointID joint;</div>
+<div class="line"><a id="l00755" name="l00755"></a><span class="lineno">  755</span>    toast::Box&lt;Joint3D&gt; node;</div>
+<div class="line"><a id="l00756" name="l00756"></a><span class="lineno">  756</span>    <span class="keywordtype">bool</span> broken = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00757" name="l00757"></a><span class="lineno">  757</span>  };</div>
+<div class="line"><a id="l00758" name="l00758"></a><span class="lineno">  758</span> </div>
+<div class="line"><a id="l00759" name="l00759"></a><span class="lineno">  759</span>  <span class="keyword">struct </span>BrokenJoint {</div>
+<div class="line"><a id="l00760" name="l00760"></a><span class="lineno">  760</span>    JointID joint;</div>
+<div class="line"><a id="l00761" name="l00761"></a><span class="lineno">  761</span>    JointBreakReason reason = JointBreakReason::requested;</div>
+<div class="line"><a id="l00762" name="l00762"></a><span class="lineno">  762</span>  };</div>
+<div class="line"><a id="l00763" name="l00763"></a><span class="lineno">  763</span> </div>
+<div class="line"><a id="l00764" name="l00764"></a><span class="lineno">  764</span>  std::vector&lt;JointBinding&gt; m_joint_bindings;</div>
+<div class="line"><a id="l00765" name="l00765"></a><span class="lineno">  765</span>  std::vector&lt;BrokenJoint&gt; m_broken_joints;</div>
+<div class="line"><a id="l00766" name="l00766"></a><span class="lineno">  766</span>  std::vector&lt;NodeBinding&gt; m_node_bindings;</div>
+<div class="line"><a id="l00767" name="l00767"></a><span class="lineno">  767</span>  std::vector&lt;VoxelNodeBinding&gt; m_voxel_bindings;</div>
+<div class="line"><a id="l00768" name="l00768"></a><span class="lineno">  768</span></div>
+<div class="line"><a id="l00770" name="l00770"></a><span class="lineno">  770</span>  std::vector&lt;uint8_t&gt; m_body_supported;</div>
+<div class="line"><a id="l00771" name="l00771"></a><span class="lineno">  771</span>  std::vector&lt;uint8_t&gt; m_sleep_ready;</div>
+<div class="line"><a id="l00772" name="l00772"></a><span class="lineno">  772</span>  std::vector&lt;uint8_t&gt; m_sleep_moving;</div>
+<div class="line"><a id="l00773" name="l00773"></a><span class="lineno">  773</span>  std::vector&lt;uint8_t&gt; m_sleep_blocked;</div>
+<div class="line"><a id="l00775" name="l00775"></a><span class="lineno">  775</span>  std::vector&lt;uint8_t&gt; m_contact_supported;</div>
+<div class="line"><a id="l00777" name="l00777"></a><span class="lineno">  777</span>  std::vector&lt;glm::vec3&gt; m_position_shift;</div>
+<div class="line"><a id="l00778" name="l00778"></a><span class="lineno">  778</span></div>
+<div class="line"><a id="l00780" name="l00780"></a><span class="lineno">  780</span>  std::vector&lt;size_t&gt; m_island_parents;</div>
+<div class="line"><a id="l00781" name="l00781"></a><span class="lineno">  781</span>  std::vector&lt;bool&gt; m_island_participates;</div>
+<div class="line"><a id="l00782" name="l00782"></a><span class="lineno">  782</span>  std::vector&lt;size_t&gt; m_island_by_root;</div>
+<div class="line"><a id="l00783" name="l00783"></a><span class="lineno">  783</span>  std::vector&lt;uint64_t&gt; m_island_color_mask;</div>
+<div class="line"><a id="l00784" name="l00784"></a><span class="lineno">  784</span>  std::vector&lt;uint32_t&gt; m_island_next_free_batch;</div>
+<div class="line"><a id="l00785" name="l00785"></a><span class="lineno">  785</span>  std::vector&lt;uint32_t&gt; m_island_constraint_batch;</div>
+<div class="line"><a id="l00786" name="l00786"></a><span class="lineno">  786</span>  std::vector&lt;size_t&gt; m_island_batch_cursor;</div>
+<div class="line"><a id="l00787" name="l00787"></a><span class="lineno">  787</span>  std::vector&lt;Constraint&gt; m_island_reordered_scratch;</div>
+<div class="line"><a id="l00789" name="l00789"></a><span class="lineno">  789</span>  std::vector&lt;const Manifold*&gt; m_prepare_active_manifolds;</div>
+<div class="line"><a id="l00790" name="l00790"></a><span class="lineno">  790</span>  std::vector&lt;std::vector&lt;Constraint&gt;&gt; m_prepare_chunks;</div>
+<div class="line"><a id="l00791" name="l00791"></a><span class="lineno">  791</span>  std::vector&lt;size_t&gt; m_prepare_chunk_rejected;</div>
+<div class="line"><a id="l00792" name="l00792"></a><span class="lineno">  792</span>  std::vector&lt;Constraint&gt; m_constraints;</div>
+<div class="line"><a id="l00794" name="l00794"></a><span class="lineno">  794</span>  std::vector&lt;SimulationIsland&gt; m_islands;</div>
+<div class="line"><a id="l00795" name="l00795"></a><span class="lineno">  795</span>  std::vector&lt;SimulationIsland&gt; m_island_spares;</div>
+<div class="line"><a id="l00796" name="l00796"></a><span class="lineno">  796</span></div>
+<div class="line"><a id="l00798" name="l00798"></a><span class="lineno">  798</span>  std::vector&lt;size_t&gt; m_wave_chunk_invalid_counts;</div>
+<div class="line"><a id="l00799" name="l00799"></a><span class="lineno">  799</span> </div>
+<div class="line"><a id="l00800" name="l00800"></a><span class="lineno">  800</span>  std::vector&lt;ShapeSlot&gt; m_shapes;</div>
+<div class="line"><a id="l00801" name="l00801"></a><span class="lineno">  801</span>  std::deque&lt;uint32_t&gt; m_free_shape_slots;</div>
+<div class="line"><a id="l00802" name="l00802"></a><span class="lineno">  802</span> </div>
+<div class="line"><a id="l00803" name="l00803"></a><span class="lineno">  803</span>  BroadPhase m_broad_phase;</div>
+<div class="line"><a id="l00804" name="l00804"></a><span class="lineno">  804</span>  std::vector&lt;Manifold&gt; m_manifolds;</div>
+<div class="line"><a id="l00805" name="l00805"></a><span class="lineno">  805</span>  std::vector&lt;CachedManifold&gt; m_cached_manifolds;</div>
+<div class="line"><a id="l00807" name="l00807"></a><span class="lineno">  807</span>  std::vector&lt;CachedManifold&gt; m_cached_manifolds_next;</div>
+<div class="line"><a id="l00808" name="l00808"></a><span class="lineno">  808</span>  <span class="keyword">mutable</span> PhysicsStepProfile m_profile;</div>
+<div class="line"><a id="l00809" name="l00809"></a><span class="lineno">  809</span>  PhysicsStepProfile m_published_profile;</div>
+<div class="line"><a id="l00810" name="l00810"></a><span class="lineno">  810</span> </div>
+<div class="line"><a id="l00811" name="l00811"></a><span class="lineno">  811</span>  std::vector&lt;VoxelShapeSlot&gt; m_voxel_shapes;</div>
+<div class="line"><a id="l00812" name="l00812"></a><span class="lineno">  812</span>  std::deque&lt;uint32_t&gt; m_free_voxel_shape_slots;</div>
+<div class="line"><a id="l00813" name="l00813"></a><span class="lineno">  813</span>  std::vector&lt;VoxelRenderRecord&gt; m_voxel_render_records;</div>
+<div class="line"><a id="l00814" name="l00814"></a><span class="lineno">  814</span>  std::vector&lt;DebrisSpawn&gt; m_debris_spawns;</div>
+<div class="line"><a id="l00815" name="l00815"></a><span class="lineno">  815</span> </div>
+<div class="line"><a id="l00816" name="l00816"></a><span class="lineno">  816</span>  TOAST_LOCKABLE(std::mutex, m_damage_mutex, <span class="stringliteral">&quot;Physics damage&quot;</span>);</div>
+<div class="line"><a id="l00817" name="l00817"></a><span class="lineno">  817</span>  std::vector&lt;DamageCommand&gt; m_damage_commands;</div>
+<div class="line"><a id="l00818" name="l00818"></a><span class="lineno">  818</span>  std::vector&lt;DebugDirtyBrick&gt; m_debug_dirty_bricks;</div>
+<div class="line"><a id="l00819" name="l00819"></a><span class="lineno">  819</span> </div>
+<div class="line"><a id="l00820" name="l00820"></a><span class="lineno">  820</span>  uint64_t m_next_fragment_sequence = 1;</div>
+<div class="line"><a id="l00821" name="l00821"></a><span class="lineno">  821</span>  uint64_t m_tick_index = 0;</div>
+<div class="line"><a id="l00822" name="l00822"></a><span class="lineno">  822</span>  <span class="keywordtype">void</span> publishQuerySnapshot();</div>
+<div class="line"><a id="l00824" name="l00824"></a><span class="lineno">  824</span>  std::shared_ptr&lt;QuerySnapshot&gt; m_spare_query_snapshot;</div>
+<div class="line"><a id="l00826" name="l00826"></a><span class="lineno">  826</span>  std::atomic&lt;bool&gt; m_query_snapshot_dirty = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00828" name="l00828"></a><span class="lineno">  828</span>  <span class="keywordtype">bool</span> m_query_voxels_stale = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00829" name="l00829"></a><span class="lineno">  829</span>  std::vector&lt;FragmentRecord&gt; m_fragments;</div>
+<div class="line"><a id="l00830" name="l00830"></a><span class="lineno">  830</span>  std::unordered_map&lt;uint32_t, size_t&gt; m_fragment_index;</div>
+<div class="line"><a id="l00831" name="l00831"></a><span class="lineno">  831</span>  std::vector&lt;PendingFragments&gt; m_pending_fragments;</div>
+<div class="line"><a id="l00832" name="l00832"></a><span class="lineno">  832</span>  std::vector&lt;BodyID&gt; m_doomed_fragments;</div>
+<div class="line"><a id="l00833" name="l00833"></a><span class="lineno">  833</span>  std::vector&lt;BodyID&gt; m_scheduled_kills;</div>
+<div class="line"><a id="l00834" name="l00834"></a><span class="lineno">  834</span></div>
+<div class="line"><a id="l00836" name="l00836"></a><span class="lineno">  836</span>  <span class="keywordtype">size_t</span> m_connectivity_cursor = 0;</div>
 <div class="line"><a id="l00837" name="l00837"></a><span class="lineno">  837</span> </div>
-<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>  <span class="comment">// triggers stuff</span></div>
-<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span>  std::vector&lt;toast::Box&lt;Trigger&gt;&gt; m_triggers;</div>
-<div class="line"><a id="l00840" name="l00840"></a><span class="lineno">  840</span>};</div>
+<div class="line"><a id="l00838" name="l00838"></a><span class="lineno">  838</span>  <span class="keywordtype">float</span> m_interpolation_alpha = 0.0f;</div>
+<div class="line"><a id="l00839" name="l00839"></a><span class="lineno">  839</span></div>
+<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span>  std::unordered_map&lt;uint64_t, BodyID&gt; m_render_body_of_node;</div>
+<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span> </div>
+<div class="line"><a id="l00843" name="l00843"></a><span class="lineno">  843</span>  event::Listener m_listener;</div>
+<div class="line"><a id="l00844" name="l00844"></a><span class="lineno">  844</span> </div>
+<div class="line"><a id="l00845" name="l00845"></a><span class="lineno">  845</span>  <span class="comment">// triggers stuff</span></div>
+<div class="line"><a id="l00846" name="l00846"></a><span class="lineno">  846</span>  std::vector&lt;toast::Box&lt;Trigger&gt;&gt; m_triggers;</div>
+<div class="line"><a id="l00847" name="l00847"></a><span class="lineno">  847</span>};</div>
 </div>
-<div class="line"><a id="l00841" name="l00841"></a><span class="lineno">  841</span> </div>
-<div class="line"><a id="l00842" name="l00842"></a><span class="lineno">  842</span>}</div>
+<div class="line"><a id="l00848" name="l00848"></a><span class="lineno">  848</span> </div>
+<div class="line"><a id="l00849" name="l00849"></a><span class="lineno">  849</span>}</div>
 <div class="ttc" id="abody_8hpp_html"><div class="ttname"><a href="body_8hpp.html">body.hpp</a></div><div class="ttdoc">Body identifiers, creation data, and copied runtime state.</div></div>
 <div class="ttc" id="abox_8hpp_html"><div class="ttname"><a href="box_8hpp.html">box.hpp</a></div><div class="ttdoc">pseudo shared pointer for Nodes</div></div>
 <div class="ttc" id="abroad__phase_8hpp_html"><div class="ttname"><a href="broad__phase_8hpp.html">broad_phase.hpp</a></div><div class="ttdoc">Generates potentially colliding shape pairs.</div></div>
@@ -918,22 +923,22 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('simulator_8hpp
 <div class="ttc" id="aclassphysics_1_1Joint3D_html"><div class="ttname"><a href="classphysics_1_1Joint3D.html">physics::Joint3D</a></div><div class="ttdef"><b>Definition</b> joint3d.hpp:27</div></div>
 <div class="ttc" id="aclassphysics_1_1Rigidbody_html"><div class="ttname"><a href="classphysics_1_1Rigidbody.html">physics::Rigidbody</a></div><div class="ttdef"><b>Definition</b> rigidbody.hpp:22</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html"><div class="ttname"><a href="classphysics_1_1Simulator.html">physics::Simulator</a></div><div class="ttdef"><b>Definition</b> simulator.hpp:63</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a1218a8160e07021c9a33a42293ce5412"><div class="ttname"><a href="classphysics_1_1Simulator.html#a1218a8160e07021c9a33a42293ce5412">physics::Simulator::syncRenderPoses</a></div><div class="ttdeci">static void syncRenderPoses()</div><div class="ttdoc">Once per frame after the ticks so nodes below driven bodies match the tick pose the delta starts from...</div><div class="ttdef"><b>Definition</b> simulator.cpp:2709</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a19969d1bde287a2e90b03d1e15c77b43"><div class="ttname"><a href="classphysics_1_1Simulator.html#a19969d1bde287a2e90b03d1e15c77b43">physics::Simulator::runPendingRequests</a></div><div class="ttdeci">static void runPendingRequests()</div><div class="ttdoc">Carries out the requests other threads made, on the simulator thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:3706</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a4152ebccb4094621ad7e8282a5c0f389"><div class="ttname"><a href="classphysics_1_1Simulator.html#a4152ebccb4094621ad7e8282a5c0f389">physics::Simulator::pendingRequests</a></div><div class="ttdeci">static auto pendingRequests() noexcept -&gt; size_t</div><div class="ttdoc">How many requests from other threads are waiting for the simulator thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:3695</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a553fe5d9ed4ef3d1b7806e30fa0a68c3"><div class="ttname"><a href="classphysics_1_1Simulator.html#a553fe5d9ed4ef3d1b7806e30fa0a68c3">physics::Simulator::renderPoseDelta</a></div><div class="ttdeci">static auto renderPoseDelta(BodyID id) -&gt; glm::mat4</div><div class="ttdoc">World transform from the tick pose to the blended pose drawn this frame and identity unless dynamic a...</div><div class="ttdef"><b>Definition</b> simulator.cpp:2674</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a56890cc158b2409e7466282d7023a8ed"><div class="ttname"><a href="classphysics_1_1Simulator.html#a56890cc158b2409e7466282d7023a8ed">physics::Simulator::recordInterpolationAlpha</a></div><div class="ttdeci">static void recordInterpolationAlpha(double alpha)</div><div class="ttdoc">Leftover accumulator time as a fraction of one step for blending the last two poses.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2664</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a1218a8160e07021c9a33a42293ce5412"><div class="ttname"><a href="classphysics_1_1Simulator.html#a1218a8160e07021c9a33a42293ce5412">physics::Simulator::syncRenderPoses</a></div><div class="ttdeci">static void syncRenderPoses()</div><div class="ttdoc">Once per frame after the ticks so nodes below driven bodies match the tick pose the delta starts from...</div><div class="ttdef"><b>Definition</b> simulator.cpp:2672</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a19969d1bde287a2e90b03d1e15c77b43"><div class="ttname"><a href="classphysics_1_1Simulator.html#a19969d1bde287a2e90b03d1e15c77b43">physics::Simulator::runPendingRequests</a></div><div class="ttdeci">static void runPendingRequests()</div><div class="ttdoc">Carries out the requests other threads made, on the simulator thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:3669</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a4152ebccb4094621ad7e8282a5c0f389"><div class="ttname"><a href="classphysics_1_1Simulator.html#a4152ebccb4094621ad7e8282a5c0f389">physics::Simulator::pendingRequests</a></div><div class="ttdeci">static auto pendingRequests() noexcept -&gt; size_t</div><div class="ttdoc">How many requests from other threads are waiting for the simulator thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:3658</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a553fe5d9ed4ef3d1b7806e30fa0a68c3"><div class="ttname"><a href="classphysics_1_1Simulator.html#a553fe5d9ed4ef3d1b7806e30fa0a68c3">physics::Simulator::renderPoseDelta</a></div><div class="ttdeci">static auto renderPoseDelta(BodyID id) -&gt; glm::mat4</div><div class="ttdoc">World transform from the tick pose to the blended pose drawn this frame and identity unless dynamic a...</div><div class="ttdef"><b>Definition</b> simulator.cpp:2637</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a56890cc158b2409e7466282d7023a8ed"><div class="ttname"><a href="classphysics_1_1Simulator.html#a56890cc158b2409e7466282d7023a8ed">physics::Simulator::recordInterpolationAlpha</a></div><div class="ttdeci">static void recordInterpolationAlpha(double alpha)</div><div class="ttdoc">Leftover accumulator time as a fraction of one step for blending the last two poses.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2627</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html_a58ecc4c481defa350979f678e52204a7"><div class="ttname"><a href="classphysics_1_1Simulator.html#a58ecc4c481defa350979f678e52204a7">physics::Simulator::overlapAABB</a></div><div class="ttdeci">auto overlapAABB(const AABB &amp;bounds) const -&gt; bool</div><div class="ttdoc">Tests a world-space axis-aligned box against enabled physics shapes.</div><div class="ttdef"><b>Definition</b> shape_query.cpp:524</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html_a5eca9082662104e0be64492a32ea5b76"><div class="ttname"><a href="classphysics_1_1Simulator.html#a5eca9082662104e0be64492a32ea5b76">physics::Simulator::sweepCapsule</a></div><div class="ttdeci">auto sweepCapsule(BodyID ignored, const CapsuleShape &amp;capsule, const glm::quat &amp;rotation, const glm::vec3 &amp;from, const glm::vec3 &amp;to, float skin, bool refine=true) const -&gt; SweepHit</div><div class="ttdef"><b>Definition</b> shape_query.cpp:582</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html_a65e8a772a4472aeeba4adf0ebf24371c"><div class="ttname"><a href="classphysics_1_1Simulator.html#a65e8a772a4472aeeba4adf0ebf24371c">physics::Simulator::overlapSphere</a></div><div class="ttdeci">auto overlapSphere(const SphereShape &amp;sphere, const glm::vec3 &amp;position, float min_penetration, std::vector&lt; QueryContact &gt; &amp;contacts, std::optional&lt; LayerFilter &gt; layers=std::nullopt) const -&gt; bool</div><div class="ttdoc">Tests a world-space sphere against enabled physics shapes.</div><div class="ttdef"><b>Definition</b> shape_query.cpp:504</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a693bce2aa13423da515dc12c352c8a8c"><div class="ttname"><a href="classphysics_1_1Simulator.html#a693bce2aa13423da515dc12c352c8a8c">physics::Simulator::nodeFor</a></div><div class="ttdeci">static auto nodeFor(BodyID body) -&gt; toast::Box&lt; toast::Node &gt;</div><div class="ttdoc">Rigidbody or VoxelNode that owns body.</div><div class="ttdef"><b>Definition</b> simulator.cpp:704</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a693bce2aa13423da515dc12c352c8a8c"><div class="ttname"><a href="classphysics_1_1Simulator.html#a693bce2aa13423da515dc12c352c8a8c">physics::Simulator::nodeFor</a></div><div class="ttdeci">static auto nodeFor(BodyID body) -&gt; toast::Box&lt; toast::Node &gt;</div><div class="ttdoc">Rigidbody or VoxelNode that owns body.</div><div class="ttdef"><b>Definition</b> simulator.cpp:670</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html_a722e5c202b888caef369974d5a2ee12b"><div class="ttname"><a href="classphysics_1_1Simulator.html#a722e5c202b888caef369974d5a2ee12b">physics::Simulator::setCapsuleShape</a></div><div class="ttdeci">auto setCapsuleShape(BodyID body, const CapsuleShape &amp;capsule) -&gt; bool</div><div class="ttdoc">Resizes the capsule collider of a body.</div><div class="ttdef"><b>Definition</b> shape_query.cpp:788</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_a7503203a2459c8c1398ba2c67bd6f7b4"><div class="ttname"><a href="classphysics_1_1Simulator.html#a7503203a2459c8c1398ba2c67bd6f7b4">physics::Simulator::stepProfile</a></div><div class="ttdeci">static auto stepProfile() -&gt; const PhysicsStepProfile &amp;</div><div class="ttdoc">The last tick profile is safe to read from another thread between ticks.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2652</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_a7503203a2459c8c1398ba2c67bd6f7b4"><div class="ttname"><a href="classphysics_1_1Simulator.html#a7503203a2459c8c1398ba2c67bd6f7b4">physics::Simulator::stepProfile</a></div><div class="ttdeci">static auto stepProfile() -&gt; const PhysicsStepProfile &amp;</div><div class="ttdoc">The last tick profile is safe to read from another thread between ticks.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2615</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html_ab7ad1534755bea6832ef2d77166320ce"><div class="ttname"><a href="classphysics_1_1Simulator.html#ab7ad1534755bea6832ef2d77166320ce">physics::Simulator::pushBody</a></div><div class="ttdeci">void pushBody(BodyID id, const glm::vec3 &amp;point, const glm::vec3 &amp;direction, float speed, float max_impulse)</div><div class="ttdoc">Raises the velocity of a dynamic body along direction.</div><div class="ttdef"><b>Definition</b> shape_query.cpp:855</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_ac374a05d874373705d01f5d18e95ab90"><div class="ttname"><a href="classphysics_1_1Simulator.html#ac374a05d874373705d01f5d18e95ab90">physics::Simulator::requestSleep</a></div><div class="ttdeci">static void requestSleep(BodyID id)</div><div class="ttdoc">Puts a body to sleep or wakes it, from any thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:3731</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_aea4cf0a2c2cf4df63f29b9c7c4a6991d"><div class="ttname"><a href="classphysics_1_1Simulator.html#aea4cf0a2c2cf4df63f29b9c7c4a6991d">physics::Simulator::recordTickBurst</a></div><div class="ttdeci">static void recordTickBurst(size_t steps, bool time_budget_reached)</div><div class="ttdoc">Stamps how many ticks the accumulator ran once it stops catching up for this frame.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2657</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_aee286ac92df69807c5f29041f01d60d2"><div class="ttname"><a href="classphysics_1_1Simulator.html#aee286ac92df69807c5f29041f01d60d2">physics::Simulator::addForce</a></div><div class="ttdeci">static void addForce(BodyID body, glm::vec3 force, glm::vec3 offset)</div><div class="ttdoc">Force over one fixed step, offset is world space from the center of mass, from any thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:7203</div></div>
-<div class="ttc" id="aclassphysics_1_1Simulator_html_af1e5c0167824e895cfc47c396260e8a5"><div class="ttname"><a href="classphysics_1_1Simulator.html#af1e5c0167824e895cfc47c396260e8a5">physics::Simulator::renderPoseDeltaFor</a></div><div class="ttdeci">static auto renderPoseDeltaFor(const toast::Node &amp;node) -&gt; glm::mat4</div><div class="ttdoc">Delta of the dynamic body a node sits below and identity when it follows none.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2701</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_ac374a05d874373705d01f5d18e95ab90"><div class="ttname"><a href="classphysics_1_1Simulator.html#ac374a05d874373705d01f5d18e95ab90">physics::Simulator::requestSleep</a></div><div class="ttdeci">static void requestSleep(BodyID id)</div><div class="ttdoc">Puts a body to sleep or wakes it, from any thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:3694</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_aea4cf0a2c2cf4df63f29b9c7c4a6991d"><div class="ttname"><a href="classphysics_1_1Simulator.html#aea4cf0a2c2cf4df63f29b9c7c4a6991d">physics::Simulator::recordTickBurst</a></div><div class="ttdeci">static void recordTickBurst(size_t steps, bool time_budget_reached)</div><div class="ttdoc">Stamps how many ticks the accumulator ran once it stops catching up for this frame.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2620</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_aee286ac92df69807c5f29041f01d60d2"><div class="ttname"><a href="classphysics_1_1Simulator.html#aee286ac92df69807c5f29041f01d60d2">physics::Simulator::addForce</a></div><div class="ttdeci">static void addForce(BodyID body, glm::vec3 force, glm::vec3 offset)</div><div class="ttdoc">Force over one fixed step, offset is world space from the center of mass, from any thread.</div><div class="ttdef"><b>Definition</b> simulator.cpp:7198</div></div>
+<div class="ttc" id="aclassphysics_1_1Simulator_html_af1e5c0167824e895cfc47c396260e8a5"><div class="ttname"><a href="classphysics_1_1Simulator.html#af1e5c0167824e895cfc47c396260e8a5">physics::Simulator::renderPoseDeltaFor</a></div><div class="ttdeci">static auto renderPoseDeltaFor(const toast::Node &amp;node) -&gt; glm::mat4</div><div class="ttdoc">Delta of the dynamic body a node sits below and identity when it follows none.</div><div class="ttdef"><b>Definition</b> simulator.cpp:2664</div></div>
 <div class="ttc" id="aclassphysics_1_1Simulator_html_afab5326440fa1fc8ef30454c31d930f4"><div class="ttname"><a href="classphysics_1_1Simulator.html#afab5326440fa1fc8ef30454c31d930f4">physics::Simulator::current</a></div><div class="ttdeci">static auto current() -&gt; Simulator *</div><div class="ttdoc">Simulator running the current step, null outside a play session.</div><div class="ttdef"><b>Definition</b> shape_query.cpp:137</div></div>
 <div class="ttc" id="aclassphysics_1_1Trigger_html"><div class="ttname"><a href="classphysics_1_1Trigger.html">physics::Trigger</a></div><div class="ttdef"><b>Definition</b> trigger.hpp:22</div></div>
 <div class="ttc" id="aclasstoast_1_1Box_html"><div class="ttname"><a href="classtoast_1_1Box.html">toast::Box</a></div><div class="ttdoc">Intrusive reference-counted handle to a Node.</div><div class="ttdef"><b>Definition</b> box.hpp:35</div></div>
@@ -985,7 +990,7 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('simulator_8hpp
 <div class="ttc" id="astructphysics_1_1SweepHit_html"><div class="ttname"><a href="structphysics_1_1SweepHit.html">physics::SweepHit</a></div><div class="ttdef"><b>Definition</b> shape_query.hpp:25</div></div>
 <div class="ttc" id="astructphysics_1_1VoxelRenderRecord_html"><div class="ttname"><a href="structphysics_1_1VoxelRenderRecord.html">physics::VoxelRenderRecord</a></div><div class="ttdef"><b>Definition</b> voxel_render.hpp:19</div></div>
 <div class="ttc" id="astructtoast_1_1VoxelPart_html"><div class="ttname"><a href="structtoast_1_1VoxelPart.html">toast::VoxelPart</a></div><div class="ttdef"><b>Definition</b> voxel_node.hpp:69</div></div>
-<div class="ttc" id="astructvoxel_1_1Connectivity_html"><div class="ttname"><a href="structvoxel_1_1Connectivity.html">voxel::Connectivity</a></div><div class="ttdoc">Labels are deterministic with pieces in brick order and components by first appearance.</div><div class="ttdef"><b>Definition</b> connectivity.hpp:65</div></div>
+<div class="ttc" id="astructvoxel_1_1Connectivity_html"><div class="ttname"><a href="structvoxel_1_1Connectivity.html">voxel::Connectivity</a></div><div class="ttdoc">Labels are deterministic with pieces in brick order and components by first appearance.</div><div class="ttdef"><b>Definition</b> connectivity.hpp:68</div></div>
 <div class="ttc" id="avoxel__node_8hpp_html"><div class="ttname"><a href="voxel__node_8hpp.html">voxel_node.hpp</a></div><div class="ttdoc">Frontend for a Voxel node.</div></div>
 <div class="ttc" id="avoxel__render_8hpp_html"><div class="ttname"><a href="voxel__render_8hpp.html">voxel_render.hpp</a></div><div class="ttdoc">Read-only voxel render records.</div></div>
 <div class="ttc" id="avoxel__shape__data_8hpp_html"><div class="ttname"><a href="voxel__shape__data_8hpp.html">voxel_shape_data.hpp</a></div><div class="ttdoc">Voxel data structures for physics system.</div></div>

@@ -22,5 +22,7 @@ var searchData=
   ['detail_5farray_2ehpp_19',['detail_array.hpp',['../detail__array_8hpp.html',1,'']]],
   ['detail_5ftexture_2ehpp_20',['detail_texture.hpp',['../detail__texture_8hpp.html',1,'']]],
   ['directional_5flight_2ehpp_21',['directional_light.hpp',['../directional__light_8hpp.html',1,'']]],
-  ['document_5fpreprocess_2ehpp_22',['document_preprocess.hpp',['../document__preprocess_8hpp.html',1,'']]]
+  ['dlss_5fupscaler_2ecpp_22',['dlss_upscaler.cpp',['../dlss__upscaler_8cpp.html',1,'']]],
+  ['dlss_5fupscaler_2ehpp_23',['dlss_upscaler.hpp',['../dlss__upscaler_8hpp.html',1,'']]],
+  ['document_5fpreprocess_2ehpp_24',['document_preprocess.hpp',['../document__preprocess_8hpp.html',1,'']]]
 ];

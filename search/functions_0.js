@@ -20,7 +20,7 @@ var searchData=
   ['advance_17',['advance',['../structtoast_1_1ClipPlayback.html#a71fe32b6297a2623a4673a30efb84b5f',1,'toast::ClipPlayback']]],
   ['alive_18',['alive',['../classscripting_1_1LuaCallback.html#aa097b3efcd12f544b10b7989efe6bd62',1,'scripting::LuaCallback']]],
   ['allcurrent_19',['allCurrent',['../classrenderer_1_1DescriptorCache.html#acb538db04587bc4106ef5d045109c965',1,'renderer::DescriptorCache']]],
-  ['allocate_20',['allocate',['../classvoxel_1_1BrickPool.html#a82e0e02cf564f507f804eb5874fe5a45',1,'voxel::BrickPool::allocate()'],['../classassets_1_1BrickPool.html#a82e0e02cf564f507f804eb5874fe5a45',1,'assets::BrickPool::allocate()']]],
+  ['allocate_20',['allocate',['../classvoxel_1_1BrickPool.html#ab5334487e375580aab6e4b2d9f5c1a97',1,'voxel::BrickPool::allocate()'],['../classassets_1_1BrickPool.html#ab5334487e375580aab6e4b2d9f5c1a97',1,'assets::BrickPool::allocate()']]],
   ['allowed_21',['allowed',['../classscripting_1_1ScriptDepthGuard.html#aae6e83aa8de9927ac9819c1c85ba732b',1,'scripting::ScriptDepthGuard']]],
   ['allowfadeout_22',['allowFadeout',['../classtoast_1_1AudioEmitter.html#a76ef346d2a66e40abbb43ddd9e6ddfed',1,'toast::AudioEmitter']]],
   ['ambientraysactive_23',['ambientRaysActive',['../classrenderer_1_1VoxelPass.html#a236cbd3049cf0bbc93e8e107adde3b86',1,'renderer::VoxelPass']]],
