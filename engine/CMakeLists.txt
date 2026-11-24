@@ -138,9 +138,9 @@ endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
 
-# NVIDIA ships NGX for Windows x64 only, a missing package builds without DLSS instead of failing
+# Only x86_64 Windows and Linux are wired up, a missing package builds without DLSS instead of failing
 include(CMakeDependentOption)
-cmake_dependent_option(TOAST_DLSS "NVIDIA DLSS" ON "WIN32;ARCH STREQUAL x86_64" OFF)
+cmake_dependent_option(TOAST_DLSS "NVIDIA DLSS" ON "WIN32 OR CMAKE_SYSTEM_NAME STREQUAL Linux;ARCH STREQUAL x86_64" OFF)
 if (TOAST_DLSS)
     find_package(nvidia-dlss CONFIG QUIET)
     if (nvidia-dlss_FOUND)
@@ -338,6 +338,11 @@ if (WIN32)
             COMMAND_EXPAND_LISTS
             VERBATIM
     )
+else ()
+    if (NOT TOAST_DLSS OR NOT nvidia-dlss_FOUND)
+        list(FILTER _vcpkg_dlls_debug EXCLUDE REGEX "/nvngx_dlss\\.so$")
+        list(FILTER _vcpkg_dlls_release EXCLUDE REGEX "/nvngx_dlss\\.so$")
+    endif ()
 endif ()
 
 

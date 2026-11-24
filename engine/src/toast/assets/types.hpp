@@ -18,6 +18,7 @@
 #include "curve.hpp"
 #include "data.hpp"
 #include "data_value.hpp"
+#include "environment_map.hpp"
 #include "material.hpp"
 #include "material_instance.hpp"
 #include "mesh.hpp"

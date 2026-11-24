@@ -1,173 +1,129 @@
 {
-  "name": "engine",
-  "version-string": "1.0.0",
-  "builtin-baseline": "e06564091c10e0b042900800c9fd48aad7f00643",
-  "vcpkg-configuration": {
-    "overlay-ports": [
-      "./cmake/vcpkg-ports"
-    ]
+  "name" : "engine",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "e06564091c10e0b042900800c9fd48aad7f00643",
+  "vcpkg-configuration" : {
+    "overlay-ports" : [ "./cmake/vcpkg-ports" ]
   },
-  "dependencies": [
-    {
-      "name": "asio",
-      "version>=": "1.32.0"
-    },
-    {
-      "name": "sdl3",
-      "default-features": false,
-      "features": [
-        {
-          "name": "vulkan"
-        },
-        {
-          "name": "x11",
-          "platform": "linux"
-        },
-        {
-          "name": "wayland",
-          "platform": "linux"
-        },
-        {
-          "name": "dbus",
-          "platform": "linux"
-        },
-        {
-          "name": "ibus",
-          "platform": "linux"
-        }
-      ],
-      "version>=": "3.4.8"
-    },
-    {
-      "name": "vulkan",
-      "version>=": "2023-12-17"
-    },
-    {
-      "name": "vulkan-loader",
-      "version>=": "1.4.341.0"
-    },
-    {
-      "name": "vulkan-memory-allocator-hpp",
-      "version>=": "3.3.0"
-    },
-    {
-      "name": "vulkan-memory-allocator",
-      "version>=": "3.3.0"
-    },
-    {
-      "name": "tracy",
-      "features": [
-        "on-demand"
-      ],
-      "version>=": "0.13.1"
-    },
-    {
-      "name": "shader-slang",
-      "version>=": "2026.20"
-    },
-    {
-      "name": "tomlplusplus",
-      "version>=": "3.4.0#1"
-    },
-    {
-      "name": "nlohmann-json",
-      "version>=": "3.12.0#2"
-    },
-    {
-      "name": "ktx",
-      "version>=": "4.4.2"
-    },
-    {
-      "name": "glm",
-      "version>=": "1.0.3"
-    },
-    {
-      "name": "protobuf",
-      "version>=": "6.33.4#2"
-    },
-    {
-      "name": "tinyspline",
-      "version>=": "0.6.0"
-    },
-    {
-      "name": "tinygltf",
-      "version>=": "3.0.0"
-    },
-    {
-      "name": "json-schema-validator",
-      "version>=": "2.4.0"
-    },
-    {
-      "name": "lz4",
-      "version>=": "1.10.0"
-    },
-    {
-      "name": "sqlite3"
-    },
-    {
-      "name": "indicators",
-      "version>=": "2.3"
-    },
-    {
-      "name": "curl"
-    },
-    {
-      "name": "zlib"
-    },
-    {
-      "name": "luabridge3",
-      "version>=": "3.0-rc3"
-    },
-    {
-      "name": "lua",
-      "version>=": "5.5.0#1"
-    },
-    {
-      "name": "imgui",
-      "default-features": false,
-      "features": [
-        {
-          "name": "vulkan-binding"
-        }
-      ],
-      "version>=": "1.92.7"
-    },
-    {
-      "name": "rmlui",
-      "version>=": "6.2"
-    },
-    {
-      "name": "cpptrace",
-      "features": [
-        {
-          "name": "libunwind",
-          "platform": "linux"
-        }
-      ],
-      "version>=": "1.0.4"
-    },
-    {
-      "name": "nvidia-dlss",
-      "platform": "windows & x64"
-    }
-  ],
-  "overrides": [
-    {
-      "name": "tracy",
-      "version": "0.15.0"
-    },
-    {
-      "name": "lua",
-      "version": "5.4.7"
-    },
-    {
-      "name": "vulkan-memory-allocator",
-      "version": "3.3.0"
-    },
-    {
-      "name": "vulkan-memory-allocator-hpp",
-      "version": "3.3.0",
-      "port-version": 1
-    }
-  ]
+  "dependencies" : [ {
+    "name" : "asio",
+    "version>=" : "1.32.0"
+  }, {
+    "name" : "sdl3",
+    "default-features" : false,
+    "features" : [ {
+      "name" : "vulkan"
+    }, {
+      "name" : "x11",
+      "platform" : "linux"
+    }, {
+      "name" : "wayland",
+      "platform" : "linux"
+    }, {
+      "name" : "dbus",
+      "platform" : "linux"
+    }, {
+      "name" : "ibus",
+      "platform" : "linux"
+    } ],
+    "version>=" : "3.4.8"
+  }, {
+    "name" : "vulkan",
+    "version>=" : "2023-12-17"
+  }, {
+    "name" : "vulkan-loader",
+    "version>=" : "1.4.341.0"
+  }, {
+    "name" : "vulkan-memory-allocator-hpp",
+    "version>=" : "3.3.0"
+  }, {
+    "name" : "vulkan-memory-allocator",
+    "version>=" : "3.3.0"
+  }, {
+    "name" : "tracy",
+    "features" : [ "on-demand" ],
+    "version>=" : "0.13.1"
+  }, {
+    "name" : "shader-slang",
+    "version>=" : "2026.20"
+  }, {
+    "name" : "tomlplusplus",
+    "version>=" : "3.4.0#1"
+  }, {
+    "name" : "nlohmann-json",
+    "version>=" : "3.12.0#2"
+  }, {
+    "name" : "ktx",
+    "version>=" : "4.4.2"
+  }, {
+    "name" : "glm",
+    "version>=" : "1.0.3"
+  }, {
+    "name" : "protobuf",
+    "version>=" : "6.33.4#2"
+  }, {
+    "name" : "tinyspline",
+    "version>=" : "0.6.0"
+  }, {
+    "name" : "tinygltf",
+    "version>=" : "3.0.0"
+  }, {
+    "name" : "json-schema-validator",
+    "version>=" : "2.4.0"
+  }, {
+    "name" : "lz4",
+    "version>=" : "1.10.0"
+  }, {
+    "name" : "sqlite3"
+  }, {
+    "name" : "indicators",
+    "version>=" : "2.3"
+  }, {
+    "name" : "curl"
+  }, {
+    "name" : "zlib"
+  }, {
+    "name" : "luabridge3",
+    "version>=" : "3.0-rc3"
+  }, {
+    "name" : "lua",
+    "version>=" : "5.5.0#1"
+  }, {
+    "name" : "imgui",
+    "default-features" : false,
+    "features" : [ {
+      "name" : "vulkan-binding"
+    } ],
+    "version>=" : "1.92.7"
+  }, {
+    "name" : "rmlui",
+    "version>=" : "6.2"
+  }, {
+    "name" : "cpptrace",
+    "features" : [ {
+      "name" : "libunwind",
+      "platform" : "linux"
+    } ],
+    "version>=" : "1.0.4"
+  }, {
+    "name" : "nvidia-dlss",
+    "platform" : "(windows | linux) & x64"
+  }, {
+    "name" : "ffmpeg",
+    "version>=" : "9.0.2#7"
+  } ],
+  "overrides" : [ {
+    "name" : "tracy",
+    "version" : "0.15.0"
+  }, {
+    "name" : "lua",
+    "version" : "5.4.7"
+  }, {
+    "name" : "vulkan-memory-allocator",
+    "version" : "3.3.0"
+  }, {
+    "name" : "vulkan-memory-allocator-hpp",
+    "version" : "3.3.0",
+    "port-version" : 1
+  } ]
 }

@@ -960,6 +960,12 @@ public:
 
 	void setEnvironmentPass(EnvironmentPass* pass) noexcept { m_environment_pass = pass; }
 
+	/// The Renderer Settings map, used whenever no enabled AmbientLight carries its own. Applied on the next tick
+	void setGlobalEnvironmentMap(std::string uri) {
+		std::scoped_lock lock(m_environment_mutex);
+		m_global_environment_uri = std::move(uri);
+	}
+
 	[[nodiscard]]
 	auto getEnvironmentPass() const noexcept -> const EnvironmentPass* {
 		return m_environment_pass;
@@ -1571,6 +1577,12 @@ private:
 	const ShadowPass* m_shadow_pass = nullptr;
 
 	EnvironmentPass* m_environment_pass = nullptr;
+	std::mutex m_environment_mutex;
+	std::string m_global_environment_uri;
+	/// Last map the tick asked the pass for, so a map that fails to load is not retried every frame
+	std::string m_requested_environment_uri;
+	uint64_t m_ambient_environment_uid = 0;
+	std::string m_ambient_environment_uri;
 
 	ReflectionProbePass* m_reflection_probe_pass = nullptr;
 

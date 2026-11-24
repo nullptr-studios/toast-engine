@@ -445,7 +445,7 @@ void registerQuality(VulkanRenderer& renderer) {
 	    {.label = "Render scale",
 			 .category = "Quality",
 			 .description = "Share of the output resolution the world renders at before TAA upsamples it. Preset Custom only",
-			 .min = 0.5,
+			 .min = 0.1,
 			 .max = 1.0,
 			 .step = 0.05}
 	)
@@ -1141,14 +1141,10 @@ void registerEnvironment(VulkanRenderer& renderer) {
 			 .asset_type = "environment_map"}
 	)
 	    .onChange([&renderer](const std::string& v) {
-		    auto* pass = renderer.getEnvironmentPassMutable();
-		    if (pass == nullptr) {
-			    return;
-		    }
 		    if (v.empty() || v.contains("://")) {
-			    pass->setEnvironmentMap(v);
+			    renderer.setGlobalEnvironmentMap(v);
 		    } else {
-			    pass->setEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
+			    renderer.setGlobalEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
 		    }
 	    });
 

@@ -23,11 +23,20 @@ set(_dlss_files
     include/nvsdk_ngx_standalone_common.h 7bd34e71dd346650d9194e3792fa0a95a5bef1fb1b514b678abebadbd4385a8ee6bcec75963ef66151dd4ec45220793dcc09bb984dd4af03fdf10abe4da71ac0
     include/nvsdk_ngx_standalone_cuda.h 7cefa9dd4c35c8e6ef6213ae90deecd3fe180d5482dac35800bc7c853f76a188841baff1c2e48343590bd6cc0d544337046601ce67b9146883ec28eb33310167
     include/nvsdk_ngx_vk.h 610fd37c9d059f939a1d9899662d9c8bf6f9b7059a22efdff78c4ef13466e211c51abef13f8098cb6b8c357a9574de617a1ca41bbe0a30107543d414e6eccecc
-    lib/Windows_x86_64/x64/nvsdk_ngx_d.lib 0809baf904b4246e2ecc35ffc4a5a88155f9c74722427a6b02d0fa85c5a4f24e9d9f759863e6fc3c7038927a14e003215f50215cda4dfbc7b4edb513e5bf58df
-    lib/Windows_x86_64/x64/nvsdk_ngx_d_dbg.lib 781cbe38adffc42b47b31a047d73e9de7e77242a2ad0d50a787335920985b2b3160f025c509bb9a31750f6094aecb0dd80607e12ed3029ed9bc7e79b33ef4d3b
-    lib/Windows_x86_64/rel/nvngx_dlss.dll 0e1fbd01ef2374f68e6ff8728f8b394279e58670c02d1f2aadbc8927db97476eb7bc8dca2a3dfd17d13789e6b5ef101850dec836a7fda3e67d379d4a34dfae7d
     LICENSE.txt 72f5b66daad2df8b49098857adc8705dae17b60fcbefb3f8625fd252aa1e5b82dd92cb9824dd052976c73f5a0d7437ca54e593b8e9a9010758aba8887f853390
 )
+if(VCPKG_TARGET_IS_WINDOWS)
+    list(APPEND _dlss_files
+        lib/Windows_x86_64/x64/nvsdk_ngx_d.lib 0809baf904b4246e2ecc35ffc4a5a88155f9c74722427a6b02d0fa85c5a4f24e9d9f759863e6fc3c7038927a14e003215f50215cda4dfbc7b4edb513e5bf58df
+        lib/Windows_x86_64/x64/nvsdk_ngx_d_dbg.lib 781cbe38adffc42b47b31a047d73e9de7e77242a2ad0d50a787335920985b2b3160f025c509bb9a31750f6094aecb0dd80607e12ed3029ed9bc7e79b33ef4d3b
+        lib/Windows_x86_64/rel/nvngx_dlss.dll 0e1fbd01ef2374f68e6ff8728f8b394279e58670c02d1f2aadbc8927db97476eb7bc8dca2a3dfd17d13789e6b5ef101850dec836a7fda3e67d379d4a34dfae7d
+    )
+else()
+    list(APPEND _dlss_files
+        lib/Linux_x86_64/libnvsdk_ngx.a ed292252d5a7f905f63b85ada671827300cf28d0cc18c6ae7679261289907518500cb5167991e90972cc1f412745dcd674281afaab60b4253095f0939ed1ce4a
+        lib/Linux_x86_64/rel/libnvidia-ngx-dlss.so.${VERSION} e95c833c790c656d93392d08938616596776581da6b2e88426b75bec1fccba24ea838d3ba472fea22ab2405726a2dba63e2b1b6badc577068df4b388dcb9b7c5
+    )
+endif()
 
 while(_dlss_files)
     list(POP_FRONT _dlss_files _path _sha512)
@@ -43,11 +52,19 @@ while(_dlss_files)
     endif()
 endwhile()
 
-file(INSTALL "${_dlss_nvsdk_ngx_d.lib}" DESTINATION "${CURRENT_PACKAGES_DIR}/lib" RENAME "nvsdk_ngx_d.lib")
-file(INSTALL "${_dlss_nvsdk_ngx_d_dbg.lib}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib" RENAME "nvsdk_ngx_d_dbg.lib")
-# NVIDIA ships only a release runtime, NGX loads it at run time in every configuration
-file(INSTALL "${_dlss_nvngx_dlss.dll}" DESTINATION "${CURRENT_PACKAGES_DIR}/bin" RENAME "nvngx_dlss.dll")
-file(INSTALL "${_dlss_nvngx_dlss.dll}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin" RENAME "nvngx_dlss.dll")
+if(VCPKG_TARGET_IS_WINDOWS)
+    file(INSTALL "${_dlss_nvsdk_ngx_d.lib}" DESTINATION "${CURRENT_PACKAGES_DIR}/lib" RENAME "nvsdk_ngx_d.lib")
+    file(INSTALL "${_dlss_nvsdk_ngx_d_dbg.lib}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib" RENAME "nvsdk_ngx_d_dbg.lib")
+    # NVIDIA ships only a release runtime, NGX loads it at run time in every configuration
+    file(INSTALL "${_dlss_nvngx_dlss.dll}" DESTINATION "${CURRENT_PACKAGES_DIR}/bin" RENAME "nvngx_dlss.dll")
+    file(INSTALL "${_dlss_nvngx_dlss.dll}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/bin" RENAME "nvngx_dlss.dll")
+else()
+    # One static loader for both configurations, the runtime keeps NVIDIA's versioned file name because NGX looks for it
+    file(INSTALL "${_dlss_libnvsdk_ngx.a}" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
+    file(INSTALL "${_dlss_libnvsdk_ngx.a}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
+    file(INSTALL "${_dlss_libnvidia-ngx-dlss.so.${VERSION}}" DESTINATION "${CURRENT_PACKAGES_DIR}/lib")
+    file(INSTALL "${_dlss_libnvidia-ngx-dlss.so.${VERSION}}" DESTINATION "${CURRENT_PACKAGES_DIR}/debug/lib")
+endif()
 
 file(INSTALL "${CMAKE_CURRENT_LIST_DIR}/nvidia-dlss-config.cmake" DESTINATION "${CURRENT_PACKAGES_DIR}/share/${PORT}")
 vcpkg_install_copyright(FILE_LIST "${_dlss_LICENSE.txt}")

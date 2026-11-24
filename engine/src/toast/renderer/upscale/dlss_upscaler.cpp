@@ -14,7 +14,11 @@
 #ifdef TOAST_DLSS
 #include <SDL3/SDL_filesystem.h>
 #include <nvsdk_ngx_helpers_vk.h>
+#ifdef _WIN32
 #include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 #endif
 
 namespace renderer {
@@ -28,8 +32,9 @@ constexpr const char* k_engine_version = "1.0";
 constexpr uint32_t k_vendor_nvidia = 0x10DE;
 
 /// %AppData%/nullptr-studios/toast-engine/logs like the log server, NGX writes its own logs there
-auto dataPath() -> const std::filesystem::path& {
-	static const std::filesystem::path path = [] {
+auto dataPath() -> const std::wstring& {
+	// NGX takes wchar_t paths, std::filesystem::path::c_str() is char on Linux
+	static const std::wstring path = [] {
 		std::filesystem::path dir;
 		std::error_code ec;
 		if (char* pref_path = SDL_GetPrefPath("nullptr-studios", "toast-engine")) {
@@ -39,13 +44,20 @@ auto dataPath() -> const std::filesystem::path& {
 			dir = std::filesystem::temp_directory_path(ec) / "nullptr-studios" / "toast-engine" / "logs";
 		}
 		std::filesystem::create_directories(dir, ec);
-		return dir;
+		return dir.wstring();
 	}();
 	return path;
 }
 
 /// NGX itself only searches the exe directory and the editor exe lives elsewhere
 auto engineDirectory() -> std::wstring {
+#ifndef _WIN32
+	Dl_info info {};
+	if (dladdr(reinterpret_cast<void*>(&engineDirectory), &info) == 0 || info.dli_fname == nullptr) {
+		return {};
+	}
+	return std::filesystem::path(info.dli_fname).parent_path().wstring();
+#else
 	HMODULE module = nullptr;
 	if (!GetModuleHandleExW(
 	        GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -60,6 +72,7 @@ auto engineDirectory() -> std::wstring {
 		return {};
 	}
 	return std::filesystem::path(path.data()).parent_path().wstring();
+#endif
 }
 
 auto discoveryInfo() -> NVSDK_NGX_FeatureDiscoveryInfo {
@@ -68,7 +81,7 @@ auto discoveryInfo() -> NVSDK_NGX_FeatureDiscoveryInfo {
 	info.FeatureID = NVSDK_NGX_Feature_SuperSampling;
 	info.Identifier.IdentifierType = NVSDK_NGX_Application_Identifier_Type_Project_Id;
 	info.Identifier.v.ProjectDesc = {k_project_id, NVSDK_NGX_ENGINE_TYPE_CUSTOM, k_engine_version};
-	info.ApplicationDataPath = dataPath().c_str();
+	info.ApplicationDataPath = dataPath().c_str();    // same wide string, see dataPath()
 	return info;
 }
 
