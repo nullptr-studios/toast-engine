@@ -163,7 +163,7 @@ internal static unsafe class StackWalker {
 			}
 
 			Native.SymSetOptions(Native.SymOptions);
-			if (!Native.SymInitializeW(target.ProcessHandle, null, true)) {
+			if (!Native.SymInitializeW(target.ProcessHandle, SymbolSearchPath(target), true)) {
 				error = $"SymInitialize failed (error {Marshal.GetLastPInvokeError()})";
 				return frames;
 			}
@@ -206,6 +206,19 @@ internal static unsafe class StackWalker {
 
 		if (frames.Count == 0) error ??= "no frames could be walked";
 		return frames;
+	}
+
+	/// An export ships the game DLL and its PDB next to the exe, which the PDB path baked into the DLL does not point to
+	/// on another machine; a non-null path replaces the default one, so the environment paths are added back
+	private static string SymbolSearchPath(CrashTarget target) {
+		var parts = new List<string>();
+		var exe = stackalloc char[1024];
+		var length = Native.K32GetModuleFileNameExW(target.ProcessHandle, IntPtr.Zero, exe, 1024);
+		if (length > 0 && Path.GetDirectoryName(new string(exe, 0, (int)length)) is { } directory) parts.Add(directory);
+		foreach (var variable in new[] { "_NT_SYMBOL_PATH", "_NT_ALTERNATE_SYMBOL_PATH" }) {
+			if (Environment.GetEnvironmentVariable(variable) is { Length: > 0 } value) parts.Add(value);
+		}
+		return string.Join(';', parts);
 	}
 
 	private static StackFrameInfo Describe(IntPtr process, ulong pc, bool exact) {

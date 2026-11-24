@@ -67,7 +67,7 @@ struct Paths {
 class AssetManager {
 public:
 	AssetManager();
-	~AssetManager() = default;
+	~AssetManager();
 
 	static auto get() noexcept -> AssetManager&;
 

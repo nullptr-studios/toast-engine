@@ -2,7 +2,7 @@
 
 namespace voxel {
 
-auto analyseConnectivity(const Volume& volume) -> Connectivity {
+auto analyseConnectivity(const Volume& volume, ConnectivityCache* cache) -> Connectivity {
 	ZoneScopedN("voxel::AnalyseConnectivity");
 
 	Connectivity out;
@@ -15,26 +15,47 @@ auto analyseConnectivity(const Volume& volume) -> Connectivity {
 
 	// pieces of brick s are first_piece[s] .. first_piece[s + 1]
 	std::vector<uint32_t> first_piece(brick_count + 1u, 0u);
-	for (int32_t z = 0; std::cmp_less(z, dims.z); ++z) {
-		for (int32_t y = 0; std::cmp_less(y, dims.y); ++y) {
-			for (int32_t x = 0; std::cmp_less(x, dims.x); ++x) {
-				const glm::ivec3 brick(x, y, z);
-				first_piece[slot_of(brick)] = static_cast<uint32_t>(out.pieces.size());
+	std::vector<BrickFaces> faces;
+	const bool reuse = cache != nullptr && cache->dims == dims;
+	size_t cursor = 0;
+	uint32_t filled = 0;
+	uint32_t reused = 0;
+	volume.forEachSolidBrick([&](glm::ivec3 brick, uint32_t slot) {
+		std::fill(first_piece.begin() + filled, first_piece.begin() + slot + 1, static_cast<uint32_t>(out.pieces.size()));
+		filled = slot + 1;
+		const BrickOccupancy& occupancy = *volume.occupancyPointer(brick);
 
-				const BrickOccupancy* occupancy = volume.occupancyPointer(brick);
-				if (occupancy == nullptr) {
-					continue;
+		// Pieces of an unchanged brick come out the same and in the same order, so the last ones stand in for the flood fill
+		if (reuse) {
+			while (cursor < cache->pieces.size() && slot_of(cache->pieces[cursor].brick) < slot) {
+				++cursor;
+			}
+			size_t end = cursor;
+			BrickOccupancy merged {};
+			while (end < cache->pieces.size() && slot_of(cache->pieces[end].brick) == slot) {
+				merged = merged | cache->pieces[end].voxels;
+				++end;
+			}
+			const bool unchanged = end > cursor && merged == occupancy;
+			if (unchanged) {
+				for (size_t i = cursor; i < end; ++i) {
+					out.pieces.push_back(BrickPiece {.brick = brick, .voxels = cache->pieces[i].voxels});
+					faces.push_back(cache->faces[i]);
 				}
-				for (const BrickOccupancy& part : brickComponents(*occupancy)) {
-					BrickPiece piece;
-					piece.brick = brick;
-					piece.voxels = part;
-					out.pieces.push_back(piece);
-				}
+				++reused;
+			}
+			cursor = end;
+			if (unchanged) {
+				return;
 			}
 		}
-	}
-	first_piece[brick_count] = static_cast<uint32_t>(out.pieces.size());
+		forEachBrickComponent(occupancy, [&](const BrickOccupancy& part) {
+			out.pieces.push_back(BrickPiece {.brick = brick, .voxels = part});
+			faces.push_back(computeFaces(part));
+		});
+	});
+	std::fill(first_piece.begin() + filled, first_piece.end(), static_cast<uint32_t>(out.pieces.size()));
+	ZoneValue(static_cast<uint64_t>(reused));
 
 	// Lambdas since an anonymous namespace type could collide in the unity build
 	const auto piece_count = static_cast<uint32_t>(out.pieces.size());
@@ -62,48 +83,36 @@ auto analyseConnectivity(const Volume& volume) -> Connectivity {
 		set_size[a] += set_size[b];
 	};
 
-	std::vector<BrickFaces> faces(piece_count);
-	for (uint32_t i = 0; i < piece_count; ++i) {
-		faces[i] = computeFaces(out.pieces[i].voxels);
-	}
+	volume.forEachSolidBrick([&](glm::ivec3 brick, uint32_t here) {
+		for (int32_t axis = 0; axis < 3; ++axis) {
+			glm::ivec3 next = brick;
+			next[axis] += 1;
+			if (std::cmp_greater_equal(next[axis], dims[axis])) {
+				continue;
+			}
+			const uint32_t there = slot_of(next);
 
-	for (int32_t z = 0; std::cmp_less(z, dims.z); ++z) {
-		for (int32_t y = 0; std::cmp_less(y, dims.y); ++y) {
-			for (int32_t x = 0; std::cmp_less(x, dims.x); ++x) {
-				const glm::ivec3 brick(x, y, z);
-				const uint32_t here = slot_of(brick);
-
-				for (int32_t axis = 0; axis < 3; ++axis) {
-					glm::ivec3 next = brick;
-					next[axis] += 1;
-					if (std::cmp_greater_equal(next[axis], dims[axis])) {
-						continue;
+			for (uint32_t p = first_piece[here]; p < first_piece[here + 1u]; ++p) {
+				uint64_t outward = faces[p].pos_z;
+				if (axis == 0) {
+					outward = faces[p].pos_x;
+				} else if (axis == 1) {
+					outward = faces[p].pos_y;
+				}
+				for (uint32_t q = first_piece[there]; q < first_piece[there + 1u]; ++q) {
+					uint64_t inward = faces[q].neg_z;
+					if (axis == 0) {
+						inward = faces[q].neg_x;
+					} else if (axis == 1) {
+						inward = faces[q].neg_y;
 					}
-					const uint32_t there = slot_of(next);
-
-					for (uint32_t p = first_piece[here]; p < first_piece[here + 1u]; ++p) {
-						uint64_t outward = faces[p].pos_z;
-						if (axis == 0) {
-							outward = faces[p].pos_x;
-						} else if (axis == 1) {
-							outward = faces[p].pos_y;
-						}
-						for (uint32_t q = first_piece[there]; q < first_piece[there + 1u]; ++q) {
-							uint64_t inward = faces[q].neg_z;
-							if (axis == 0) {
-								inward = faces[q].neg_x;
-							} else if (axis == 1) {
-								inward = faces[q].neg_y;
-							}
-							if (facesConnect(outward, inward)) {
-								unite(p, q);
-							}
-						}
+					if (facesConnect(outward, inward)) {
+						unite(p, q);
 					}
 				}
 			}
 		}
-	}
+	});
 
 	// Numbered by first appearance so labels do not depend on union find internals
 	std::vector<uint32_t> label(piece_count, k_no_component);
@@ -113,6 +122,12 @@ auto analyseConnectivity(const Volume& volume) -> Connectivity {
 			label[root] = out.component_count++;
 		}
 		out.pieces[i].component = label[root];
+	}
+
+	if (cache != nullptr) {
+		cache->dims = dims;
+		cache->pieces = out.pieces;
+		cache->faces = std::move(faces);
 	}
 	return out;
 }

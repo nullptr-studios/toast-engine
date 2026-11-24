@@ -6,18 +6,6 @@ namespace voxel {
 
 namespace {
 
-static_assert(k_brick_dim == 8, "brickOfVoxel and localOf shift and mask by 3 and 7");
-
-[[nodiscard]]
-auto brickOfVoxel(glm::ivec3 voxel) noexcept -> glm::ivec3 {
-	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
-}
-
-[[nodiscard]]
-auto localOf(glm::ivec3 voxel) noexcept -> BrickCoord {
-	return BrickCoord {static_cast<uint32_t>(voxel.x & 7), static_cast<uint32_t>(voxel.y & 7), static_cast<uint32_t>(voxel.z & 7)};
-}
-
 [[nodiscard]]
 auto nextVolumeId() noexcept -> uint64_t {
 	static std::atomic<uint64_t> counter {0};
@@ -29,6 +17,8 @@ auto nextVolumeId() noexcept -> uint64_t {
 Volume::Volume(BrickPool& pool, glm::uvec3 brick_dims) : m_pool(&pool), m_brick_dims(brick_dims), m_id(nextVolumeId()) {
 	const size_t count = static_cast<size_t>(brick_dims.x) * brick_dims.y * brick_dims.z;
 	m_entries.assign(count, BrickEntry {});
+	m_brick_solid.assign(count, 0);
+	m_solid_mask.assign((count + 63) / 64, 0ull);
 }
 
 Volume::~Volume() {
@@ -40,6 +30,9 @@ Volume::Volume(Volume&& other) noexcept
       m_brick_dims(other.m_brick_dims),
       m_texture_origin(other.m_texture_origin),
       m_entries(std::move(other.m_entries)),
+      m_brick_solid(std::move(other.m_brick_solid)),
+      m_solid_mask(std::move(other.m_solid_mask)),
+      m_solid_voxels(other.m_solid_voxels),
       m_revision(other.m_revision),
       m_id(other.m_id),
       m_dirty_mask(std::move(other.m_dirty_mask)),
@@ -48,6 +41,9 @@ Volume::Volume(Volume&& other) noexcept
 	other.m_pool = nullptr;
 	other.m_brick_dims = glm::uvec3 {0};
 	other.m_entries.clear();
+	other.m_brick_solid.clear();
+	other.m_solid_mask.clear();
+	other.m_solid_voxels = 0;
 	other.m_dirty_mask.clear();
 	other.m_dirty_list.clear();
 	other.m_id = 0;
@@ -60,6 +56,9 @@ auto Volume::operator=(Volume&& other) noexcept -> Volume& {
 		m_brick_dims = other.m_brick_dims;
 		m_texture_origin = other.m_texture_origin;
 		m_entries = std::move(other.m_entries);
+		m_brick_solid = std::move(other.m_brick_solid);
+		m_solid_mask = std::move(other.m_solid_mask);
+		m_solid_voxels = other.m_solid_voxels;
 		m_revision = other.m_revision;
 		m_id = other.m_id;
 		m_dirty_mask = std::move(other.m_dirty_mask);
@@ -68,11 +67,40 @@ auto Volume::operator=(Volume&& other) noexcept -> Volume& {
 		other.m_pool = nullptr;
 		other.m_brick_dims = glm::uvec3 {0};
 		other.m_entries.clear();
+		other.m_brick_solid.clear();
+		other.m_solid_mask.clear();
+		other.m_solid_voxels = 0;
 		other.m_dirty_mask.clear();
 		other.m_dirty_list.clear();
 		other.m_id = 0;
 	}
 	return *this;
+}
+
+void Volume::syncBrick(uint32_t index) noexcept {
+	const BrickEntry entry = m_entries[index];
+	uint32_t count = 0;
+	switch (entry.tag()) {
+		case BrickTag::empty: break;
+		case BrickTag::uniform: count = k_brick_voxel_count; break;
+		default: count = popCount(std::as_const(*m_pool).occupancy(entry.payload())); break;
+	}
+	m_solid_voxels = m_solid_voxels - m_brick_solid[index] + count;
+	m_brick_solid[index] = static_cast<uint16_t>(count);
+	uint64_t& word = m_solid_mask[index >> 6u];
+	const uint64_t bit = 1ull << (index & 63u);
+	word = count != 0 ? (word | bit) : (word & ~bit);
+}
+
+void Volume::recountAll() noexcept {
+	m_brick_solid.assign(m_entries.size(), 0);
+	m_solid_mask.assign((m_entries.size() + 63) / 64, 0ull);
+	m_solid_voxels = 0;
+	for (uint32_t index = 0; index < m_entries.size(); ++index) {
+		if (m_entries[index].tag() != BrickTag::empty) {
+			syncBrick(index);
+		}
+	}
 }
 
 auto Volume::instanceOf(const Volume& source) -> Volume {
@@ -81,6 +109,9 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 
 	out.m_texture_origin = source.m_texture_origin;
 	out.m_entries = source.m_entries;
+	out.m_brick_solid = source.m_brick_solid;
+	out.m_solid_mask = source.m_solid_mask;
+	out.m_solid_voxels = source.m_solid_voxels;
 	for (BrickEntry& entry : out.m_entries) {
 		if (entry.isPooled()) {
 			source.m_pool->retain(entry.payload());
@@ -88,6 +119,48 @@ auto Volume::instanceOf(const Volume& source) -> Volume {
 		}
 	}
 	return out;
+}
+
+void Volume::reshareFrom(const Volume& source) {
+	assert(source.m_pool != nullptr);
+	if (m_pool != source.m_pool || this == &source) {
+		*this = instanceOf(source);
+		return;
+	}
+
+	const auto same_brick = [](BrickEntry a, BrickEntry b) { return a.isPooled() && b.isPooled() && a.payload() == b.payload(); };
+	const size_t old_count = m_entries.size();
+	const size_t new_count = source.m_entries.size();
+	// retain everything new first so a brick that only moved index never drops to zero in between
+	for (size_t index = 0; index < new_count; ++index) {
+		const BrickEntry entry = source.m_entries[index];
+		if (entry.isPooled() && not(index < old_count && same_brick(m_entries[index], entry))) {
+			m_pool->retain(entry.payload());
+		}
+	}
+	for (size_t index = 0; index < old_count; ++index) {
+		const BrickEntry entry = m_entries[index];
+		if (entry.isPooled() && not(index < new_count && same_brick(entry, source.m_entries[index]))) {
+			m_pool->free(entry.payload());
+		}
+	}
+
+	m_brick_dims = source.m_brick_dims;
+	m_texture_origin = source.m_texture_origin;
+	m_entries = source.m_entries;
+	m_brick_solid = source.m_brick_solid;
+	m_solid_mask = source.m_solid_mask;
+	m_solid_voxels = source.m_solid_voxels;
+	for (BrickEntry& entry : m_entries) {
+		if (entry.isPooled()) {
+			entry = BrickEntry::make(BrickTag::shared, entry.payload());
+		}
+	}
+	m_revision = 0;
+	m_id = nextVolumeId();
+	m_dirty_mask.clear();
+	m_dirty_list.clear();
+	m_dirty_since = 0;
 }
 
 auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume {
@@ -115,6 +188,7 @@ auto Volume::adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 br
 			entry = BrickEntry::make(BrickTag::shared, entry.payload());
 		}
 	}
+	out.recountAll();
 	return out;
 }
 
@@ -127,57 +201,6 @@ void Volume::releaseOwned() {
 			m_pool->free(entry.payload());
 			entry = BrickEntry {};
 		}
-	}
-}
-
-auto Volume::containsBrick(glm::ivec3 brick) const noexcept -> bool {
-	return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && std::cmp_less(brick.x, m_brick_dims.x) &&
-	       std::cmp_less(brick.y, m_brick_dims.y) && std::cmp_less(brick.z, m_brick_dims.z);
-}
-
-auto Volume::containsVoxel(glm::ivec3 voxel) const noexcept -> bool {
-	return containsBrick(brickOfVoxel(voxel));
-}
-
-auto Volume::entryIndex(glm::ivec3 brick) const noexcept -> uint32_t {
-	assert(containsBrick(brick));
-	return static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * m_brick_dims.x) +
-	       (static_cast<uint32_t>(brick.z) * m_brick_dims.x * m_brick_dims.y);
-}
-
-auto Volume::entryAt(glm::ivec3 brick) const noexcept -> BrickEntry {
-	if (!containsBrick(brick)) {
-		return BrickEntry {};
-	}
-	return m_entries[entryIndex(brick)];
-}
-
-auto Volume::materialAt(glm::ivec3 voxel) const noexcept -> uint8_t {
-	if (!containsVoxel(voxel)) {
-		return k_empty_palette_index;
-	}
-
-	const BrickEntry entry = m_entries[entryIndex(brickOfVoxel(voxel))];
-	switch (entry.tag()) {
-		case BrickTag::empty: return k_empty_palette_index;
-		case BrickTag::uniform: return static_cast<uint8_t>(entry.payload());
-		default: break;
-	}
-
-	const BrickCoord local = localOf(voxel);
-	return m_pool->material(entry.payload())[localIndex(local.x, local.y, local.z)];
-}
-
-auto Volume::isSolidAt(glm::ivec3 voxel) const noexcept -> bool {
-	return materialAt(voxel) != k_empty_palette_index;
-}
-
-auto Volume::occupancyPointer(glm::ivec3 brick) const noexcept -> const BrickOccupancy* {
-	const BrickEntry entry = entryAt(brick);
-	switch (entry.tag()) {
-		case BrickTag::empty: return nullptr;
-		case BrickTag::uniform: return &k_full_brick;
-		default: return &m_pool->occupancy(entry.payload());
 	}
 }
 
@@ -198,7 +221,8 @@ auto Volume::makeWritable(uint32_t entry_index) -> uint32_t {
 		return entry.payload();
 	}
 
-	const uint32_t id = m_pool->allocate();
+	// uniform and pooled sources overwrite every byte below, only an empty one needs the clear
+	const uint32_t id = m_pool->allocate(entry.tag() == BrickTag::empty);
 	if (id == k_invalid_brick) {
 		return k_invalid_brick;
 	}
@@ -242,7 +266,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 		return result;
 	}
 
-	const uint32_t index = entryIndex(brickOfVoxel(voxel));
+	const uint32_t index = entryIndex(brickOf(voxel));
 	const bool was_occupied = m_entries[index].tag() != BrickTag::empty;
 
 	const uint32_t id = makeWritable(index);
@@ -256,7 +280,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 
 	result.changed = true;
 	++m_revision;
-	markDirty(brickOfVoxel(voxel));
+	markDirty(brickOf(voxel));
 
 	if (material != k_empty_palette_index) {
 		result.brick_became_occupied = !was_occupied;
@@ -265,6 +289,7 @@ auto Volume::setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite {
 		m_entries[index] = BrickEntry {};
 		result.brick_became_empty = true;
 	}
+	syncBrick(index);
 
 	return result;
 }
@@ -284,6 +309,7 @@ void Volume::setBrickUniform(glm::ivec3 brick, uint8_t material) {
 	}
 
 	m_entries[index] = next;
+	syncBrick(index);
 	++m_revision;
 	markDirty(brick);
 }
@@ -315,6 +341,7 @@ auto Volume::tryCollapseUniform(glm::ivec3 brick) -> bool {
 
 	m_pool->free(id);
 	m_entries[index] = BrickEntry::make(BrickTag::uniform, first);
+	syncBrick(index);
 	++m_revision;
 	markDirty(brick);
 	return true;
@@ -331,7 +358,8 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 		return true;
 	}
 
-	const uint32_t id = makeWritable(entryIndex(brick));
+	const uint32_t index = entryIndex(brick);
+	const uint32_t id = makeWritable(index);
 	if (id == k_invalid_brick) {
 		return false;
 	}
@@ -349,6 +377,7 @@ auto Volume::setBrickMaterial(glm::ivec3 brick, std::span<const uint8_t, k_brick
 		occupancy[z] = word;
 	}
 	m_pool->occupancy(id) = occupancy;
+	syncBrick(index);
 	++m_revision;
 	markDirty(brick);
 	return true;
@@ -366,6 +395,7 @@ auto Volume::takeBrick(glm::ivec3 brick) -> BrickEntry {
 	}
 
 	m_entries[index] = BrickEntry {};
+	syncBrick(index);
 	++m_revision;
 	markDirty(brick);
 	return entry;
@@ -383,6 +413,7 @@ void Volume::adoptBrick(glm::ivec3 brick, BrickEntry entry) {
 	}
 
 	m_entries[index] = entry;
+	syncBrick(index);
 	++m_revision;
 	markDirty(brick);
 }
@@ -404,6 +435,7 @@ auto Volume::clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool {
 			m_pool->free(m_entries[index].payload());
 		}
 		m_entries[index] = BrickEntry {};
+		syncBrick(index);
 		++m_revision;
 		markDirty(brick);
 		return true;
@@ -416,14 +448,11 @@ auto Volume::clearVoxels(glm::ivec3 brick, const BrickOccupancy& mask) -> bool {
 
 	std::span<uint8_t, k_brick_material_bytes> bytes = m_pool->material(id);
 	BrickOccupancy& stored = m_pool->occupancy(id);
-	for (uint32_t z = 0; z < k_brick_dim; ++z) {
-		uint64_t word = affected[z];
-		stored[z] &= ~word;
-		while (word != 0ull) {
-			bytes[(z * k_brick_dim * k_brick_dim) + static_cast<uint32_t>(std::countr_zero(word))] = k_empty_palette_index;
-			word &= word - 1ull;
-		}
-	}
+	forEachSetVoxel(affected, [&](uint32_t local_index, uint32_t, uint32_t, uint32_t) {
+		bytes[local_index] = k_empty_palette_index;
+	});
+	stored = stored & ~affected;
+	syncBrick(index);
 
 	++m_revision;
 	markDirty(brick);
@@ -454,6 +483,7 @@ auto Volume::copyBrickFrom(glm::ivec3 brick, const Volume& source, glm::ivec3 so
 	}
 	std::ranges::copy(bytes, m_pool->material(id).begin());
 	m_pool->occupancy(id) = std::as_const(*source.m_pool).occupancy(from.payload());
+	syncBrick(index);
 	++m_revision;
 	markDirty(brick);
 	return true;
@@ -485,6 +515,8 @@ void Volume::finishBrickWrite(glm::ivec3 brick, bool changed) {
 	} else if (changed) {
 		tryCollapseUniform(brick);
 	}
+	// the caller wrote the occupancy itself so recount whether or not it says it changed
+	syncBrick(index);
 	if (changed) {
 		++m_revision;
 		markDirty(brick);
@@ -527,18 +559,6 @@ auto Volume::brickAtIndex(uint32_t index) const noexcept -> glm::ivec3 {
 	  static_cast<int>((index / m_brick_dims.x) % m_brick_dims.y),
 	  static_cast<int>(index / layer)
 	};
-}
-
-auto Volume::solidVoxelCount() const -> uint32_t {
-	uint32_t total = 0;
-	for (const BrickEntry& entry : m_entries) {
-		switch (entry.tag()) {
-			case BrickTag::empty: break;
-			case BrickTag::uniform: total += k_brick_voxel_count; break;
-			default: total += popCount(m_pool->occupancy(entry.payload())); break;
-		}
-	}
-	return total;
 }
 
 auto Volume::ownedBrickCount() const -> uint32_t {

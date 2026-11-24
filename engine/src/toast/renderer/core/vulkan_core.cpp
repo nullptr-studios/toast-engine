@@ -797,6 +797,11 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	    supported_vulkan12.shaderSampledImageArrayNonUniformIndexing == VK_TRUE,
 	    "Vulkan 1.2 shaderSampledImageArrayNonUniformIndexing"
 	);
+	// Some compiled shaders declare StorageBufferArrayNonUniformIndexing, undefined behaviour without the feature
+	require_feature(
+	    supported_vulkan12.shaderStorageBufferArrayNonUniformIndexing == VK_TRUE,
+	    "Vulkan 1.2 shaderStorageBufferArrayNonUniformIndexing"
+	);
 	// eDepthAttachmentOptimal and eDepthReadOnlyOptimal are only legal with this enabled
 	require_feature(supported_vulkan12.separateDepthStencilLayouts == VK_TRUE, "Vulkan 1.2 separateDepthStencilLayouts");
 	// AsyncCompute tickets are timeline values
@@ -984,6 +989,7 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	vulkan12_features.descriptorBindingVariableDescriptorCount = VK_TRUE;
 	vulkan12_features.bufferDeviceAddress = VK_TRUE;
 	vulkan12_features.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+	vulkan12_features.shaderStorageBufferArrayNonUniformIndexing = VK_TRUE;
 	vulkan12_features.separateDepthStencilLayouts = VK_TRUE;
 	vulkan12_features.timelineSemaphore = VK_TRUE;
 	vulkan11_features.shaderDrawParameters = VK_TRUE;

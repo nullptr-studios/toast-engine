@@ -1809,6 +1809,7 @@ private:
 		uint32_t record = 0;
 		bool mirrored = false;
 		uint64_t frame = 0;
+		VoxelCollisionWorld::Volume collision;
 	};
 
 	std::unordered_map<uint64_t, VoxelProxyMath> m_voxel_proxy_math;
@@ -1820,6 +1821,8 @@ private:
 	/// What the published collision world was built from so a still scene keeps it
 	const VoxelGpuStorage* m_voxel_collision_storage = nullptr;
 	size_t m_voxel_collision_count = 0;
+	/// Collision entries of this frame's drawn proxies, scratch that keeps its capacity
+	std::vector<VoxelCollisionWorld::Volume> m_voxel_collision_volumes;
 	std::unordered_map<uint64_t, glm::mat4> m_mesh_previous_models;
 	bool m_voxel_upload_failed_warned = false;
 

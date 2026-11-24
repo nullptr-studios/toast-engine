@@ -5,6 +5,8 @@ namespace crash_reporter;
 
 internal static unsafe class Native {
 	public const uint ProcessAllAccess = 0x001F0FFF;
+	public const uint ProcessVmRead = 0x0010;
+	public const uint ProcessQueryInformation = 0x0400;
 	public const uint ThreadAllAccess = 0x001FFFFF;
 	public const uint MachineAmd64 = 0x8664;
 	public const uint AddrModeFlat = 3;
@@ -30,6 +32,9 @@ internal static unsafe class Native {
 
 	[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
 	public static extern uint K32GetModuleBaseNameW(IntPtr process, IntPtr module, char* name, uint size);
+
+	[DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+	public static extern uint K32GetModuleFileNameExW(IntPtr process, IntPtr module, char* name, uint size);
 
 	[DllImport("ntdll.dll")]
 	public static extern int NtSuspendProcess(IntPtr process);

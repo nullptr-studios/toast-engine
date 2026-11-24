@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <bit>
+#include <cassert>
 #include <cstdint>
 #include <memory>
 #include <span>
@@ -27,9 +28,10 @@ class TOAST_API BrickPool {
 public:
 	explicit BrickPool(uint32_t capacity);
 
+	/// @param cleared false leaves stale contents for a caller that overwrites the whole brick
 	/// @returns k_invalid_brick when the pool is exhausted
 	[[nodiscard]]
-	auto allocate() -> uint32_t;
+	auto allocate(bool cleared = true) -> uint32_t;
 
 	/// @brief The id must come from allocate and not already be freed
 	void free(uint32_t id);
@@ -39,16 +41,32 @@ public:
 	auto referenceCount(uint32_t id) const noexcept -> uint32_t;
 
 	[[nodiscard]]
-	auto material(uint32_t id) -> std::span<uint8_t, k_brick_material_bytes>;
+	auto material(uint32_t id) -> std::span<uint8_t, k_brick_material_bytes> {
+		assert(isValid(id));
+		return std::span<uint8_t, k_brick_material_bytes>(
+		    m_material.get() + (static_cast<size_t>(id) * k_brick_material_bytes), k_brick_material_bytes
+		);
+	}
 
 	[[nodiscard]]
-	auto material(uint32_t id) const -> std::span<const uint8_t, k_brick_material_bytes>;
+	auto material(uint32_t id) const -> std::span<const uint8_t, k_brick_material_bytes> {
+		assert(isValid(id));
+		return std::span<const uint8_t, k_brick_material_bytes>(
+		    m_material.get() + (static_cast<size_t>(id) * k_brick_material_bytes), k_brick_material_bytes
+		);
+	}
 
 	[[nodiscard]]
-	auto occupancy(uint32_t id) -> BrickOccupancy&;
+	auto occupancy(uint32_t id) -> BrickOccupancy& {
+		assert(isValid(id));
+		return m_occupancy[id];
+	}
 
 	[[nodiscard]]
-	auto occupancy(uint32_t id) const -> const BrickOccupancy&;
+	auto occupancy(uint32_t id) const -> const BrickOccupancy& {
+		assert(isValid(id));
+		return m_occupancy[id];
+	}
 
 	[[nodiscard]]
 	auto capacity() const noexcept -> uint32_t {

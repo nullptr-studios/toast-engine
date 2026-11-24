@@ -387,6 +387,8 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 		target.endScope(cmd);
 	};
 
+	// The pyramid draws bind the same set before the surface draw first writes it
+	m_surface.makeSampleable(cmd);
 	if (previous_view) {
 		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, "TracedSpecular colour pyramid");
 		recordPyramid(cmd, layout, sets, params);

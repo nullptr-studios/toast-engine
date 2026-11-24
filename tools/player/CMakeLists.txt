@@ -27,6 +27,10 @@ add_custom_target(player ALL
         -DSRC_DIR=$<TARGET_FILE_DIR:dummy_game>
         -DDST_DIR=${OUTPUT_ROOT}/$<CONFIG>/player
         -P "${CMAKE_SOURCE_DIR}/cmake/link_or_copy_dir.cmake"
+        # The crash handler looks in crash_reporter/ next to toast_engine.dll; recursive since runtimes/ holds native libs
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${OUTPUT_ROOT}/$<CONFIG>/crash_reporter"
+        "${OUTPUT_ROOT}/$<CONFIG>/player/crash_reporter"
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "[dotnet] Building ${CSHARP_ASSEMBLY_NAME} (${DOTNET_CONFIG})..."
         VERBATIM
@@ -34,3 +38,4 @@ add_custom_target(player ALL
 
 add_dependencies(player toast_engine)
 add_dependencies(player dummy_game)
+add_dependencies(player crash_reporter)

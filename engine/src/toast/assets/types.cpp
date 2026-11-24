@@ -5,6 +5,18 @@ void Asset::addRef() noexcept {
 	m_ref_count.fetch_add(1, std::memory_order_relaxed);
 }
 
+namespace {
+std::atomic_bool g_freeing_all {false};
+}
+
+void Asset::setFreeingAll(bool freeing) noexcept {
+	g_freeing_all.store(freeing, std::memory_order_release);
+}
+
+auto Asset::freeingAll() noexcept -> bool {
+	return g_freeing_all.load(std::memory_order_acquire);
+}
+
 void Asset::release() noexcept {
 	m_ref_count.fetch_sub(1, std::memory_order_relaxed);
 }
@@ -26,7 +38,7 @@ HandleBase::HandleBase(Asset* asset, toast::UID uid, std::string_view uri) : m_a
 }
 
 HandleBase::~HandleBase() {
-	if (m_asset) {
+	if (m_asset && !Asset::freeingAll()) {
 		m_asset->release();
 	}
 }
@@ -40,7 +52,7 @@ HandleBase::HandleBase(const HandleBase& other) : m_asset(other.m_asset), m_uid(
 
 auto HandleBase::operator=(const HandleBase& other) -> HandleBase& {
 	if (this != &other) {
-		if (m_asset) {
+		if (m_asset && !Asset::freeingAll()) {
 			m_asset->release();
 		}
 		m_asset = other.m_asset;
@@ -61,7 +73,7 @@ HandleBase::HandleBase(HandleBase&& other) noexcept : m_asset(other.m_asset), m_
 
 auto HandleBase::operator=(HandleBase&& other) noexcept -> HandleBase& {
 	if (this != &other) {
-		if (m_asset) {
+		if (m_asset && !Asset::freeingAll()) {
 			m_asset->release();
 		}
 		m_asset = other.m_asset;
