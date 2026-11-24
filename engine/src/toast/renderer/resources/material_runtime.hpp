@@ -44,6 +44,8 @@ public:
 
 	void markValuesDirty() { m_values_dirty = true; }
 
+	void markTexturesDirty() { m_textures_dirty = true; }
+
 	struct UboBlob {
 		uint32_t set = 0;
 		uint32_t binding = 0;

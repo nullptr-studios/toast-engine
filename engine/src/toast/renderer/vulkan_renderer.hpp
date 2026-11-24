@@ -298,6 +298,11 @@ public:
 		return m_scene_color.view.has_value() ? **m_scene_color.view : vk::ImageView {};
 	}
 
+	[[nodiscard]]
+	auto getSceneColorImage() const noexcept -> vk::Image {
+		return m_scene_color.state.image;
+	}
+
 	/// xyz world normal w roughness
 
 	void setVoxelDetailTexture(assets::Handle<assets::DetailTexture> detail);
@@ -822,6 +827,17 @@ public:
 		return m_depth_resources.view.has_value() ? **m_depth_resources.view : vk::ImageView {};
 	}
 
+	/// For a pass that needs another layout briefly and restores the tracked usage
+	[[nodiscard]]
+	auto getDepthState() const noexcept -> const sync::ImageState& {
+		return m_depth_resources.state;
+	}
+
+	[[nodiscard]]
+	auto getDepthFormat() const noexcept -> vk::Format {
+		return m_depth_format;
+	}
+
 	[[nodiscard]]
 	auto getOverlayDepthView() const noexcept -> vk::ImageView {
 		return m_output_depth.view.has_value() ? **m_output_depth.view : getDepthView();
@@ -1265,6 +1281,38 @@ public:
 		return m_taa_enabled.load(std::memory_order_relaxed);
 	}
 
+	/// DLSS replaces the temporal resolve when it is available
+	void setDlssRequested(bool requested) noexcept { m_dlss_requested.store(requested, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto dlssRequested() const noexcept -> bool {
+		return m_dlss_requested.load(std::memory_order_relaxed);
+	}
+
+	/// Set by TaaPass after each record
+	void setDlssActive(bool active) noexcept { m_dlss_active.store(active, std::memory_order_relaxed); }
+
+	/// True while DLSS produced the last resolved frame
+	[[nodiscard]]
+	auto dlssActive() const noexcept -> bool {
+		return m_dlss_active.load(std::memory_order_relaxed);
+	}
+
+	/// Why DLSS cannot run, empty when it can
+	[[nodiscard]]
+	auto dlssFailureReason() const -> std::string;
+
+	/// Sharper material mips offset the lower render resolution so the temporal resolve recovers detail
+	[[nodiscard]]
+	auto materialMipBias() const noexcept -> float {
+		const float scale_bias = std::log2(m_applied_render_scale.load(std::memory_order_relaxed));
+		// NVIDIA's DLSS guidance is one level sharper than the resolution ratio
+		if (dlssActive()) {
+			return scale_bias - 1.0f;
+		}
+		return taaEnabled() ? scale_bias : 0.0f;
+	}
+
 	void setTaaHistoryWeight(float weight) noexcept { m_taa_history_weight.store(weight, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -1699,6 +1747,8 @@ private:
 	bool m_traced_shadows_voxel_fallback_logged = false;
 
 	std::atomic_bool m_taa_enabled {true};
+	std::atomic_bool m_dlss_requested {true};
+	std::atomic_bool m_dlss_active {false};
 	std::atomic<float> m_render_scale {1.0f};
 	std::mutex m_setting_request_mutex;
 	std::vector<std::pair<std::string, toast::settings::Value>> m_setting_requests;

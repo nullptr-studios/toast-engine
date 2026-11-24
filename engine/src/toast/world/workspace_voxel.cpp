@@ -5,6 +5,10 @@
 
 #include <toast/assets/asset_manager.hpp>
 #include <toast/engine.hpp>
+#include <toast/physics/nodes/box_collider.hpp>
+#include <toast/physics/nodes/capsule_collider.hpp>
+#include <toast/physics/nodes/rigidbody.hpp>
+#include <toast/physics/nodes/sphere_collider.hpp>
 #include <toast/renderer/debug/editor_overlays.hpp>
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_model.hpp>
@@ -1458,6 +1462,72 @@ auto meshRayHit(const assets::Mesh& mesh, glm::vec3 origin, glm::vec3 direction,
 	return nearest;
 }
 
+/// Entry t of a unit ray into a sphere, none from inside or behind
+[[nodiscard]]
+auto rayBallEntry(glm::vec3 origin, glm::vec3 direction, glm::vec3 centre, float radius) -> std::optional<float> {
+	const glm::vec3 m = origin - centre;
+	const float b = glm::dot(m, direction);
+	const float disc = (b * b) - (glm::dot(m, m) - (radius * radius));
+	if (disc < 0.0f) {
+		return std::nullopt;
+	}
+	const float t = -b - std::sqrt(disc);
+	return t >= 0.0f ? std::optional(t) : std::nullopt;
+}
+
+/// Entry t of a unit ray into a centred box, none from inside or behind
+[[nodiscard]]
+auto rayBoxEntry(glm::vec3 origin, glm::vec3 direction, glm::vec3 half) -> std::optional<float> {
+	float t_min = -std::numeric_limits<float>::max();
+	float t_max = std::numeric_limits<float>::max();
+	for (int axis = 0; axis < 3; ++axis) {
+		if (std::abs(direction[axis]) < 1.0e-8f) {
+			if (std::abs(origin[axis]) > half[axis]) {
+				return std::nullopt;
+			}
+			continue;
+		}
+		float t1 = (-half[axis] - origin[axis]) / direction[axis];
+		float t2 = (half[axis] - origin[axis]) / direction[axis];
+		if (t1 > t2) {
+			std::swap(t1, t2);
+		}
+		t_min = std::max(t_min, t1);
+		t_max = std::min(t_max, t2);
+	}
+	return (t_min >= 0.0f && t_min <= t_max) ? std::optional(t_min) : std::nullopt;
+}
+
+/// Entry t of a unit ray into a capsule along Z with shaft the half length between the cap centres
+[[nodiscard]]
+auto rayCapsuleEntry(glm::vec3 origin, glm::vec3 direction, float radius, float shaft) -> std::optional<float> {
+	const glm::vec3 along(0.0f, 0.0f, std::clamp(origin.z, -shaft, shaft));
+	if (glm::dot(origin - along, origin - along) <= radius * radius) {
+		return std::nullopt;
+	}
+	std::optional<float> nearest;
+	const auto take = [&](std::optional<float> t) {
+		if (t.has_value() && (!nearest.has_value() || *t < *nearest)) {
+			nearest = t;
+		}
+	};
+	take(rayBallEntry(origin, direction, {0.0f, 0.0f, shaft}, radius));
+	take(rayBallEntry(origin, direction, {0.0f, 0.0f, -shaft}, radius));
+	const float a = (direction.x * direction.x) + (direction.y * direction.y);
+	if (a > 1.0e-12f) {
+		const float b = (origin.x * direction.x) + (origin.y * direction.y);
+		const float c = (origin.x * origin.x) + (origin.y * origin.y) - (radius * radius);
+		const float disc = (b * b) - (a * c);
+		if (disc >= 0.0f) {
+			const float t = (-b - std::sqrt(disc)) / a;
+			if (t >= 0.0f && std::abs(origin.z + (t * direction.z)) <= shaft) {
+				take(t);
+			}
+		}
+	}
+	return nearest;
+}
+
 /// Entry t of a unit ray into a world sphere or 0 from inside and none behind
 [[nodiscard]]
 auto raySphereEntry(const Ray& ray, glm::vec3 direction, glm::vec4 sphere) -> std::optional<float> {
@@ -1494,12 +1564,46 @@ auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 	};
 
 	std::vector<Candidate> candidates;
+	Box<Node> collider_node;
+	float collider_t = std::numeric_limits<float>::max();
+
+	// Colliders are tested against the shape the debug draw shows, from outside only so a surrounding trigger never eats clicks
+	const auto pickCollider = [&](physics::Collider& collider, const Box<Node>& node) {
+		if (!collider.draw_debug) {
+			return;
+		}
+		collider.syncTransform();
+		glm::vec3 centre = collider.world_position;
+		if (const auto sphere = node.as<physics::SphereCollider>(); sphere.exists()) {
+			if (const auto body = collider.parent().as<physics::Rigidbody>(); body.exists()) {
+				body->syncTransform();
+				centre = body->world_position + body->world_rotation * collider.position;
+			}
+		}
+		const glm::quat inverse = glm::inverse(collider.world_rotation);
+		const glm::vec3 origin = inverse * (ray->origin - centre);
+		const glm::vec3 local_direction = inverse * direction;
+		std::optional<float> t;
+		if (const auto box = node.as<physics::BoxCollider>(); box.exists()) {
+			t = rayBoxEntry(origin, local_direction, box->size * 0.5f);
+		} else if (const auto sphere = node.as<physics::SphereCollider>(); sphere.exists()) {
+			t = rayBallEntry(origin, local_direction, glm::vec3(0.0f), sphere->radius);
+		} else if (const auto capsule = node.as<physics::CapsuleCollider>(); capsule.exists()) {
+			t = rayCapsuleEntry(origin, local_direction, capsule->radius, std::max(capsule->height * 0.5f - capsule->radius, 0.0f));
+		}
+		if (t.has_value() && *t < collider_t) {
+			collider_t = *t;
+			collider_node = node;
+		}
+	};
 
 	const auto visit = [&](const auto& self, Box<Node> node) -> void {
 		if (!node.exists() || !node->enabled()) {
 			return;
 		}
-		if (auto* voxels = reflect_cast<VoxelNode>(&*node)) {
+		if (auto* collider = reflect_cast<physics::Collider>(&*node)) {
+			pickCollider(*collider, node);
+		} else if (auto* voxels = reflect_cast<VoxelNode>(&*node)) {
 			voxels->syncTransform();
 			const auto add = [&](const voxel::Volume* volume, const glm::mat4& model) {
 				if (const auto entry = raySphereEntry(*ray, direction, voxel::worldBoundingSphere(model, volume->brickDims()))) {
@@ -1574,6 +1678,11 @@ auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 	const bool voxel_hit = hit.first.exists();
 	if (!voxel_hit) {
 		hit = nearest(false);
+	}
+	// A collider wins when its shown surface is in front of the geometry or flush with it
+	constexpr float k_collider_slack = 0.02f;
+	if (collider_node.exists() && (!hit.first.exists() || collider_t <= hit.second + k_collider_slack)) {
+		return SceneHit {.node = collider_node, .t = collider_t, .position = ray->origin + direction * collider_t};
 	}
 	if (!hit.first.exists()) {
 		return std::nullopt;

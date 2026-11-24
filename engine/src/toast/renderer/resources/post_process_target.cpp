@@ -6,17 +6,46 @@
 
 #include "toast/renderer/resources/post_process_target.hpp"
 
+#include <mutex>
+#include <unordered_map>
+
 namespace renderer {
 
-void PostProcessTarget::create(const VulkanCore& core, vk::Extent2D extent, vk::Format format, std::string_view debug_name) {
+namespace {
+
+std::mutex g_post_target_images_mutex;
+std::unordered_map<VkImageView, VkImage> g_post_target_images;
+
+}
+
+auto PostProcessTarget::imageOf(vk::ImageView view) -> vk::Image {
+	const std::lock_guard lock(g_post_target_images_mutex);
+	const auto it = g_post_target_images.find(view);
+	return it != g_post_target_images.end() ? vk::Image(it->second) : vk::Image {};
+}
+
+PostProcessTarget::~PostProcessTarget() {
+	if (m_view.has_value()) {
+		const std::lock_guard lock(g_post_target_images_mutex);
+		g_post_target_images.erase(**m_view);
+	}
+}
+
+void PostProcessTarget::create(
+    const VulkanCore& core, vk::Extent2D extent, vk::Format format, std::string_view debug_name, vk::ImageUsageFlags usage
+) {
 	ZoneScoped;
+	if (m_view.has_value()) {
+		const std::lock_guard lock(g_post_target_images_mutex);
+		g_post_target_images.erase(**m_view);
+	}
 	// View before the image it views
 	m_view.reset();
 	m_image.reset();
 	m_extent = extent;
 	m_state = {};
 
-	const auto image_ci = colorTargetImageInfo(extent, format);
+	const auto image_ci = colorTargetImageInfo(extent, format, usage);
 
 	vma::AllocationCreateInfo allocation_ci {};
 	allocation_ci.usage = vma::MemoryUsage::eAutoPreferDevice;
@@ -32,6 +61,9 @@ void PostProcessTarget::create(const VulkanCore& core, vk::Extent2D extent, vk::
 	view_ci.subresourceRange = colorSubresourceRange();
 	m_view.emplace(core.getDevice(), view_ci);
 	setDebugName(core, **m_view, std::format("{} TargetView", debug_name));
+
+	const std::lock_guard lock(g_post_target_images_mutex);
+	g_post_target_images[**m_view] = **m_image;
 }
 
 void PostProcessTarget::beginScope(vk::CommandBuffer cmd) const {

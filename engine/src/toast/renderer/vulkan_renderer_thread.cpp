@@ -395,6 +395,10 @@ auto VulkanRenderer::previousResolvedColour() const noexcept -> vk::ImageView {
 	return m_taa_pass->resolvedHistory();
 }
 
+auto VulkanRenderer::dlssFailureReason() const -> std::string {
+	return m_taa_pass != nullptr ? m_taa_pass->dlssFailureReason() : std::string {};
+}
+
 void VulkanRenderer::submitFrame() noexcept {
 	{
 		std::lock_guard lock(m_queue_mutex);

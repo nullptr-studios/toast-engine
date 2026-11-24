@@ -1514,13 +1514,33 @@ void VulkanRenderer::updateTemporalAA(RenderFrame& frame, vk::Extent2D render_ex
 
 	frame.jitter_ndc = glm::vec2(0.0f);
 	if (taa && render_extent.width > 0 && render_extent.height > 0) {
-		// R2 low discrepancy sequence from the plastic number
-		constexpr double k_plastic = 1.32471795724474602596;
-		const auto n = static_cast<double>(++m_taa_history.jitter_index);
-		const glm::vec2 pixel_offset(
-		    static_cast<float>(std::fmod(0.5 + (n / k_plastic), 1.0)) - 0.5f,
-		    static_cast<float>(std::fmod(0.5 + (n / (k_plastic * k_plastic)), 1.0)) - 0.5f
-		);
+		const uint64_t index = ++m_taa_history.jitter_index;
+		glm::vec2 pixel_offset;
+		if (dlssActive()) {
+			// Halton(2,3) with enough phases per output pixel as NVIDIA's DLSS guide asks
+			const float ratio = frame.output_extent.x / static_cast<float>(render_extent.width);
+			const auto phases = static_cast<uint64_t>(std::ceil(8.0f * ratio * ratio));
+			const auto halton = [](uint64_t i, uint64_t base) {
+				float fraction = 1.0f;
+				float result = 0.0f;
+				for (; i > 0; i /= base) {
+					fraction /= static_cast<float>(base);
+					result += fraction * static_cast<float>(i % base);
+				}
+				return result;
+			};
+			// Halton index 0 is the corner so the cycle starts at 1
+			const uint64_t phase = (index % std::max<uint64_t>(phases, 1)) + 1;
+			pixel_offset = glm::vec2(halton(phase, 2) - 0.5f, halton(phase, 3) - 0.5f);
+		} else {
+			// R2 low discrepancy sequence from the plastic number
+			constexpr double k_plastic = 1.32471795724474602596;
+			const auto n = static_cast<double>(index);
+			pixel_offset = glm::vec2(
+			    static_cast<float>(std::fmod(0.5 + (n / k_plastic), 1.0)) - 0.5f,
+			    static_cast<float>(std::fmod(0.5 + (n / (k_plastic * k_plastic)), 1.0)) - 0.5f
+			);
+		}
 		const glm::vec2 ndc_offset =
 		    2.0f * pixel_offset / glm::vec2(static_cast<float>(render_extent.width), static_cast<float>(render_extent.height));
 		frame.jitter_ndc = ndc_offset;
