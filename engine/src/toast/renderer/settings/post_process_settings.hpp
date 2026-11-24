@@ -11,7 +11,6 @@
 
 namespace renderer {
 
-/// @note Every member must be handled in blendPostProcess()
 struct PostProcessSettings {
 	struct Bloom {
 		float threshold = 1.0f;
@@ -21,24 +20,24 @@ struct PostProcessSettings {
 	} bloom;
 
 	struct LensFlare {
-		float intensity = 0.1f;
+		float intensity = 0.009f;
 		float threshold = 1.0f;
 		float threshold_range = 1.0f;
-		float ghost_intensity = 1.0f;
+		float ghost_intensity = 2.0f;
 		float chroma_shift = 0.015f;
 		float halo_intensity = 1.0f;
-		float halo_width = 0.6f;
-		float halo_mask = 0.5f;
-		float halo_compression = 0.65f;
+		float halo_width = 0.41f;
+		float halo_mask = 0.124f;
+		float halo_compression = 1.0f;
 		float glare_intensity = 0.2f;
-		float glare_divider = 60.0f;
+		float glare_divider = 162.0f;
 		float anamorphic_intensity = 1.0f;
 		/// Share of the streak pulled toward blue
 		float anamorphic_tint = 0.6f;
 		float dirt_intensity = 0.0f;
 		/// Spread of the ring along its radius
-		float halo_thickness = 0.3f;
-		float halo_dispersion = 0.015f;
+		float halo_thickness = 0.09f;
+		float halo_dispersion = 0.056f;
 		float halo_tint_r = 1.0f;
 		float halo_tint_g = 1.0f;
 		float halo_tint_b = 1.0f;
@@ -48,7 +47,7 @@ struct PostProcessSettings {
 	struct Tonemap {
 		float exposure = 1.0f;
 		/// 0 Reinhard 1 ACES 2 GT7
-		uint32_t mode = 0;
+		uint32_t mode = 2;
 		float gt_contrast_dip = 1.28f;
 		float chromatic_aberration = 0.0f;
 		float gamma = 2.2f;
@@ -57,10 +56,10 @@ struct PostProcessSettings {
 		float vignette = 0.0f;
 		float grain = 0.0f;
 
-		bool auto_exposure = false;
+		bool auto_exposure = true;
 		/// log2 of the average scene luminance the meter may settle on
-		float auto_exposure_min = -8.0f;
-		float auto_exposure_max = 4.0f;
+		float auto_exposure_min = -5.0f;
+		float auto_exposure_max = 8.0f;
 		/// Per second toward a brighter scene
 		float adapt_speed_up = 3.0f;
 		float adapt_speed_down = 1.0f;
@@ -96,7 +95,7 @@ struct PostProcessSettings {
 
 	struct Fog {
 		/// Extinction per meter at the base height and 0 turns volumetrics off
-		float density = 0.0f;
+		float density = 0.005f;
 		float height = 0.0f;
 		/// Per meter above the base height and 0 is uniform
 		float height_falloff = 0.0f;
@@ -110,7 +109,5 @@ struct PostProcessSettings {
 		float distance = 64.0f;
 	} fog;
 };
-
-TOAST_API void blendPostProcess(PostProcessSettings& target, const PostProcessSettings& source, float weight);
 
 }

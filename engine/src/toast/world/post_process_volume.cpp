@@ -24,77 +24,68 @@ void PostProcessVolume::destroy() {
 	end();
 }
 
-void PostProcessVolume::syncSettings() const {
-	m_settings.bloom.threshold = m_bloom_threshold;
-	m_settings.bloom.knee = m_bloom_knee;
-	m_settings.bloom.filter_radius = m_bloom_filter_radius;
-	m_settings.bloom.strength = m_bloom_strength;
+void PostProcessVolume::syncParams() const {
+	// Built before the asset manager could load the schema, so it holds no slots and cannot take a value
+	const bool rebuild = m_params.layout()->slots.empty();
+	if (rebuild) {
+		m_params = renderer::PostProcessParams {};
+	}
 
-	m_settings.lens_flare.intensity = m_lens_flare_intensity;
-	m_settings.lens_flare.threshold = m_lens_flare_threshold;
-	m_settings.lens_flare.ghost_intensity = m_ghost_intensity;
-	m_settings.lens_flare.halo_intensity = m_halo_intensity;
-	m_settings.lens_flare.halo_width = m_halo_width;
-	m_settings.lens_flare.halo_mask = m_halo_mask;
-	m_settings.lens_flare.halo_compression = m_halo_compression;
-	m_settings.lens_flare.halo_thickness = m_halo_thickness;
-	m_settings.lens_flare.halo_dispersion = m_halo_dispersion;
-	m_settings.lens_flare.halo_tint_r = m_halo_tint.r;
-	m_settings.lens_flare.halo_tint_g = m_halo_tint.g;
-	m_settings.lens_flare.halo_tint_b = m_halo_tint.b;
-	m_settings.lens_flare.chroma_shift = m_flare_chroma_shift;
-	m_settings.lens_flare.threshold_range = m_lens_flare_threshold_range;
-	m_settings.lens_flare.glare_divider = m_glare_divider;
-	m_settings.lens_flare.glare_intensity = m_glare_intensity;
-	m_settings.lens_flare.anamorphic_intensity = m_anamorphic_intensity;
-	m_settings.lens_flare.anamorphic_tint = m_anamorphic_tint;
-	m_settings.lens_flare.dirt_intensity = m_dirt_intensity;
-	m_settings.lens_flare.dirt_texture = m_lens_dirt_texture;
+	const assets::PostProcessProfile* profile = m_profile.hasValue() ? &*m_profile : nullptr;
+	const uint32_t version = profile != nullptr ? profile->version() : 0;
+	if (!rebuild && profile == m_synced_profile && version == m_synced_version) {
+		return;
+	}
 
-	m_settings.tonemap.exposure = m_exposure;
-	m_settings.tonemap.mode = static_cast<uint32_t>(std::max(m_tonemap_mode, 0));
-	m_settings.tonemap.gt_contrast_dip = m_gt_contrast_dip;
-	m_settings.tonemap.chromatic_aberration = m_chromatic_aberration;
-	m_settings.tonemap.gamma = m_gamma;
-	m_settings.tonemap.contrast = m_contrast;
-	m_settings.tonemap.saturation = m_saturation;
-	m_settings.tonemap.vignette = m_vignette;
-	m_settings.tonemap.grain = m_grain;
-	m_settings.tonemap.auto_exposure = m_auto_exposure;
-	m_settings.tonemap.auto_exposure_min = m_auto_exposure_min;
-	m_settings.tonemap.auto_exposure_max = m_auto_exposure_max;
-	m_settings.tonemap.adapt_speed_up = m_adapt_speed_up;
-	m_settings.tonemap.adapt_speed_down = m_adapt_speed_down;
-
-	m_settings.fxaa.contrast_threshold = m_fxaa_contrast_threshold;
-	m_settings.fxaa.relative_threshold = m_fxaa_relative_threshold;
-	m_settings.fxaa.subpixel_blending = m_fxaa_subpixel_blending;
-
-	m_settings.ssr.intensity = m_ssr_intensity;
-	m_settings.ssr.max_roughness = m_ssr_max_roughness;
-	m_settings.ssr.thickness = m_ssr_thickness;
-	m_settings.ssr.stride = m_ssr_stride;
-	m_settings.ssr.max_steps = static_cast<uint32_t>(std::max(m_ssr_max_steps, 1));
-
-	m_settings.ssao.radius = m_ssao_radius;
-	m_settings.ssao.strength = m_ssao_strength;
-	m_settings.ssao.range_cutoff = m_ssao_range_cutoff;
-	m_settings.ssao.sample_count = static_cast<uint32_t>(std::max(m_ssao_sample_count, 1));
-
-	m_settings.fog.density = std::max(m_fog_density, 0.0f);
-	m_settings.fog.height = m_fog_height;
-	m_settings.fog.height_falloff = std::max(m_fog_height_falloff, 0.0f);
-	m_settings.fog.albedo_r = m_fog_albedo.r;
-	m_settings.fog.albedo_g = m_fog_albedo.g;
-	m_settings.fog.albedo_b = m_fog_albedo.b;
-	m_settings.fog.anisotropy = std::clamp(m_fog_anisotropy, -0.9f, 0.9f);
-	m_settings.fog.ambient = std::max(m_fog_ambient, 0.0f);
-	m_settings.fog.distance = std::max(m_fog_distance, 1.0f);
+	m_synced_profile = profile;
+	m_synced_version = version;
+	if (profile != nullptr) {
+		m_params.loadFrom(*profile);
+	} else {
+		m_params.reset();
+	}
 }
 
-auto PostProcessVolume::settings() const -> const renderer::PostProcessSettings& {
-	syncSettings();
-	return m_settings;
+auto PostProcessVolume::params() const -> const renderer::PostProcessParams& {
+	syncParams();
+	return m_params;
+}
+
+auto PostProcessVolume::setParam(std::string_view name, float value) -> bool {
+	syncParams();
+	return m_params.setNumber(name, value);
+}
+
+auto PostProcessVolume::setParamColor(std::string_view name, glm::vec3 value) -> bool {
+	syncParams();
+	return m_params.setColor(name, value);
+}
+
+auto PostProcessVolume::setParamOption(std::string_view name, std::string_view option) -> bool {
+	syncParams();
+	return m_params.setOption(name, option);
+}
+
+auto PostProcessVolume::getParam(std::string_view name) const -> float {
+	syncParams();
+	return m_params.number(name).value_or(0.0f);
+}
+
+auto PostProcessVolume::getParamColor(std::string_view name) const -> glm::vec3 {
+	syncParams();
+	return m_params.color(name).value_or(glm::vec3(0.0f));
+}
+
+auto PostProcessVolume::hasParam(std::string_view name) const -> bool {
+	syncParams();
+	return m_params.layout()->find(name).has_value();
+}
+
+void PostProcessVolume::resetParams() {
+	// A version no profile reports forces the next sync to load again
+	m_synced_profile = nullptr;
+	m_synced_version = ~0u;
+	syncParams();
 }
 
 auto PostProcessVolume::closestPointOnBounds(glm::vec3 point) const -> glm::vec3 {

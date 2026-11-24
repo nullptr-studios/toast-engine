@@ -21,6 +21,7 @@
 #include "toast/renderer/resources/vulkan_mesh.hpp"
 #include "toast/renderer/resources/vulkan_texture.hpp"
 #include "toast/renderer/settings/gi_settings.hpp"
+#include "toast/renderer/settings/post_process_params.hpp"
 #include "toast/renderer/settings/post_process_settings.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
 #include "toast/renderer/shaders/vulkan_pipeline.hpp"
@@ -1271,18 +1272,12 @@ public:
 		return m_taa_history_weight.load(std::memory_order_relaxed);
 	}
 
-	void setPostProcessSettings(const PostProcessSettings& settings) noexcept { m_post_process_settings = settings; }
+	/// Sets a knob of the base grade that post process volumes blend over, by its path in post_process.schema.json
+	/// ("bloom.strength"), clamped to the schema range. Safe from any thread
+	/// @returns false when the name is unknown or not a scalar
+	auto setPostProcessNumber(std::string_view name, float value) -> bool;
 
-	[[nodiscard]]
-	auto getPostProcessSettings() const noexcept -> const PostProcessSettings& {
-		return m_post_process_settings;
-	}
-
-	/// Safe from any thread
-	void requestPostProcessSettings(const PostProcessSettings& settings) {
-		const std::lock_guard lock(m_pending_post_settings_mutex);
-		m_pending_post_settings = settings;
-	}
+	auto setPostProcessColor(std::string_view name, const glm::vec3& value) -> bool;
 
 	/// nullptr renders every owner. Main thread only
 	void setRenderOwnerFilter(const toast::INodeOwner* owner) {
@@ -1692,7 +1687,12 @@ private:
 
 	void gatherFogVolumes(RenderFrame& frame, const glm::vec3& camera_position);
 
-	PostProcessSettings m_post_process_settings;
+	PostProcessParams m_base_params;
+	std::mutex m_base_params_mutex;
+	/// Scratch for the per-frame blend, tick thread only
+	PostProcessParams m_blend_params;
+	void repairBaseParamsLocked();
+	void copyBaseParams(PostProcessParams& out);
 
 	std::atomic_bool m_traced_shadows_enabled {false};
 	/// Logs once each time the fallback starts
@@ -1724,9 +1724,6 @@ private:
 
 	void beginDebugLineCollection(RenderFrame& frame);
 	void endDebugLineCollection();
-
-	std::mutex m_pending_post_settings_mutex;
-	std::optional<PostProcessSettings> m_pending_post_settings;
 
 	const toast::INodeOwner* m_render_owner_filter = nullptr;
 

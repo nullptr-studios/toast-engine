@@ -255,7 +255,8 @@ auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm:
 
 auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -> PostProcessSettings {
 	ZoneScoped;
-	PostProcessSettings result = m_post_process_settings;
+	PostProcessParams& result = m_blend_params;
+	copyBaseParams(result);
 
 	auto& volumes = m_tick_post_volumes;
 	{
@@ -280,10 +281,35 @@ auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -
 		if (influence <= 0.0f) {
 			continue;
 		}
-		blendPostProcess(result, volume->settings(), influence);
+		result.blend(volume->params(), influence);
 	}
 
-	return result;
+	return result.resolve();
+}
+
+void VulkanRenderer::repairBaseParamsLocked() {
+	// Built before the asset manager could load the schema, so it holds no slots
+	if (m_base_params.layout()->slots.empty()) {
+		m_base_params = PostProcessParams {};
+	}
+}
+
+void VulkanRenderer::copyBaseParams(PostProcessParams& out) {
+	const std::lock_guard lock(m_base_params_mutex);
+	repairBaseParamsLocked();
+	out = m_base_params;
+}
+
+auto VulkanRenderer::setPostProcessNumber(std::string_view name, float value) -> bool {
+	const std::lock_guard lock(m_base_params_mutex);
+	repairBaseParamsLocked();
+	return m_base_params.setNumber(name, value);
+}
+
+auto VulkanRenderer::setPostProcessColor(std::string_view name, const glm::vec3& value) -> bool {
+	const std::lock_guard lock(m_base_params_mutex);
+	repairBaseParamsLocked();
+	return m_base_params.setColor(name, value);
 }
 
 void VulkanRenderer::gatherFogVolumes(RenderFrame& frame, const glm::vec3& camera_position) {
@@ -604,14 +630,8 @@ void VulkanRenderer::resetFrameBuild(RenderFrame& frame) {
 	frame.sequence = ++m_frame_sequence_counter;
 	frame.render_mode = m_render_mode;
 
-	{
-		const std::lock_guard lock(m_pending_post_settings_mutex);
-		if (m_pending_post_settings.has_value()) {
-			m_post_process_settings = *m_pending_post_settings;
-			m_pending_post_settings.reset();
-		}
-	}
-	frame.post_process = m_post_process_settings;
+	copyBaseParams(m_blend_params);
+	frame.post_process = m_blend_params.resolve();
 }
 
 void VulkanRenderer::gatherMeshProxies(RenderFrame& frame) {

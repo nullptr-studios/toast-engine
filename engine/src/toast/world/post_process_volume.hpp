@@ -10,7 +10,8 @@
 #include "volume.hpp"
 
 #include <toast/export.hpp>
-#include <toast/renderer/settings/post_process_settings.hpp>
+#include <toast/renderer/settings/post_process_params.hpp>
+#include <toast/renderer/settings/post_process_profile.hpp>
 
 namespace toast {
 
@@ -49,11 +50,34 @@ public:
 	}
 
 	/// @returns the grade this volume contributes, at full weight
-	///
-	/// Rebuilt from the reflected fields on each call, so an inspector edit is visible on the next frame
-	/// without the node needing to know it was edited
 	[[nodiscard]]
-	auto settings() const -> const renderer::PostProcessSettings&;
+	auto params() const -> const renderer::PostProcessParams&;
+
+	/// @returns false when the name is unknown or not a scalar
+	[[Reflect]]
+	auto setParam(std::string_view name, float value) -> bool;
+
+	[[Reflect]]
+	auto setParamColor(std::string_view name, glm::vec3 value) -> bool;
+
+	/// Sets an enumeration by option name, like setParamOption("tonemap.mode", "ACES")
+	/// @returns false when the name is unknown, not an enumeration, or the option does not exist
+	[[Reflect]]
+	auto setParamOption(std::string_view name, std::string_view option) -> bool;
+
+	/// @returns 0 when the name is unknown, see hasParam()
+	[[Reflect]]
+	auto getParam(std::string_view name) const -> float;
+
+	/// @returns black when the name is unknown, see hasParam()
+	[[Reflect]]
+	auto getParamColor(std::string_view name) const -> glm::vec3;
+
+	[[Reflect]]
+	auto hasParam(std::string_view name) const -> bool;
+
+	[[Reflect]]
+	void resetParams();
 
 	/**
 	 * @brief How strongly this volume applies with the camera at @p camera_position
@@ -89,139 +113,15 @@ private:
 	/// Volume supplies Is Global, Priority, Weight and Blend Distance; only the box shape is ours
 	[[Reflect, Name("Extents"), Unit("m"), Group("Shape")]] alignas(16) glm::vec3 m_extents = glm::vec3(10.0f);
 
-	[[Reflect, Name("Bloom Threshold"), Range(0.0, 10.0), Group("Bloom")]]
-	float m_bloom_threshold = 1.0f;
-	[[Reflect, Name("Bloom Knee"), Range(0.0, 1.0), Group("Bloom")]]
-	float m_bloom_knee = 0.5f;
-	[[Reflect, Name("Bloom Filter Radius"), Range(0.0, 4.0), Group("Bloom")]]
-	float m_bloom_filter_radius = 1.0f;
-	[[Reflect, Name("Bloom Strength"), Range(0.0, 1.0), Group("Bloom")]]
-	float m_bloom_strength = 0.05f;
+	/// Empty grades with the schema defaults
+	[[Reflect, Name("Profile")]]
+	assets::Handle<assets::PostProcessProfile> m_profile;
 
-	[[Reflect, Name("Lens Flare Intensity"), Range(0.0, 2.0), Group("Lens Flare")]]
-	float m_lens_flare_intensity = 0.1f;
-	[[Reflect, Name("Lens Flare Threshold"), Range(0.0, 20.0), Group("Lens Flare")]]
-	float m_lens_flare_threshold = 1.0f;
-	[[Reflect, Name("Ghost Intensity"), Range(0.0, 4.0), Group("Lens Flare")]]
-	float m_ghost_intensity = 1.0f;
-	[[Reflect, Name("Halo Intensity"), Range(0.0, 4.0), Group("Lens Flare")]]
-	float m_halo_intensity = 1.0f;
-	[[Reflect, Name("Halo Radius"), Range(0.0, 2.0), Group("Lens Flare")]]
-	float m_halo_width = 0.6f;
-	[[Reflect, Name("Halo Fade Start"), Range(0.0, 1.0), Group("Lens Flare")]]
-	float m_halo_mask = 0.5f;
-	[[Reflect, Name("Halo Fisheye"), Range(0.05, 4.0), Group("Lens Flare")]]
-	float m_halo_compression = 0.65f;
-	[[Reflect, Name("Halo Thickness"), Range(0.0, 4.0), Group("Lens Flare")]]
-	float m_halo_thickness = 0.3f;
-	[[Reflect, Name("Halo Dispersion"), Range(0.0, 0.1), Group("Lens Flare")]]
-	float m_halo_dispersion = 0.015f;
-	[[Reflect, Name("Halo Tint"), Color, Group("Lens Flare")]]
-	glm::vec3 m_halo_tint = glm::vec3(1.0f);
-	[[Reflect, Name("Flare Chroma Shift"), Range(0.0, 0.1), Group("Lens Flare")]]
-	float m_flare_chroma_shift = 0.015f;
-	[[Reflect, Name("Threshold Range"), Range(0.01, 10.0), Group("Lens Flare")]]
-	float m_lens_flare_threshold_range = 1.0f;
-	[[Reflect, Name("Glare Divider"), Range(1.0, 200.0), Group("Lens Flare")]]
-	float m_glare_divider = 60.0f;
-	[[Reflect, Name("Glare Intensity"), Range(0.0, 2.0), Group("Lens Flare")]]
-	float m_glare_intensity = 0.2f;
-	[[Reflect, Name("Anamorphic Streak"), Range(0.0, 4.0), Group("Lens Flare")]]
-	float m_anamorphic_intensity = 1.0f;
-	[[Reflect, Name("Streak Blue Tint"), Range(0.0, 1.0), Group("Lens Flare")]]
-	float m_anamorphic_tint = 0.6f;
-	[[Reflect, Name("Lens Dirt"), Range(0.0, 2.0), Group("Lens Flare")]]
-	float m_dirt_intensity = 0.5f;
-	[[Reflect, Name("Lens Dirt Texture"), Group("Lens Flare")]]
-	assets::Handle<assets::Texture> m_lens_dirt_texture {nullptr};
+	void syncParams() const;
 
-	[[Reflect, Name("Exposure"), Range(0.0, 8.0), Group("Tonemap")]]
-	float m_exposure = 1.0f;
-	/// Switches at the halfway point of a blend rather than interpolating - there is no curve in between
-	[[Reflect, Name("Tonemap Curve"), Enum("Reinhard", "ACES", "GT7"), Group("Tonemap")]]
-	int32_t m_tonemap_mode = 0;
-	/// GT7 toe exponent under the grey point, 1 is linear and higher darkens the shadows
-	[[Reflect, Name("GT7 Contrast Dip"), Range(1.0, 2.0), Group("Tonemap")]]
-	float m_gt_contrast_dip = 1.28f;
-	[[Reflect, Name("Chromatic Aberration"), Range(0.0, 0.05), Group("Tonemap")]]
-	float m_chromatic_aberration = 0.0f;
-	[[Reflect, Name("Gamma"), Range(1.0, 3.0), Group("Tonemap")]]
-	float m_gamma = 2.2f;
-	[[Reflect, Name("Contrast"), Range(0.0, 2.0), Group("Tonemap")]]
-	float m_contrast = 1.0f;
-	[[Reflect, Name("Saturation"), Range(0.0, 2.0), Group("Tonemap")]]
-	float m_saturation = 1.0f;
-	[[Reflect, Name("Vignette"), Range(0.0, 1.0), Group("Tonemap")]]
-	float m_vignette = 0.0f;
-	[[Reflect, Name("Film Grain"), Range(0.0, 1.0), Group("Tonemap")]]
-	float m_grain = 0.0f;
-
-	/// Exposure above becomes a compensation on the metered value
-	[[Reflect, Name("Auto Exposure"), Group("Auto Exposure")]]
-	bool m_auto_exposure = false;
-	/// log2 of the average scene luminance so one step is one stop
-	[[Reflect, Name("Min Brightness"), Range(-16.0, 16.0), Group("Auto Exposure")]]
-	float m_auto_exposure_min = -8.0f;
-	[[Reflect, Name("Max Brightness"), Range(-16.0, 16.0), Group("Auto Exposure")]]
-	float m_auto_exposure_max = 4.0f;
-	/// Per second toward a brighter scene
-	[[Reflect, Name("Adapt Speed Up"), Range(0.0, 20.0), Group("Auto Exposure")]]
-	float m_adapt_speed_up = 3.0f;
-	[[Reflect, Name("Adapt Speed Down"), Range(0.0, 20.0), Group("Auto Exposure")]]
-	float m_adapt_speed_down = 1.0f;
-
-	[[Reflect, Name("FXAA Contrast Threshold"), Range(0.0, 0.2), Group("FXAA")]]
-	float m_fxaa_contrast_threshold = 0.0312f;
-	[[Reflect, Name("FXAA Relative Threshold"), Range(0.0, 0.5), Group("FXAA")]]
-	float m_fxaa_relative_threshold = 0.125f;
-	[[Reflect, Name("FXAA Subpixel Blending"), Range(0.0, 1.0), Group("FXAA")]]
-	float m_fxaa_subpixel_blending = 0.75f;
-
-	[[Reflect, Name("SSR Intensity"), Range(0.0, 2.0), Group("Screen Space Reflections")]]
-	float m_ssr_intensity = 1.0f;
-	[[Reflect, Name("SSR Max Roughness"), Range(0.0, 1.0), Group("Screen Space Reflections")]]
-	float m_ssr_max_roughness = 0.6f;
-	[[Reflect, Name("SSR Thickness"), Unit("m"), Range(0.01, 5.0), Group("Screen Space Reflections")]]
-	float m_ssr_thickness = 0.5f;
-	[[Reflect, Name("SSR Stride"), Unit("m"), Range(0.01, 1.0), Group("Screen Space Reflections")]]
-	float m_ssr_stride = 0.15f;
-	[[Reflect, Name("SSR Max Steps"), Range(1, 256), Group("Screen Space Reflections")]]
-	int32_t m_ssr_max_steps = 48;
-
-	[[Reflect, Name("AO Radius"), Unit("m"), Range(0.01, 10.0), Group("Ambient Occlusion")]]
-	float m_ssao_radius = 0.5f;
-	[[Reflect, Name("AO Strength"), Range(0.0, 4.0), Group("Ambient Occlusion")]]
-	float m_ssao_strength = 1.0f;
-	[[Reflect, Name("AO Range Cutoff"), Unit("m"), Range(0.01, 10.0), Group("Ambient Occlusion")]]
-	float m_ssao_range_cutoff = 1.0f;
-	[[Reflect, Name("AO Samples"), Range(1, 64), Group("Ambient Occlusion")]]
-	int32_t m_ssao_sample_count = 16;
-
-	/// 0 turns volumetrics off
-	[[Reflect, Name("Fog Density"), Unit("1/m"), Range(0.0, 1.0), Group("Fog")]]
-	float m_fog_density = 0.0f;
-	[[Reflect, Name("Fog Height"), Unit("m"), Range(-1000.0, 1000.0), Group("Fog")]]
-	float m_fog_height = 0.0f;
-	/// 0 is uniform fog
-	[[Reflect, Name("Fog Height Falloff"), Unit("1/m"), Range(0.0, 2.0), Group("Fog")]]
-	float m_fog_height_falloff = 0.0f;
-	[[Reflect, Name("Fog Albedo"), Color, Group("Fog")]]
-	glm::vec3 m_fog_albedo = glm::vec3(1.0f);
-	/// Above 0 scatters forward so shafts brighten toward the light
-	[[Reflect, Name("Fog Anisotropy"), Range(-0.9, 0.9), Group("Fog")]]
-	float m_fog_anisotropy = 0.3f;
-	[[Reflect, Name("Fog Ambient"), Range(0.0, 4.0), Group("Fog")]]
-	float m_fog_ambient = 1.0f;
-	[[Reflect, Name("Fog Distance"), Unit("m"), Range(1.0, 1000.0), Group("Fog")]]
-	float m_fog_distance = 64.0f;
-
-	/// @brief Rebuilt from the reflected fields each time the renderer asks
-	///
-	/// The fields are separate rather than a nested PostProcessSettings because reflection describes flat
-	/// members with their own range and group metadata, which is what gives the inspector usable sliders
-	mutable renderer::PostProcessSettings m_settings;
-
-	void syncSettings() const;
+	mutable renderer::PostProcessParams m_params;
+	mutable const assets::PostProcessProfile* m_synced_profile = nullptr;
+	mutable uint32_t m_synced_version = 0;
 
 	/// Last value evaluateTarget() computed; see the note there for why the renderer bypasses it
 	float m_influence = 0.0f;
