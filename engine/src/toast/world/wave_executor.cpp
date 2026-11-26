@@ -5,6 +5,7 @@
 #endif
 #include <thread>
 #include <toast/scripting/lua_state.hpp>
+#include <toast/world/world_params.hpp>
 
 namespace toast::_detail {
 
@@ -19,9 +20,6 @@ inline void cpuRelax() noexcept {
 }
 
 std::atomic<size_t> g_queued_helpers {0};    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
-constexpr size_t k_queued_helpers_per_worker = 4;
-constexpr auto k_grace_with_idle_workers = std::chrono::milliseconds(2);
-constexpr auto k_grace_without_idle_workers = std::chrono::microseconds(150);
 
 struct alignas(64) Claim {
 	std::atomic<size_t> next {0};
@@ -150,7 +148,7 @@ void runJobs(const std::vector<WaveJob>& jobs, size_t item_count, ItemRunner run
 	const size_t workers = ThreadPool::workerCount();
 	const size_t idle = ThreadPool::idleWorkers();
 	const size_t helpers = std::min(jobs.size(), workers);
-	const size_t queue_limit = workers * k_queued_helpers_per_worker;
+	const size_t queue_limit = workers * static_cast<size_t>(worldParams().queued_helpers_per_worker.get());
 	size_t queued = 0;
 	for (; queued < helpers; ++queued) {
 		if (g_queued_helpers.fetch_add(1) >= queue_limit) {
@@ -173,7 +171,8 @@ void runJobs(const std::vector<WaveJob>& jobs, size_t item_count, ItemRunner run
 		} else {
 			// Workers that are waiting for a task show up at once
 			const auto deadline =
-			    std::chrono::steady_clock::now() + (idle != 0 ? k_grace_with_idle_workers : k_grace_without_idle_workers);
+			    std::chrono::steady_clock::now() +
+			    std::chrono::microseconds(idle != 0 ? worldParams().grace_idle.get() : worldParams().grace_busy.get());
 			unsigned spins = 0;
 			while (run->remaining.load() != 0 && run->entered.load(std::memory_order_relaxed) == 0) {
 				if (std::chrono::steady_clock::now() >= deadline) {

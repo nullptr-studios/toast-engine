@@ -5,6 +5,7 @@
 
 #include <toast/assets/script.hpp>
 #include <toast/voxel/stamp.hpp>
+#include <toast/voxel/voxel_params.hpp>
 
 namespace toast {
 
@@ -49,7 +50,7 @@ void VoxelPiece::draw(std::string_view operation, Kernel&& kernel) {
 		    "'{}' {} stopped early: the procedural brick pool is out of its {} bricks",
 		    name(),
 		    operation,
-		    voxel::k_procedural_brick_capacity
+		    voxel::voxelParams().procedural_bricks.get()
 		);
 	}
 }

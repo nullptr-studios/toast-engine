@@ -6,12 +6,26 @@
 using System;
 using System.Globalization;
 using System.IO;
+using editor.Engine;
 
 namespace editor.Logger;
 
 public sealed class LogEntry {
 	private const char FieldSeparator = '';
-	private const int MaxDisplayMessageLength = 500;
+	private static int s_maxLength = 500;
+	private static long s_maxLengthRead;
+
+	private static int MaxDisplayMessageLength {
+		get {
+			var now = Environment.TickCount64;
+			if (now - s_maxLengthRead > 2000) {
+				s_maxLengthRead = now;
+				s_maxLength = (int)Math.Clamp(ToastSettings.Number("editor.logs.max_message_length", 500), 80, 5000);
+			}
+
+			return s_maxLength;
+		}
+	}
 
 	public LogEntry(ulong timestampNanos, uint severity, string filepath, uint line, string sink, string message,
 		string details = "", string backtrace = "") {

@@ -79,7 +79,7 @@ inline auto planShatter(
 
 	const float threshold = crackThickness();
 	const float min_width = 2.0f * threshold;
-	const float max_width = std::max(tunables().fracture_max_shatter_distance, min_width);
+	const float max_width = std::max(tunables().fracture_max_shatter_distance.get(), min_width);
 
 	const float cell_size = std::max(values.shatter_cell_size, threshold);
 	const float length = glm::length(crater.end - crater.start);
@@ -169,7 +169,7 @@ inline auto planShatter(
 	const float cells_wanted = std::clamp(
 	    band_volume_of(width) / (cell_size * cell_size * cell_size),
 	    2.0f,
-	    static_cast<float>(std::max(tunables().fracture_max_shatter_cells, 2u))
+	    static_cast<float>(std::max(tunables().fracture_max_shatter_cells.get(), 2u))
 	);
 	const auto cell_count = static_cast<uint32_t>(cells_wanted);
 
@@ -432,7 +432,7 @@ inline auto shardSeeds(const UnglueRegion& region, const Crater& crater) -> std:
 
 	const float gap = std::max(crater.profile.shatter_cell_size, crackThickness());
 	const float gap_squared = gap * gap;
-	const uint32_t max_cells = std::max(tunables().fracture_max_shatter_cells, 1u);
+	const uint32_t max_cells = std::max(tunables().fracture_max_shatter_cells.get(), 1u);
 	constexpr uint64_t k_axis_mask = (1ull << 21) - 1ull;    // voxelKey packs 21 bits per axis
 	Rng rng {streamSeed(crater.seed, FractureStream::shard_points)};
 	for (uint32_t attempt = 0; attempt < max_cells * 12 && seeds.size() < max_cells; ++attempt) {

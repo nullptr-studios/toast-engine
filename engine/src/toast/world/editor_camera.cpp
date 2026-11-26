@@ -75,9 +75,17 @@ void EditorCameraController::copyViewFrom(const EditorCameraController& other) n
 	m_mode = other.m_mode;
 }
 
+void EditorCameraController::placeAt(glm::vec3 position, const glm::quat& rotation) noexcept {
+	const glm::vec3 forward = rotation * Camera::world_forward;
+	m_mode = event::EditorCameraMode::free;
+	m_position = position;
+	m_yaw = std::atan2(-forward.x, forward.y);
+	m_pitch = std::clamp(std::asin(std::clamp(forward.z, -1.0f, 1.0f)), -k_pitch_limit, k_pitch_limit);
+}
+
 void EditorCameraController::configure(event::EditorCameraMode mode, float speed, bool horizontal_movement) {
 	setMode(mode);
-	m_speed = std::clamp(speed, k_min_speed, k_max_speed);
+	m_speed = clampedBetween(speed, editorParams().camera_min_speed.get(), editorParams().camera_max_speed.get());
 	m_horizontal_movement = horizontal_movement;
 }
 
@@ -95,8 +103,10 @@ void EditorCameraController::setMode(event::EditorCameraMode mode) {
 }
 
 void EditorCameraController::syncOrbitFromPosition() {
-	m_orbit_radius = std::clamp(glm::length(m_position), k_min_radius, k_max_radius);
-	if (m_orbit_radius > k_min_radius) {
+	m_orbit_radius = clampedBetween(
+	    glm::length(m_position), editorParams().camera_orbit_min_radius.get(), editorParams().camera_orbit_max_radius.get()
+	);
+	if (m_orbit_radius > editorParams().camera_orbit_min_radius.get()) {
 		m_yaw = std::atan2(m_position.x, -m_position.y);
 		m_orbit_elevation = std::clamp(std::asin(m_position.z / m_orbit_radius), -k_pitch_limit, k_pitch_limit);
 	}
@@ -108,11 +118,12 @@ auto EditorCameraController::orientation() const -> glm::quat {
 }
 
 void EditorCameraController::applyLook(float dx, float dy) {
-	m_yaw -= dx * k_look_sensitivity;
+	m_yaw -= dx * editorParams().camera_look_sensitivity.get();
 	if (m_mode == event::EditorCameraMode::orbit) {
-		m_orbit_elevation = std::clamp(m_orbit_elevation + (dy * k_look_sensitivity), -k_pitch_limit, k_pitch_limit);
+		m_orbit_elevation =
+		    std::clamp(m_orbit_elevation + (dy * editorParams().camera_look_sensitivity.get()), -k_pitch_limit, k_pitch_limit);
 	} else {
-		m_pitch = std::clamp(m_pitch - (dy * k_look_sensitivity), -k_pitch_limit, k_pitch_limit);
+		m_pitch = std::clamp(m_pitch - (dy * editorParams().camera_look_sensitivity.get()), -k_pitch_limit, k_pitch_limit);
 	}
 }
 
@@ -125,7 +136,7 @@ void EditorCameraController::applyPan(float dx, float dy) {
 	const glm::quat rot = orientation();
 	const glm::vec3 right = rot * glm::vec3(1.0f, 0.0f, 0.0f);
 	const glm::vec3 up = rot * Camera::world_up;
-	m_position += ((right * -dx) + (up * dy)) * k_gesture_pan_sensitivity * m_speed;
+	m_position += ((right * -dx) + (up * dy)) * editorParams().camera_pan_sensitivity.get() * m_speed;
 }
 
 void EditorCameraController::applyZoom(float delta) {
@@ -133,11 +144,15 @@ void EditorCameraController::applyZoom(float delta) {
 		return;
 	}
 	if (m_mode == event::EditorCameraMode::orbit) {
-		m_orbit_radius = std::clamp(m_orbit_radius * std::exp(-delta * k_gesture_zoom_sensitivity), k_min_radius, k_max_radius);
+		m_orbit_radius = clampedBetween(
+		    m_orbit_radius * std::exp(-delta * editorParams().camera_zoom_sensitivity.get()),
+		    editorParams().camera_orbit_min_radius.get(),
+		    editorParams().camera_orbit_max_radius.get()
+		);
 		return;
 	}
 
-	m_position += (orientation() * Camera::world_forward) * delta * m_speed * k_gesture_zoom_sensitivity;
+	m_position += (orientation() * Camera::world_forward) * delta * m_speed * editorParams().camera_zoom_sensitivity.get();
 }
 
 void EditorCameraController::tick(float dt, Camera* target) {
@@ -146,8 +161,8 @@ void EditorCameraController::tick(float dt, Camera* target) {
 	}
 
 	if (m_mode == event::EditorCameraMode::orbit) {
-		const float speed = m_speed * (m_boost ? k_boost_multiplier : 1.0f);
-		const float angular_speed = speed / std::max(m_orbit_radius, k_min_radius);
+		const float speed = m_speed * (m_boost ? editorParams().camera_boost.get() : 1.0f);
+		const float angular_speed = speed / std::max(m_orbit_radius, editorParams().camera_orbit_min_radius.get());
 		if (m_move_forward) {
 			m_orbit_elevation += angular_speed * dt;
 		}
@@ -167,7 +182,9 @@ void EditorCameraController::tick(float dt, Camera* target) {
 			m_orbit_radius -= speed * dt;
 		}
 		m_orbit_elevation = std::clamp(m_orbit_elevation, -k_pitch_limit, k_pitch_limit);
-		m_orbit_radius = std::clamp(m_orbit_radius, k_min_radius, k_max_radius);
+		m_orbit_radius = clampedBetween(
+		    m_orbit_radius, editorParams().camera_orbit_min_radius.get(), editorParams().camera_orbit_max_radius.get()
+		);
 
 		const float horizontal = std::cos(m_orbit_elevation) * m_orbit_radius;
 		m_position = {
@@ -213,7 +230,7 @@ void EditorCameraController::tick(float dt, Camera* target) {
 
 	if (glm::length(move) > 0.0001f) {
 		move = glm::normalize(move);
-		const float speed = m_speed * (m_boost ? k_boost_multiplier : 1.0f);
+		const float speed = m_speed * (m_boost ? editorParams().camera_boost.get() : 1.0f);
 		m_position += move * speed * dt;
 	}
 

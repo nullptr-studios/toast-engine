@@ -1,12 +1,13 @@
 #include "lua_util.hpp"
 
+#include "scripting_params.hpp"
+
 #include <lua.hpp>
 
 namespace scripting {
 
 namespace {
 
-constexpr int k_max_script_depth = 48;
 thread_local int t_script_depth = 0;    // NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 
 auto tracebackHandler(lua_State* state) -> int {
@@ -26,7 +27,7 @@ auto pcallTraceback(lua_State* state, int nargs, int nresults) noexcept -> int {
 	return status;
 }
 
-ScriptDepthGuard::ScriptDepthGuard() noexcept : m_allowed(t_script_depth < k_max_script_depth) {
+ScriptDepthGuard::ScriptDepthGuard() noexcept : m_allowed(t_script_depth < scriptingParams().max_call_depth.get()) {
 	if (m_allowed) {
 		++t_script_depth;
 	}

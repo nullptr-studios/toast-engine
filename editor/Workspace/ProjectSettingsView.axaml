@@ -1,15 +1,15 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:editor.Workspace"
-             xmlns:editors="using:editor.Editors"
+             xmlns:set="using:editor.Settings"
              xmlns:elements="using:editor.Components.Elements"
              xmlns:lucide="using:Lucide.Avalonia"
-             xmlns:assets="using:editor.Assets"
+             xmlns:conv="using:editor.Components.Converters"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             d:DesignWidth="1200"
-             d:DesignHeight="800"
+             d:DesignWidth="980"
+             d:DesignHeight="720"
              x:Class="editor.Workspace.ProjectSettingsView"
              Background="{StaticResource Bg2}"
              x:DataType="vm:ProjectSettingsViewModel">
@@ -21,7 +21,7 @@
 	<UserControl.Styles>
 		<Style Selector="TextBlock.lbl">
 			<Setter Property="Foreground"
-			        Value="{StaticResource TextMuted}" />
+			        Value="{StaticResource Text}" />
 			<Setter Property="VerticalAlignment"
 			        Value="Center" />
 			<Setter Property="TextTrimming"
@@ -34,14 +34,14 @@
 			        Value="11" />
 			<Setter Property="TextWrapping"
 			        Value="Wrap" />
-			<Setter Property="Margin"
-			        Value="0,2,0,0" />
 		</Style>
-		<Style Selector="TextBlock.category">
-			<Setter Property="FontWeight"
-			        Value="SemiBold" />
+		<Style Selector="TextBlock.unit">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
 			<Setter Property="VerticalAlignment"
 			        Value="Center" />
+			<Setter Property="MinWidth"
+			        Value="0" />
 		</Style>
 		<Style Selector="Border.card">
 			<Setter Property="Background"
@@ -51,85 +51,396 @@
 			<Setter Property="Padding"
 			        Value="6" />
 		</Style>
-		<Style Selector="Button.icon-btn">
-			<Setter Property="BorderThickness"
-			        Value="0" />
-			<Setter Property="Padding"
-			        Value="5" />
+
+		<Style Selector="Button.btn">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
 			<Setter Property="CornerRadius"
 			        Value="6" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
 			<Setter Property="Cursor"
 			        Value="Hand" />
-			<Setter Property="Background"
-			        Value="Transparent" />
 			<Setter Property="VerticalAlignment"
 			        Value="Center" />
 		</Style>
+		<Style Selector="Button.reset">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="0" />
+			<Setter Property="Width"
+			        Value="20" />
+			<Setter Property="Height"
+			        Value="20" />
+			<Setter Property="MinHeight"
+			        Value="0" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+
+		<Style Selector="Border.nav">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderBrush"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="2" />
+			<Setter Property="CornerRadius"
+			        Value="8" />
+			<Setter Property="Height"
+			        Value="26" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="Border.nav:pointerover">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg3}" />
+		</Style>
+		<Style Selector="Border.nav.selected">
+			<Setter Property="BorderBrush"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="TextBlock.navname.selected">
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+		</Style>
+
+		<!-- collapsible header -->
+		<Style Selector="ToggleButton.hdr">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="4" />
+			<Setter Property="HorizontalAlignment"
+			        Value="Stretch" />
+			<Setter Property="HorizontalContentAlignment"
+			        Value="Stretch" />
+			<Setter Property="Foreground"
+			        Value="{StaticResource Text}" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+		</Style>
+		<Style Selector="ToggleButton.hdr /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="ToggleButton.hdr:pressed /template/ ContentPresenter#PART_ContentPresenter">
+			<Setter Property="Background"
+			        Value="{StaticResource Bg4}" />
+		</Style>
+		<Style Selector="TextBlock.group">
+			<Setter Property="FontWeight"
+			        Value="Bold" />
+		</Style>
+		<Style Selector="TextBlock.subgroup">
+			<Setter Property="Foreground"
+			        Value="{StaticResource TextMuted}" />
+			<Setter Property="FontWeight"
+			        Value="SemiBold" />
+		</Style>
 	</UserControl.Styles>
 
+	<UserControl.Resources>
+		<conv:ResourceBrushConverter x:Key="BrushFromKey" />
+
+		<DataTemplate x:Key="SettingRowTemplate"
+		              x:DataType="set:SettingRow">
+			<Grid ColumnDefinitions="230,*"
+			      ColumnSpacing="6"
+			      Margin="0,0,0,3"
+			      ToolTip.Tip="{Binding Tooltip}">
+				<StackPanel Grid.Column="0"
+				            Orientation="Horizontal"
+				            Spacing="6"
+				            VerticalAlignment="Top"
+				            Margin="0,5,0,0">
+					<TextBlock Text="{Binding Label}"
+					           Classes="lbl compact-text" />
+					<TextBlock Text="restart"
+					           Classes="hint compact-text"
+					           VerticalAlignment="Center"
+					           IsVisible="{Binding RequiresRestart}" />
+				</StackPanel>
+
+				<StackPanel Grid.Column="1">
+					<Grid ColumnDefinitions="*,22"
+					      ColumnSpacing="6">
+						<ContentControl Grid.Column="0"
+						                Content="{Binding}" />
+						<Button Grid.Column="1"
+						        Classes="reset"
+						        VerticalAlignment="Top"
+						        Margin="0,4,0,0"
+						        Command="{Binding ResetCommand}"
+						        IsVisible="{Binding IsOverridden}"
+						        ToolTip.Tip="Back to the default">
+							<lucide:LucideIcon Kind="Undo2"
+							                   Size="14"
+							                   StrokeWidth="2.5" />
+						</Button>
+					</Grid>
+					<TextBlock Text="{Binding Error}"
+					           Classes="hint compact-text"
+					           Foreground="{StaticResource Red}"
+					           IsVisible="{Binding HasError}" />
+				</StackPanel>
+			</Grid>
+		</DataTemplate>
+
+		<DataTemplate x:Key="SettingCardTemplate"
+		              x:DataType="vm:SettingsCardViewModel">
+			<Border Classes="card"
+			        Margin="0,0,0,2"
+			        Padding="4">
+				<StackPanel>
+					<ToggleButton Classes="hdr compact-control"
+					              IsChecked="{Binding Expanded, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4">
+							<Border Width="3"
+							        Height="14"
+							        CornerRadius="2"
+							        VerticalAlignment="Center"
+							        Background="{Binding ColorKey, Converter={StaticResource BrushFromKey}}" />
+							<TextBlock Classes="group compact-text"
+							           Text="{Binding Title}" />
+						</StackPanel>
+					</ToggleButton>
+
+					<elements:AnimatedReveal IsExpanded="{Binding Expanded}">
+						<StackPanel Margin="10,4,0,0">
+							<StackPanel IsVisible="{Binding HasInfo}">
+							<StackPanel DataContext="{Binding Info}">
+								<Grid ColumnDefinitions="230,*"
+								      ColumnSpacing="6"
+								      Margin="0,0,0,3">
+									<TextBlock Text="Name"
+									           Classes="lbl compact-text"
+									           VerticalAlignment="Top"
+									           Margin="0,5,0,0" />
+									<elements:StringBox Grid.Column="1"
+									                    Value="{Binding Name, Mode=TwoWay}"
+									                    Wrap="False"
+									                    Classes="compact-field" />
+								</Grid>
+								<Grid ColumnDefinitions="230,*"
+								      ColumnSpacing="6"
+								      Margin="0,0,0,3">
+									<TextBlock Text="Version"
+									           Classes="lbl compact-text"
+									           VerticalAlignment="Top"
+									           Margin="0,5,0,0" />
+									<Grid Grid.Column="1"
+									      ColumnDefinitions="*,*,*,28"
+									      ColumnSpacing="4">
+										<elements:DragIntBox Grid.Column="0"
+										                     Value="{Binding Major, Mode=TwoWay}"
+										                     Minimum="0"
+										                     Classes="compact-field" />
+										<elements:DragIntBox Grid.Column="1"
+										                     Value="{Binding Minor, Mode=TwoWay}"
+										                     Minimum="0"
+										                     Classes="compact-field" />
+										<elements:DragIntBox Grid.Column="2"
+										                     Value="{Binding Patch, Mode=TwoWay}"
+										                     Minimum="0"
+										                     Classes="compact-field" />
+									</Grid>
+								</Grid>
+								<TextBlock Classes="hint compact-text"
+								           Text="{Binding Status}"
+								           Foreground="{StaticResource Red}" />
+							</StackPanel>
+							</StackPanel>
+
+							<ItemsControl ItemsSource="{Binding Normal}"
+							              Margin="0,2,0,0"
+							              ItemTemplate="{StaticResource SettingRowTemplate}" />
+
+							<StackPanel IsVisible="{Binding HasAdvanced}">
+								<ToggleButton Classes="hdr compact-control"
+								              Margin="-6,0,0,0"
+								              IsChecked="{Binding AdvancedExpanded, Mode=TwoWay}">
+									<TextBlock Classes="subgroup compact-text"
+									           Text="Advanced" />
+								</ToggleButton>
+								<elements:AnimatedReveal IsExpanded="{Binding AdvancedExpanded}">
+									<ItemsControl ItemsSource="{Binding Advanced}"
+									              Margin="0,4,0,0"
+									              ItemTemplate="{StaticResource SettingRowTemplate}" />
+								</elements:AnimatedReveal>
+							</StackPanel>
+
+							<StackPanel IsVisible="{Binding HasDebug}">
+								<ToggleButton Classes="hdr compact-control"
+								              Margin="-6,0,0,0"
+								              IsChecked="{Binding DebugExpanded, Mode=TwoWay}">
+									<TextBlock Classes="subgroup compact-text"
+									           Text="Debug" />
+								</ToggleButton>
+								<elements:AnimatedReveal IsExpanded="{Binding DebugExpanded}">
+									<ItemsControl ItemsSource="{Binding Debug}"
+									              Margin="0,4,0,0"
+									              ItemTemplate="{StaticResource SettingRowTemplate}" />
+								</elements:AnimatedReveal>
+							</StackPanel>
+						</StackPanel>
+					</elements:AnimatedReveal>
+				</StackPanel>
+			</Border>
+		</DataTemplate>
+	</UserControl.Resources>
+
 	<UserControl.DataTemplates>
-		<DataTemplate DataType="vm:BoolSettingRow">
-			<elements:BoolBox Value="{Binding Value, Mode=TwoWay}" Classes="compact-field" />
+		<DataTemplate DataType="set:BoolSettingRow">
+			<elements:BoolBox Value="{Binding Value, Mode=TwoWay}"
+			                  Classes="compact-field" />
 		</DataTemplate>
 
-		<DataTemplate DataType="vm:EnumSettingRow">
-			<ComboBox ItemsSource="{Binding Options}"
-			          SelectedIndex="{Binding SelectedIndex, Mode=TwoWay}"
-			          HorizontalAlignment="Stretch" Classes="compact-control" />
+		<DataTemplate DataType="set:IntSettingRow">
+			<elements:DragIntBox Value="{Binding Value, Mode=TwoWay}"
+			                     Minimum="{Binding Minimum}"
+			                     Maximum="{Binding Maximum}"
+			                     Unit="{Binding Unit}"
+			                     Classes="compact-field" />
 		</DataTemplate>
 
-		<DataTemplate DataType="vm:IntSettingRow">
-			<elements:DragIntBox Value="{Binding IntValue, Mode=TwoWay}"
-			                     Minimum="{Binding MinimumDouble}"
-			                     Maximum="{Binding MaximumDouble}" Classes="compact-field" />
-		</DataTemplate>
-
-		<DataTemplate DataType="vm:FloatSettingRow">
-			<elements:DragFloatBox Value="{Binding FloatValue, Mode=TwoWay}"
+		<DataTemplate DataType="set:FloatSettingRow">
+			<elements:DragFloatBox Value="{Binding Value, Mode=TwoWay}"
 			                       Minimum="{Binding Minimum}"
-			                       Maximum="{Binding Maximum}" Classes="compact-field" />
+			                       Maximum="{Binding Maximum}"
+			                       Unit="{Binding Unit}"
+			                       Classes="compact-field" />
 		</DataTemplate>
 
-		<DataTemplate DataType="vm:Vec3SettingRow">
-			<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
-			                      Y="{Binding Y, Mode=TwoWay}"
-			                      Z="{Binding Z, Mode=TwoWay}" Classes="compact-vector" />
+		<DataTemplate DataType="set:ChoiceSettingRow">
+			<elements:EnumBox Value="{Binding SelectedName, Mode=TwoWay}"
+			                  Options="{Binding Options}"
+			                  Classes="compact-field" />
 		</DataTemplate>
 
-		<DataTemplate DataType="vm:AssetSettingRow">
-			<elements:AssetBox Value="{Binding Value, Mode=TwoWay}"
-			                   AssetType="{Binding AssetType}" Classes="compact-field" />
-		</DataTemplate>
-
-		<DataTemplate DataType="vm:StringSettingRow">
+		<DataTemplate DataType="set:TextSettingRow">
 			<elements:StringBox Value="{Binding Value, Mode=TwoWay}"
-			                    Wrap="False" Classes="compact-field" />
+			                    Wrap="False"
+			                    Classes="compact-field" />
+		</DataTemplate>
+
+		<DataTemplate DataType="set:AssetSettingRow">
+			<elements:AssetBox Value="{Binding Value, Mode=TwoWay}"
+			                   AssetType="{Binding AssetType}"
+			                   Classes="compact-field" />
+		</DataTemplate>
+
+		<DataTemplate DataType="set:VectorSettingRow">
+			<Panel>
+				<elements:DragVec2Box X="{Binding X, Mode=TwoWay}"
+				                      Y="{Binding Y, Mode=TwoWay}"
+				                      Unit="{Binding Unit}"
+				                      IsVisible="{Binding IsVec2}"
+				                      Classes="compact-vector" />
+				<elements:DragVec3Box X="{Binding X, Mode=TwoWay}"
+				                      Y="{Binding Y, Mode=TwoWay}"
+				                      Z="{Binding Z, Mode=TwoWay}"
+				                      Unit="{Binding Unit}"
+				                      IsVisible="{Binding IsVec3}"
+				                      Classes="compact-vector" />
+				<elements:DragVec4Box X="{Binding X, Mode=TwoWay}"
+				                      Y="{Binding Y, Mode=TwoWay}"
+				                      Z="{Binding Z, Mode=TwoWay}"
+				                      W="{Binding W, Mode=TwoWay}"
+				                      Unit="{Binding Unit}"
+				                      IsVisible="{Binding IsVec4}"
+				                      Classes="compact-vector" />
+			</Panel>
+		</DataTemplate>
+
+		<DataTemplate DataType="set:ArraySettingRow">
+			<elements:ArrayBox Background="{StaticResource Bg1}"
+			                   Padding="6"
+			                   Items="{Binding Items}"
+			                   AddLabel="Add"
+			                   AddCommand="{Binding AddCommand}"
+			                   CanReorder="True"
+			                   CanAddRemove="True"
+			                   Classes="compact-array">
+				<elements:ArrayBox.ItemTemplate>
+					<DataTemplate x:DataType="set:ArrayItem">
+						<elements:StringBox Value="{Binding Text, Mode=TwoWay}"
+						                    Wrap="False"
+						                    Classes="compact-field" />
+					</DataTemplate>
+				</elements:ArrayBox.ItemTemplate>
+			</elements:ArrayBox>
 		</DataTemplate>
 	</UserControl.DataTemplates>
 
-	<Grid ColumnDefinitions="0.2*,4,0.8*"
+	<Grid x:Name="Columns"
+	      ColumnDefinitions="190,4,*"
 	      Margin="8">
 
 		<Border Grid.Column="0"
-		       Classes="card">
-			<TreeView ItemsSource="{Binding Sections}"
-			          SelectedItem="{Binding SelectedSection, Mode=TwoWay}">
-				<TreeView.ItemTemplate>
-					<TreeDataTemplate ItemsSource="{Binding Children}"
-					                  x:DataType="vm:SettingsSection">
-						<TextBlock Text="{Binding Name}"
-						           VerticalAlignment="Center" Classes="compact-text" />
-					</TreeDataTemplate>
-				</TreeView.ItemTemplate>
-			</TreeView>
+		        Classes="card">
+			<ScrollViewer HorizontalScrollBarVisibility="Disabled">
+				<ItemsControl ItemsSource="{Binding NavRows}">
+					<ItemsControl.ItemTemplate>
+						<DataTemplate x:DataType="vm:SettingsNavItem">
+							<Border Classes="nav"
+							        Classes.selected="{Binding IsSelected}"
+							        PointerPressed="OnNavPressed">
+								<Grid ColumnDefinitions="Auto,Auto,*"
+								      Margin="{Binding Indent}">
+									<Border Grid.Column="0"
+									        Width="16"
+									        Background="Transparent"
+									        PointerPressed="OnNavChevronPressed">
+										<Panel IsVisible="{Binding HasChildren}">
+											<lucide:LucideIcon Kind="ChevronDown"
+											                   Size="14"
+											                   StrokeWidth="2.5"
+											                   IsVisible="{Binding IsExpanded}" />
+											<lucide:LucideIcon Kind="ChevronRight"
+											                   Size="14"
+											                   StrokeWidth="2.5"
+											                   IsVisible="{Binding !IsExpanded}" />
+										</Panel>
+									</Border>
+									<TextBlock Grid.Column="2"
+									           Text="{Binding Name}"
+									           Classes="navname compact-text"
+									           Classes.selected="{Binding IsSelected}"
+									           VerticalAlignment="Center"
+									           Margin="6,0,0,0"
+									           TextTrimming="CharacterEllipsis" />
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
+			</ScrollViewer>
 		</Border>
 
-		<GridSplitter Grid.Column="1"
+		<GridSplitter x:Name="NavSplitter"
+		              Grid.Column="1"
 		              Background="Transparent"
 		              ResizeDirection="Columns" />
 
 		<Border Grid.Column="2"
-		       Classes="card">
+		        Classes="card">
 			<DockPanel LastChildFill="True">
 
 				<DockPanel DockPanel.Dock="Top"
@@ -137,62 +448,70 @@
 					<StackPanel DockPanel.Dock="Right"
 					            Orientation="Horizontal"
 					            Spacing="4">
-						<Button Classes="icon-btn compact-control"
+						<Button Classes="btn compact-control"
 						        Command="{Binding ReloadCommand}"
-						        ToolTip.Tip="Re-read every setting from the engine">
+						        ToolTip.Tip="Read every parameter from the engine again">
 							<lucide:LucideIcon Kind="RefreshCw"
 							                   Size="16"
 							                   StrokeWidth="2.5" />
 						</Button>
-						<Button Classes="icon-btn compact-control"
+						<Button Classes="btn compact-control"
 						        Command="{Binding ResetAllCommand}"
-						        IsVisible="{Binding IsEngineTab}"
-						        ToolTip.Tip="Drop every override, exposing the defaults underneath">
+						        IsVisible="{Binding ShowCards}"
+						        ToolTip.Tip="Every parameter back to its default">
 							<lucide:LucideIcon Kind="Undo2"
 							                   Size="16"
 							                   StrokeWidth="2.5" />
 						</Button>
-						<Button Classes="icon-btn compact-control"
+						<Button Classes="btn compact-control"
 						        Command="{Binding SaveCommand}"
-						        IsVisible="{Binding IsEngineTab}"
-						        Background="{StaticResource Red}"
-						        ToolTip.Tip="Write the project settings layer">
+						        IsVisible="{Binding ShowCards}"
+						        ToolTip.Tip="Write the changes to the project's config files">
 							<lucide:LucideIcon Kind="Save"
 							                   Size="16"
 							                   StrokeWidth="2.5" />
 						</Button>
 					</StackPanel>
-					<TextBlock Text="{Binding SelectedSection.Name}"
-					          Classes="category"
+					<TextBlock Text="{Binding SectionTitle}"
+					           Classes="group"
+					           VerticalAlignment="Center"
 					           FontSize="13" />
 				</DockPanel>
 
+				<TextBox DockPanel.Dock="Top"
+				         Text="{Binding SearchText, Mode=TwoWay}"
+				         PlaceholderText="Filter properties"
+				         IsVisible="{Binding ShowCards}"
+				         VerticalContentAlignment="Center"
+				         CornerRadius="6"
+				         BorderThickness="0"
+				         Background="{StaticResource Bg1}"
+				         Margin="0,0,0,8"
+				         Classes="compact-control" />
+
 				<TextBlock DockPanel.Dock="Bottom"
-				          Classes="hint compact-text"
+				           Classes="hint compact-text"
 				           Text="{Binding StatusMessage}"
 				           IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
 				<Panel>
+					<ScrollViewer>
+						<StackPanel Spacing="0">
 
-					<editors:GenericView DataContext="{Binding GeneralEditor}"
-					                     IsVisible="{Binding $parent[UserControl].((vm:ProjectSettingsViewModel)DataContext).IsGeneral}" />
-
-					
-					<ScrollViewer IsVisible="{Binding IsEngineTab}">
-						<StackPanel Spacing="12">
-
-							
 							<Border Classes="card"
-							        IsVisible="{Binding IsRendering}">
+							        Margin="0,0,0,8"
+							        IsVisible="{Binding ShowBaking}">
 								<StackPanel Spacing="4">
 									<TextBlock Text="Baking"
-									          Classes="category compact-text" />
+									           Classes="group compact-text" />
 									<StackPanel Orientation="Horizontal"
 									            Spacing="4">
 										<Button Content="Reflection probes"
-										        Command="{Binding BakeReflectionProbesCommand}" Classes="compact-control" />
+										        Command="{Binding BakeReflectionProbesCommand}"
+										        Classes="btn compact-control" />
 										<Button Content="Irradiance volumes"
-										        Command="{Binding BakeIrradianceVolumesCommand}" Classes="compact-control" />
+										        Command="{Binding BakeIrradianceVolumesCommand}"
+										        Classes="btn compact-control" />
 									</StackPanel>
 									<TextBlock Classes="hint compact-text"
 									           Text="Some reflection probes are stale"
@@ -206,70 +525,25 @@
 								</StackPanel>
 							</Border>
 
-							<ItemsControl ItemsSource="{Binding VisibleCategories}">
-								<ItemsControl.ItemTemplate>
-									<DataTemplate x:DataType="vm:SettingCategory">
-										<Border Classes="card"
-										        Margin="0,0,0,8">
-											<StackPanel Spacing="4">
-												<TextBlock Text="{Binding Name}"
-												          Classes="category compact-text" />
+							<ItemsControl ItemsSource="{Binding Cards}"
+							              IsVisible="{Binding ShowCards}"
+							              ItemTemplate="{StaticResource SettingCardTemplate}" />
 
-												<ItemsControl ItemsSource="{Binding Rows}">
-													<ItemsControl.ItemTemplate>
-														<DataTemplate x:DataType="vm:SettingRow">
-															<Grid ColumnDefinitions="180,*,Auto"
-															      ColumnSpacing="4"
-															      Margin="0,0,0,6">
-																<StackPanel Grid.Column="0"
-																            VerticalAlignment="Center">
-																	<TextBlock Text="{Binding Label}"
-																	          Classes="lbl compact-text" />
-																	<TextBlock Text="Needs a restart"
-																	          Classes="hint compact-text"
-																	           IsVisible="{Binding RequiresRestart}" />
-																</StackPanel>
+							<TextBlock Classes="hint compact-text"
+							           Text="{Binding EmptyMessage}"
+							           IsVisible="{Binding NothingToShow}" />
 
-																<StackPanel Grid.Column="1"
-																            VerticalAlignment="Center">
-																	<ContentControl Content="{Binding}" />
-																	<TextBlock Text="{Binding Description}"
-																	          Classes="hint compact-text"
-																	           IsVisible="{Binding HasDescription}" />
-																</StackPanel>
+							<vm:AssetBrowserSettingsView DataContext="{Binding AssetBrowser}"
+							                             IsVisible="{Binding $parent[UserControl].((vm:ProjectSettingsViewModel)DataContext).ShowAssetBrowser}" />
 
-																<Button Grid.Column="2"
-																       Classes="icon-btn compact-control"
-																        Command="{Binding ResetCommand}"
-																        ToolTip.Tip="Drop this override">
-																	<lucide:LucideIcon Kind="Undo2"
-																	                   Size="14"
-																	                   StrokeWidth="2.5" />
-																</Button>
-															</Grid>
-														</DataTemplate>
-													</ItemsControl.ItemTemplate>
-												</ItemsControl>
-											</StackPanel>
-										</Border>
-									</DataTemplate>
-								</ItemsControl.ItemTemplate>
-							</ItemsControl>
-
-							<Panel IsVisible="{Binding IsSettingList}">
-								<TextBlock Classes="hint compact-text"
-								           Text="Nothing declared under this prefix yet - open a workspace so the system starts."
-								           IsVisible="{Binding !VisibleCategories.Count}" />
-							</Panel>
-
-							<!-- Physics > Tags -->
+							<!-- physics > Layers -->
 							<Border Classes="card"
-							        IsVisible="{Binding IsPhysicsTags}">
+							        IsVisible="{Binding ShowPhysicsLayers}">
 								<StackPanel Spacing="4">
-									<StackPanel>
-										<TextBlock Text="Layers"
-										          Classes="category compact-text" />
-									</StackPanel>
+									<TextBlock Text="Layers"
+									           Classes="group compact-text" />
+									<TextBlock Classes="hint compact-text"
+									           Text="Names and short names for the collision layers. Layer 0 is always Default." />
 
 									<ItemsControl ItemsSource="{Binding PhysicsLayers.Layers}">
 										<ItemsControl.ItemTemplate>
@@ -279,7 +553,7 @@
 												      Margin="0,0,0,4">
 													<TextBlock Grid.Column="0"
 													           Text="{Binding Index}"
-													          Classes="lbl compact-text"
+													           Classes="lbl compact-text"
 													           HorizontalAlignment="Right" />
 													<TextBox Grid.Column="1"
 													         Text="{Binding Abbreviation, Mode=TwoWay}"
@@ -291,7 +565,8 @@
 													         VerticalContentAlignment="Center"
 													         CornerRadius="6"
 													         BorderThickness="0"
-													         Background="{StaticResource Bg1}" Classes="compact-control" />
+													         Background="{StaticResource Bg1}"
+													         Classes="compact-control" />
 													<TextBox Grid.Column="2"
 													         Text="{Binding Name, Mode=TwoWay}"
 													         IsEnabled="{Binding Editable}"
@@ -299,7 +574,8 @@
 													         VerticalContentAlignment="Center"
 													         CornerRadius="6"
 													         BorderThickness="0"
-													         Background="{StaticResource Bg1}" Classes="compact-control" />
+													         Background="{StaticResource Bg1}"
+													         Classes="compact-control" />
 												</Grid>
 											</DataTemplate>
 										</ItemsControl.ItemTemplate>
@@ -309,262 +585,6 @@
 						</StackPanel>
 					</ScrollViewer>
 
-					<!-- Editor > Asset Browser -->
-					<ScrollViewer IsVisible="{Binding IsEditor}">
-						<ContentControl Content="{Binding AssetBrowser}">
-							<ContentControl.ContentTemplate>
-								<DataTemplate x:DataType="vm:AssetBrowserSettingsViewModel">
-									<StackPanel Spacing="12">
-
-										<!-- Tags -->
-										<Border Classes="card">
-											<StackPanel Spacing="4">
-												<DockPanel>
-													<Button DockPanel.Dock="Right"
-													        Command="{Binding AddTagCommand}"
-													        CornerRadius="6"
-													        Background="{StaticResource Red}" Classes="compact-control">
-														<StackPanel Orientation="Horizontal"
-														            Spacing="4">
-															<lucide:LucideIcon Kind="Plus"
-															                   Size="14"
-															                   StrokeWidth="3" />
-															<TextBlock Text="Add tag"
-															           FontWeight="SemiBold" Classes="compact-text" />
-														</StackPanel>
-													</Button>
-													<StackPanel>
-														<TextBlock Text="Tags"
-														          Classes="category compact-text" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Right click an asset and open Tags to assign them. The order here is the order chips appear on the cards." />
-													</StackPanel>
-												</DockPanel>
-
-												<ItemsControl ItemsSource="{Binding Tags}">
-													<ItemsControl.ItemTemplate>
-														<DataTemplate x:DataType="assets:AssetTag">
-															<Grid ColumnDefinitions="Auto,Auto,Auto,*,90,Auto"
-															      ColumnSpacing="4"
-															      Margin="0,0,0,4">
-																<Button Grid.Column="0"
-																       Classes="icon-btn compact-control"
-																        Command="{Binding $parent[ItemsControl].((vm:AssetBrowserSettingsViewModel)DataContext).MoveUpCommand}"
-																        CommandParameter="{Binding}"
-																        ToolTip.Tip="Move up">
-																	<lucide:LucideIcon Kind="ChevronUp"
-																	                   Size="14"
-																	                   StrokeWidth="2.5" />
-																</Button>
-																<Button Grid.Column="1"
-																       Classes="icon-btn compact-control"
-																        Command="{Binding $parent[ItemsControl].((vm:AssetBrowserSettingsViewModel)DataContext).MoveDownCommand}"
-																        CommandParameter="{Binding}"
-																        ToolTip.Tip="Move down">
-																	<lucide:LucideIcon Kind="ChevronDown"
-																	                   Size="14"
-																	                   StrokeWidth="2.5" />
-																</Button>
-																<Button Grid.Column="2"
-																        Width="22"
-																        Height="22"
-																        Padding="0"
-																        CornerRadius="100"
-																        VerticalAlignment="Center"
-																        BorderThickness="2"
-																        BorderBrush="{StaticResource Bg4}"
-																        Background="{Binding Brush}"
-																        ToolTip.Tip="Color" Classes="compact-control compact-small">
-															<Button.Styles>
-																<Style Selector="Button:pointerover /template/ Border#ColorBorder">
-																	<Setter Property="BorderBrush"
-																	        Value="{StaticResource Text}" />
-																</Style>
-															</Button.Styles>
-															<Button.Template>
-																<ControlTemplate>
-																	<Border Name="ColorBorder"
-																	        Background="{TemplateBinding Background}"
-																	        BorderBrush="{TemplateBinding BorderBrush}"
-																	        BorderThickness="{TemplateBinding BorderThickness}"
-																	        CornerRadius="{TemplateBinding CornerRadius}" />
-																</ControlTemplate>
-															</Button.Template>
-																	<Button.Flyout>
-																		<Flyout Placement="BottomEdgeAlignedLeft">
-																			<ColorView Color="{Binding Color, Mode=TwoWay}"
-																			           Palette="{x:Static elements:EditorColorPalette.Instance}"
-																			           IsAlphaEnabled="False"
-																			           IsAlphaVisible="False"
-																			           IsColorPaletteVisible="True"
-																			           SelectedIndex="1" />
-																		</Flyout>
-																	</Button.Flyout>
-																</Button>
-																<TextBox Grid.Column="3"
-																         Text="{Binding Name, Mode=TwoWay}"
-																         PlaceholderText="Tag name"
-																         VerticalContentAlignment="Center"
-																         CornerRadius="6"
-																         BorderThickness="0"
-																         Background="{StaticResource Bg1}" Classes="compact-control" />
-																<TextBlock Grid.Column="4"
-																           Text="{Binding AssetCountText}"
-																          Classes="lbl"
-																           FontSize="12"
-																           HorizontalAlignment="Right" />
-																<Button Grid.Column="5"
-																       Classes="icon-btn compact-control"
-																        Command="{Binding $parent[ItemsControl].((vm:AssetBrowserSettingsViewModel)DataContext).RemoveTagCommand}"
-																        CommandParameter="{Binding}"
-																        ToolTip.Tip="Remove tag">
-																	<lucide:LucideIcon Kind="X"
-																	                   Size="14"
-																	                   StrokeWidth="2.5" />
-																</Button>
-															</Grid>
-														</DataTemplate>
-													</ItemsControl.ItemTemplate>
-												</ItemsControl>
-
-												<TextBlock Classes="hint compact-text"
-												           Text="No tags yet."
-												           IsVisible="{Binding !HasTags}" />
-											</StackPanel>
-										</Border>
-
-										<!-- Display -->
-										<Border Classes="card">
-											<StackPanel Spacing="4">
-												<TextBlock Text="Display"
-												          Classes="category compact-text" />
-												<Grid ColumnDefinitions="180,*"
-												      RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-												      ColumnSpacing="4"
-												      RowSpacing="4">
-													<TextBlock Grid.Row="0"
-													           Text="Show tags"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="0"
-													            Grid.Column="1">
-														<elements:BoolBox Value="{Binding ShowTags, Mode=TwoWay}" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Tag chips under the name of each asset card" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="1"
-													           Text="Show type badge"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="1"
-													            Grid.Column="1">
-														<elements:BoolBox Value="{Binding ShowTypeBadge, Mode=TwoWay}" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="The colored type chip over each preview" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="2"
-													           Text="Card size"
-													          Classes="lbl compact-text" />
-													<ComboBox Grid.Row="2"
-													          Grid.Column="1"
-													          ItemsSource="{Binding CardSizes}"
-													          SelectedIndex="{Binding CardSizeIndex, Mode=TwoWay}"
-													          HorizontalAlignment="Stretch" Classes="compact-control" />
-
-													<TextBlock Grid.Row="3"
-													           Text="Show core://"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="3"
-													            Grid.Column="1">
-														<elements:BoolBox Value="{Binding ShowCore, Mode=TwoWay}" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="The read-only engine assets" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="4"
-													           Text="Show cache://"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="4"
-													            Grid.Column="1">
-														<elements:BoolBox Value="{Binding ShowCache, Mode=TwoWay}" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Files the engine generates: manifests, thumbnails, compiled output" />
-													</StackPanel>
-												</Grid>
-											</StackPanel>
-										</Border>
-
-										<!-- Behaviour -->
-										<Border Classes="card">
-											<StackPanel Spacing="4">
-												<TextBlock Text="Behaviour"
-												          Classes="category compact-text" />
-												<Grid ColumnDefinitions="180,*"
-												      RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-												      ColumnSpacing="4"
-												      RowSpacing="4">
-													<TextBlock Grid.Row="0"
-													           Text="Sort by"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="0"
-													            Grid.Column="1">
-														<ComboBox ItemsSource="{Binding SortOptions}"
-														          SelectedIndex="{Binding SortByIndex, Mode=TwoWay}"
-														          HorizontalAlignment="Stretch" Classes="compact-control" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Modified lists the most recently changed assets first" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="1"
-													           Text="Folders first"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="1"
-													            Grid.Column="1">
-														<elements:BoolBox Value="{Binding FoldersFirst, Mode=TwoWay}" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="When off, folders are listed after the assets" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="2"
-													           Text="Search in"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="2"
-													            Grid.Column="1">
-														<ComboBox ItemsSource="{Binding SearchScopes}"
-														          SelectedIndex="{Binding SearchScopeIndex, Mode=TwoWay}"
-														          HorizontalAlignment="Stretch" Classes="compact-control" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Current folder searches the selected folder and everything under it" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="3"
-													           Text="Confirm delete"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="3"
-													            Grid.Column="1">
-														<elements:BoolBox Value="{Binding ConfirmDelete, Mode=TwoWay}" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Ask before deleting assets and folders" />
-													</StackPanel>
-
-													<TextBlock Grid.Row="4"
-													           Text="Hidden patterns"
-													          Classes="lbl compact-text" />
-													<StackPanel Grid.Row="4"
-													            Grid.Column="1">
-														<elements:StringBox Value="{Binding HiddenPatterns, Mode=TwoWay}"
-														                    Wrap="False" Classes="compact-field" />
-														<TextBlock Classes="hint compact-text"
-														           Text="Comma separated, * and ? wildcards, matched against file and folder names. e.g. *.bak, _wip*" />
-													</StackPanel>
-												</Grid>
-											</StackPanel>
-										</Border>
-									</StackPanel>
-								</DataTemplate>
-							</ContentControl.ContentTemplate>
-						</ContentControl>
-					</ScrollViewer>
 				</Panel>
 			</DockPanel>
 		</Border>

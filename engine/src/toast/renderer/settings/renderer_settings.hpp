@@ -5,10 +5,11 @@
  */
 
 #pragma once
+#include <cstdint>
 #include <optional>
 #include <string_view>
 #include <toast/export.hpp>
-#include <toast/settings/settings.hpp>
+#include <toast/params/value.hpp>
 
 namespace renderer {
 
@@ -17,16 +18,16 @@ class VulkanRenderer;
 inline constexpr std::string_view k_hdr_output = "renderer.display.hdr";
 
 /// F3 in game view flips it
-inline constexpr std::string_view k_debug_overlay_in_game = "renderer.debug.overlay_in_game";
+inline constexpr std::string_view k_debug_overlay_in_game = "renderer.display.debug_overlay";
 
-/// @note Call after Settings::load() and before the passes exist
 TOAST_API void registerRendererStartupSettings();
 
 /// @note Call after the post process passes exist
 TOAST_API void registerRendererSettings(VulkanRenderer& renderer);
 
-/// Nothing under Custom or for a setting no tier drives
 [[nodiscard]]
-auto presetDrivenValue(std::string_view key) -> std::optional<toast::settings::Value>;
+TOAST_API auto presetDrivenValue(std::string_view path) -> std::optional<toast::params::Value>;
+
+TOAST_API void testSetPreset(uint32_t preset);
 
 }

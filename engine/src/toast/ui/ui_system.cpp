@@ -16,6 +16,7 @@
 #include <cctype>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/engine.hpp>
+#include <toast/params/registry.hpp>
 #include <toast/project_settings.hpp>
 
 namespace ui {
@@ -191,8 +192,45 @@ auto UISystem::exists() noexcept -> bool {
 	return instance != nullptr;
 }
 
+namespace {
+
+auto uiParameter(std::string_view path, float fallback) -> float {
+	const auto* param = toast::params::Registry::get().find(path);
+	if (param == nullptr) {
+		return fallback;
+	}
+	const auto value = param->snapshot();
+	if (const auto* scalar = std::get_if<toast::params::Scalar>(&value)) {
+		if (const auto* d = std::get_if<double>(scalar)) {
+			return static_cast<float>(*d);
+		}
+		if (const auto* i = std::get_if<int64_t>(scalar)) {
+			return static_cast<float>(*i);
+		}
+	}
+	return fallback;
+}
+
+}
+
 void UISystem::tick() noexcept {
 	ZoneScoped;
+
+	{
+		const float scale = std::max(0.25F, uiParameter("ui.scale", 1.0F));
+		const float scroll = std::max(0.05F, uiParameter("ui.scroll_speed", 1.0F));
+		if (scale != m_ui_scale) {
+			m_ui_scale = scale;
+			applyDpRatio(m_dp_ratio);
+		}
+		if (scroll != m_scroll_speed) {
+			m_scroll_speed = scroll;
+			for (int i = 0; i < Rml::GetNumContexts(); ++i) {
+				Rml::GetContext(i)->SetDefaultScrollBehavior(Rml::ScrollBehavior::Instant, m_scroll_speed);
+			}
+		}
+		syncLanguageParameter();
+	}
 	{
 		std::scoped_lock lock(m_deferred_mutex);
 		for (auto& [_, setup] : m_deferred_setups) {
@@ -252,7 +290,10 @@ auto UISystem::createContext(std::string_view name, glm::ivec2 dimensions, std::
 		return nullptr;
 	}
 
-	context->SetDensityIndependentPixelRatio(fixed_dp_ratio.value_or(m_dp_ratio));
+	context->SetDensityIndependentPixelRatio(fixed_dp_ratio.value_or(m_dp_ratio * m_ui_scale));
+	if (m_scroll_speed != 1.0f) {
+		context->SetDefaultScrollBehavior(Rml::ScrollBehavior::Instant, m_scroll_speed);
+	}
 	if (!fixed_dp_ratio.has_value()) {
 		m_display_density_contexts.emplace(context);
 	}
@@ -264,7 +305,7 @@ auto UISystem::createContext(std::string_view name, glm::ivec2 dimensions, std::
 void UISystem::applyDpRatio(float ratio) {
 	m_dp_ratio = ratio;
 	for (Rml::Context* context : m_display_density_contexts) {
-		context->SetDensityIndependentPixelRatio(ratio);
+		context->SetDensityIndependentPixelRatio(ratio * m_ui_scale);
 	}
 }
 
@@ -481,14 +522,70 @@ void UISystem::setLanguage(std::string language) {
 			return;
 		}
 	}
+	switchLanguage(std::move(language));
+}
+
+void UISystem::switchLanguage(std::string language) {
+	ZoneScoped;
 	if (language == currentLanguage()) {
+		publishLanguage();
 		return;
 	}
 	m_language = std::move(language);
 	TOAST_INFO("UI", "Switching UI language to '{}'", m_language);
+	publishLanguage();
 
 	// Reloading re-runs TranslateString and re-applies localized images with the new language
 	reloadAllDocuments();
+}
+
+void UISystem::publishLanguage() {
+	m_language_param_seen = currentLanguage();
+	m_language_param_ready = true;
+	toast::params::Registry::get().request(
+	    "ui.language", toast::params::Value {toast::params::Scalar {m_language_param_seen}}, toast::params::Layer::runtime
+	);
+}
+
+void UISystem::syncLanguageParameter() {
+	const auto& registry = toast::params::Registry::get();
+	const auto* param = registry.find("ui.language");
+	if (param == nullptr) {
+		return;
+	}
+
+	const auto pending = registry.pendingValue("ui.language");
+	const auto value = pending ? *pending : param->snapshot();
+	const auto* scalar = std::get_if<toast::params::Scalar>(&value);
+	const auto* text = scalar != nullptr ? std::get_if<std::string>(scalar) : nullptr;
+	if (text == nullptr) {
+		return;
+	}
+
+	if (!m_language_param_ready) {
+		m_language_param_ready = true;
+		if (text->empty()) {
+			publishLanguage();
+			return;
+		}
+	}
+	if (*text == m_language_param_seen) {
+		return;
+	}
+
+	m_language_param_seen = *text;
+	if (!text->empty()) {
+		switchLanguage(*text);
+		return;
+	}
+	std::string fallback = "en";
+	if (toast::ProjectSettings::get() != nullptr) {
+		const auto& languages = toast::ProjectSettings::uiSettings().languages();
+		if (!languages.empty()) {
+			fallback = languages.front();
+		}
+	}
+	switchLanguage(std::move(fallback));
 }
 
 void UISystem::reloadAllDocuments() {

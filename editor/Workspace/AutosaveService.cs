@@ -24,7 +24,8 @@ public interface IAutosavable {
 // Writes every dirty open editor to cache://autosaves/<uid><ext> once a minute
 public sealed class AutosaveService {
 	private const string AutosaveDir = "cache://autosaves/";
-	private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
+	private const string EnabledKey = "editor.autosave.enabled";
+	private const string IntervalKey = "editor.autosave.interval_seconds";
 
 	private readonly Func<IEnumerable<IAutosavable>> m_sources;
 	private readonly DispatcherTimer m_timer;
@@ -32,9 +33,16 @@ public sealed class AutosaveService {
 
 	public AutosaveService(Func<IEnumerable<IAutosavable>> sources) {
 		m_sources = sources;
-		m_timer = new DispatcherTimer { Interval = Interval };
-		m_timer.Tick += async (_, _) => await RequestAutosave();
+		m_timer = new DispatcherTimer { Interval = CurrentInterval() };
+		m_timer.Tick += async (_, _) => {
+			m_timer.Interval = CurrentInterval();
+			if (ToastSettings.Flag(EnabledKey, true)) await RequestAutosave();
+		};
 		m_timer.Start();
+	}
+
+	private static TimeSpan CurrentInterval() {
+		return TimeSpan.FromSeconds(Math.Clamp(ToastSettings.Number(IntervalKey, 60), 10, 3600));
 	}
 
 	public void Stop() {

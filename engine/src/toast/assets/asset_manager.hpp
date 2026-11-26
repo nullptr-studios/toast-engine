@@ -25,6 +25,7 @@
 #include <optional>
 #include <string>
 #include <toast/events/listener.hpp>
+#include <toast/export.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -42,6 +43,7 @@ struct Paths {
 	std::filesystem::path cache;
 	std::filesystem::path saved;
 	std::filesystem::path core;
+	std::filesystem::path config;
 };
 
 /**
@@ -53,6 +55,7 @@ struct Paths {
  *   - cache://    generated or baked files that can be rebuilt
  *   - core://     engine built-in assets (default shaders, primitives)
  *   - saved://    user save data and preferences
+ *   - config://   committed parameter files, `<project>/config` unless the host says otherwise
  *
  * Content database schemes (registered via registerDatabase after ProjectSettings loads):
  *   - assets://   default content database (always present for a new project)
@@ -145,24 +148,28 @@ public:
 	 * @param paths Filesystem paths for each fixed scheme (project, artwork, cache, core, saved)
 	 * @warning Not thread-safe after initialization; call this before creating the AssetManager or spawning load threads
 	 */
-	static void setPaths(Paths&& paths);
+	TOAST_API static void setPaths(Paths&& paths);
 
 	/**
 	 * @brief Registers a content database scheme
 	 * @note Call after setPaths and before AssetManager construction (or before reloadManifest)
 	 */
-	static void registerDatabase(std::string_view name, std::filesystem::path root);
+	TOAST_API static void registerDatabase(std::string_view name, std::filesystem::path root);
 
 	/**
 	 * @brief Removes all content database schemes (non-fixed), leaving only special roots intact
 	 * @note Used by reloadSettings to reset before re-registering databases from updated project settings
 	 */
-	static void clearDatabases();
+	TOAST_API static void clearDatabases();
 
 	/**
 	 * @brief Returns the project root path (project:// root)
 	 */
 	static auto projectRoot() -> const std::filesystem::path&;
+
+	TOAST_API static auto configRoot() -> const std::filesystem::path&;
+
+	TOAST_API static auto savedRoot() -> const std::filesystem::path&;
 
 	/**
 	 * @brief Maps a virtual URI to its manifest UID

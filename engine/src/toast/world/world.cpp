@@ -632,6 +632,14 @@ auto World::cacheNode(Node& node) -> Box<Node> {
 	return instance->moveToCached(node);
 }
 
+auto World::root() -> Box<Node> {
+	if (instance == nullptr) {
+		return {};
+	}
+	const TreeReadLock lock(instance);
+	return instance->trees.root;
+}
+
 auto World::findCached(std::string_view name) -> Box<Node> {
 	ZoneScoped;
 

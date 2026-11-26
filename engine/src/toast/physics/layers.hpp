@@ -14,6 +14,8 @@
 
 namespace physics {
 
+struct PhysicsParams;
+
 inline constexpr int k_layer_count = 32;
 inline constexpr uint32_t k_all_layers = 0xFFFF'FFFFu;
 inline constexpr size_t k_layer_abbreviation_length = 3;
@@ -76,6 +78,6 @@ TOAST_API auto layerName(int layer) -> std::string;
 [[nodiscard]]
 TOAST_API auto layerAbbreviation(int layer) -> std::string;
 
-void registerLayerSettings();
+void registerLayerSettings(PhysicsParams& params);
 
 }

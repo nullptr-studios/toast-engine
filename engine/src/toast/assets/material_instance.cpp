@@ -1,12 +1,13 @@
 #include "material_instance.hpp"
 
+#include "asset_params.hpp"
+
 #include <sstream>
 
 namespace assets {
 
 namespace {
 
-constexpr int k_max_parent_depth = 16;
 thread_local int s_parent_depth = 0;
 
 struct DepthGuard {
@@ -16,7 +17,7 @@ struct DepthGuard {
 
 	[[nodiscard]]
 	auto exceeded() const -> bool {
-		return s_parent_depth > k_max_parent_depth;
+		return s_parent_depth > assetParams().material_parent_depth.get();
 	}
 };
 

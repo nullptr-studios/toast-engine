@@ -1,9 +1,13 @@
 #include "event.hpp"
 
+#include "event_params.hpp"
 #include "proto_event.hpp"
 
 #include <cassert>
+#include <chrono>
 #include <memory_resource>
+#include <toast/log.hpp>
+#include <typeinfo>
 
 namespace event {
 
@@ -68,8 +72,22 @@ void pollEvents() noexcept {
 	}
 
 	// notify events
+	const EventParams& params = eventParams();
+	const bool log_all = params.log_dispatch;
+	const float slow_limit_ms = params.slow_warning;
 	for (auto& event : pools[idx].queue) {
-		event->notify();
+		if (!log_all && slow_limit_ms <= 0.0F) {
+			event->notify();
+		} else {
+			const auto started = std::chrono::steady_clock::now();
+			event->notify();
+			const float took_ms = std::chrono::duration<float, std::milli>(std::chrono::steady_clock::now() - started).count();
+			if (log_all) {
+				TOAST_INFO("Events", "{} took {:.3f} ms", typeid(*event).name(), took_ms);
+			} else if (took_ms > slow_limit_ms) {
+				TOAST_WARN("Events", "{} took {:.2f} ms to dispatch", typeid(*event).name(), took_ms);
+			}
+		}
 		std::destroy_at(event);
 	}
 

@@ -1,0 +1,336 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:editor.Workspace"
+             xmlns:elements="using:editor.Components.Elements"
+             xmlns:lucide="using:Lucide.Avalonia"
+             xmlns:assets="using:editor.Assets"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d"
+             d:DesignWidth="700"
+             d:DesignHeight="700"
+             x:Class="editor.Workspace.AssetBrowserSettingsView"
+             x:DataType="vm:AssetBrowserSettingsViewModel">
+
+	<UserControl.Styles>
+		<Style Selector="Button.icon-btn">
+			<Setter Property="BorderThickness"
+			        Value="0" />
+			<Setter Property="Padding"
+			        Value="5" />
+			<Setter Property="CornerRadius"
+			        Value="6" />
+			<Setter Property="Cursor"
+			        Value="Hand" />
+			<Setter Property="Background"
+			        Value="Transparent" />
+			<Setter Property="VerticalAlignment"
+			        Value="Center" />
+		</Style>
+	</UserControl.Styles>
+
+	<StackPanel>
+
+		<!-- tags -->
+		<Border Classes="card"
+		        Margin="0,0,0,2"
+		        Padding="4">
+			<StackPanel>
+				<DockPanel>
+					<Button DockPanel.Dock="Right"
+					        Command="{Binding AddTagCommand}"
+					        Classes="btn compact-control">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4">
+							<lucide:LucideIcon Kind="Plus"
+							                   Size="14"
+							                   StrokeWidth="3" />
+							<TextBlock Text="Add tag"
+							           Classes="compact-text" />
+						</StackPanel>
+					</Button>
+					<ToggleButton Classes="hdr compact-control"
+					              IsChecked="{Binding TagsExpanded, Mode=TwoWay}">
+						<StackPanel Orientation="Horizontal"
+						            Spacing="4">
+							<Border Width="3"
+							        Height="14"
+							        CornerRadius="2"
+							        VerticalAlignment="Center"
+							        Background="{StaticResource Blue}" />
+							<TextBlock Classes="group compact-text"
+							           Text="Tags" />
+						</StackPanel>
+					</ToggleButton>
+				</DockPanel>
+				<elements:AnimatedReveal IsExpanded="{Binding TagsExpanded}">
+					<StackPanel Margin="10,4,0,0">
+						<ItemsControl ItemsSource="{Binding Tags}">
+							<ItemsControl.ItemTemplate>
+								<DataTemplate x:DataType="assets:AssetTag">
+									<Grid ColumnDefinitions="Auto,Auto,Auto,*,90,Auto"
+									      ColumnSpacing="4"
+									      Margin="0,0,0,3">
+										<Button Grid.Column="0"
+										        Classes="icon-btn compact-control"
+										        Command="{Binding $parent[ItemsControl].((vm:AssetBrowserSettingsViewModel)DataContext).MoveUpCommand}"
+										        CommandParameter="{Binding}"
+										        ToolTip.Tip="Move up">
+											<lucide:LucideIcon Kind="ChevronUp"
+											                   Size="14"
+											                   StrokeWidth="2.5" />
+										</Button>
+										<Button Grid.Column="1"
+										        Classes="icon-btn compact-control"
+										        Command="{Binding $parent[ItemsControl].((vm:AssetBrowserSettingsViewModel)DataContext).MoveDownCommand}"
+										        CommandParameter="{Binding}"
+										        ToolTip.Tip="Move down">
+											<lucide:LucideIcon Kind="ChevronDown"
+											                   Size="14"
+											                   StrokeWidth="2.5" />
+										</Button>
+										<Button Grid.Column="2"
+										        Width="22"
+										        Height="22"
+										        Padding="0"
+										        CornerRadius="100"
+										        VerticalAlignment="Center"
+										        BorderThickness="2"
+										        BorderBrush="{StaticResource Bg4}"
+										        Background="{Binding Brush}"
+										        ToolTip.Tip="Color"
+										        Classes="compact-control compact-small">
+											<Button.Styles>
+												<Style Selector="Button:pointerover /template/ Border#ColorBorder">
+													<Setter Property="BorderBrush"
+													        Value="{StaticResource Text}" />
+												</Style>
+											</Button.Styles>
+											<Button.Template>
+												<ControlTemplate>
+													<Border Name="ColorBorder"
+													        Background="{TemplateBinding Background}"
+													        BorderBrush="{TemplateBinding BorderBrush}"
+													        BorderThickness="{TemplateBinding BorderThickness}"
+													        CornerRadius="{TemplateBinding CornerRadius}" />
+												</ControlTemplate>
+											</Button.Template>
+											<Button.Flyout>
+												<Flyout Placement="BottomEdgeAlignedLeft">
+													<ColorView Color="{Binding Color, Mode=TwoWay}"
+													           Palette="{x:Static elements:EditorColorPalette.Instance}"
+													           IsAlphaEnabled="False"
+													           IsAlphaVisible="False"
+													           IsColorPaletteVisible="True"
+													           SelectedIndex="1" />
+												</Flyout>
+											</Button.Flyout>
+										</Button>
+										<TextBox Grid.Column="3"
+										         Text="{Binding Name, Mode=TwoWay}"
+										         PlaceholderText="Tag name"
+										         VerticalContentAlignment="Center"
+										         CornerRadius="6"
+										         BorderThickness="0"
+										         Background="{StaticResource Bg1}"
+										         Classes="compact-control" />
+										<TextBlock Grid.Column="4"
+										           Text="{Binding AssetCountText}"
+										           Classes="lbl"
+										           FontSize="12"
+										           HorizontalAlignment="Right" />
+										<Button Grid.Column="5"
+										        Classes="icon-btn compact-control"
+										        Command="{Binding $parent[ItemsControl].((vm:AssetBrowserSettingsViewModel)DataContext).RemoveTagCommand}"
+										        CommandParameter="{Binding}"
+										        ToolTip.Tip="Remove tag">
+											<lucide:LucideIcon Kind="X"
+											                   Size="14"
+											                   StrokeWidth="2.5" />
+										</Button>
+									</Grid>
+								</DataTemplate>
+							</ItemsControl.ItemTemplate>
+						</ItemsControl>
+						<TextBlock Classes="hint compact-text"
+						           Text="No tags yet."
+						           IsVisible="{Binding !HasTags}" />
+					</StackPanel>
+				</elements:AnimatedReveal>
+			</StackPanel>
+		</Border>
+
+		<!-- display -->
+		<Border Classes="card"
+		        Margin="0,0,0,2"
+		        Padding="4">
+			<StackPanel>
+				<ToggleButton Classes="hdr compact-control"
+				              IsChecked="{Binding DisplayExpanded, Mode=TwoWay}">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="4">
+						<Border Width="3"
+						        Height="14"
+						        CornerRadius="2"
+						        VerticalAlignment="Center"
+						        Background="{StaticResource Green}" />
+						<TextBlock Classes="group compact-text"
+						           Text="Display" />
+					</StackPanel>
+				</ToggleButton>
+				<elements:AnimatedReveal IsExpanded="{Binding DisplayExpanded}">
+					<StackPanel Margin="10,4,0,0">
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="Tag chips under the name of each asset card">
+							<TextBlock Text="Show tags"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:BoolBox Grid.Column="1"
+							                  Value="{Binding ShowTags, Mode=TwoWay}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="The colored type chip over each preview">
+							<TextBlock Text="Show type badge"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:BoolBox Grid.Column="1"
+							                  Value="{Binding ShowTypeBadge, Mode=TwoWay}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3">
+							<TextBlock Text="Card size"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:EnumBox Grid.Column="1"
+							                  Value="{Binding CardSizeName, Mode=TwoWay}"
+							                  Options="{Binding CardSizes}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="The read-only engine assets">
+							<TextBlock Text="Show core://"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:BoolBox Grid.Column="1"
+							                  Value="{Binding ShowCore, Mode=TwoWay}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="Files the engine generates: manifests, thumbnails, compiled output">
+							<TextBlock Text="Show cache://"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:BoolBox Grid.Column="1"
+							                  Value="{Binding ShowCache, Mode=TwoWay}"
+							                  Classes="compact-field" />
+						</Grid>
+					</StackPanel>
+				</elements:AnimatedReveal>
+			</StackPanel>
+		</Border>
+
+		<!-- behaviour -->
+		<Border Classes="card"
+		        Margin="0,0,0,2"
+		        Padding="4">
+			<StackPanel>
+				<ToggleButton Classes="hdr compact-control"
+				              IsChecked="{Binding BehaviourExpanded, Mode=TwoWay}">
+					<StackPanel Orientation="Horizontal"
+					            Spacing="4">
+						<Border Width="3"
+						        Height="14"
+						        CornerRadius="2"
+						        VerticalAlignment="Center"
+						        Background="{StaticResource Orange}" />
+						<TextBlock Classes="group compact-text"
+						           Text="Behaviour" />
+					</StackPanel>
+				</ToggleButton>
+				<elements:AnimatedReveal IsExpanded="{Binding BehaviourExpanded}">
+					<StackPanel Margin="10,4,0,0">
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="Modified lists the most recently changed assets first">
+							<TextBlock Text="Sort by"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:EnumBox Grid.Column="1"
+							                  Value="{Binding SortByName, Mode=TwoWay}"
+							                  Options="{Binding SortOptions}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="When off, folders are listed after the assets">
+							<TextBlock Text="Folders first"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:BoolBox Grid.Column="1"
+							                  Value="{Binding FoldersFirst, Mode=TwoWay}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="Current folder searches the selected folder and everything under it">
+							<TextBlock Text="Search in"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:EnumBox Grid.Column="1"
+							                  Value="{Binding SearchScopeName, Mode=TwoWay}"
+							                  Options="{Binding SearchScopes}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="Ask before deleting assets and folders">
+							<TextBlock Text="Confirm delete"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:BoolBox Grid.Column="1"
+							                  Value="{Binding ConfirmDelete, Mode=TwoWay}"
+							                  Classes="compact-field" />
+						</Grid>
+						<Grid ColumnDefinitions="230,*"
+						      ColumnSpacing="6"
+						      Margin="0,0,0,3"
+						      ToolTip.Tip="Comma separated, * and ? wildcards, matched against file and folder names. e.g. *.bak, _wip*">
+							<TextBlock Text="Hidden patterns"
+							           Classes="lbl compact-text"
+							           VerticalAlignment="Top"
+							           Margin="0,5,0,0" />
+							<elements:StringBox Grid.Column="1"
+							                    Value="{Binding HiddenPatterns, Mode=TwoWay}"
+							                    Wrap="False"
+							                    Classes="compact-field" />
+						</Grid>
+					</StackPanel>
+				</elements:AnimatedReveal>
+			</StackPanel>
+		</Border>
+	</StackPanel>
+</UserControl>

@@ -1,5 +1,7 @@
 #include "mesh.hpp"
 
+#include "asset_params.hpp"
+
 #include <toast/renderer/vulkan_renderer.hpp>
 
 namespace assets {
@@ -134,8 +136,7 @@ auto Mesh::boundingSphere() const -> const glm::vec4& {
 	}
 
 	// See boundingSphere()'s docs: a skinned mesh is only ever measured in its bind pose here
-	constexpr float k_skinned_padding = 1.5f;
-	const float radius = std::sqrt(radius_squared) * (isSkinned() ? k_skinned_padding : 1.0f);
+	const float radius = std::sqrt(radius_squared) * (isSkinned() ? assetParams().skinned_bounds_padding.get() : 1.0f);
 
 	m_bounding_sphere.emplace(center, radius);
 	return *m_bounding_sphere;

@@ -18,7 +18,7 @@ if (BUILD_TESTING)
 	target_precompile_headers(toast_tests PRIVATE ${CMAKE_SOURCE_DIR}/engine/pch.h)
 	# renderer/04-import-reflection calls the Slang API directly and the engine find_package does not carry here
 	find_package(slang CONFIG REQUIRED)
-	target_link_libraries(toast_tests PRIVATE toast_engine RmlUi::RmlUi slang::slang unofficial::sqlite3::sqlite3)
+	target_link_libraries(toast_tests PRIVATE toast_engine toast_pack RmlUi::RmlUi slang::slang unofficial::sqlite3::sqlite3)
 	target_compile_definitions(toast_tests PRIVATE UNIT_TESTING TRACY_NO_INVARIANT_CHECK=1)
 	target_compile_definitions(toast_tests PRIVATE TOAST_CORE_ASSETS_DIR="${CMAKE_SOURCE_DIR}/engine/assets")
 	target_compile_definitions(toast_tests PRIVATE TOAST_TEST_CONTENT_DIR="${CMAKE_SOURCE_DIR}/tools/test_content")

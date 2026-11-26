@@ -1235,6 +1235,33 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			await Task.Run(() => File.Copy(toastFile, dest, true));
 		}
 
+		async Task CookConfigs(Action<string> log) {
+			var configDir = Path.Combine(ProjectContext.ProjectPath, "config");
+			var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault() ?? "";
+			var stageDir = Path.Combine(stageRoot, "configs");
+			if (Directory.Exists(stageDir)) Directory.Delete(stageDir, true);
+
+			log("  cooking config://");
+			if (!await Task.Run(() => ToastSettings.Cook(configDir, toastFile, stageDir)))
+				throw new Exception("could not cook the config files; the log says which one");
+
+			var pakOut = Path.Combine(outputDir, "configs.pak");
+			log("  packing → configs.pak");
+			await Task.Run(() => {
+				using var proc = new Process();
+				proc.StartInfo = new ProcessStartInfo {
+					FileName = packerBin,
+					Arguments = $"\"{stageDir}\" \"{pakOut}\"",
+					WorkingDirectory = ProjectContext.ProjectPath,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				};
+				var exitCode = TerminalReader.Run(proc, log);
+				if (exitCode != 0)
+					throw new Exception($"packer exited with code {exitCode} for configs");
+			});
+		}
+
 		// Baked lighting (irradiance volume SH, reflection probe captures) lives in cache://, which belongs to no content
 		// database and so never reaches a pak; the player resolves cache:// to <build>/cache
 		async Task CopyBakedLighting(Action<string> log) {
@@ -1326,6 +1353,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),
 			LoaderTask.Do("copy project.toast", CopyProjectToast),
+			LoaderTask.Do("cook configs", CookConfigs),
 			LoaderTask.Do("copy baked lighting", CopyBakedLighting)
 		};
 

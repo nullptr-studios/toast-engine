@@ -522,6 +522,8 @@ void AssetManager::clearUnusedAssets() {
 }
 
 void AssetManager::setPaths(Paths&& paths) {
+	// worked out before project is moved from
+	roots["config"] = paths.config.empty() ? paths.project / "config" : std::move(paths.config);
 	roots["project"] = std::move(paths.project);
 	roots["artwork"] = std::move(paths.artworks);
 	roots["cache"] = std::move(paths.cache);
@@ -537,13 +539,25 @@ void AssetManager::clearDatabases() {
 	// Keep only the five fixed special schemes; erase everything else
 	std::erase_if(roots, [](const auto& kv) {
 		const auto& k = kv.first;
-		return k != "project" && k != "artwork" && k != "cache" && k != "saved" && k != "core";
+		return k != "project" && k != "artwork" && k != "cache" && k != "saved" && k != "core" && k != "config";
 	});
 }
 
 auto AssetManager::projectRoot() -> const std::filesystem::path& {
 	static const std::filesystem::path empty;
 	auto it = roots.find("project");
+	return it != roots.end() ? it->second : empty;
+}
+
+auto AssetManager::configRoot() -> const std::filesystem::path& {
+	static const std::filesystem::path empty;
+	auto it = roots.find("config");
+	return it != roots.end() ? it->second : empty;
+}
+
+auto AssetManager::savedRoot() -> const std::filesystem::path& {
+	static const std::filesystem::path empty;
+	auto it = roots.find("saved");
 	return it != roots.end() ? it->second : empty;
 }
 

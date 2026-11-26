@@ -36,7 +36,7 @@ public:
 
 	[[nodiscard]]
 	static auto maxSteps() -> unsigned {
-		return std::max(tunables().max_substeps, 1u);
+		return std::max(tunables().max_substeps.get(), 1u);
 	}
 
 	template<typename Fn>

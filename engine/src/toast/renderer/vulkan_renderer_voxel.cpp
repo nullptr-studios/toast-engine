@@ -12,7 +12,6 @@
 #include <toast/assets/material.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/profiler_phases.hpp>
-#include <toast/settings/settings.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>

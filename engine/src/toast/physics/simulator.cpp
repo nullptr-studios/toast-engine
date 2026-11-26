@@ -1143,9 +1143,9 @@ void Simulator::emitDebris(
 		      .position = position,
 		      .rotation = lattice_rotation,
 		      .velocity = velocity,
-		      .angular_velocity = together
-					                        ? body->angular_velocity
-					                        : rng.direction() * rng.range(0.0f, std::min(k_debris_max_spin, tunables().debris_max_spin)),
+		      .angular_velocity =
+		          together ? body->angular_velocity
+							         : rng.direction() * rng.range(0.0f, std::min(k_debris_max_spin, tunables().debris_max_spin.get())),
 		      .mask = cluster.mask,
 		      .material = cluster.material,
 		      .albedo_roughness = static_cast<uint32_t>(look.albedo_r) | (static_cast<uint32_t>(look.albedo_g) << 8u) |
@@ -1579,7 +1579,7 @@ void Simulator::enforceFragmentBudget(float dt) {
 	ZoneScopedN("physics::FragmentProfile");
 
 	// Never below the limit a fragment may sleep at on its own
-	const float force_scale = std::max(tunables().fragment_sleep_scale, std::sqrt(tunables().force_sleep_slack));
+	const float force_scale = std::max(tunables().fragment_sleep_scale.get(), std::sqrt(tunables().force_sleep_slack.get()));
 	const float linear_limit = tunables().sleep_linear_threshold * force_scale;
 	const float angular_limit = tunables().sleep_angular_threshold * force_scale;
 
@@ -2302,7 +2302,7 @@ void Simulator::wakeDisturbedSleepers(float dt) {
 	markSupportedBodies();
 
 	// A sleeper wakes when a body runs into it or races past and slow creeping never does
-	const float gravity_speed = glm::length(tunables().gravity) * dt;
+	const float gravity_speed = glm::length(tunables().gravity.get()) * dt;
 	for (const Manifold& manifold : m_manifolds) {
 		const Body* a = tryGetBody(manifold.pair.a.body);
 		const Body* b = tryGetBody(manifold.pair.b.body);
@@ -2918,7 +2918,7 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 	}
 	std::vector<uint32_t> touched;
 
-	const uint32_t passes = std::max(tunables().position_iterations, 1u);
+	const uint32_t passes = std::max(tunables().position_iterations.get(), 1u);
 	for (uint32_t pass = 0; pass < passes; ++pass) {
 		for (const size_t manifold_index : manifold_indices) {
 			const Manifold& manifold = m_manifolds[manifold_index];
@@ -2958,7 +2958,8 @@ auto Simulator::correctPositions(std::span<const size_t> manifold_indices) -> si
 				continue;
 			}
 
-			float correction_distance = std::min(tunables().correction_beta * excess_penetration, tunables().max_correction);
+			float correction_distance =
+			    std::min(tunables().correction_beta.get() * excess_penetration, tunables().max_correction.get());
 			glm::vec3 correction = manifold.normal * (correction_distance / inv_mass);
 
 			if (movable(*body_a)) {
@@ -3331,7 +3332,7 @@ void Simulator::updateSleeping(float dt) {
 				body.sleep_anchor_center = body.worldCenterOfMass();
 				body.sleep_anchor_rotation = body.rotation;
 			}
-			body.sleep_timer = std::min(body.sleep_timer + dt, tunables().sleep_delay);
+			body.sleep_timer = std::min(body.sleep_timer + dt, tunables().sleep_delay.get());
 		} else {
 			body.sleep_timer = std::max(body.sleep_timer - (dt * k_sleep_decay), 0.0f);
 			m_sleep_moving[index] = 1;
@@ -5661,7 +5662,7 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 			edge.edge_lobes = std::clamp(profile.edge_lobes, 0.0f, k_max_edge_noise);
 		}
 		const bool cracks_around = hit.has_value() && patternShatters(hit->fracture_pattern);
-		const float band_width = cracks_around ? std::max(tunables().explosion_shatter_width, 0.0f) : 0.0f;
+		const float band_width = cracks_around ? std::max(tunables().explosion_shatter_width.get(), 0.0f) : 0.0f;
 		const float scan = craterMaxRadius(edge) + band_width;
 
 		const glm::ivec3 voxel_dims = glm::ivec3(volume.voxelDims());
@@ -5674,9 +5675,9 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		}
 
 		// Voronoi
-		const float cell_size = std::max(tunables().explosion_chunk_size, 2.0f * voxel::k_voxel_size);
+		const float cell_size = std::max(tunables().explosion_chunk_size.get(), 2.0f * voxel::k_voxel_size);
 		const float crack_gap = crackThickness();
-		const float debris_ratio = std::max(tunables().explosion_debris_ratio, 1.0f);
+		const float debris_ratio = std::max(tunables().explosion_debris_ratio.get(), 1.0f);
 		const float release = hit.has_value() ? std::clamp(profile.shatter_release, 0.0f, 1.0f) : 0.0f;
 		const uint64_t jitter_seed = streamSeed(seed, FractureStream::shatter_points);
 		const uint64_t release_seed = streamSeed(seed, FractureStream::granular);
@@ -6146,7 +6147,8 @@ void Simulator::convertImpulsesToDamage(std::span<const SimulationIsland> island
 	};
 
 	std::vector<ImpactPatch> patches;
-	const auto impact_hardness = static_cast<Hardness>(std::min(tunables().impact_max_hardness, static_cast<uint32_t>(k_hardest)));
+	const auto impact_hardness =
+	    static_cast<Hardness>(std::min(tunables().impact_max_hardness.get(), static_cast<uint32_t>(k_hardest)));
 
 	std::scoped_lock voxel_lock {voxelDataMutex()};
 
@@ -7038,7 +7040,7 @@ void Simulator::solveIslands(std::vector<SimulationIsland>& islands) {
 	std::vector<glm::vec3> predicted_centers;
 	if (not jointed_islands.empty()) {
 		ZoneScopedN("physics::JointSubsteps");
-		const uint32_t substeps = std::max(tunables().joint_substeps, 1u);
+		const uint32_t substeps = std::max(tunables().joint_substeps.get(), 1u);
 		const float substep_dt = static_cast<float>(Accumulator::fixedDelta()) / static_cast<float>(substeps);
 		const uint32_t substep_iterations = std::max((solver_iterations + substeps - 1) / substeps, 1u);
 

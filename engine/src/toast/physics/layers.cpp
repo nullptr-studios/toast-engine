@@ -1,6 +1,6 @@
 #include "layers.hpp"
 
-#include <toast/settings/settings.hpp>
+#include "physics_settings.hpp"
 
 namespace physics {
 
@@ -34,10 +34,24 @@ auto defaultLayer(int layer) -> LayerInfo {
 	}
 }
 
-auto settingKey(int layer, std::string_view field) -> std::string {
-	return "physics.layers." + std::to_string(layer) + "." + std::string {field};
 }
 
+auto defaultLayerNames() -> std::vector<std::string> {
+	std::vector<std::string> names;
+	names.reserve(k_layer_count);
+	for (int layer = 0; layer < k_layer_count; ++layer) {
+		names.push_back(defaultLayer(layer).name);
+	}
+	return names;
+}
+
+auto defaultLayerAbbreviations() -> std::vector<std::string> {
+	std::vector<std::string> abbreviations;
+	abbreviations.reserve(k_layer_count);
+	for (int layer = 0; layer < k_layer_count; ++layer) {
+		abbreviations.push_back(defaultLayer(layer).abbreviation);
+	}
+	return abbreviations;
 }
 
 auto layerMask(const std::vector<int>& layers) -> uint32_t {
@@ -80,33 +94,33 @@ auto layerAbbreviation(int layer) -> std::string {
 	return all.layers[layer].abbreviation;
 }
 
-void registerLayerSettings() {
-	LayerTable& all = table();
+void registerLayerSettings(PhysicsParams& params) {
 	{
+		LayerTable& all = table();
 		std::scoped_lock lock(all.mutex);
 		for (int layer = 0; layer < k_layer_count; ++layer) {
 			all.layers[layer] = defaultLayer(layer);
 		}
 	}
 
-	// Default can not be renamed so it has no setting
-	for (int layer = 1; layer < k_layer_count; ++layer) {
-		const LayerInfo info = defaultLayer(layer);
-		toast::settings::declareString(settingKey(layer, "name"), info.name, {.label = info.name, .category = "Tags", .hidden = true})
-		    .onChange([layer](const std::string& value) {
-			    LayerTable& all = table();
-			    std::scoped_lock lock(all.mutex);
-			    all.layers[layer].name = value;
-		    });
-		toast::settings::declareString(
-		    settingKey(layer, "abbr"), info.abbreviation, {.label = info.abbreviation, .category = "Tags", .hidden = true}
-		)
-		    .onChange([layer](const std::string& value) {
-			    LayerTable& all = table();
-			    std::scoped_lock lock(all.mutex);
-			    all.layers[layer].abbreviation = value.substr(0, k_layer_abbreviation_length);
-		    });
-	}
+	params.layer_names.onChange([](const std::vector<std::string>& names) {
+		LayerTable& all = table();
+		std::scoped_lock lock(all.mutex);
+		for (int layer = 1; layer < k_layer_count; ++layer) {
+			const auto index = static_cast<size_t>(layer);
+			all.layers[layer].name = index < names.size() && !names[index].empty() ? names[index] : defaultLayer(layer).name;
+		}
+	});
+	params.layer_abbreviations.onChange([](const std::vector<std::string>& abbreviations) {
+		LayerTable& all = table();
+		std::scoped_lock lock(all.mutex);
+		for (int layer = 1; layer < k_layer_count; ++layer) {
+			const auto index = static_cast<size_t>(layer);
+			all.layers[layer].abbreviation = index < abbreviations.size() && !abbreviations[index].empty()
+			                                     ? abbreviations[index].substr(0, k_layer_abbreviation_length)
+			                                     : defaultLayer(layer).abbreviation;
+		}
+	});
 }
 
 }

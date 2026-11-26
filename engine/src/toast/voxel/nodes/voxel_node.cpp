@@ -10,6 +10,7 @@
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/destruction_event.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/voxel/voxel_params.hpp>
 #include <toast/world/bone_attachment.hpp>
 
 namespace toast {
@@ -152,7 +153,7 @@ auto VoxelNode::volume() -> voxel::Volume* {
 				    "Voxel",
 				    "'{}' could not be instantiated: the runtime brick pool is out of its {} bricks",
 				    name(),
-				    voxel::k_runtime_brick_capacity
+				    voxel::voxelParams().runtime_bricks.get()
 				);
 			}
 		}
@@ -267,13 +268,10 @@ void VoxelNode::finishShape() {
 
 namespace {
 
-constexpr int32_t k_max_bricks_per_axis = 512;
-constexpr int64_t k_max_bricks = int64_t {1} << 21;
-
 [[nodiscard]]
 auto tooBig(glm::ivec3 dims) noexcept -> bool {
-	return glm::any(glm::greaterThan(dims, glm::ivec3(k_max_bricks_per_axis))) ||
-	       static_cast<int64_t>(dims.x) * dims.y * dims.z > k_max_bricks;
+	return glm::any(glm::greaterThan(dims, glm::ivec3(voxel::voxelParams().max_bricks_per_axis.get()))) ||
+	       static_cast<int64_t>(dims.x) * dims.y * dims.z > voxel::voxelParams().max_bricks.get();
 }
 
 }
@@ -296,8 +294,8 @@ auto VoxelNode::replaceVolume(const voxel::EditBounds& bounds) -> voxel::Volume*
 }
 
 auto VoxelNode::ensureContains(const voxel::EditBounds& bounds) -> voxel::Volume* {
-	constexpr int32_t max_bricks_per_axis = 512;
-	constexpr int64_t max_bricks = int64_t {1} << 21;
+	const int32_t max_bricks_per_axis = voxel::voxelParams().max_bricks_per_axis;
+	const int64_t max_bricks = voxel::voxelParams().max_bricks;
 
 	voxel::Volume* current = volume();
 	if (bounds.empty()) {
@@ -347,7 +345,7 @@ void VoxelNode::commitEdit(const voxel::EditResult& result, std::string_view ope
 		    "'{}' {} stopped early: the runtime brick pool is out of its {} bricks",
 		    name(),
 		    operation,
-		    voxel::k_runtime_brick_capacity
+		    voxel::voxelParams().runtime_bricks.get()
 		);
 	}
 	if (result.changed == 0) {

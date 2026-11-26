@@ -8,6 +8,7 @@
 #include <array>
 #include <filesystem>
 #include <format>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <toast/assets/types.hpp>
@@ -15,6 +16,14 @@
 #include <vector>
 
 namespace toast {
+
+namespace params {
+class Files;
+}
+
+namespace detail {
+struct ProjectGroups;
+}
 
 class TOAST_API GameplaySettings {
 public:
@@ -60,7 +69,11 @@ private:
 
 class TOAST_API ProjectSettings {
 public:
-	explicit ProjectSettings(const std::filesystem::path& path);
+	explicit ProjectSettings(const std::filesystem::path& path, params::Files* files = nullptr);
+	~ProjectSettings();
+
+	ProjectSettings(const ProjectSettings&) = delete;
+	auto operator=(const ProjectSettings&) -> ProjectSettings& = delete;
 
 	static auto get() -> ProjectSettings* { return instance; }
 
@@ -91,6 +104,7 @@ private:
 	std::vector<std::string> m_databases;
 	GameplaySettings m_gameplay_settings;
 	UISettings m_ui_settings;
+	std::unique_ptr<detail::ProjectGroups> m_groups;
 };
 
 }

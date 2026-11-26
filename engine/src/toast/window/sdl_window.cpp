@@ -1,6 +1,7 @@
 #include "sdl_window.hpp"
 
 #include <SDL3/SDL_vulkan.h>
+#include <toast/console/console.hpp>
 
 namespace {
 
@@ -129,6 +130,17 @@ void SDLWindow::pollEvents() {
 			pending_mouse.reset();
 		}
 	};
+
+	{
+		const bool console_open = toast::console::Console::get().isOpen();
+		SDL_Window* window = m.sdl_window.get();
+		if (console_open && !m.console_text_input) {
+			m.console_text_input = !SDL_TextInputActive(window) && SDL_StartTextInput(window);
+		} else if (!console_open && m.console_text_input) {
+			m.console_text_input = false;
+			SDL_StopTextInput(window);
+		}
+	}
 
 	const SDL_WindowID window_id = SDL_GetWindowID(m.sdl_window.get());
 	for (SDL_Event event; SDL_PollEvent(&event);) {

@@ -1,16 +1,63 @@
 #include "project_settings.hpp"
 
+#include "toast/params/files.hpp"
+#include "toast/params/project_params.hpp"
+
 #include <toml++/toml.hpp>
 
 namespace toast {
 
-ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
+namespace detail {
+
+struct ProjectGroups {
+	params::ProjectParams project;
+	params::GameplayParams gameplay;
+	params::UIParams ui;
+};
+
+}
+
+namespace {
+
+template<typename T>
+auto handleFrom(const params::Param<params::AssetRef>& param) -> assets::Handle<T> {
+	const std::string& uri = param.get().uri;
+	if (uri.empty()) {
+		return {};
+	}
+	return {nullptr, toast::UID::make(), uri};
+}
+
+}
+
+ProjectSettings::ProjectSettings(const std::filesystem::path& path, params::Files* files)
+    : m_groups(std::make_unique<detail::ProjectGroups>()) {
 	ZoneScoped;
 	instance = this;
 
+	if (files != nullptr) {
+		files->load(m_groups->project);
+		files->load(m_groups->gameplay);
+		files->load(m_groups->ui);
+	}
+
+	m_databases = m_groups->project.databases.get();
+	if (m_databases.empty()) {
+		m_databases.emplace_back("assets");
+	}
+	m_max_tick_rate = m_groups->project.max_tick_rate;
+
+	m_gameplay_settings.m_init_scene = handleFrom<assets::Prefab>(m_groups->gameplay.init_scene);
+	m_gameplay_settings.m_player = handleFrom<assets::Prefab>(m_groups->gameplay.player);
+
+	m_ui_settings.m_color_scheme = handleFrom<assets::ColorScheme>(m_groups->ui.color_scheme);
+	m_ui_settings.m_languages = m_groups->ui.languages.get();
+	if (m_ui_settings.m_languages.empty()) {
+		m_ui_settings.m_languages.emplace_back("en");
+	}
+
 	if (path.empty() || !std::filesystem::exists(path)) {
 		TOAST_WARN("ProjectSettings", "No project file found; using defaults");
-		m_databases = {"assets"};
 		return;
 	}
 
@@ -25,56 +72,18 @@ ProjectSettings::ProjectSettings(const std::filesystem::path& path) {
 			}
 		}
 
-		if (auto* dbs = table["databases"].as_array()) {
-			for (const auto& db : *dbs) {
-				if (auto str = db.value<std::string>()) {
-					m_databases.push_back(*str);
-				}
-			}
-		}
-		if (m_databases.empty()) {
-			m_databases.emplace_back("assets");
-		}
-
-		m_max_tick_rate =
-		    static_cast<unsigned>(std::max<int64_t>(0, table["max_tick_rate"].value_or<int64_t>(k_default_max_tick_rate)));
-
-		if (auto* gameplay = table["gameplay"].as_table()) {
-			auto make_handle = [](std::string_view uri) -> assets::Handle<assets::Prefab> {
-				return {nullptr, toast::UID::make(), uri};
-			};
-			if (auto uri = (*gameplay)["init_scene"].value<std::string>()) {
-				m_gameplay_settings.m_init_scene = make_handle(*uri);
-			}
-			if (auto uri = (*gameplay)["player"].value<std::string>()) {
-				m_gameplay_settings.m_player = make_handle(*uri);
-			}
-		}
-
-		if (auto* ui = table["ui"].as_table()) {
-			if (auto uri = (*ui)["color_scheme"].value<std::string>()) {
-				m_ui_settings.m_color_scheme = {nullptr, toast::UID::make(), *uri};
-			}
-			if (auto* langs = (*ui)["languages"].as_array()) {
-				m_ui_settings.m_languages.clear();
-				for (const auto& lang : *langs) {
-					if (auto str = lang.value<std::string>()) {
-						m_ui_settings.m_languages.push_back(*str);
-					}
-				}
-			}
-			if (m_ui_settings.m_languages.empty()) {
-				m_ui_settings.m_languages.emplace_back("en");
-			}
-		}
-
 		TOAST_INFO("ProjectSettings", "Loaded '{}' {} — {} database(s)", m_name, version(), m_databases.size());
 
 	} catch (const std::exception& e) {
 		TOAST_ERROR("ProjectSettings", "Failed to parse {}: {}; using defaults", path.string(), e.what());
 		m_name = "Untitled";
 		m_version = {1, 0, 0};
-		m_databases = {"assets"};
+	}
+}
+
+ProjectSettings::~ProjectSettings() {
+	if (instance == this) {
+		instance = nullptr;
 	}
 }
 

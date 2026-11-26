@@ -157,6 +157,8 @@ public partial class ToastEngine : IDisposable {
 	/// Overlay up in game view so the cursor stays free even under a game lock
 	public static bool DebugOverlayOwnsCursor => IsEngineReady && toast_debug_overlay_owns_cursor() != 0;
 
+	public static bool ConsoleOpen => IsEngineReady && toast_console_is_open() != 0;
+
 	public string ProjectPath { get; }
 	public string CorePath { get; }
 
@@ -613,6 +615,9 @@ public partial class ToastEngine : IDisposable {
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_debug_overlay_owns_cursor();
+
+	[LibraryImport(EngineLib)]
+	private static partial int toast_console_is_open();
 
 	public static void ReloadProjectSettings() {
 		if (IsEngineReady) OnTickThread(toast_reload_project_settings);

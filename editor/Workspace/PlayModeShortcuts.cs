@@ -4,12 +4,13 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using editor.Engine;
 
 namespace editor.Workspace;
 
 // the game owns the keyboard while any workspace plays so no editor shortcut may fire
 internal static class PlayModeShortcuts {
-	public static bool Blocked => WorkspaceViewModel.AnyPlayActive && ViewportControl.AnyGameInput;
+	public static bool Blocked => ToastEngine.ConsoleOpen || (WorkspaceViewModel.AnyPlayActive && ViewportControl.AnyGameInput);
 
 	// KeyBindings fire before any routed handler and only check CanExecute so their commands get wrapped
 	// app wide instead of disabled which would also grey out the menus

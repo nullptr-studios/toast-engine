@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <vector>
 
+struct ImGuiContext;
+
 namespace renderer {
 class VulkanCore;
 class ClusterLightingPass;
@@ -131,6 +133,7 @@ private:
 	std::unordered_map<VkImageView, vk::raii::DescriptorSet> m_billboard_texture_sets;
 
 	bool m_imgui_ready = false;
+	ImGuiContext* m_imgui_context = nullptr;
 	bool m_editor_panels = true;
 
 	/// Last io.WantCapture* sent to the input system

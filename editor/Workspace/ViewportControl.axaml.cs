@@ -808,7 +808,23 @@ public partial class ViewportControl : UserControl {
 		// RenderDoc-only check meant F12 silently did nothing for a Nsight-only session
 		if (e.Key == Key.F12) {
 			if (m_engine is not null) Events.Send(new CaptureFrame());
+
+			SendKey(e, ActionPressed);
 			e.Handled = true;
+			return;
+		}
+
+		if (ToastEngine.ConsoleOpen) {
+			var sent = SendKey(e, ActionPressed);
+
+			m_consoleTextSent = false;
+			if (!e.KeyModifiers.HasFlag(KeyModifiers.Control) && !e.KeyModifiers.HasFlag(KeyModifiers.Alt) &&
+			    !string.IsNullOrEmpty(e.KeySymbol) && !char.IsControl(e.KeySymbol[0])) {
+				foreach (var rune in e.KeySymbol.AsSpan().EnumerateRunes()) Events.Send(new WindowChar { Key = (uint)rune.Value });
+				m_consoleTextSent = true;
+			}
+
+			if (sent || m_consoleTextSent) e.Handled = true;
 			return;
 		}
 
@@ -840,9 +856,14 @@ public partial class ViewportControl : UserControl {
 	protected override void OnKeyUp(KeyEventArgs e) {
 		base.OnKeyUp(e);
 
-		// matches the OnKeyDown intercept - F12 down is never forwarded, so its key-up shouldn't be either
 		if (e.Key == Key.F12) {
+			SendKey(e, ActionReleased);
 			e.Handled = true;
+			return;
+		}
+
+		if (ToastEngine.ConsoleOpen) {
+			if (SendKey(e, ActionReleased)) e.Handled = true;
 			return;
 		}
 
@@ -862,7 +883,7 @@ public partial class ViewportControl : UserControl {
 	}
 
 	// F3 still reaches the engine after the backtick freed the mouse
-	private bool IsOverlayKey(Key key) => PlayMode && key == Key.F3;
+	private bool IsOverlayKey(Key key) => key == Key.F12 || (PlayMode && key == Key.F3) || ToastEngine.ConsoleOpen;
 
 	private bool SendKey(KeyEventArgs e, int action) {
 		var wasHeld = action == ActionReleased && m_heldKeys.Remove(e.Key);
@@ -878,15 +899,21 @@ public partial class ViewportControl : UserControl {
 		return true;
 	}
 
+	private bool m_consoleTextSent;
+
 	protected override void OnTextInput(TextInputEventArgs e) {
 		base.OnTextInput(e);
-		if (!ShouldForward || m_engine is null || string.IsNullOrEmpty(e.Text)) return;
+		if (m_consoleTextSent) {
+			m_consoleTextSent = false;
+			return;
+		}
+		if ((!ShouldForward && !ToastEngine.ConsoleOpen) || m_engine is null || string.IsNullOrEmpty(e.Text)) return;
 
 		foreach (var rune in e.Text.AsSpan().EnumerateRunes()) Events.Send(new WindowChar { Key = (uint)rune.Value });
 	}
 
 	private async Task PasteClipboardAsync() {
-		if (!ShouldForward || m_engine is null) return;
+		if ((!ShouldForward && !ToastEngine.ConsoleOpen) || m_engine is null) return;
 		var clipboard = m_topLevel?.Clipboard;
 		if (clipboard is null) return;
 		var data = await clipboard.TryGetDataAsync();
@@ -961,6 +988,10 @@ public partial class ViewportControl : UserControl {
 			Key.F10 => (ScancodeMask | 67, 67),
 			Key.F11 => (ScancodeMask | 68, 68),
 			Key.F12 => (ScancodeMask | 69, 69),
+			Key.Home => (ScancodeMask | 74, 74),
+			Key.End => (ScancodeMask | 77, 77),
+			Key.PageUp => (ScancodeMask | 75, 75),
+			Key.PageDown => (ScancodeMask | 78, 78),
 			_ => (0, 0)
 		};
 	}

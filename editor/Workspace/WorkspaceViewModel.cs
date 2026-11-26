@@ -53,13 +53,13 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	[ObservableProperty] private PlayState m_playState;
 
 	private PlayWindow? m_playWindow;
-	[ObservableProperty] private double m_rotateSnap = 30;
-	[ObservableProperty] private bool m_rotateSnapEnabled = true;
-	[ObservableProperty] private double m_scaleSnap = 0.10;
-	[ObservableProperty] private bool m_scaleSnapEnabled = true;
-	[ObservableProperty] private double m_translateSnap = 0.10;
+	[ObservableProperty] private double m_rotateSnap = ToastSettings.Number("editor.snapping.rotate_step", 30);
+	[ObservableProperty] private bool m_rotateSnapEnabled = ToastSettings.Flag("editor.snapping.rotate_enabled", true);
+	[ObservableProperty] private double m_scaleSnap = ToastSettings.Number("editor.snapping.scale_step", 0.10);
+	[ObservableProperty] private bool m_scaleSnapEnabled = ToastSettings.Flag("editor.snapping.scale_enabled", true);
+	[ObservableProperty] private double m_translateSnap = ToastSettings.Number("editor.snapping.translate_step", 0.10);
 
-	[ObservableProperty] private bool m_translateSnapEnabled = true;
+	[ObservableProperty] private bool m_translateSnapEnabled = ToastSettings.Flag("editor.snapping.translate_enabled", true);
 
 	private WorkspaceViewModel(ToastEngine? engine = null) {
 		Engine = engine;
@@ -419,6 +419,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	public static event Action? PlayModeChanged;
 
 	partial void OnPlayStateChanged(PlayState value) {
+		ToastSettings.Restore();
+
 		OnPropertyChanged(nameof(IsPlaying));
 		OnPropertyChanged(nameof(IsSimulating));
 		OnPropertyChanged(nameof(IsPlayingInViewport));
@@ -440,6 +442,7 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	partial void OnIsPausedChanged(bool value) {
+		ToastSettings.Restore();
 		UpdateAdvancing();
 		if (PlayHandle != 0) Events.Send(new WorkspacePause { Handle = PlayHandle, Paused = value });
 		TogglePlayCommand.NotifyCanExecuteChanged();
