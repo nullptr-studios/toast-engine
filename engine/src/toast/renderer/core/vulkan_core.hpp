@@ -140,6 +140,13 @@ public:
 		return m_fragment_shading_rate_supported;
 	}
 
+	/// TOAST_PIPELINE_STATS=1 and VK_KHR_pipeline_executable_properties: every pipeline logs its driver statistics such as
+	/// registers
+	[[nodiscard]]
+	auto isPipelineStatsEnabled() const noexcept -> bool {
+		return m_pipeline_stats_enabled;
+	}
+
 	/// Every instance and device extension NGX asked for is enabled, DlssUpscaler still has to initialise NGX
 	[[nodiscard]]
 	auto dlssExtensionsEnabled() const noexcept -> bool {
@@ -329,6 +336,7 @@ private:
 	RayTracingMode m_ray_tracing_startup_mode {};
 	bool m_mesh_shader_supported = false;
 	bool m_fragment_shading_rate_supported = false;
+	bool m_pipeline_stats_enabled = false;
 	std::string_view m_ray_tracing_reason = "not probed";
 
 	uint32_t m_mesh_multiview_views = 0;

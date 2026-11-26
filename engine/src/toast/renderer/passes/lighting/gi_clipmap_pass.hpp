@@ -129,10 +129,16 @@ private:
 		bool needs_full = true;
 		/// Dirty cells past the fill budget that later frames refill first
 		std::vector<gi_clip::Box> pending;
+		/// Whole level refill after the edit history was lost, spread over frames since the old cells are still close
+		std::vector<gi_clip::Box> sweep;
+		/// History was lost again during a sweep so another follows it
+		bool resweep = false;
 	};
 
 	/// Dirty cells refilled per level each frame on top of the scroll so a blast spreads over frames
 	static constexpr int64_t k_fill_budget_cells = 16384;
+	/// A 128 cell level in about 32 frames instead of all at once, which spiked fill and inject to 15 ms a frame
+	static constexpr int64_t k_sweep_budget_cells = 65536;
 
 	auto createPipelines(const VulkanCore& core) -> bool;
 	/// Waits for the device so no frame in flight still reads the old images

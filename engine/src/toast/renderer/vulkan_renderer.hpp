@@ -94,7 +94,6 @@ class SelectionOutline;
 class SkinningPass;
 class VoxelPass;
 class DebrisPass;
-class GiPass;
 class GiClipmapPass;
 class TracedSpecularPass;
 class TaaPass;
@@ -370,6 +369,11 @@ public:
 	[[nodiscard]]
 	auto getVoxelGiView() const noexcept -> vk::ImageView {
 		return m_voxel_gi.view.has_value() ? **m_voxel_gi.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelAmbientOcclusionView() const noexcept -> vk::ImageView {
+		return m_voxel_ao.view.has_value() ? **m_voxel_ao.view : vk::ImageView {};
 	}
 
 	/// Marched and sampled diffuse over albedo before denoising
@@ -981,8 +985,6 @@ public:
 		return m_debris_pass;
 	}
 
-	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
-
 	void setGiClipmapPass(GiClipmapPass* pass) noexcept { m_gi_clipmap_pass = pass; }
 
 	[[nodiscard]]
@@ -1013,11 +1015,6 @@ public:
 	[[nodiscard]]
 	auto glassBackdropCaptured() const noexcept -> bool {
 		return m_glass_backdrop_captured;
-	}
-
-	[[nodiscard]]
-	auto giPass() const noexcept -> GiPass* {
-		return m_gi_pass;
 	}
 
 	[[nodiscard]]
@@ -1589,7 +1586,6 @@ private:
 	VoxelPass* m_voxel_pass = nullptr;
 
 	DebrisPass* m_debris_pass = nullptr;
-	GiPass* m_gi_pass = nullptr;
 	GiClipmapPass* m_gi_clipmap_pass = nullptr;
 	bool m_glass_backdrop_captured = false;
 	bool m_glass_nearest_valid = false;
@@ -1653,6 +1649,7 @@ private:
 	bool m_voxel_denoised_indirect_frame = false;
 	/// Half the render extent
 	SceneColorResources m_voxel_gi;
+	SceneColorResources m_voxel_ao;
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
 	std::array<SceneColorResources, 2> m_voxel_reservoirs;

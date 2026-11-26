@@ -565,48 +565,71 @@ float emitterExtent(float4 shapeParams)
 }
 
 static const float kOctagonRadiusScale = 1.0540925;
-static const uint kMaxEmitterVertices = 8u;
+
+/// Corner @p i of a quad centre plus or minus u and v, or of an octagon centre plus u cos plus v sin
+float3 emitterVertex(float3 centre, float3 u, float3 v, uint count, uint i)
+{
+    if (count == 4u)
+    {
+        return centre + u * ((i == 1u || i == 2u) ? 1.0 : -1.0) + v * (i >= 2u ? 1.0 : -1.0);
+    }
+    float s, c;
+    sincos(0.78539816 * float(i), s, c);
+    return centre + u * c + v * s;
+}
+
+float3 edgeVectorIrradiance(float3 a, float3 b)
+{
+    const float3 na = a / max(length(a), 1e-6);
+    const float3 nb = b / max(length(b), 1e-6);
+    const float3 edge = cross(na, nb);
+    const float edgeLength = length(edge);
+    return edgeLength > 1e-7 ? atan2(edgeLength, dot(na, nb)) * (edge / edgeLength) : float3(0.0, 0.0, 0.0);
+}
 
 /// Vector irradiance of a Lambert polygon relative to the receiver whose dot with N is the cosine weighted solid angle
-float3 clippedPolygonVectorIrradiance(float3 vertices[kMaxEmitterVertices], uint count, float3 N)
+/// Clipped to the horizon one edge at a time since vertex arrays held every cluster light shader at 128 registers
+float3 clippedPolygonVectorIrradiance(float3 centre, float3 u, float3 v, uint count, float3 N)
 {
-    float3 clipped[kMaxEmitterVertices + 2];
-    float heights[kMaxEmitterVertices];
-    uint kept = 0u;
-    for (uint i = 0u; i < count; ++i)
-    {
-        heights[i] = dot(vertices[i], N);
-    }
-    for (uint i = 0u; i < count; ++i)
-    {
-        const uint j = (i + 1u == count) ? 0u : i + 1u;
-        const bool inside = heights[i] >= 0.0;
-        if (inside)
-        {
-            clipped[kept++] = vertices[i];
-        }
-        if (inside != (heights[j] >= 0.0))
-        {
-            clipped[kept++] = lerp(vertices[i], vertices[j], heights[i] / (heights[i] - heights[j]));
-        }
-    }
     float3 sum = float3(0.0, 0.0, 0.0);
-    if (kept < 3u)
+    // A convex polygon leaves the horizon once and comes back once, joined by one edge along it
+    float3 exitPoint = float3(0.0, 0.0, 0.0);
+    float3 entryPoint = float3(0.0, 0.0, 0.0);
+    bool exited = false;
+    bool entered = false;
+    const float3 first = emitterVertex(centre, u, v, count, 0u);
+    float3 a = first;
+    float heightA = dot(a, N);
+    for (uint i = 1u; i <= count; ++i)
     {
-        return sum;
-    }
-    for (uint i = 0u; i < kept; ++i)
-    {
-        const float3 a = clipped[i];
-        const float3 b = clipped[(i + 1u == kept) ? 0u : i + 1u];
-        const float3 na = a / max(length(a), 1e-6);
-        const float3 nb = b / max(length(b), 1e-6);
-        const float3 edge = cross(na, nb);
-        const float edgeLength = length(edge);
-        if (edgeLength > 1e-7)
+        const float3 b = i == count ? first : emitterVertex(centre, u, v, count, i);
+        const float heightB = dot(b, N);
+        if ((heightA >= 0.0) != (heightB >= 0.0))
         {
-            sum += atan2(edgeLength, dot(na, nb)) * (edge / edgeLength);
+            const float3 crossing = lerp(a, b, heightA / (heightA - heightB));
+            if (heightA >= 0.0)
+            {
+                sum += edgeVectorIrradiance(a, crossing);
+                exitPoint = crossing;
+                exited = true;
+            }
+            else
+            {
+                sum += edgeVectorIrradiance(crossing, b);
+                entryPoint = crossing;
+                entered = true;
+            }
         }
+        else if (heightA >= 0.0)
+        {
+            sum += edgeVectorIrradiance(a, b);
+        }
+        a = b;
+        heightA = heightB;
+    }
+    if (exited && entered)
+    {
+        sum += edgeVectorIrradiance(exitPoint, entryPoint);
     }
     return 0.5 * sum;
 }
@@ -648,18 +671,15 @@ AreaEmitter evaluateAreaEmitter(GpuLight light, float3 position, float3 N)
     const float distance = max(length(toCenter), 1e-4);
     const float3 centerDirection = toCenter / distance;
 
-    float3 vertices[kMaxEmitterVertices];
+    // The polygon as its centre and two half axes, see emitterVertex
+    float3 u = float3(0.0, 0.0, 0.0);
+    float3 v = float3(0.0, 0.0, 0.0);
     uint count = 0u;
     if (shape == kLightShapeRect && oriented)
     {
         const float3 tangent = light.shapeTangent.xyz;
-        const float3 bitangent = cross(axis, tangent);
-        const float3 w = tangent * light.shape.y;
-        const float3 h = bitangent * light.shape.z;
-        vertices[0] = toCenter - w - h;
-        vertices[1] = toCenter + w - h;
-        vertices[2] = toCenter + w + h;
-        vertices[3] = toCenter - w + h;
+        u = tangent * light.shape.y;
+        v = cross(axis, tangent) * light.shape.z;
         count = 4u;
         emitter.area = 4.0 * light.shape.y * light.shape.z;
     }
@@ -669,12 +689,8 @@ AreaEmitter evaluateAreaEmitter(GpuLight light, float3 position, float3 N)
         float3 bitangent;
         perpendicularBasis(axis, tangent, bitangent);
         const float radius = light.shape.y * kOctagonRadiusScale;
-        for (uint i = 0u; i < 8u; ++i)
-        {
-            float s, c;
-            sincos(0.78539816 * float(i), s, c);
-            vertices[i] = toCenter + (tangent * c + bitangent * s) * radius;
-        }
+        u = tangent * radius;
+        v = bitangent * radius;
         count = 8u;
         emitter.area = kPi * light.shape.y * light.shape.y;
     }
@@ -688,19 +704,15 @@ AreaEmitter evaluateAreaEmitter(GpuLight light, float3 position, float3 N)
             float3 unused;
             perpendicularBasis(axis, facing, unused);
         }
-        const float3 across = cross(axis, facing) * light.shape.y;
-        const float3 along = axis * (light.shape.z + 0.25 * kPi * light.shape.y);
-        vertices[0] = toCenter - along - across;
-        vertices[1] = toCenter + along - across;
-        vertices[2] = toCenter + along + across;
-        vertices[3] = toCenter - along + across;
+        u = axis * (light.shape.z + 0.25 * kPi * light.shape.y);
+        v = cross(axis, facing) * light.shape.y;
         count = 4u;
         emitter.area = 4.0 * light.shape.y * light.shape.z + kPi * light.shape.y * light.shape.y;
     }
 
     if (count > 0u)
     {
-        float3 vector = clippedPolygonVectorIrradiance(vertices, count, N);
+        float3 vector = clippedPolygonVectorIrradiance(toCenter, u, v, count, N);
         // Either winding is accepted and the emitter lies on the side of its centre
         vector *= dot(vector, centerDirection) < 0.0 ? -1.0 : 1.0;
         emitter.irradiance = max(dot(N, vector), 0.0);
@@ -826,20 +838,20 @@ static const float kWidePenumbraTexels = 6.0;
 static const uint kWidePenumbraTaps = 16u;
 
 
-/// xyz irradiance over pi w open sky share or kGiSkyHeld from the cascades and below 0 for none since lighting never gathers on its own
+/// xyz irradiance over pi w open sky share and below 0 for none since lighting never gathers on its own
 static float4 gGiGathered = float4(0.0, 0.0, 0.0, -1.0);
 
 bool giSurfaceIrradiance(out float3 irradiance, out float sky)
 {
     irradiance = gGiGathered.rgb;
-    sky = gGiGathered.w >= kGiSkyHeld ? 0.0 : gGiGathered.w;
+    sky = gGiGathered.w;
     return gGiGathered.w >= 0.0;
 }
 
-/// Share of the sky map a surface reflects where the cascades hold the sky and say nothing so all of it
+/// Share of the hemisphere the clipmap cones left open, which reflects the sky map
 float giSpecularOpen()
 {
-    return gGiGathered.w >= kGiSkyHeld ? 1.0 : saturate(gGiGathered.w);
+    return saturate(gGiGathered.w);
 }
 
 float interleavedGradientNoise(float2 pixel)
@@ -1395,7 +1407,7 @@ struct ShadingResult
     /// Environment and probe share of specular which traced specular replaces on voxels
     float3 ambientSpecular;
 
-    /// Meters below which the radiance cascades blur occlusion and 0 where they did not light the point
+    /// Meters below which the clipmap blurs occlusion and 0 where it did not light the point
     float contactReach;
 
     bool isDebugView;
@@ -1945,10 +1957,10 @@ ShadingResult evaluateLighting<Filter : IShadowFilter>(Surface surface, ClusterC
         irradiance = volumeIrradiance;
     }
 
-    // The cascades already hold the sky and what it bounces off so they replace ambient and baked volumes
+    // The clipmap gather replaces baked volumes
     if (hasCascades)
     {
-        // The clipmap leaves the open share of the hemisphere to the ambient above and the cascades leave none
+        // The clipmap leaves the open share of the hemisphere to the ambient above
         irradiance = cascadeIrradiance * giIntensity() + cascadeSky * irradiance;
         // The environment map is the sky so only the open share reflects it and the closed share reflects the bounce GI found
         // shortcut: the bounce is cosine weighted irradiance so smooth indoor surfaces reflect it too flat, upgrade with a specular cone

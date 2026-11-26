@@ -819,8 +819,7 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 	const auto* frame = renderer->renderingFrame();
 	const GiSettings& settings = renderer->giSettings();
 	constexpr auto relaxed = std::memory_order_relaxed;
-	if (!settings.enabled.load(relaxed) || settings.backend.load(relaxed) != GiSettings::k_backend_clipmap || frame == nullptr ||
-	    frame_index >= m_storage_sets.size() || !m_fill_pipeline.isReady()) {
+	if (!settings.enabled.load(relaxed) || frame == nullptr || frame_index >= m_storage_sets.size() || !m_fill_pipeline.isReady()) {
 		markFull();
 		unpublish(cmd);
 		return source_view;
@@ -965,29 +964,40 @@ auto GiClipmapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 		const float level_cell = cell * static_cast<float>(1u << i);
 		const glm::ivec3 origin = gi_clip::origin(camera, level_cell, side);
 		data.levels[i] = glm::vec4(glm::vec3(origin), level_cell);
-		if (level.needs_full || !known) {
+		if (level.needs_full) {
 			boxes[i].push_back({.min = origin, .max = origin + side});
 			whole[i] = true;
 			scrolled_boxes[i] = 1;
 			level.pending.clear();
+			level.sweep.clear();
+			level.resweep = false;
 		} else {
 			std::array<gi_clip::Box, 3> slabs;
 			const uint32_t count = gi_clip::scrolled(level.origin, origin, side, slabs);
 			boxes[i].assign(slabs.begin(), slabs.begin() + count);
 			scrolled_boxes[i] = count;
 			// Queued cells that scrolled out are gone and the ones that scrolled in come with the slabs
-			std::erase_if(level.pending, [&](gi_clip::Box& box) {
+			const auto outside = [&](gi_clip::Box& box) {
 				box.min = glm::max(box.min, origin);
 				box.max = glm::min(box.max, origin + side);
 				return gi_clip::empty(box);
-			});
+			};
+			std::erase_if(level.pending, outside);
+			std::erase_if(level.sweep, outside);
 			for (size_t b = 0; b + 1 < dirty.size(); b += 2) {
 				const gi_clip::Box box = gi_clip::cells(dirty[b], dirty[b + 1], level_cell, origin, side);
 				if (!gi_clip::empty(box)) {
 					mergeInto(level.pending, box);
 				}
 			}
+			// Edits past the history could be anywhere so the whole level refreshes, a budget a frame
+			level.resweep = level.resweep || !known;
+			if (level.resweep && level.sweep.empty()) {
+				level.sweep.push_back({.min = origin, .max = origin + side});
+				level.resweep = false;
+			}
 			takeBudget(level.pending, k_fill_budget_cells, boxes[i]);
+			takeBudget(level.sweep, k_sweep_budget_cells, boxes[i]);
 		}
 		level.origin = origin;
 		level.needs_full = false;

@@ -79,7 +79,9 @@ void TaaPass::createResources(const VulkanCore& core) {
 
 void TaaPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
 	// DLSS writes the resolve as a storage image, R16G16B16A16Sfloat storage support is mandatory in Vulkan
-	const vk::ImageUsageFlags usage = m_dlss.available() ? vk::ImageUsageFlagBits::eStorage : vk::ImageUsageFlags {};
+	// and clears it on a reset so it needs the transfer destination too
+	const vk::ImageUsageFlags usage =
+	    m_dlss.available() ? vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferDst : vk::ImageUsageFlags {};
 	m_targets[0].create(core, extent, m_scene_format, "TaaPass History A", usage);
 	m_targets[1].create(core, extent, m_scene_format, "TaaPass History B", usage);
 	m_bound_views.invalidate();
@@ -237,6 +239,9 @@ auto TaaPass::recordDlss(
 	sync::BarrierBatch barriers;
 	barriers.image(target.state(), sync::Usage::compute_storage_write);
 	barriers.image(depth.image, depth.range, depth.usage, sync::Usage::shader_sampled);
+	barriers.flush(cmd);
+	// NGX clears the output on a reset before it writes it, and only a later dependency orders after the layout transition
+	barriers.memory(sync::Usage::compute_storage_write, sync::Usage::transfer_dst);
 	barriers.flush(cmd);
 
 	DlssInputs inputs {};

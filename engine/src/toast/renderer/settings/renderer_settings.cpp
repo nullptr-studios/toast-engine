@@ -45,7 +45,7 @@ struct PresetKnobs {
 	float glass_reflection_reach = 32.0f;
 };
 
-/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT. Radiance cascades run in every tier
+/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT. The radiance clipmap runs in every tier
 constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
   {
    // Without ray tracing
@@ -149,7 +149,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 		 .glass_lit_surfaces = 1,
 		 .glass_reflection_reach = 8.0f},
    {.ssr = true,
-	   .ssao = true,
+	   .ssao = false,
 	   .traced_specular = false,
 	   .specular_roughness = 0.4f,
 	   .specular_reach = 24.0f,
@@ -168,7 +168,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .glass_lit_surfaces = 2,
 	   .glass_reflection_reach = 16.0f},
    {.ssr = true,
-	   .ssao = true,
+	   .ssao = false,
 	   .traced_specular = true,
 	   .specular_roughness = 0.45f,
 	   .specular_reach = 24.0f,
@@ -188,7 +188,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .glass_lit_surfaces = 3,
 	   .glass_reflection_reach = 24.0f},
    {.ssr = true,
-	   .ssao = true,
+	   .ssao = false,
 	   .traced_specular = true,
 	   .specular_roughness = 0.6f,
 	   .specular_reach = 32.0f,
@@ -221,16 +221,32 @@ struct PresetState {
 
 PresetState g_preset;
 
-/// RT tiers fall back to the non RT tier of the same level when not tracing
-auto activeKnobs() -> const PresetKnobs& {
+/// DLSS Quality input share
+constexpr float k_laptop_render_scale = 2.0f / 3.0f;
+
+/// NVIDIA names its mobile parts "... Laptop GPU", and native size on one cost about 40% of the frame in the 4060 Laptop capture
+auto laptopWithDlss(const VulkanCore& core) -> bool {
+	static const bool laptop =
+	    core.dlssExtensionsEnabled() &&
+	    std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).find("Laptop") != std::string_view::npos;
+	return laptop;
+}
+
+/// RT tiers fall back to the non RT tier of the same level when not tracing, and laptops render tiers at DLSS Quality at most
+auto activeKnobs() -> PresetKnobs {
 	if (g_preset.preset >= k_preset_custom) {
 		return g_preset.knobs;
 	}
+	const VulkanCore& core = g_preset.renderer->getCore();
 	uint32_t tier = g_preset.preset;
-	if (tier >= k_tiers_per_branch && !g_preset.renderer->getCore().isRayTracingSupported()) {
+	if (tier >= k_tiers_per_branch && !core.isRayTracingSupported()) {
 		tier -= k_tiers_per_branch;
 	}
-	return k_preset_tiers[tier];
+	PresetKnobs knobs = k_preset_tiers[tier];
+	if (laptopWithDlss(core)) {
+		knobs.render_scale = std::min(knobs.render_scale, k_laptop_render_scale);
+	}
+	return knobs;
 }
 
 void applyPreset() {
@@ -444,7 +460,9 @@ void registerQuality(VulkanRenderer& renderer) {
 	    1.0,
 	    {.label = "Render scale",
 			 .category = "Quality",
-			 .description = "Share of the output resolution the world renders at before TAA upsamples it. Preset Custom only",
+			 .description =
+			     "Share of the output resolution the world renders at before TAA upsamples it. Presets cap it at 0.67 (DLSS Quality) "
+			     "on a laptop GPU with DLSS. Preset Custom only",
 			 .min = 0.1,
 			 .max = 1.0,
 			 .step = 0.05}
@@ -1319,9 +1337,9 @@ void registerGi(VulkanRenderer& renderer) {
 	toast::settings::declareBool(
 	    "renderer.gi.enabled",
 	    true,
-	    {.label = "Radiance cascades",
+	    {.label = "Radiance clipmap",
 			 .category = "Global illumination",
-			 .description = "World space radiance cascade probes. Preset Custom only"}
+			 .description = "World space voxel clipmap that cones gather bounce light from. Preset Custom only"}
 	)
 	    .onChange(presetKnob<bool, bool>(&PresetKnobs::gi_enabled, k_same_bool));
 
@@ -1331,179 +1349,13 @@ void registerGi(VulkanRenderer& renderer) {
 	    {
 	      .label = "Quality",
 	      .category = "Global illumination",
-	      .description = "Rays per frame, cascades, probe spacing, multibounce and update rate. Custom uses the knobs below",
+	      .description = "Clipmap resolution and level count. Custom uses the knobs below",
 	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
 	}
 	)
 	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::gi_quality, [](int64_t v) {
 		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom));
 	    }));
-
-	toast::settings::declareInt(
-	    "renderer.gi.update_interval",
-	    1,
-	    {.label = "Update interval",
-			 .category = "Global illumination",
-			 .description = "Rendered frames per GI update. Custom quality only",
-			 .min = 1.0,
-			 .max = 4.0}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.update_interval.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4)), std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareInt(
-	    "renderer.gi.secondary_points",
-	    65536,
-	    {.label = "Multibounce points",
-			 .category = "Global illumination",
-			 .description = "Off screen hits kept for the secondary cache per frame. Custom quality only",
-			 .min = 1024.0,
-			 .max = 65536.0}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.secondary_points.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1024, 65536)), std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareBool(
-	    "renderer.gi.multibounce",
-	    true,
-	    {.label = "Multibounce",
-			 .category = "Global illumination",
-			 .description = "GI rays that hit something the camera cannot see seed a coarser secondary probe cache and read it "
-			                "back, so light keeps bouncing off screen. Costs about half again the rays. Custom quality only"}
-	)
-	    .onChange([&gi](bool enabled) { gi.multibounce.store(enabled, std::memory_order_relaxed); });
-
-	toast::settings::declareFloat(
-	    "renderer.gi.probe_spacing",
-	    0.1,
-	    {.label = "Probe spacing",
-			 .category = "Global illumination",
-			 .description =
-			     "Meters between cascade 0 probes near the camera. Every cascade and every LOD doubles it. Custom quality only",
-			 .min = 0.025,
-			 .max = 1.0,
-			 .step = 0.025}
-	)
-	    .onChange([&gi](double v) { gi.probe_spacing.store(static_cast<float>(v), std::memory_order_relaxed); });
-
-	toast::settings::declareFloat(
-	    "renderer.gi.lod_distance",
-	    4.0,
-	    {.label = "LOD distance",
-			 .category = "Global illumination",
-			 .description = "Meters from the camera where probes start doubling their spacing. Custom quality only",
-			 .min = 0.5,
-			 .max = 64.0,
-			 .step = 0.5}
-	)
-	    .onChange([&gi](double v) { gi.lod_distance.store(static_cast<float>(v), std::memory_order_relaxed); });
-
-	toast::settings::declareInt(
-	    "renderer.gi.cascades",
-	    5,
-	    {.label = "Cascades",
-			 .category = "Global illumination",
-			 .description = "Each cascade reaches four times farther than the one below. Custom quality only",
-			 .min = 1.0,
-			 .max = 6.0}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.cascades.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 6)), std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareInt(
-	    "renderer.gi.ray_resolution",
-	    1,
-	    {
-	      .label = "Ray resolution",
-	      .category = "Global illumination",
-	      .description = "Pixels that place probes and trace rays each frame. Custom quality only",
-	      .options = {"Full", "Half", "Quarter"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    constexpr std::array<uint32_t, 3> k_steps {1, 2, 4};
-		    gi.ray_step.store(k_steps[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))], std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareInt(
-	    "renderer.gi.probe_lifetime",
-	    60,
-	    {.label = "Probe lifetime",
-			 .category = "Global illumination",
-			 .description = "Frames a probe stays after no pixel needs it",
-			 .min = 1.0,
-			 .max = 600.0}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.probe_lifetime.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 600)), std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareFloat(
-	    "renderer.gi.history_seconds",
-	    0.3,
-	    {.label = "History length",
-			 .category = "Global illumination",
-			 .description = "Seconds of light every probe direction averages, the same at any frame rate. Longer is smoother "
-			                "in dark places lit only through gaps but follows moving lights more slowly, 0 keeps no history. "
-			                "Voxel changes and moving bodies reset the probes around them either way",
-			 .min = 0.0,
-			 .max = 5.0,
-			 .step = 0.05}
-	)
-	    .onChange([&gi](double v) { gi.history_seconds.store(static_cast<float>(v), std::memory_order_relaxed); });
-
-	toast::settings::declareBool(
-	    "renderer.gi.history_per_frame",
-	    false,
-	    {.label = "Per frame history",
-			 .category = "Global illumination",
-			 .description = "Blend a fixed share of every frame into the history instead of a length in seconds. Less ghosting "
-			                "at high frame rates, more flicker where light only reaches through thin gaps"}
-	)
-	    .onChange([&gi](bool enabled) { gi.history_per_frame.store(enabled, std::memory_order_relaxed); });
-
-	toast::settings::declareFloat(
-	    "renderer.gi.history",
-	    0.03,
-	    {.label = "History blend",
-			 .category = "Global illumination",
-			 .description = "Share of each new frame in the light of every probe direction while Per frame history is on. "
-			                "Lower is smoother but follows moving lights more slowly, 1 keeps no history",
-			 .min = 0.005,
-			 .max = 1.0,
-			 .step = 0.005}
-	)
-	    .onChange([&gi](double v) { gi.history_blend.store(static_cast<float>(v), std::memory_order_relaxed); });
-
-	toast::settings::declareFloat(
-	    "renderer.gi.motion_threshold",
-	    0.01,
-	    {.label = "Motion threshold",
-			 .category = "Global illumination",
-			 .description = "Meters a voxel body has to move in one frame before the probes around it drop their history. "
-			                "Raise it when resting physics bodies jitter and the perf window keeps reporting moved bodies",
-			 .min = 0.0,
-			 .max = 0.2,
-			 .step = 0.001}
-	)
-	    .onChange([&gi](double v) { gi.motion_threshold.store(static_cast<float>(v), std::memory_order_relaxed); });
-
-	toast::settings::declareFloat(
-	    "renderer.gi.max_ray_radiance",
-	    16.0,
-	    {.label = "Ray brightness clamp",
-			 .category = "Global illumination",
-			 .description = "Brightest a single GI ray hit may count as, keeping its colour. Rays rarely catch a small very bright "
-			                "emitter like a lamp shade, so each catch jumps the light around it. Lower is steadier, higher keeps "
-			                "more bounce from bright emitters",
-			 .min = 0.5,
-			 .max = 1000.0,
-			 .step = 0.5}
-	)
-	    .onChange([&gi](double v) { gi.max_ray_radiance.store(static_cast<float>(v), std::memory_order_relaxed); });
 
 	toast::settings::declareFloat(
 	    "renderer.gi.intensity",
@@ -1517,54 +1369,6 @@ void registerGi(VulkanRenderer& renderer) {
 			 .step = 0.1}
 	)
 	    .onChange([&gi](double v) { gi.intensity.store(static_cast<float>(v), std::memory_order_relaxed); });
-
-	toast::settings::declareInt(
-	    "renderer.gi.debug_view",
-	    0,
-	    {
-	      .label = "Probe view",
-	      .category = "Global illumination",
-	      .description = "Draws the probe cells of one cascade over the scene. Red has no probe and dim was carried from an "
-	                     "earlier frame",
-	      .options = {"Off", "Cascade 0", "Cascade 1", "Cascade 2", "Cascade 3", "Cascade 4", "Cascade 5"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.debug_view.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 6)), std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareInt(
-	    "renderer.gi.debug_mode",
-	    0,
-	    {
-	      .label = "Probe view shows",
-	      .category = "Global illumination",
-	      .description = "Probe cells, the accumulated radiance of the cascade interval, the share of directions facing the "
-	                     "surface that got a ray this frame, the merged irradiance lighting will read, which ignores the "
-	                     "cascade picked, or how many rays of history the directions facing the surface hold, red none, "
-	                     "yellow about 8, green 64 and up, or how much the irradiance at each pixel changes per frame, black "
-	                     "steady, blue 1%, yellow 5%, red 15% and up. Purple probes have no storage",
-	      .options = {"Probe cells", "Interval radiance", "Coverage", "Irradiance", "History depth", "Irradiance change"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 5)), std::memory_order_relaxed);
-	    });
-
-	toast::settings::declareInt(
-	    "renderer.gi.backend",
-	    0,
-	    {
-	      .label = "Backend",
-	      .category = "Global illumination",
-	      .description = "Radiance clipmap is in development and only fills its voxel clipmap so far, lighting gets no GI "
-	                     "from it yet",
-	      .options = {"Radiance cascades", "Radiance clipmap"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.backend.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 1)), std::memory_order_relaxed);
-	    });
 
 	toast::settings::declareFloat(
 	    "renderer.gi.clip_cell",
