@@ -1589,7 +1589,7 @@ auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 		} else if (const auto sphere = node.as<physics::SphereCollider>(); sphere.exists()) {
 			t = rayBallEntry(origin, local_direction, glm::vec3(0.0f), sphere->radius);
 		} else if (const auto capsule = node.as<physics::CapsuleCollider>(); capsule.exists()) {
-			t = rayCapsuleEntry(origin, local_direction, capsule->radius, std::max(capsule->height * 0.5f - capsule->radius, 0.0f));
+			t = rayCapsuleEntry(origin, local_direction, capsule->radius, std::max((capsule->height * 0.5f) - capsule->radius, 0.0f));
 		}
 		if (t.has_value() && *t < collider_t) {
 			collider_t = *t;

@@ -228,7 +228,7 @@ constexpr float k_laptop_render_scale = 2.0f / 3.0f;
 auto laptopWithDlss(const VulkanCore& core) -> bool {
 	static const bool laptop =
 	    core.dlssExtensionsEnabled() &&
-	    std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).find("Laptop") != std::string_view::npos;
+	    std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).contains("Laptop");
 	return laptop;
 }
 

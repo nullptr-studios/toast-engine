@@ -87,6 +87,7 @@ auto discoveryInfo() -> NVSDK_NGX_FeatureDiscoveryInfo {
 
 auto extensionNames(const VkExtensionProperties* properties, uint32_t count) -> std::vector<const char*> {
 	std::vector<const char*> names;
+	names.reserve(count);
 	for (uint32_t i = 0; i < count; ++i) {
 		names.push_back(properties[i].extensionName);
 	}

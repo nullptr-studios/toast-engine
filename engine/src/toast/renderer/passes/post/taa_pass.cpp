@@ -220,7 +220,7 @@ auto TaaPass::recordDlss(
 	    source_view == renderer->getSceneColorView() ? renderer->getSceneColorImage() : PostProcessTarget::imageOf(source_view);
 	const sync::ImageState& depth = renderer->getDepthState();
 	if (!color_image || !depth || !m_motion_fill.motionImage() || !m_motion_fill.reactiveImage()) {
-		const char* missing = !color_image ? "the TAA source view is neither the scene colour nor a post process target"
+		/*const char* missing = !color_image ? "the TAA source view is neither the scene colour nor a post process target"
 		                      : !depth     ? "the depth image is missing"
 		                      : !m_motion_fill.motionImage() ? "the motion image is missing"
 		                                                     : "the reactive image is missing";
@@ -228,7 +228,7 @@ auto TaaPass::recordDlss(
 		if (!m_dlss_source_logged) {
 			m_dlss_source_logged = true;
 			TOAST_WARN("Render", "DLSS skipped: {}; using TAA", missing);
-		}
+		}*/
 		return false;
 	}
 
