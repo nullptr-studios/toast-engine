@@ -226,8 +226,8 @@ auto TaaPass::recordDlss(
 		                                                     : "the reactive image is missing";
 		m_dlss.setRuntimeReason(missing);
 		if (!m_dlss_source_logged) {
-			m_dlss_source_logged = true;
-			TOAST_WARN("Render", "DLSS skipped: {}; using TAA", missing);
+		  m_dlss_source_logged = true;
+		  TOAST_WARN("Render", "DLSS skipped: {}; using TAA", missing);
 		}*/
 		return false;
 	}

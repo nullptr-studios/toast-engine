@@ -6,6 +6,7 @@
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
 #include "toast/renderer/raytracing/ray_tracing_scene.hpp"
+#include "toast/renderer/resources/video_textures.hpp"
 #include "toast/renderer/resources/vulkan_texture.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
@@ -396,7 +397,18 @@ void MaterialPass::updateInstanceDescriptors(InstanceResources& res, uint32_t fr
 
 		const VulkanTexture* gpu_texture = slot.texture.hasValue() ? &slot.texture->gpuTexture() : nullptr;
 		uint64_t generation = 0;
-		if (gpu_texture != nullptr && gpu_texture->isReady() && gpu_texture->getView()) {
+		const auto video_view = slot.video.hasValue() ? VideoTextures::view(*slot.video, frame_index) : std::nullopt;
+		if (video_view) {
+			view = video_view->first;
+			generation = video_view->second;
+		} else if (slot.video.hasValue() && !VideoTextures::failed(*slot.video)) {
+			// Keeps the slot default until the first decoded frame lands
+		} else if (slot.video.hasValue()) {
+			if (const vk::ImageView failsafe = VulkanRenderer::instance->getFailsafeTextureView(true, nullptr)) {
+				view = failsafe;
+				sampler = VulkanRenderer::instance->getFailsafeSampler();
+			}
+		} else if (gpu_texture != nullptr && gpu_texture->isReady() && gpu_texture->getView()) {
 			view = gpu_texture->getView();
 			generation = gpu_texture->generation();
 			warnIfWrongColorSpace(slot, *gpu_texture);

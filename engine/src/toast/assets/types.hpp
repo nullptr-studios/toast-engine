@@ -28,6 +28,7 @@
 #include "shader.hpp"
 #include "skeleton.hpp"
 #include "texture.hpp"
+#include "video.hpp"
 
 #include <toast/audio/assets.hpp>
 #include <toast/input/assets.hpp>

@@ -226,9 +226,8 @@ constexpr float k_laptop_render_scale = 2.0f / 3.0f;
 
 /// NVIDIA names its mobile parts "... Laptop GPU", and native size on one cost about 40% of the frame in the 4060 Laptop capture
 auto laptopWithDlss(const VulkanCore& core) -> bool {
-	static const bool laptop =
-	    core.dlssExtensionsEnabled() &&
-	    std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).contains("Laptop");
+	static const bool laptop = core.dlssExtensionsEnabled() &&
+	                           std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).contains("Laptop");
 	return laptop;
 }
 
@@ -1454,6 +1453,17 @@ auto presetDrivenValue(std::string_view key) -> std::optional<toast::settings::V
 	return std::nullopt;
 }
 
+static void registerVideo() {
+	toast::settings::declareInt(
+	    "renderer.video.frame_cache_mb",
+	    512,
+	    {.label = "Video frame cache (MB)",
+			 .category = "Video",
+			 .description = "RAM for decoded video loops. A video that does not fit keeps decoding every frame. 0 disables the "
+			                "cache. Applies to videos loaded after the change"}
+	);
+}
+
 void registerRendererSettings(VulkanRenderer& renderer) {
 	g_preset.renderer = &renderer;
 	registerDisplay(renderer);
@@ -1462,6 +1472,7 @@ void registerRendererSettings(VulkanRenderer& renderer) {
 	registerGi(renderer);
 	registerEnvironment(renderer);
 	registerVolumetrics(renderer);
+	registerVideo();
 #if defined(TOAST_DEV_TOOLS)
 	registerDebug(renderer);
 #endif

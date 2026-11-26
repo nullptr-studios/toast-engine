@@ -14,7 +14,7 @@
 #include <string_view>
 #include <vector>
 
-struct NVSDK_NGX_Parameter; 
+struct NVSDK_NGX_Parameter;
 struct NVSDK_NGX_Handle;
 
 namespace renderer {

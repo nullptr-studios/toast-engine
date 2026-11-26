@@ -20,7 +20,8 @@ namespace editor.Assets;
 public static class AssetDatabase {
 	// extension -> engine asset type, derived from the registry
 	private static readonly Dictionary<string, string> s_assetTypes =
-		AssetTypeRegistry.All.ToDictionary(a => a.Extension, a => a.Type, StringComparer.OrdinalIgnoreCase);
+		AssetTypeRegistry.All.SelectMany(a => a.AllExtensions.Select(e => (e, a.Type)))
+			.ToDictionary(p => p.e, p => p.Type, StringComparer.OrdinalIgnoreCase);
 
 	public static event Action? ReloadedDatabase;
 
@@ -331,6 +332,7 @@ public static class AssetDatabase {
 			".hdr" => new HdrImporter(),
 			".bank" when isStringsBank => new AudioStringImporter(new AudioStringImporter.Settings()),
 			".bank" => new AudioBankImporter(),
+			".webm" or ".mp4" or ".mkv" => new VideoImporter(),
 			_ => new TextureImporter(textureSettings)
 		};
 

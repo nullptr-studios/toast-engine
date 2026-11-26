@@ -25,6 +25,7 @@ void AssetRegistry::init() {
 	// Raw binary loaders
 	s_raw["mesh"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Mesh>(d); };
 	s_raw["texture"] = [](std::vector<uint8_t> d) { return std::make_unique<Texture>(std::move(d)); };
+	s_raw["video"] = [](std::vector<uint8_t> d) { return std::make_unique<Video>(std::move(d)); };
 	s_raw["schema"] = [](std::vector<uint8_t> d) {
 		std::string_view json(reinterpret_cast<const char*>(d.data()), d.size());
 		return std::make_unique<Schema>(json);
@@ -95,6 +96,7 @@ void AssetRegistry::init() {
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";
 	s_lua_names["texture"] = "Texture";
+	s_lua_names["video"] = "Video";
 	s_lua_names["data"] = "Data";
 	s_lua_names["material"] = "Material";
 	s_lua_names["material_instance"] = "MaterialInstance";

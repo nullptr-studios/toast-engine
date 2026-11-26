@@ -105,7 +105,9 @@ public static class MaterialSchemaGenerator {
 
 	private static JsonObject TextureDefProperties(TomlTable? textureDefaults) {
 		var props = new JsonObject {
-			["texture"] = new JsonObject { ["x-toast-type"] = "asset", ["x-toast-asset-type"] = "texture" },
+			["texture"] = new JsonObject {
+				["x-toast-type"] = "asset", ["x-toast-asset-type"] = Components.Elements.AssetBox.MaterialTextureType
+			},
 			["repeat_u"] = WrapEnum(["repeat", "mirrored", "clamp", "border"], "repeat"),
 			["repeat_v"] = WrapEnum(["repeat", "mirrored", "clamp", "border"], "repeat"),
 			["min_filter"] = WrapEnum(["nearest", "linear"], "linear"),

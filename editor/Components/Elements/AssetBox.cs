@@ -262,6 +262,9 @@ public sealed class AssetBox : TemplatedControl {
 		m_pasteItem.Command = FieldPasteCommand;
 	}
 
+	/// <summary>Material texture slots, which accept videos as well as textures.</summary>
+	public const string MaterialTextureType = "material_texture";
+
 	private static string? NormalizeAssetType(string? type) {
 		if (string.IsNullOrEmpty(type)) return null;
 		// Direct lookup (handles types that are already identifiers like "texture")
@@ -280,12 +283,15 @@ public sealed class AssetBox : TemplatedControl {
 	private async void OpenPicker() {
 		if (!IsEnabled || (TopLevel.GetTopLevel(this) as Window ?? App.MainWindow) is not { } owner) return;
 		var normalized = NormalizeAssetType(AssetType);
+		// A material slot also takes a video; other texture fields load the uid as a texture without checking
+		if (normalized == MaterialTextureType) normalized = "texture";
 		// A material picker should also show material instances
 		var extra = normalized switch {
 			"material" => "material_instance",
 			"voxel_model" => "node",
 			_ => null
 		};
+		if (AssetType == MaterialTextureType) extra = "video";
 		var picked = await new AssetList(normalized, extra).ShowDialog<string?>(owner);
 		if (picked is not null) Value = picked;
 	}
@@ -309,6 +315,8 @@ public sealed class AssetBox : TemplatedControl {
 	}
 
 	private static bool IsCompatibleType(string boxType, string dragged) {
+		if (boxType == MaterialTextureType)
+			return dragged is "texture" or "video";
 		return (string.Equals(boxType, "material", StringComparison.OrdinalIgnoreCase)
 				&& string.Equals(dragged, "material_instance", StringComparison.OrdinalIgnoreCase))
 			|| (string.Equals(boxType, "voxel_model", StringComparison.OrdinalIgnoreCase)

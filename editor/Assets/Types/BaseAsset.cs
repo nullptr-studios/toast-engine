@@ -10,6 +10,9 @@ namespace editor.Assets.Types;
 public abstract class BaseAsset {
 	public abstract string Type { get; }
 	public abstract string Extension { get; }
+	/// <summary>Further extensions files of this type keep, e.g. a video imported as .mp4.</summary>
+	public virtual IReadOnlyList<string> ExtraExtensions => [];
+	public IEnumerable<string> AllExtensions => ExtraExtensions.Prepend(Extension);
 	public abstract string DisplayName { get; }
 	public abstract string ChipText { get; }
 	public abstract string ChipColor { get; }
