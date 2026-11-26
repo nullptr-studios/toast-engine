@@ -39,15 +39,15 @@ void unloadDbghelpSymbols() noexcept {
 	if (dbghelp == nullptr) {
 		return;
 	}
-	const auto enumModules = reinterpret_cast<EnumModules>(GetProcAddress(dbghelp, "SymEnumerateModules64"));
-	const auto unloadModule = reinterpret_cast<UnloadModule>(GetProcAddress(dbghelp, "SymUnloadModule64"));
-	if (enumModules == nullptr || unloadModule == nullptr) {
+	const auto enum_modules = reinterpret_cast<EnumModules>(GetProcAddress(dbghelp, "SymEnumerateModules64"));
+	const auto unload_module = reinterpret_cast<UnloadModule>(GetProcAddress(dbghelp, "SymUnloadModule64"));
+	if (enum_modules == nullptr || unload_module == nullptr) {
 		return;
 	}
 
-	const auto unloadSession = [&](HANDLE process) {
+	const auto unload_session = [&](HANDLE process) {
 		std::vector<DWORD64> bases;
-		enumModules(
+		enum_modules(
 		    process,
 		    [](PCSTR, DWORD64 base, PVOID user) -> BOOL {
 			    static_cast<std::vector<DWORD64>*>(user)->push_back(base);
@@ -56,14 +56,14 @@ void unloadDbghelpSymbols() noexcept {
 		    &bases
 		);
 		for (const DWORD64 base : bases) {
-			unloadModule(process, base);
+			unload_module(process, base);
 		}
 	};
 
-	unloadSession(GetCurrentProcess());
+	unload_session(GetCurrentProcess());
 	constexpr std::uintptr_t k_max_handle = 0x10000;
 	for (std::uintptr_t value = 4; value < k_max_handle; value += 4) {
-		unloadSession(reinterpret_cast<HANDLE>(value));
+		unload_session(reinterpret_cast<HANDLE>(value));
 	}
 }
 #endif

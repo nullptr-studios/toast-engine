@@ -226,9 +226,8 @@ constexpr float k_laptop_render_scale = 2.0f / 3.0f;
 
 /// NVIDIA names its mobile parts "... Laptop GPU", and native size on one cost about 40% of the frame in the 4060 Laptop capture
 auto laptopWithDlss(const VulkanCore& core) -> bool {
-	static const bool laptop =
-	    core.dlssExtensionsEnabled() &&
-	    std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).contains("Laptop");
+	static const bool laptop = core.dlssExtensionsEnabled() &&
+	                           std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).contains("Laptop");
 	return laptop;
 }
 

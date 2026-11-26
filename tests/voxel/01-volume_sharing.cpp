@@ -5,7 +5,7 @@
 #include <toast/voxel/brick_pool.hpp>
 #include <toast/voxel/voxel_volume.hpp>
 
-TOAST_TEST_NAMED("voxel", "voxel/01-reshare_touches_only_changed_bricks", test_voxel_01_reshare_touches_only_changed_bricks) {
+TOAST_TEST_NAMED("voxel", "voxel/01-volume_sharing", test_voxel_01_volume_sharing) {
 	voxel::BrickPool pool(16);
 	voxel::Volume source(pool, glm::uvec3 {3, 1, 1});
 	source.setVoxel({1, 1, 1}, 3);

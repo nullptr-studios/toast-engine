@@ -70,7 +70,7 @@ struct GameViewDesc {
 	const char* name = nullptr;
 	uint32_t width = 256;
 	uint32_t height = 256;
-	std::array<float,4> clear_color = {0.0f, 0.0f, 0.0f, 0.0f};
+	std::array<float, 4> clear_color = {0.0f, 0.0f, 0.0f, 0.0f};
 	/// Own depth attachment cleared every frame
 	bool depth = false;
 };
