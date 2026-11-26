@@ -155,7 +155,7 @@
 				export VCPKG_ROOT="${pkgs.vcpkg}/share/vcpkg"
 				export NIX_SSL_CERT_FILE="${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt"
 				export PKG_CONFIG="${pkgs.pkg-config}/bin/pkg-config"
-				# export VCPKG_DEFAULT_BINARY_CACHE="/var/cache/vcpkg"
+				export VCPKG_DEFAULT_BINARY_CACHE="/var/cache/vcpkg"
 				export VCPKG_KEEP_ENV_VARS=$(env | grep -E '^(NIX_|PKG_CONFIG|VCPKG_DEFAULT_BINARY_CACHE)' | cut -d= -f1 | tr '\n' ';')
 				export PROTOBUF_PROTOC="${pkgs.protobuf}/bin/protoc"
 				export GRPC_PROTOC_PLUGIN="${pkgs.grpc}/bin/grpc_csharp_plugin"
