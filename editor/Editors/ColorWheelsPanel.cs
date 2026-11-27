@@ -29,9 +29,8 @@ public class ColorWheelsPanel : UserControl {
 		// Every object row hosts this panel, only the marked one may claim its children
 		if (DataContext is not GenericFieldVM { IsColorWheels: true } group) return;
 
-		var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("*,*,*"), Margin = new(0, 4, 0, 4) };
-		for (var i = 0; i < Wheels.Length; i++) {
-			var (label, tintName, offsetName) = Wheels[i];
+		var stack = new StackPanel { Spacing = 12, Margin = new(0, 4, 0, 4) };
+		foreach (var (label, tintName, offsetName) in Wheels) {
 			var tint = group.Children.FirstOrDefault(c => c.Name == tintName && c.IsColor3);
 			var offset = group.Children.FirstOrDefault(c => c.Name == offsetName && c.IsFloat);
 			// A schema missing a field keeps its plain row rather than losing the control
@@ -39,12 +38,10 @@ public class ColorWheelsPanel : UserControl {
 			tint.OwnedByWidget = true;
 			offset.OwnedByWidget = true;
 
-			var column = BuildWheel(label, tint, offset);
-			Grid.SetColumn(column, i);
-			grid.Children.Add(column);
+			stack.Children.Add(BuildWheel(label, tint, offset));
 		}
 
-		Content = grid;
+		Content = stack;
 	}
 
 	private static StackPanel BuildWheel(string label, GenericFieldVM tint, GenericFieldVM offset) {
@@ -53,7 +50,9 @@ public class ColorWheelsPanel : UserControl {
 		wheel.Bind(ColorWheel.GProperty, new Binding(nameof(GenericFieldVM.Y)) { Source = tint, Mode = BindingMode.TwoWay });
 		wheel.Bind(ColorWheel.BProperty, new Binding(nameof(GenericFieldVM.Z)) { Source = tint, Mode = BindingMode.TwoWay });
 
-		var brightness = new DragFloatBox { Minimum = offset.Minimum, Maximum = offset.Maximum, Classes = { "compact-field" } };
+		var brightness = new DragFloatBox {
+			Minimum = offset.Minimum, Maximum = offset.Maximum, CoarseStep = 0.01f, Classes = { "compact-field" }
+		};
 		brightness.Bind(DragFloatBox.ValueProperty,
 			new Binding(nameof(GenericFieldVM.FloatVal)) { Source = offset, Mode = BindingMode.TwoWay });
 		ToolTip.SetTip(brightness, "Brightness");

@@ -16,7 +16,7 @@ public:
 
 	[[nodiscard]]
 	auto type() const -> std::string_view override {
-		return "post_process";
+		return "post_process_profile";
 	}
 
 	/// Bumps whenever the file is re-read

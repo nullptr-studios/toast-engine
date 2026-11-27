@@ -21,6 +21,9 @@ public class ColorWheel : Control {
 	private const int RingSegments = 180;
 	private const double FineFactor = 0.1;
 
+	/// Dot travel per pixel of pointer travel
+	private const double DragFactor = 0.2;
+
 	public static readonly StyledProperty<float> RProperty =
 		AvaloniaProperty.Register<ColorWheel, float>(nameof(R), 1f, defaultBindingMode: BindingMode.TwoWay);
 
@@ -131,7 +134,7 @@ public class ColorWheel : Control {
 
 		var radius = Math.Min(Bounds.Width, Bounds.Height) / 2 * 0.9;
 		if (radius <= 0) return;
-		var scale = RimChroma / radius * (e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? FineFactor : 1.0);
+		var scale = RimChroma / radius * DragFactor * (e.KeyModifiers.HasFlag(KeyModifiers.Shift) ? FineFactor : 1.0);
 		var (cb, cr) = ChromaFromTint(R, G, B);
 		cb += delta.X * scale;
 		cr -= delta.Y * scale;
