@@ -171,71 +171,74 @@ document.addEventListener('DOMContentLoaded',() => { initNavTree('traced__specul
 <div class="line"><a id="l00060" name="l00060"></a><span class="lineno">   60</span></div>
 <div class="line"><a id="l00062" name="l00062"></a><span class="lineno">   62</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> vk::Format k_trace_format = vk::Format::eR16G16B16A16Sfloat;</div>
 <div class="line"><a id="l00064" name="l00064"></a><span class="lineno">   64</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> vk::Format k_surface_format = vk::Format::eR32G32B32A32Uint;</div>
-<div class="line"><a id="l00065" name="l00065"></a><span class="lineno">   65</span></div>
-<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> vk::Format k_pyramid_format = vk::Format::eR16G16B16A16Sfloat;</div>
-<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_pyramid_levels = 6;</div>
-<div class="line"><a id="l00070" name="l00070"></a><span class="lineno">   70</span> </div>
-<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_image_bindings = 16;</div>
+<div class="line"><a id="l00066" name="l00066"></a><span class="lineno">   66</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> vk::Format k_hit_format = vk::Format::eR32G32Uint;</div>
+<div class="line"><a id="l00067" name="l00067"></a><span class="lineno">   67</span></div>
+<div class="line"><a id="l00069" name="l00069"></a><span class="lineno">   69</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> vk::Format k_pyramid_format = vk::Format::eR16G16B16A16Sfloat;</div>
+<div class="line"><a id="l00071" name="l00071"></a><span class="lineno">   71</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_pyramid_levels = 6;</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span> </div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keywordtype">void</span> createSets(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core);</div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>  <span class="keywordtype">void</span> createTargets(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Extent2D extent);</div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordtype">void</span> createPyramid(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Extent2D extent);</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">void</span> recordPyramid(</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>      vk::CommandBuffer cmd, vk::PipelineLayout layout, std::span&lt;const vk::DescriptorSet&gt; sets, <span class="keyword">const</span> Params&amp; params</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  );</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span> </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>* m_core = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>  vk::Format m_scene_format = vk::Format::eUndefined;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keywordtype">bool</span> m_ready = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_layout;</div>
-<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_surface_pipeline;</div>
-<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_trace_pipeline;</div>
-<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_resolve_pipeline;</div>
-<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_temporal_pipeline;</div>
-<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_composite_pipeline;</div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_pyramid_pipeline;</div>
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_filter_pipeline;</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <a class="code hl_class" href="classrenderer_1_1SceneDescriptorSets.html">SceneDescriptorSets</a> m_scene_sets;</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <span class="keywordtype">bool</span> m_instances_bound = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span> </div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  vk::raii::Sampler m_point_sampler = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>  vk::raii::Sampler m_pyramid_sampler = <span class="keyword">nullptr</span>;</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span></div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_storage_sets;</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;</a>&gt; m_storage_bound;</div>
-<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_image_sets;</div>
-<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;std::array&lt;vk::ImageView, k_image_bindings&gt;</a>&gt; m_image_bound;</div>
-<div class="line"><a id="l00106" name="l00106"></a><span class="lineno">  106</span> </div>
-<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_surface;</div>
-<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_trace;</div>
-<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_resolved;</div>
-<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  std::array&lt;PostProcessTarget, 2&gt; m_history;</div>
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_filtered;</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_target;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>  <a class="code hl_class" href="classrenderer_1_1HiZPyramid.html">HiZPyramid</a> m_hiz;</div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span> </div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  std::optional&lt;vma::raii::Image&gt; m_pyramid;</div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  std::optional&lt;vk::raii::ImageView&gt; m_pyramid_view;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>  std::optional&lt;vk::raii::ImageView&gt; m_pyramid_top_view;</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  vk::Extent2D m_pyramid_extent {};</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>  uint32_t m_pyramid_level_count = 0;</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  <a class="code hl_struct" href="structrenderer_1_1sync_1_1ImageState.html">sync::ImageState</a> m_pyramid_state;</div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span> </div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  uint32_t m_parity = 0;</div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  <span class="keywordtype">bool</span> m_history_valid = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>  uint64_t m_last_sequence = 0;</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>};</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>  <span class="keyword">static</span> <span class="keyword">constexpr</span> uint32_t k_image_bindings = 17;</div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span> </div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>  <span class="keywordtype">void</span> createSets(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core);</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>  <span class="keywordtype">void</span> createTargets(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Extent2D extent);</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>  <span class="keywordtype">void</span> createPyramid(<span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>&amp; core, vk::Extent2D extent);</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>  <span class="keywordtype">void</span> recordPyramid(</div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>      vk::CommandBuffer cmd, vk::PipelineLayout layout, std::span&lt;const vk::DescriptorSet&gt; sets, <span class="keyword">const</span> Params&amp; params</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>  );</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span> </div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>  <span class="keyword">const</span> <a class="code hl_class" href="classrenderer_1_1VulkanCore.html">VulkanCore</a>* m_core = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>  vk::Format m_scene_format = vk::Format::eUndefined;</div>
+<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span>  <span class="keywordtype">bool</span> m_ready = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00086" name="l00086"></a><span class="lineno">   86</span> </div>
+<div class="line"><a id="l00087" name="l00087"></a><span class="lineno">   87</span>  <a class="code hl_class" href="classrenderer_1_1ShaderLayout.html">ShaderLayout</a> m_layout;</div>
+<div class="line"><a id="l00088" name="l00088"></a><span class="lineno">   88</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_surface_pipeline;</div>
+<div class="line"><a id="l00089" name="l00089"></a><span class="lineno">   89</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_trace_pipeline;</div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_shade_pipeline;</div>
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_resolve_pipeline;</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_temporal_pipeline;</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_composite_pipeline;</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_pyramid_pipeline;</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>  <a class="code hl_class" href="classrenderer_1_1VulkanPipeline.html">VulkanPipeline</a> m_filter_pipeline;</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>  <a class="code hl_class" href="classrenderer_1_1SceneDescriptorSets.html">SceneDescriptorSets</a> m_scene_sets;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>  <span class="keywordtype">bool</span> m_instances_bound = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span> </div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>  vk::raii::Sampler m_point_sampler = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>  vk::raii::Sampler m_pyramid_sampler = <span class="keyword">nullptr</span>;</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span></div>
+<div class="line"><a id="l00104" name="l00104"></a><span class="lineno">  104</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_storage_sets;</div>
+<div class="line"><a id="l00105" name="l00105"></a><span class="lineno">  105</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;std::shared_ptr&lt;const VoxelGpuStorage&gt;</a>&gt; m_storage_bound;</div>
+<div class="line"><a id="l00107" name="l00107"></a><span class="lineno">  107</span>  std::vector&lt;vk::raii::DescriptorSet&gt; m_image_sets;</div>
+<div class="line"><a id="l00108" name="l00108"></a><span class="lineno">  108</span>  <a class="code hl_class" href="classrenderer_1_1DescriptorCache.html">DescriptorCache&lt;std::array&lt;vk::ImageView, k_image_bindings&gt;</a>&gt; m_image_bound;</div>
+<div class="line"><a id="l00109" name="l00109"></a><span class="lineno">  109</span> </div>
+<div class="line"><a id="l00110" name="l00110"></a><span class="lineno">  110</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_surface;</div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_trace;</div>
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_hit;</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_resolved;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>  std::array&lt;PostProcessTarget, 2&gt; m_history;</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_filtered;</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>  <a class="code hl_class" href="classrenderer_1_1PostProcessTarget.html">PostProcessTarget</a> m_target;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>  <a class="code hl_class" href="classrenderer_1_1HiZPyramid.html">HiZPyramid</a> m_hiz;</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span> </div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>  std::optional&lt;vma::raii::Image&gt; m_pyramid;</div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>  std::optional&lt;vk::raii::ImageView&gt; m_pyramid_view;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>  std::optional&lt;vk::raii::ImageView&gt; m_pyramid_top_view;</div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>  vk::Extent2D m_pyramid_extent {};</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>  uint32_t m_pyramid_level_count = 0;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>  <a class="code hl_struct" href="structrenderer_1_1sync_1_1ImageState.html">sync::ImageState</a> m_pyramid_state;</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span> </div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>  uint32_t m_parity = 0;</div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>  <span class="keywordtype">bool</span> m_history_valid = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>  uint64_t m_last_sequence = 0;</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>};</div>
 </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span> </div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>}</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span> </div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>}</div>
 <div class="ttc" id="aclassrenderer_1_1DescriptorCache_html"><div class="ttname"><a href="classrenderer_1_1DescriptorCache.html">renderer::DescriptorCache</a></div><div class="ttdoc">What each descriptor set slot was last written with.</div><div class="ttdef"><b>Definition</b> descriptor_cache.hpp:32</div></div>
 <div class="ttc" id="aclassrenderer_1_1HiZPyramid_html"><div class="ttname"><a href="classrenderer_1_1HiZPyramid.html">renderer::HiZPyramid</a></div><div class="ttdoc">Farthest or closest depth pyramid where level k texel t covers pixels t &lt;&lt; (k + 1) to ((t + 1) &lt;&lt; (k ...</div><div class="ttdef"><b>Definition</b> hiz_pyramid.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1IPostProcessPass_html"><div class="ttname"><a href="classrenderer_1_1IPostProcessPass.html">renderer::IPostProcessPass</a></div><div class="ttdef"><b>Definition</b> post_process_pass_base.hpp:14</div></div>
 <div class="ttc" id="aclassrenderer_1_1PostProcessTarget_html"><div class="ttname"><a href="classrenderer_1_1PostProcessTarget.html">renderer::PostProcessTarget</a></div><div class="ttdef"><b>Definition</b> post_process_target.hpp:19</div></div>
 <div class="ttc" id="aclassrenderer_1_1SceneDescriptorSets_html"><div class="ttname"><a href="classrenderer_1_1SceneDescriptorSets.html">renderer::SceneDescriptorSets</a></div><div class="ttdef"><b>Definition</b> scene_descriptor_set.hpp:24</div></div>
 <div class="ttc" id="aclassrenderer_1_1ShaderLayout_html"><div class="ttname"><a href="classrenderer_1_1ShaderLayout.html">renderer::ShaderLayout</a></div><div class="ttdef"><b>Definition</b> shader_layout.hpp:12</div></div>
-<div class="ttc" id="aclassrenderer_1_1TracedSpecularPass_html_a056148685d7f477289787c92a340c3d9"><div class="ttname"><a href="classrenderer_1_1TracedSpecularPass.html#a056148685d7f477289787c92a340c3d9">renderer::TracedSpecularPass::record</a></div><div class="ttdeci">auto record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</div><div class="ttdef"><b>Definition</b> traced_specular_pass.cpp:276</div></div>
+<div class="ttc" id="aclassrenderer_1_1TracedSpecularPass_html_a056148685d7f477289787c92a340c3d9"><div class="ttname"><a href="classrenderer_1_1TracedSpecularPass.html#a056148685d7f477289787c92a340c3d9">renderer::TracedSpecularPass::record</a></div><div class="ttdeci">auto record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView source_view) -&gt; vk::ImageView override</div><div class="ttdef"><b>Definition</b> traced_specular_pass.cpp:287</div></div>
 <div class="ttc" id="aclassrenderer_1_1VoxelGpuStorage_html"><div class="ttname"><a href="classrenderer_1_1VoxelGpuStorage.html">renderer::VoxelGpuStorage</a></div><div class="ttdoc">Immutable scene version and versions from small carves share buffers patched in place.</div><div class="ttdef"><b>Definition</b> voxel_gpu_storage.hpp:68</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanCore_html"><div class="ttname"><a href="classrenderer_1_1VulkanCore.html">renderer::VulkanCore</a></div><div class="ttdef"><b>Definition</b> vulkan_core.hpp:50</div></div>
 <div class="ttc" id="aclassrenderer_1_1VulkanPipeline_html"><div class="ttname"><a href="classrenderer_1_1VulkanPipeline.html">renderer::VulkanPipeline</a></div><div class="ttdef"><b>Definition</b> vulkan_pipeline.hpp:19</div></div>

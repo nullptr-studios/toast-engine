@@ -4,8 +4,5 @@ var searchData=
   ['hardness_1',['hardness',['../structvoxel_1_1PhysicalMaterial.html#a01316e9aec529466becf56bb00324553',1,'voxel::PhysicalMaterial']]],
   ['has_5fprevious_2',['has_previous',['../structrenderer_1_1VoxelVolumeProxy.html#aab6cd229fdde2f4d3f06e67bf37c2f75',1,'renderer::VoxelVolumeProxy']]],
   ['height_5ffalloff_3',['height_falloff',['../structrenderer_1_1PostProcessSettings_1_1Fog.html#aeb78f6ff7f63d4bb75748b190881a2b3',1,'renderer::PostProcessSettings::Fog']]],
-  ['hidden_4',['hidden',['../structtoast_1_1settings_1_1Meta.html#a95012a506797f5f863d116e0ae041fff',1,'toast::settings::Meta::hidden'],['../structphysics_1_1Meta.html#a95012a506797f5f863d116e0ae041fff',1,'physics::Meta::hidden'],['../structrenderer_1_1Meta.html#a95012a506797f5f863d116e0ae041fff',1,'renderer::Meta::hidden']]],
-  ['history_5fblend_5',['history_blend',['../structrenderer_1_1GiSettings.html#a3839ff5faaccbc3761f2588fea90dcee',1,'renderer::GiSettings']]],
-  ['history_5fper_5fframe_6',['history_per_frame',['../structrenderer_1_1GiSettings.html#a5b921b3f11fdefd4b301b3ac109ef779',1,'renderer::GiSettings']]],
-  ['history_5fseconds_7',['history_seconds',['../structrenderer_1_1GiSettings.html#addc29fbdb0069125b2c3c628b7573ce3',1,'renderer::GiSettings']]]
+  ['hidden_4',['hidden',['../structtoast_1_1settings_1_1Meta.html#a95012a506797f5f863d116e0ae041fff',1,'toast::settings::Meta::hidden'],['../structphysics_1_1Meta.html#a95012a506797f5f863d116e0ae041fff',1,'physics::Meta::hidden'],['../structrenderer_1_1Meta.html#a95012a506797f5f863d116e0ae041fff',1,'renderer::Meta::hidden']]]
 ];

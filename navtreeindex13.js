@@ -1,5 +1,7 @@
 var NAVTREEINDEX13 =
 {
+"gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a430a47bc6196323c4c9cd660cfb3eed4":[14,0,2,0,0,6,1,5,7,10],
+"gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a47ed49958e2500d72e305f85ed316c91":[14,0,2,0,0,6,1,5,7,11],
 "gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a4a51401e8554f82eefb65d547ce14d0a":[14,0,2,0,0,6,1,5,7,4],
 "gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a53e7889711e460d08eca0e6e3579951f":[14,0,2,0,0,6,1,5,7,1],
 "gpu__sync_8hpp.html#aafc90ea87b17d3cde4a806db138fc1f5a548f467d4e83e81ec25f5e473cc9a0a4":[14,0,2,0,0,6,1,5,7,7],
@@ -24,9 +26,9 @@ var NAVTREEINDEX13 =
 "hardness_8hpp.html":[14,0,2,0,0,4,22],
 "hardness_8hpp_source.html":[14,0,2,0,0,4,22],
 "hash_8hpp_source.html":[14,0,2,0,0,19],
-"hdr__image_8cpp.html":[14,0,2,0,0,0,12],
-"hdr__image_8hpp.html":[14,0,2,0,0,0,13],
-"hdr__image_8hpp_source.html":[14,0,2,0,0,0,13],
+"hdr__image_8cpp.html":[14,0,2,0,0,0,13],
+"hdr__image_8hpp.html":[14,0,2,0,0,0,14],
+"hdr__image_8hpp_source.html":[14,0,2,0,0,0,14],
 "heap__tracking_8cpp.html":[14,0,2,0,0,20],
 "hierarchy.html":[13,2],
 "hinge__joint_8hpp.html":[14,0,2,0,0,4,0,5],
@@ -175,12 +177,12 @@ var NAVTREEINDEX13 =
 "manifold_8hpp_source.html":[14,0,2,0,0,4,26],
 "mass__accumulator_8hpp.html":[14,0,2,0,0,10,8],
 "mass__accumulator_8hpp_source.html":[14,0,2,0,0,10,8],
-"material_8hpp.html":[14,0,2,0,0,0,14],
-"material_8hpp_source.html":[14,0,2,0,0,0,14],
+"material_8hpp.html":[14,0,2,0,0,0,15],
+"material_8hpp_source.html":[14,0,2,0,0,0,15],
 "material__defaults_8hpp.html":[14,0,2,0,0,4,27],
 "material__defaults_8hpp_source.html":[14,0,2,0,0,4,27],
-"material__instance_8hpp.html":[14,0,2,0,0,0,15],
-"material__instance_8hpp_source.html":[14,0,2,0,0,0,15],
+"material__instance_8hpp.html":[14,0,2,0,0,0,16],
+"material__instance_8hpp_source.html":[14,0,2,0,0,0,16],
 "material__pass_8hpp.html":[14,0,2,0,0,6,5,2,3],
 "material__pass_8hpp_source.html":[14,0,2,0,0,6,5,2,3],
 "material__runtime_8hpp.html":[14,0,2,0,0,6,7,5],
@@ -247,7 +249,5 @@ var NAVTREEINDEX13 =
 "md_docs_2renderer.html#autotoc_md59":[7,3],
 "md_docs_2renderer.html#autotoc_md60":[7,4],
 "md_docs_2renderer.html#autotoc_md61":[7,5],
-"md_docs_2scripting.html":[8],
-"md_docs_2scripting.html#autotoc_md63":[8,0],
-"md_docs_2scripting.html#autotoc_md64":[8,1]
+"md_docs_2scripting.html":[8]
 };

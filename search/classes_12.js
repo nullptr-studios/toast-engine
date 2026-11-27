@@ -166,7 +166,7 @@ var searchData=
   ['statemachine_163',['StateMachine',['../classtoast_1_1StateMachine.html',1,'toast']]],
   ['statement_164',['Statement',['../classeditor_1_1LuaEditor_1_1Graph_1_1Statement.html',1,'editor::LuaEditor::Graph']]],
   ['staticrigidbody_165',['StaticRigidbody',['../classphysics_1_1StaticRigidbody.html',1,'physics']]],
-  ['stats_166',['Stats',['../structrenderer_1_1GiPass_1_1Stats.html',1,'renderer::GiPass::Stats'],['../structrenderer_1_1ShadowPass_1_1Stats.html',1,'renderer::ShadowPass::Stats'],['../structrenderer_1_1VoxelBlasCache_1_1Stats.html',1,'renderer::VoxelBlasCache::Stats']]],
+  ['stats_166',['Stats',['../structrenderer_1_1ShadowPass_1_1Stats.html',1,'renderer::ShadowPass::Stats'],['../structrenderer_1_1VoxelBlasCache_1_1Stats.html',1,'renderer::VoxelBlasCache::Stats']]],
   ['stepcontext_167',['StepContext',['../classrenderer_1_1AsyncComputeTask_1_1StepContext.html',1,'renderer::AsyncComputeTask']]],
   ['stepresult_168',['StepResult',['../structphysics_1_1StepResult.html',1,'physics']]],
   ['stringbox_169',['StringBox',['../classeditor_1_1Components_1_1Elements_1_1StringBox.html',1,'editor::Components::Elements']]],

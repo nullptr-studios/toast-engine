@@ -1,5 +1,8 @@
 var NAVTREEINDEX16 =
 {
+"structevent_1_1Event.html#a001f7d0fce333a6cc043ae52e1d6ab54":[13,0,4,21,0],
+"structevent_1_1EventSystem.html":[13,0,4,22],
+"structevent_1_1EventSystem_1_1EventInfo.html":[13,0,4,22,0],
 "structevent_1_1ExitApplication.html":[13,0,4,23],
 "structevent_1_1HierarchyNodesEnabled.html":[13,0,4,24],
 "structevent_1_1HierarchyNodesEnabled_1_1Entry.html":[13,0,4,24,0],
@@ -246,8 +249,5 @@ var NAVTREEINDEX16 =
 "structevent_1_1WorkspaceMergeHistory.html":[13,0,4,245],
 "structevent_1_1WorkspaceMoveNodeTo.html":[13,0,4,246],
 "structevent_1_1WorkspacePasteNode.html":[13,0,4,247],
-"structevent_1_1WorkspacePause.html":[13,0,4,248],
-"structevent_1_1WorkspacePrepareHistoryMerge.html":[13,0,4,249],
-"structevent_1_1WorkspacePromoteNode.html":[13,0,4,250],
-"structevent_1_1WorkspaceRedo.html":[13,0,4,251]
+"structevent_1_1WorkspacePause.html":[13,0,4,248]
 };

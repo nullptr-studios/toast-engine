@@ -303,6 +303,8 @@ auto&#160;</td><td class="memItemRight"><b>getVoxelFaceNormalView</b> () const n
 <tr class="memdesc:ad77342b9a4c0d30b1633f814ec950493"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds flat face normals not the rounded scene normal ones. <br /></td></tr>
 <tr class="memitem:a61d5f8ec5f9b5a096de4736a40ca101d" id="r_a61d5f8ec5f9b5a096de4736a40ca101d"><td class="memItemLeft"><a id="a61d5f8ec5f9b5a096de4736a40ca101d" name="a61d5f8ec5f9b5a096de4736a40ca101d"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelGiView</b> () const noexcept -&gt; vk::ImageView</td></tr>
+<tr class="memitem:a68e8fa4098852778c8586a91c9cb917f" id="r_a68e8fa4098852778c8586a91c9cb917f"><td class="memItemLeft"><a id="a68e8fa4098852778c8586a91c9cb917f" name="a68e8fa4098852778c8586a91c9cb917f"></a>
+auto&#160;</td><td class="memItemRight"><b>getVoxelAmbientOcclusionView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memitem:aabd24286646ac34b96155ec903c0c6fc" id="r_aabd24286646ac34b96155ec903c0c6fc"><td class="memItemLeft"><a id="aabd24286646ac34b96155ec903c0c6fc" name="aabd24286646ac34b96155ec903c0c6fc"></a>
 auto&#160;</td><td class="memItemRight"><b>getVoxelNoisyDiffuseView</b> () const noexcept -&gt; vk::ImageView</td></tr>
 <tr class="memdesc:aabd24286646ac34b96155ec903c0c6fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Marched and sampled diffuse over albedo before denoising. <br /></td></tr>
@@ -593,6 +595,9 @@ void&#160;</td><td class="memItemRight"><b>setShadowPass</b> (const <a class="el
 auto&#160;</td><td class="memItemRight"><b>getShadowPass</b> () const noexcept -&gt; const <a class="el" href="classrenderer_1_1ShadowPass.html">ShadowPass</a> *</td></tr>
 <tr class="memitem:a64bdc2833a53e830bdf479ae6efcffcd" id="r_a64bdc2833a53e830bdf479ae6efcffcd"><td class="memItemLeft"><a id="a64bdc2833a53e830bdf479ae6efcffcd" name="a64bdc2833a53e830bdf479ae6efcffcd"></a>
 void&#160;</td><td class="memItemRight"><b>setEnvironmentPass</b> (<a class="el" href="classrenderer_1_1EnvironmentPass.html">EnvironmentPass</a> *pass) noexcept</td></tr>
+<tr class="memitem:af593ea224d60ce78e53376261a67f51e" id="r_af593ea224d60ce78e53376261a67f51e"><td class="memItemLeft"><a id="af593ea224d60ce78e53376261a67f51e" name="af593ea224d60ce78e53376261a67f51e"></a>
+void&#160;</td><td class="memItemRight"><b>setGlobalEnvironmentMap</b> (std::string uri)</td></tr>
+<tr class="memdesc:af593ea224d60ce78e53376261a67f51e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The Renderer Settings map, used whenever no enabled AmbientLight carries its own. Applied on the next tick. <br /></td></tr>
 <tr class="memitem:a0ce582e8c4b07d94665836d364214aa8" id="r_a0ce582e8c4b07d94665836d364214aa8"><td class="memItemLeft"><a id="a0ce582e8c4b07d94665836d364214aa8" name="a0ce582e8c4b07d94665836d364214aa8"></a>
 auto&#160;</td><td class="memItemRight"><b>getEnvironmentPass</b> () const noexcept -&gt; const <a class="el" href="classrenderer_1_1EnvironmentPass.html">EnvironmentPass</a> *</td></tr>
 <tr class="memitem:af99a4f011583d98972c29370251f71a6" id="r_af99a4f011583d98972c29370251f71a6"><td class="memItemLeft"><a id="af99a4f011583d98972c29370251f71a6" name="af99a4f011583d98972c29370251f71a6"></a>
@@ -602,8 +607,6 @@ void&#160;</td><td class="memItemRight"><b>setVoxelPass</b> (<a class="el" href=
 void&#160;</td><td class="memItemRight"><b>setDebrisPass</b> (<a class="el" href="classrenderer_1_1DebrisPass.html">DebrisPass</a> *pass) noexcept</td></tr>
 <tr class="memitem:a87e91aea589ca71e08da380f28721093" id="r_a87e91aea589ca71e08da380f28721093"><td class="memItemLeft"><a id="a87e91aea589ca71e08da380f28721093" name="a87e91aea589ca71e08da380f28721093"></a>
 auto&#160;</td><td class="memItemRight"><b>getDebrisPass</b> () const noexcept -&gt; const <a class="el" href="classrenderer_1_1DebrisPass.html">DebrisPass</a> *</td></tr>
-<tr class="memitem:a989c7d3cae8d609b03f1b122a8053913" id="r_a989c7d3cae8d609b03f1b122a8053913"><td class="memItemLeft"><a id="a989c7d3cae8d609b03f1b122a8053913" name="a989c7d3cae8d609b03f1b122a8053913"></a>
-void&#160;</td><td class="memItemRight"><b>setGiPass</b> (<a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> *pass) noexcept</td></tr>
 <tr class="memitem:a7f8133754e2d8d3583babfc92c4cded4" id="r_a7f8133754e2d8d3583babfc92c4cded4"><td class="memItemLeft"><a id="a7f8133754e2d8d3583babfc92c4cded4" name="a7f8133754e2d8d3583babfc92c4cded4"></a>
 void&#160;</td><td class="memItemRight"><b>setGiClipmapPass</b> (<a class="el" href="classrenderer_1_1GiClipmapPass.html">GiClipmapPass</a> *pass) noexcept</td></tr>
 <tr class="memitem:af97b42b78246865683a8e365f5cf6a0c" id="r_af97b42b78246865683a8e365f5cf6a0c"><td class="memItemLeft"><a id="af97b42b78246865683a8e365f5cf6a0c" name="af97b42b78246865683a8e365f5cf6a0c"></a>
@@ -623,8 +626,6 @@ auto&#160;</td><td class="memItemRight"><b>tracedSpecularFrame</b> () const noex
 auto&#160;</td><td class="memItemRight"><b>ssrFrame</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a6815b574a2553faef9c50cb8675282bc" id="r_a6815b574a2553faef9c50cb8675282bc"><td class="memItemLeft"><a id="a6815b574a2553faef9c50cb8675282bc" name="a6815b574a2553faef9c50cb8675282bc"></a>
 auto&#160;</td><td class="memItemRight"><b>glassBackdropCaptured</b> () const noexcept -&gt; bool</td></tr>
-<tr class="memitem:a645b190083dd9a546db8232081768d2e" id="r_a645b190083dd9a546db8232081768d2e"><td class="memItemLeft"><a id="a645b190083dd9a546db8232081768d2e" name="a645b190083dd9a546db8232081768d2e"></a>
-auto&#160;</td><td class="memItemRight"><b>giPass</b> () const noexcept -&gt; <a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> *</td></tr>
 <tr class="memitem:a31fa5b678c6e654cb8aeb105d843e2e3" id="r_a31fa5b678c6e654cb8aeb105d843e2e3"><td class="memItemLeft"><a id="a31fa5b678c6e654cb8aeb105d843e2e3" name="a31fa5b678c6e654cb8aeb105d843e2e3"></a>
 auto&#160;</td><td class="memItemRight"><b>giSettings</b> () noexcept -&gt; <a class="el" href="structrenderer_1_1GiSettings.html">GiSettings</a> &amp;</td></tr>
 <tr class="memitem:a3d7cacaa28a7ac66fb477c073d9bc5b2" id="r_a3d7cacaa28a7ac66fb477c073d9bc5b2"><td class="memItemLeft"><a id="a3d7cacaa28a7ac66fb477c073d9bc5b2" name="a3d7cacaa28a7ac66fb477c073d9bc5b2"></a>

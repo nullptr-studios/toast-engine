@@ -1,5 +1,6 @@
 var NAVTREEINDEX2 =
 {
+"classeditor_1_1Assets_1_1Types_1_1PhysicsMaterialAsset.html":[13,0,3,0,1,24],
 "classeditor_1_1Assets_1_1Types_1_1PostProcessProfileAsset.html":[11,0,0,0,1,25],
 "classeditor_1_1Assets_1_1Types_1_1PostProcessProfileAsset.html":[13,0,3,0,1,25],
 "classeditor_1_1Assets_1_1Types_1_1ProjectSettingsAsset.html":[11,0,0,0,1,26],
@@ -248,6 +249,5 @@ var NAVTREEINDEX2 =
 "classeditor_1_1Editors_1_1TableView.html":[13,0,3,4,22],
 "classeditor_1_1Editors_1_1TableViewModel.html":[11,0,0,4,23],
 "classeditor_1_1Editors_1_1TableViewModel.html":[13,0,3,4,23],
-"classeditor_1_1Editors_1_1TypeSwitchCaseVM.html":[11,0,0,4,24],
-"classeditor_1_1Editors_1_1TypeSwitchCaseVM.html":[13,0,3,4,24]
+"classeditor_1_1Editors_1_1TypeSwitchCaseVM.html":[11,0,0,4,24]
 };

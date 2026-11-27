@@ -11,6 +11,7 @@ var dir_86f88daaaf08922b03db05b762deb37a =
     [ "data.hpp", "data_8hpp.html", "data_8hpp" ],
     [ "data_schema_codegen.hpp", "data__schema__codegen_8hpp.html", "data__schema__codegen_8hpp" ],
     [ "data_value.hpp", "data__value_8hpp.html", "data__value_8hpp" ],
+    [ "environment_map.hpp", "environment__map_8hpp.html", "environment__map_8hpp" ],
     [ "gltf_importer.hpp", "gltf__importer_8hpp.html", null ],
     [ "hdr_image.cpp", "hdr__image_8cpp.html", "hdr__image_8cpp" ],
     [ "hdr_image.hpp", "hdr__image_8hpp.html", "hdr__image_8hpp" ],

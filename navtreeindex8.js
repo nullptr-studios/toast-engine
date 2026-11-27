@@ -1,5 +1,6 @@
 var NAVTREEINDEX8 =
 {
+"classscripting_1_1ScriptInstance.html#a0ba822cb12d4ed02b150f475374ab813":[13,0,11,21,13],
 "classscripting_1_1ScriptInstance.html#a27aa55c793eb92f4990793529b64ac43":[13,0,11,21,5],
 "classscripting_1_1ScriptInstance.html#a2b592654aa52c3e3e1337ca44ad2353a":[13,0,11,21,4],
 "classscripting_1_1ScriptInstance.html#a3285b3bf81439d8b3a6f8ced505b1d28":[13,0,11,21,8],
@@ -41,6 +42,8 @@ var NAVTREEINDEX8 =
 "classtoast_1_1AmbienceVolume.html#a018f9441db30ae008f1f8c1b71cb2282":[13,0,14,5,0],
 "classtoast_1_1AmbientLight.html":[11,0,2,2],
 "classtoast_1_1AmbientLight.html":[13,0,14,6],
+"classtoast_1_1AmbientLight.html#a66d504d5185daf53463e43ddb8cc2d96":[11,0,2,2,0],
+"classtoast_1_1AmbientLight.html#a66d504d5185daf53463e43ddb8cc2d96":[13,0,14,6,0],
 "classtoast_1_1AnimationPlayer.html":[11,0,2,3],
 "classtoast_1_1AnimationPlayer.html":[13,0,14,7],
 "classtoast_1_1AnimationPlayer.html#a886d6620bf3f0c845f646e6ce9c29d73":[11,0,2,3,0],
@@ -246,8 +249,5 @@ var NAVTREEINDEX8 =
 "classtoast_1_1IrradianceVolume.html#afdc22338583b14ecb5b02120d3e04439":[11,0,2,39,2],
 "classtoast_1_1IrradianceVolume.html#afdc22338583b14ecb5b02120d3e04439":[13,0,14,43,2],
 "classtoast_1_1Light.html":[11,0,2,40],
-"classtoast_1_1Light.html":[13,0,14,44],
-"classtoast_1_1Light.html#a04c81f1808528f860d2bf7b06a0b4631":[11,0,2,40,4],
-"classtoast_1_1Light.html#a04c81f1808528f860d2bf7b06a0b4631":[13,0,14,44,4],
-"classtoast_1_1Light.html#a092ae45d0bfd128b22c8067cf7098ab1":[11,0,2,40,2]
+"classtoast_1_1Light.html":[13,0,14,44]
 };

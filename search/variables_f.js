@@ -9,11 +9,9 @@ var searchData=
   ['pieces_6',['pieces',['../structvoxel_1_1ConnectivityCache.html#a94049ba6330dbc253bc2ce31063261b4',1,'voxel::ConnectivityCache']]],
   ['pixels_7',['pixels',['../structassets_1_1HdrImage.html#a75b36192d3559d8869c2f9171edb34cd',1,'assets::HdrImage']]],
   ['plane_8',['plane',['../structtoast_1_1Workspace_1_1VoxelToolState.html#a528c1ad99d74a13249bda7cb426984aa',1,'toast::Workspace::VoxelToolState']]],
-  ['points_9',['points',['../structrenderer_1_1GiPass_1_1Stats.html#a3f6260bb604e8fbb0a4274fa677b70d8',1,'renderer::GiPass::Stats']]],
-  ['pool_5fslots_10',['pool_slots',['../structvoxel_1_1gpu_1_1ScenePatch.html#ab6ae4ac56d7057b4d0fab6701be72dba',1,'voxel::gpu::ScenePatch']]],
-  ['previous_5fview_5fprojection_11',['previous_view_projection',['../structrenderer_1_1FrameUBO.html#a6a64456ab92dd4038f6b0bc1598a8333',1,'renderer::FrameUBO']]],
-  ['probe_5fsearch_5fbounds_12',['probe_search_bounds',['../structphysics_1_1VoxelVoxelSplitInfo.html#ac310d3cf11dc8d702a593e2984fdda39',1,'physics::VoxelVoxelSplitInfo']]],
-  ['probe_5fspacing_13',['probe_spacing',['../structrenderer_1_1GiSettings.html#ada6dc21afd72423fb0025bcd811c140e',1,'renderer::GiSettings']]],
-  ['project_14',['project',['../structassets_1_1Paths.html#ae48f88e88aba4c821198d39017ade8a1',1,'assets::Paths']]],
-  ['projections_15',['projections',['../structrenderer_1_1EditorOverlays.html#ae9ef076741a126f7523696e5b21aaddc',1,'renderer::EditorOverlays::projections'],['../structevent_1_1ProceduralVoxelLayout.html#a06fa831e66bfece883bec224d13057ef',1,'event::ProceduralVoxelLayout::projections']]]
+  ['pool_5fslots_9',['pool_slots',['../structvoxel_1_1gpu_1_1ScenePatch.html#ab6ae4ac56d7057b4d0fab6701be72dba',1,'voxel::gpu::ScenePatch']]],
+  ['previous_5fview_5fprojection_10',['previous_view_projection',['../structrenderer_1_1FrameUBO.html#a6a64456ab92dd4038f6b0bc1598a8333',1,'renderer::FrameUBO']]],
+  ['probe_5fsearch_5fbounds_11',['probe_search_bounds',['../structphysics_1_1VoxelVoxelSplitInfo.html#ac310d3cf11dc8d702a593e2984fdda39',1,'physics::VoxelVoxelSplitInfo']]],
+  ['project_12',['project',['../structassets_1_1Paths.html#ae48f88e88aba4c821198d39017ade8a1',1,'assets::Paths']]],
+  ['projections_13',['projections',['../structrenderer_1_1EditorOverlays.html#ae9ef076741a126f7523696e5b21aaddc',1,'renderer::EditorOverlays::projections'],['../structevent_1_1ProceduralVoxelLayout.html#a06fa831e66bfece883bec224d13057ef',1,'event::ProceduralVoxelLayout::projections']]]
 ];

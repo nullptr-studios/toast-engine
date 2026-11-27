@@ -162,6 +162,7 @@ auto&#160;</td><td class="memItemRight"><b>isMeshShaderSupported</b> () const no
 <tr class="memitem:a2e28f6cbefb2a309156669595b55372b" id="r_a2e28f6cbefb2a309156669595b55372b"><td class="memItemLeft"><a id="a2e28f6cbefb2a309156669595b55372b" name="a2e28f6cbefb2a309156669595b55372b"></a>
 auto&#160;</td><td class="memItemRight"><b>isFragmentShadingRateSupported</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a2e28f6cbefb2a309156669595b55372b"><td class="mdescLeft">&#160;</td><td class="mdescRight">VK_KHR_fragment_shading_rate with a per pipeline rate, which always offers 2x2. <br /></td></tr>
+<tr class="memitem:af8f6906c529bd5afb801d2a34df382f3" id="r_af8f6906c529bd5afb801d2a34df382f3"><td class="memItemLeft">auto&#160;</td><td class="memItemRight"><a class="el" href="#af8f6906c529bd5afb801d2a34df382f3">isPipelineStatsEnabled</a> () const noexcept -&gt; bool</td></tr>
 <tr class="memitem:a215962067ce303b69688d36728e8b338" id="r_a215962067ce303b69688d36728e8b338"><td class="memItemLeft"><a id="a215962067ce303b69688d36728e8b338" name="a215962067ce303b69688d36728e8b338"></a>
 auto&#160;</td><td class="memItemRight"><b>dlssExtensionsEnabled</b> () const noexcept -&gt; bool</td></tr>
 <tr class="memdesc:a215962067ce303b69688d36728e8b338"><td class="mdescLeft">&#160;</td><td class="mdescRight">Every instance and device extension NGX asked for is enabled, <a class="el" href="classrenderer_1_1DlssUpscaler.html" title="NVIDIA DLSS Super Resolution through NGX, every call is a no-op in builds without TOAST_DLSS.">DlssUpscaler</a> still has to initialise NGX. <br /></td></tr>
@@ -218,6 +219,33 @@ auto&#160;</td><td class="memItemRight"><b>transferSubmitMutex</b> () const noex
 <tr class="memitem:ab1aa6a824b9d2847fa36a5b9a09ea34e" id="r_ab1aa6a824b9d2847fa36a5b9a09ea34e"><td class="memItemLeft"><a id="ab1aa6a824b9d2847fa36a5b9a09ea34e" name="ab1aa6a824b9d2847fa36a5b9a09ea34e"></a>
 auto&#160;</td><td class="memItemRight"><b>graphicsSubmitMutex</b> () const noexcept -&gt; std::mutex &amp;</td></tr>
 </table>
+<a name="doc-func-members" id="doc-func-members"></a><h2 id="header-doc-func-members" class="groupheader">Member Function Documentation</h2>
+<a id="af8f6906c529bd5afb801d2a34df382f3" name="af8f6906c529bd5afb801d2a34df382f3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8f6906c529bd5afb801d2a34df382f3">&#9670;&#160;</a></span>isPipelineStatsEnabled()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">auto renderer::VulkanCore::isPipelineStatsEnabled </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const -&gt; bool</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel inline">inline</span><span class="mlabel nodiscard">nodiscard</span><span class="mlabel noexcept">noexcept</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>TOAST_PIPELINE_STATS=1 and VK_KHR_pipeline_executable_properties: every pipeline logs its driver statistics such as registers </p>
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>engine/src/toast/renderer/core/<a class="el" href="vulkan__core_8hpp_source.html">vulkan_core.hpp</a></li>
 <li>engine/src/toast/renderer/core/<b>vulkan_core.cpp</b></li>

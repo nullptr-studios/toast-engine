@@ -165,9 +165,8 @@ Classes</h2></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">In eShaderReadOnlyOptimal once the view pass ran.  <a href="structrenderer_1_1GameViewTexture.html#details">More...</a><br /></td></tr>
 <tr class="memitem:GiClipmapPass" id="r_GiClipmapPass"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1GiClipmapPass.html">GiClipmapPass</a></td></tr>
 <tr class="memitem:GiDirtyBoxes" id="r_GiDirtyBoxes"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1GiDirtyBoxes.html">GiDirtyBoxes</a></td></tr>
-<tr class="memitem:GiPass" id="r_GiPass"><td class="memItemLeft">class &#160;</td><td class="memItemRight"><a class="el" href="classrenderer_1_1GiPass.html">GiPass</a></td></tr>
 <tr class="memitem:GiSettings" id="r_GiSettings"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1GiSettings.html">GiSettings</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">renderer.gi settings written by the settings thread and read by <a class="el" href="classrenderer_1_1GiPass.html">GiPass</a> on the render thread  <a href="structrenderer_1_1GiSettings.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">renderer.gi settings written by the settings thread and read by <a class="el" href="classrenderer_1_1GiClipmapPass.html">GiClipmapPass</a> on the render thread  <a href="structrenderer_1_1GiSettings.html#details">More...</a><br /></td></tr>
 <tr class="memitem:GizmoState" id="r_GizmoState"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1GizmoState.html">GizmoState</a></td></tr>
 <tr class="memitem:GpuLight" id="r_GpuLight"><td class="memItemLeft">struct &#160;</td><td class="memItemRight"><a class="el" href="structrenderer_1_1GpuLight.html">GpuLight</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mirrors <a class="el" href="structrenderer_1_1GpuLight.html" title="Mirrors GpuLight in lighting.slang and cluster_lighting.slang.">GpuLight</a> in lighting.slang and cluster_lighting.slang.  <a href="structrenderer_1_1GpuLight.html#details">More...</a><br /></td></tr>
@@ -540,6 +539,9 @@ constexpr vk::Format&#160;</td><td class="memItemRight"><b>k_voxel_denoised_indi
 <tr class="memitem:a54d598a8d2702a92cfda7c216862c5d1" id="r_a54d598a8d2702a92cfda7c216862c5d1"><td class="memItemLeft"><a id="a54d598a8d2702a92cfda7c216862c5d1" name="a54d598a8d2702a92cfda7c216862c5d1"></a>
 constexpr vk::Format&#160;</td><td class="memItemRight"><b>k_voxel_gi_format</b> = vk::Format::eR16G16B16A16Sfloat</td></tr>
 <tr class="memdesc:a54d598a8d2702a92cfda7c216862c5d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Half resolution clipmap gather with a signed alpha marking pixels that gathered nothing. <br /></td></tr>
+<tr class="memitem:a391e531701e85f4f6fce09281654bf40" id="r_a391e531701e85f4f6fce09281654bf40"><td class="memItemLeft"><a id="a391e531701e85f4f6fce09281654bf40" name="a391e531701e85f4f6fce09281654bf40"></a>
+constexpr vk::Format&#160;</td><td class="memItemRight"><b>k_voxel_ao_format</b> = vk::Format::eR16Sfloat</td></tr>
+<tr class="memdesc:a391e531701e85f4f6fce09281654bf40"><td class="mdescLeft">&#160;</td><td class="mdescRight">voxel_lighting.slang gAmbientOcclusion, half resolution with below 0 for none <br /></td></tr>
 <tr class="memitem:aeb921ce2f90f2a196618bb02f952ddaa" id="r_aeb921ce2f90f2a196618bb02f952ddaa"><td class="memItemLeft"><a id="aeb921ce2f90f2a196618bb02f952ddaa" name="aeb921ce2f90f2a196618bb02f952ddaa"></a>
 constexpr vk::Format&#160;</td><td class="memItemRight"><b>k_voxel_reservoir_format</b> = vk::Format::eR32G32B32A32Uint</td></tr>
 <tr class="memdesc:aeb921ce2f90f2a196618bb02f952ddaa"><td class="mdescLeft">&#160;</td><td class="mdescRight">voxel_lighting.slang packReservoir <br /></td></tr>

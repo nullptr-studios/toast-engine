@@ -41,6 +41,7 @@ var classrenderer_1_1VulkanRenderer =
     [ "setGameView", "classrenderer_1_1VulkanRenderer.html#a0c65c578e499122e08f0043d24209048", null ],
     [ "setGlassCostView", "classrenderer_1_1VulkanRenderer.html#a36ed735402fb96147ebf754e02aa9b0c", null ],
     [ "setGlassGlowScale", "classrenderer_1_1VulkanRenderer.html#a04e1b0178ef3a3102de2b2508a373a18", null ],
+    [ "setGlobalEnvironmentMap", "classrenderer_1_1VulkanRenderer.html#af593ea224d60ce78e53376261a67f51e", null ],
     [ "setHdrNits", "classrenderer_1_1VulkanRenderer.html#ac21ced61473195f8c4127040a2928a29", null ],
     [ "setLowLatency", "classrenderer_1_1VulkanRenderer.html#a322b99046a09baf3ddb3615e11c12507", null ],
     [ "setMotionBlurMaxLength", "classrenderer_1_1VulkanRenderer.html#a80db505d1a2e074f570f7b27455b2625", null ],

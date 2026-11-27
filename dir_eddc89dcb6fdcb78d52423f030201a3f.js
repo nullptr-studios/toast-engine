@@ -6,8 +6,6 @@ var dir_eddc89dcb6fdcb78d52423f030201a3f =
     [ "environment_pass.hpp", "environment__pass_8hpp.html", "environment__pass_8hpp" ],
     [ "gi_clipmap_pass.cpp", "gi__clipmap__pass_8cpp.html", null ],
     [ "gi_clipmap_pass.hpp", "gi__clipmap__pass_8hpp.html", "gi__clipmap__pass_8hpp" ],
-    [ "gi_pass.cpp", "gi__pass_8cpp.html", null ],
-    [ "gi_pass.hpp", "gi__pass_8hpp.html", "gi__pass_8hpp" ],
     [ "reflection_probe_pass.cpp", "reflection__probe__pass_8cpp.html", null ],
     [ "reflection_probe_pass.hpp", "reflection__probe__pass_8hpp.html", "reflection__probe__pass_8hpp" ],
     [ "shadow_pass.cpp", "shadow__pass_8cpp.html", null ],

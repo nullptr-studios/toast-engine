@@ -41,6 +41,7 @@ var hierarchy =
         [ "assets::PostProcessProfile", "classassets_1_1PostProcessProfile.html", null ]
       ] ],
       [ "assets::DetailTexture", "classassets_1_1DetailTexture.html", null ],
+      [ "assets::EnvironmentMap", "classassets_1_1EnvironmentMap.html", null ],
       [ "assets::Font", "classassets_1_1Font.html", null ],
       [ "assets::LocalizationBase", "classassets_1_1LocalizationBase.html", [
         [ "assets::ImageLocalization", "classassets_1_1ImageLocalization.html", null ],
@@ -383,6 +384,7 @@ var hierarchy =
       [ "assets::Handle< assets::Action >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::PhysicsMaterial >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::DetailTexture >", "classassets_1_1Handle.html", null ],
+      [ "assets::Handle< assets::EnvironmentMap >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::AudioEvent >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::Animation >", "classassets_1_1Handle.html", null ],
       [ "assets::Handle< assets::Prefab >", "classassets_1_1Handle.html", null ],
@@ -966,7 +968,6 @@ var hierarchy =
       [ "renderer::BloomPass", "classrenderer_1_1BloomPass.html", null ],
       [ "renderer::FxaaPass", "classrenderer_1_1FxaaPass.html", null ],
       [ "renderer::GiClipmapPass", "classrenderer_1_1GiClipmapPass.html", null ],
-      [ "renderer::GiPass", "classrenderer_1_1GiPass.html", null ],
       [ "renderer::LensFlarePass", "classrenderer_1_1LensFlarePass.html", null ],
       [ "renderer::MotionBlurPass", "classrenderer_1_1MotionBlurPass.html", null ],
       [ "renderer::SsaoPass", "classrenderer_1_1SsaoPass.html", null ],
@@ -1610,7 +1611,6 @@ var hierarchy =
     [ "renderer::ShaderCache::StartupProgress", "structrenderer_1_1ShaderCache_1_1StartupProgress.html", null ],
     [ "toast::StartupSplash", "classtoast_1_1StartupSplash.html", null ],
     [ "toast::State", "structtoast_1_1State.html", null ],
-    [ "renderer::GiPass::Stats", "structrenderer_1_1GiPass_1_1Stats.html", null ],
     [ "renderer::ShadowPass::Stats", "structrenderer_1_1ShadowPass_1_1Stats.html", null ],
     [ "renderer::VoxelBlasCache::Stats", "structrenderer_1_1VoxelBlasCache_1_1Stats.html", null ],
     [ "renderer::AsyncComputeTask::StepContext", "classrenderer_1_1AsyncComputeTask_1_1StepContext.html", null ],

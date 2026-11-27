@@ -5,7 +5,7 @@ var namespaces_dup =
     [ "toast", null, [
       [ "_detail", "namespacetoast_1_1__detail.html", "namespacetoast_1_1__detail" ],
       [ "AmbienceVolume", "classtoast_1_1AmbienceVolume.html", "classtoast_1_1AmbienceVolume" ],
-      [ "AmbientLight", "classtoast_1_1AmbientLight.html", null ],
+      [ "AmbientLight", "classtoast_1_1AmbientLight.html", "classtoast_1_1AmbientLight" ],
       [ "AnimationPlayer", "classtoast_1_1AnimationPlayer.html", "classtoast_1_1AnimationPlayer" ],
       [ "AssetArrayFieldAccess", "structtoast_1_1AssetArrayFieldAccess.html", null ],
       [ "AssetFieldAccess", "structtoast_1_1AssetFieldAccess.html", null ],

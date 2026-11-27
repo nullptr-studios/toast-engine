@@ -1,5 +1,6 @@
 var NAVTREEINDEX4 =
 {
+"classeditor_1_1Workspace_1_1BoolSettingRow.html":[13,0,3,11,3],
 "classeditor_1_1Workspace_1_1ButtonVM.html":[11,0,0,12,4],
 "classeditor_1_1Workspace_1_1ButtonVM.html":[13,0,3,11,4],
 "classeditor_1_1Workspace_1_1ClassCardVM.html":[11,0,0,12,5],
@@ -248,6 +249,5 @@ var NAVTREEINDEX4 =
 "classphysics_1_1BroadPhase.html":[13,0,8,18],
 "classphysics_1_1CapsuleCollider.html":[13,0,8,23],
 "classphysics_1_1Collider.html":[13,0,8,26],
-"classphysics_1_1DebrisSimulation.html":[13,0,8,39],
-"classphysics_1_1DynamicRigidbody.html":[13,0,8,43]
+"classphysics_1_1DebrisSimulation.html":[13,0,8,39]
 };

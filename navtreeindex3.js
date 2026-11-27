@@ -1,5 +1,6 @@
 var NAVTREEINDEX3 =
 {
+"classeditor_1_1Editors_1_1TypeSwitchCaseVM.html":[13,0,3,4,24],
 "classeditor_1_1Engine_1_1Listener.html":[11,0,0,5,0],
 "classeditor_1_1Engine_1_1Listener.html":[13,0,3,5,0],
 "classeditor_1_1Engine_1_1NodeTreeItem.html":[11,0,0,5,1],
@@ -248,6 +249,5 @@ var NAVTREEINDEX3 =
 "classeditor_1_1Workspace_1_1AssetSettingRow.html":[13,0,3,11,1],
 "classeditor_1_1Workspace_1_1AutosaveService.html":[11,0,0,12,2],
 "classeditor_1_1Workspace_1_1AutosaveService.html":[13,0,3,11,2],
-"classeditor_1_1Workspace_1_1BoolSettingRow.html":[11,0,0,12,3],
-"classeditor_1_1Workspace_1_1BoolSettingRow.html":[13,0,3,11,3]
+"classeditor_1_1Workspace_1_1BoolSettingRow.html":[11,0,0,12,3]
 };

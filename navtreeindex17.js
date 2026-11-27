@@ -1,5 +1,8 @@
 var NAVTREEINDEX17 =
 {
+"structevent_1_1WorkspacePrepareHistoryMerge.html":[13,0,4,249],
+"structevent_1_1WorkspacePromoteNode.html":[13,0,4,250],
+"structevent_1_1WorkspaceRedo.html":[13,0,4,251],
 "structevent_1_1WorkspaceRemove.html":[13,0,4,252],
 "structevent_1_1WorkspaceRemoveNode.html":[13,0,4,253],
 "structevent_1_1WorkspaceResolveHistoryConflicts.html":[13,0,4,254],
@@ -246,8 +249,5 @@ var NAVTREEINDEX17 =
 "structrenderer_1_1EditorOverlays.html#ae9ef076741a126f7523696e5b21aaddc":[13,0,9,25,2],
 "structrenderer_1_1FogVolumeGpu.html":[11,0,1,22],
 "structrenderer_1_1FogVolumeGpu.html":[13,0,9,27],
-"structrenderer_1_1FogVolumeGpu.html#a00d6225dcfe90ddef2177254bef7ef41":[11,0,1,22,0],
-"structrenderer_1_1FogVolumeGpu.html#a00d6225dcfe90ddef2177254bef7ef41":[13,0,9,27,0],
-"structrenderer_1_1FogVolumeGpu.html#a0c685ddedfa1066e181b9831e9ee0301":[11,0,1,22,3],
-"structrenderer_1_1FogVolumeGpu.html#a0c685ddedfa1066e181b9831e9ee0301":[13,0,9,27,3]
+"structrenderer_1_1FogVolumeGpu.html#a00d6225dcfe90ddef2177254bef7ef41":[11,0,1,22,0]
 };

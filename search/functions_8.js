@@ -37,8 +37,9 @@ var searchData=
   ['isinstanceroot_34',['isInstanceRoot',['../classtoast_1_1Node.html#a4aaf31de720d90ac1f4e3e9c16d955af',1,'toast::Node']]],
   ['ismeshshadersupported_35',['isMeshShaderSupported',['../classrenderer_1_1VulkanCore.html#ad8e87601f3cd69b85c8af0702e5ec35e',1,'renderer::VulkanCore']]],
   ['ismisaligned_36',['isMisaligned',['../classtoast_1_1VoxelPiece.html#aebaae6396232c146a8d71838cdb50b23',1,'toast::VoxelPiece']]],
-  ['isplaying_37',['isPlaying',['../classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c',1,'toast::AudioEmitter::isPlaying()'],['../classtoast_1_1PlayWorkspace.html#abb4821b10521be22513237194dd0dfbb',1,'toast::PlayWorkspace::isPlaying()'],['../classtoast_1_1Workspace.html#a182ea711f9ed7f461af3c2dd896c7b69',1,'toast::Workspace::isPlaying()']]],
-  ['isprebaked_38',['isPrebaked',['../classtoast_1_1ReflectionProbe.html#ab5ef924f34d9b86c62cca3a55333d0e0',1,'toast::ReflectionProbe']]],
-  ['isready_39',['isReady',['../classrenderer_1_1HiZPyramid.html#af3a667e1e1d00a7e4d161786d618de09',1,'renderer::HiZPyramid']]],
-  ['isvalid_40',['isValid',['../classscripting_1_1ScriptInstance.html#a3285b3bf81439d8b3a6f8ced505b1d28',1,'scripting::ScriptInstance']]]
+  ['ispipelinestatsenabled_37',['isPipelineStatsEnabled',['../classrenderer_1_1VulkanCore.html#af8f6906c529bd5afb801d2a34df382f3',1,'renderer::VulkanCore']]],
+  ['isplaying_38',['isPlaying',['../classtoast_1_1AudioEmitter.html#a0b598b5b8508b38e15cb1029feeabf6c',1,'toast::AudioEmitter::isPlaying()'],['../classtoast_1_1PlayWorkspace.html#abb4821b10521be22513237194dd0dfbb',1,'toast::PlayWorkspace::isPlaying()'],['../classtoast_1_1Workspace.html#a182ea711f9ed7f461af3c2dd896c7b69',1,'toast::Workspace::isPlaying()']]],
+  ['isprebaked_39',['isPrebaked',['../classtoast_1_1ReflectionProbe.html#ab5ef924f34d9b86c62cca3a55333d0e0',1,'toast::ReflectionProbe']]],
+  ['isready_40',['isReady',['../classrenderer_1_1HiZPyramid.html#af3a667e1e1d00a7e4d161786d618de09',1,'renderer::HiZPyramid']]],
+  ['isvalid_41',['isValid',['../classscripting_1_1ScriptInstance.html#a3285b3bf81439d8b3a6f8ced505b1d28',1,'scripting::ScriptInstance']]]
 ];
