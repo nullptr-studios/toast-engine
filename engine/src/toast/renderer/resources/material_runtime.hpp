@@ -76,7 +76,7 @@ public:
 		uint32_t set = 0;
 		uint32_t binding = 0;
 		assets::Handle<assets::Texture> texture;
-		assets::Handle<assets::Video> video;	// evety texture can also hold a video texture
+		assets::Handle<assets::Video> video;    // evety texture can also hold a video texture
 		vk::Sampler sampler;
 		std::string default_fallback;
 		bool linear_data = false;

@@ -14,8 +14,8 @@
 #include <string_view>
 #include <vector>
 
-struct NVSDK_NGX_Parameter;
-struct NVSDK_NGX_Handle;
+struct NVSDK_NGX_Parameter;    // NOLINT
+struct NVSDK_NGX_Handle;       // NOLINT
 
 namespace renderer {
 class VulkanCore;
