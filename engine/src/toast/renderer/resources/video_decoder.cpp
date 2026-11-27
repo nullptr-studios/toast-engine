@@ -18,9 +18,9 @@ namespace {
 constexpr int k_io_buffer_size = 32 * 1024;
 
 auto errorText(int code) -> std::string {
-	char text[AV_ERROR_MAX_STRING_SIZE] {};
-	av_strerror(code, text, sizeof(text));
-	return text;
+	std::array<char, AV_ERROR_MAX_STRING_SIZE> text {};
+	av_strerror(code, text.data(), sizeof(text));
+	return text.data();
 }
 
 }
@@ -255,9 +255,9 @@ auto VideoDecoder::decodeNext(std::byte* dst, size_t dst_row_pitch) -> std::opti
 		sws_setColorspaceDetails(m_sws, coefficients, source_full_range, coefficients, 1, 0, 1 << 16, 1 << 16);
 	}
 
-	uint8_t* planes[4] = {reinterpret_cast<uint8_t*>(dst), nullptr, nullptr, nullptr};
-	const int strides[4] = {static_cast<int>(dst_row_pitch), 0, 0, 0};
-	sws_scale(m_sws, m_frame->data, m_frame->linesize, 0, m_frame->height, planes, strides);
+	std::array<uint8_t*, 4> planes = {reinterpret_cast<uint8_t*>(dst), nullptr, nullptr, nullptr};
+	std::array<const int, 4> strides = {static_cast<int>(dst_row_pitch), 0, 0, 0};
+	sws_scale(m_sws, m_frame->data, m_frame->linesize, 0, m_frame->height, planes.data(), strides.data());
 	av_frame_unref(m_frame);
 	return m_next_index++;
 }
