@@ -88,7 +88,7 @@ void AssetRegistry::init() {
 	s_schema_toml["destruction_material"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<DestructionMaterial>(t, std::move(s));
 	};
-	s_schema_toml["post_process_profile"] = [](const toml::table& t, Handle<Schema> s) {
+	s_schema_toml["post_process"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<PostProcessProfile>(t, std::move(s));
 	};
 

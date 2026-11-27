@@ -325,7 +325,7 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 				lut_view = lut.getView();
 				lut_generation = lut.generation();
 				// Default texture imports are sRGB, the sampler then hands back linear values the shader re-encodes
-				lut_srgb = vk::to_string(lut.getFormat()).find("Srgb") != std::string::npos;
+				lut_srgb = vk::to_string(lut.getFormat()).contains("Srgb");
 			} else if (std::exchange(m_rejected_lut, lut.generation()) != lut.generation()) {
 				TOAST_WARN(
 				    "Render",
