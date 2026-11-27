@@ -148,7 +148,7 @@ void runJobs(const std::vector<WaveJob>& jobs, size_t item_count, ItemRunner run
 	const size_t workers = ThreadPool::workerCount();
 	const size_t idle = ThreadPool::idleWorkers();
 	const size_t helpers = std::min(jobs.size(), workers);
-	const size_t queue_limit = workers * static_cast<size_t>(worldParams().queued_helpers_per_worker.get());
+	const size_t queue_limit = workers * static_cast<size_t>(worldParams().queued_helpers_per_worker);
 	size_t queued = 0;
 	for (; queued < helpers; ++queued) {
 		if (g_queued_helpers.fetch_add(1) >= queue_limit) {
@@ -170,9 +170,8 @@ void runJobs(const std::vector<WaveJob>& jobs, size_t item_count, ItemRunner run
 			work();
 		} else {
 			// Workers that are waiting for a task show up at once
-			const auto deadline =
-			    std::chrono::steady_clock::now() +
-			    std::chrono::microseconds(idle != 0 ? worldParams().grace_idle.get() : worldParams().grace_busy.get());
+			const auto deadline = std::chrono::steady_clock::now() +
+			                      std::chrono::microseconds(idle != 0 ? worldParams().grace_idle : worldParams().grace_busy);
 			unsigned spins = 0;
 			while (run->remaining.load() != 0 && run->entered.load(std::memory_order_relaxed) == 0) {
 				if (std::chrono::steady_clock::now() >= deadline) {

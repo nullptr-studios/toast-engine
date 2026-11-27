@@ -153,7 +153,7 @@ auto VoxelNode::volume() -> voxel::Volume* {
 				    "Voxel",
 				    "'{}' could not be instantiated: the runtime brick pool is out of its {} bricks",
 				    name(),
-				    voxel::voxelParams().runtime_bricks.get()
+				    voxel::voxelParams().runtime_bricks
 				);
 			}
 		}
@@ -270,8 +270,8 @@ namespace {
 
 [[nodiscard]]
 auto tooBig(glm::ivec3 dims) noexcept -> bool {
-	return glm::any(glm::greaterThan(dims, glm::ivec3(voxel::voxelParams().max_bricks_per_axis.get()))) ||
-	       static_cast<int64_t>(dims.x) * dims.y * dims.z > voxel::voxelParams().max_bricks.get();
+	return glm::any(glm::greaterThan(dims, glm::ivec3(voxel::voxelParams().max_bricks_per_axis))) ||
+	       static_cast<int64_t>(dims.x) * dims.y * dims.z > voxel::voxelParams().max_bricks;
 }
 
 }
@@ -345,7 +345,7 @@ void VoxelNode::commitEdit(const voxel::EditResult& result, std::string_view ope
 		    "'{}' {} stopped early: the runtime brick pool is out of its {} bricks",
 		    name(),
 		    operation,
-		    voxel::voxelParams().runtime_bricks.get()
+		    voxel::voxelParams().runtime_bricks
 		);
 	}
 	if (result.changed == 0) {

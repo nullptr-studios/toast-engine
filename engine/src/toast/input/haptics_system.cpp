@@ -104,7 +104,7 @@ void HapticsSystem::tick() {
 		}
 	}
 
-	const uint32_t slice = static_cast<uint32_t>(Time::delta() * 1000.0f) + static_cast<uint32_t>(params.haptics_slack.get());
+	const uint32_t slice = static_cast<uint32_t>(Time::delta() * 1000.0f) + static_cast<uint32_t>(params.haptics_slack);
 	std::unordered_set<uint32_t> active_now;
 	for (const auto& [controller, blend] : per_controller) {
 		SDL_Gamepad* pad = SDL_GetGamepadFromID(controller);

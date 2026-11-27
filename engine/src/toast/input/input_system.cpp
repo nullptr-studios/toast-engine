@@ -148,7 +148,7 @@ void InputSystem::subscribeEvents() {
 		if (m_overlay_mouse) {
 			return false;
 		}
-		m_scroll += glm::vec2 {e.x, e.y} * inputParams().mouse_scroll_speed.get();
+		m_scroll += glm::vec2 {e.x, e.y} * inputParams().mouse_scroll_speed;
 		noteLastInput(Device::mouse, "mouse");
 		return false;
 	});
@@ -234,7 +234,7 @@ void InputSystem::refreshGamepads() {
 		}
 		for (int a = 0; a < SDL_GAMEPAD_AXIS_COUNT && !active; ++a) {
 			const float v = static_cast<float>(SDL_GetGamepadAxis(pad, static_cast<SDL_GamepadAxis>(a))) / axis_normalize;
-			active = std::abs(v) >= inputParams().gamepad_activity_threshold.get();
+			active = std::abs(v) >= inputParams().gamepad_activity_threshold;
 		}
 		if (active) {
 			noteLastInput(Device::controller, gamepadName(pad));
@@ -352,7 +352,7 @@ void InputSystem::tick() {
 	m_last_tick = now;
 	m_has_last_tick = true;
 
-	m_mouse_delta = (m_mouse_position - m_prev_mouse_position) * inputParams().mouse_sensitivity.get();
+	m_mouse_delta = (m_mouse_position - m_prev_mouse_position) * inputParams().mouse_sensitivity;
 
 	refreshGamepads();
 

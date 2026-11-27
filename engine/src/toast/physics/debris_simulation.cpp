@@ -102,7 +102,7 @@ auto DebrisSimulation::get() -> DebrisSimulation* {
 
 void DebrisSimulation::spawn(std::span<const DebrisSpawn> spawns) {
 	const Tunables& settings = tunables();
-	const float jitter = std::clamp(settings.debris_lifetime_jitter.get(), 0.0f, 0.9f);
+	const float jitter = std::clamp(settings.debris_lifetime_jitter, 0.0f, 0.9f);
 	for (const DebrisSpawn& spawn : spawns) {
 		if (spawn.mask == 0) {
 			continue;
@@ -263,7 +263,7 @@ auto DebrisSimulation::planSlots(double now, std::span<GpuSpawn> spawns, std::sp
 	}
 
 	// The GPU cuts their life to the fade from the current age so they die by the same time as here
-	const uint32_t cap = std::min(m_max_particles, std::max(tunables().debris_max_particles.get(), 1u));
+	const uint32_t cap = std::min(m_max_particles, std::max(tunables().debris_max_particles, 1u));
 	const auto incoming = static_cast<uint32_t>(spawns.size());
 	uint32_t retire_count = 0;
 	while (live + incoming > cap && retire_count < retires.size() && !m_spawn_order.empty()) {

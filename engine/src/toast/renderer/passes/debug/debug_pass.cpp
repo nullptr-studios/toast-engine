@@ -867,9 +867,9 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 				ImGui::TextColored(
 				    ImVec4(1.0f, 0.4f, 1.0f, 1.0f),
 				    "Live thresholds: box-voxel %u  voxel-voxel %u  regions %u",
-				    physics::tunables().box_voxel_split_min_voxels.get(),
-				    physics::tunables().voxel_voxel_split_min_voxels.get(),
-				    physics::tunables().voxel_pair_split_regions.get()
+				    physics::tunables().box_voxel_split_min_voxels,
+				    physics::tunables().voxel_voxel_split_min_voxels,
+				    physics::tunables().voxel_pair_split_regions
 				);
 			}
 

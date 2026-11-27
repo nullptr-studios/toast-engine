@@ -103,7 +103,7 @@ void registerLayerSettings(PhysicsParams& params) {
 		}
 	}
 
-	params.layer_names.onChange([](const std::vector<std::string>& names) {
+	toast::params::onChange(params.layer_names, [](const std::vector<std::string>& names) {
 		LayerTable& all = table();
 		std::scoped_lock lock(all.mutex);
 		for (int layer = 1; layer < k_layer_count; ++layer) {
@@ -111,7 +111,7 @@ void registerLayerSettings(PhysicsParams& params) {
 			all.layers[layer].name = index < names.size() && !names[index].empty() ? names[index] : defaultLayer(layer).name;
 		}
 	});
-	params.layer_abbreviations.onChange([](const std::vector<std::string>& abbreviations) {
+	toast::params::onChange(params.layer_abbreviations, [](const std::vector<std::string>& abbreviations) {
 		LayerTable& all = table();
 		std::scoped_lock lock(all.mutex);
 		for (int layer = 1; layer < k_layer_count; ++layer) {

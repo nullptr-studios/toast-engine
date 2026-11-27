@@ -17,7 +17,7 @@ struct DepthGuard {
 
 	[[nodiscard]]
 	auto exceeded() const -> bool {
-		return s_parent_depth > assetParams().material_parent_depth.get();
+		return s_parent_depth > assetParams().material_parent_depth;
 	}
 };
 

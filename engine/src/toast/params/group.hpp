@@ -9,6 +9,7 @@
 #pragma once
 #include <algorithm>
 #include <cstddef>
+#include <memory>
 #include <span>
 #include <string>
 #include <string_view>
@@ -68,6 +69,11 @@ public:
 	auto operator[](std::string_view id) const -> ParamBase&;
 
 	[[nodiscard]]
+	auto findByAnchor(const void* anchor) const -> ParamBase*;
+
+	void adopt(std::unique_ptr<ParamBase> param);
+
+	[[nodiscard]]
 	auto dirty(Layer layer) const -> bool {
 		return (m_dirty & (1U << static_cast<unsigned>(layer))) != 0;
 	}
@@ -80,6 +86,12 @@ protected:
 	explicit GroupBase(std::string_view name);
 	~GroupBase();
 
+	/// Declares a plain field of the derived group as a parameter; see toast::params::declare
+	template<typename T>
+	static auto param(T* self, Id id, std::type_identity_t<T> default_value, Meta<std::type_identity_t<T>> meta = {}) -> T {
+		return declare(self, id, std::move(default_value), meta);
+	}
+
 private:
 	friend class ParamBase;
 
@@ -90,6 +102,8 @@ private:
 	uint8_t m_dirty = 0;
 	std::vector<ParamBase*> m_params;
 	std::unordered_map<uint64_t, ParamBase*> m_by_hash;
+	std::unordered_map<const void*, ParamBase*> m_by_anchor;
+	std::vector<std::unique_ptr<ParamBase>> m_owned;    // last, so it is destroyed while the indexes above are alive
 };
 
 template<FixedString Name>

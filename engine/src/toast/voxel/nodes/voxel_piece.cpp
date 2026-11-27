@@ -50,7 +50,7 @@ void VoxelPiece::draw(std::string_view operation, Kernel&& kernel) {
 		    "'{}' {} stopped early: the procedural brick pool is out of its {} bricks",
 		    name(),
 		    operation,
-		    voxel::voxelParams().procedural_bricks.get()
+		    voxel::voxelParams().procedural_bricks
 		);
 	}
 }

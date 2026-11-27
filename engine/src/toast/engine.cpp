@@ -411,8 +411,8 @@ void Engine::init() {
 
 		m->params_files->reload();
 
-		timeParams().scale.onChange([](const float& value) { Time::scale(value); });
-		timeParams().max_delta.onChange([](const float& value) { Time::setMaxDelta(value); });
+		toast::params::onChange(timeParams().scale, [](const float& value) { Time::scale(value); });
+		toast::params::onChange(timeParams().max_delta, [](const float& value) { Time::setMaxDelta(value); });
 	}
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
@@ -682,7 +682,7 @@ void Engine::tick() {
 	// TODO MOVE THIS
 	// FIXME: @XEIN where should we move this??
 	clear_assets_timer += Time::delta();
-	const double unload_interval = assets::assetParams().unload_interval.get();
+	const double unload_interval = assets::assetParams().unload_interval;
 	if (unload_interval > 0.0 && clear_assets_timer > unload_interval) {
 		m->asset_manager->clearUnusedAssets();
 		clear_assets_timer = 0.0;
@@ -788,7 +788,7 @@ void Engine::tick() {
 	if (m->shared_target != nullptr && m->asset_manager && !gameIsAdvancing(*m)) {
 		script_reload_timer += Time::delta();
 		const auto& reload = assets::assetParams();
-		if (reload.hot_reload_enabled && script_reload_timer > reload.hot_reload_interval.get()) {
+		if (reload.hot_reload_enabled && script_reload_timer > reload.hot_reload_interval) {
 			script_reload_timer = 0.0;
 			m->asset_manager->pollModifiedAssets();
 		}
@@ -851,7 +851,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// Reads true only once the window is shown
 	const SDLWindow::DisplayHdr display_hdr = SDLWindow::queryDisplayHdr(sdl_window);
-	const bool prefer_hdr = display_hdr.enabled && renderer::rendererParams().display_hdr.get();
+	const bool prefer_hdr = display_hdr.enabled && renderer::rendererParams().display_hdr;
 	TOAST_INFO(
 	    "Render",
 	    "Display HDR {} (SDR white {:.2f}, headroom {:.2f}), HDR output {}",

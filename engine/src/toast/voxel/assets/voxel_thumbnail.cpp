@@ -258,7 +258,7 @@ auto toast_tvox_render_thumbnail(const char* tvox_path, const char* palette_path
 		}
 		const VoxThumbCamera cam = voxThumbBuildCamera(grid, *center_of_mass);
 
-		const uint32_t k_supersample = static_cast<uint32_t>(voxel::voxelParams().thumbnail_supersample.get());
+		const uint32_t k_supersample = static_cast<uint32_t>(voxel::voxelParams().thumbnail_supersample);
 		const uint32_t super_size = thumb_size * k_supersample;
 		std::vector<RgbaF> samples(static_cast<size_t>(super_size) * super_size);
 

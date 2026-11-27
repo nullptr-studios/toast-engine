@@ -642,7 +642,7 @@ void ProceduralVoxel::applyComposed(ComposeOutput& output) {
 		    "Voxel",
 		    "'{}' is missing voxels: the procedural brick pool is out of its {} bricks",
 		    name(),
-		    voxel::voxelParams().procedural_bricks.get()
+		    voxel::voxelParams().procedural_bricks
 		);
 	}
 	if (result.too_many_parts && !result.region.has_value()) {

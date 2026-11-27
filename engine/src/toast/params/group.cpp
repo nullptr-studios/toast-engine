@@ -122,12 +122,43 @@ auto GroupBase::operator[](std::string_view id) const -> ParamBase& {
 	return *param;
 }
 
+auto GroupBase::findByAnchor(const void* anchor) const -> ParamBase* {
+	const auto it = m_by_anchor.find(anchor);
+	return it == m_by_anchor.end() ? nullptr : it->second;
+}
+
+void GroupBase::adopt(std::unique_ptr<ParamBase> param) {
+	m_owned.push_back(std::move(param));
+}
+
+namespace detail {
+
+void adopt(const void* anchor, std::unique_ptr<ParamBase> param) {
+	if (GroupBase* group = locateGroup(anchor)) {
+		group->adopt(std::move(param));
+	} else {
+		TOAST_ERROR("Params", "'{}' is not declared inside a Group and was dropped", param->id());
+	}
+}
+
+auto paramAt(const void* anchor) -> ParamBase* {
+	GroupBase* group = locateGroup(anchor);
+	ParamBase* param = group != nullptr ? group->findByAnchor(anchor) : nullptr;
+	if (param == nullptr) {
+		throw std::out_of_range("of(): the address is not a declared parameter");
+	}
+	return param;
+}
+
+}
+
 auto GroupBase::add(ParamBase& param) -> bool {
 	if (m_by_hash.contains(param.hash())) {
 		TOAST_ERROR("Params", "Duplicate parameter id '{}' in group '{}'; the first declaration is kept", param.id(), m_name);
 		return false;
 	}
 	m_by_hash.emplace(param.hash(), &param);
+	m_by_anchor.emplace(param.anchor(), &param);
 	m_params.push_back(&param);
 	return true;
 }
@@ -135,6 +166,7 @@ auto GroupBase::add(ParamBase& param) -> bool {
 void GroupBase::remove(ParamBase& param) {
 	if (const auto it = m_by_hash.find(param.hash()); it != m_by_hash.end() && it->second == &param) {
 		m_by_hash.erase(it);
+		m_by_anchor.erase(param.anchor());
 		std::erase(m_params, &param);
 	}
 }

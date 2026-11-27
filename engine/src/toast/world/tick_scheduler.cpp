@@ -440,7 +440,7 @@ void TickScheduler::runLifecycle(Node& root, TickFunctionList stage) const {
 		};
 		count(root);
 	}
-	if (scripted < static_cast<size_t>(scripting::scriptingParams().parallel_lifecycle.get()) || interpreters.size() < 2) {
+	if (scripted < static_cast<size_t>(scripting::scriptingParams().parallel_lifecycle) || interpreters.size() < 2) {
 		one_node_at_a_time();
 		return;
 	}

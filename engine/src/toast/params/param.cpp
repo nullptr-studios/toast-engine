@@ -15,7 +15,8 @@ ParamBase::ParamBase(const Info& info)
       m_requires_restart(info.requires_restart),
       m_asset_type(info.asset_type),
       m_unit(info.unit) {
-	const std::string prefix = detail::prefixFor(this);
+	m_anchor = info.anchor != nullptr ? info.anchor : this;
+	const std::string prefix = detail::prefixFor(m_anchor);
 	if (prefix.empty()) {
 		m_id = std::string {info.id.text};
 		m_hash = info.id.hash;
@@ -24,7 +25,7 @@ ParamBase::ParamBase(const Info& info)
 		m_hash = fnv1a(m_id);
 	}
 
-	m_group = detail::locateGroup(this);
+	m_group = detail::locateGroup(m_anchor);
 	if (m_group != nullptr && !m_group->add(*this)) {
 		m_group = nullptr;
 	}

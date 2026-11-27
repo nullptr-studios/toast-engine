@@ -117,7 +117,7 @@ auto ScriptDispatch::deliver(int max_rounds) -> size_t {
 		// stay in the order they were queued, so they apply in the order they were issued, and the interpreters do not wait
 		// for each other. A small batch is not worth handing out
 		std::vector<toast::_detail::WaveJob> jobs;
-		if (batch.size() >= static_cast<size_t>(scriptingParams().parallel_batch.get()) && toast::ThreadPool::workerCount() > 1) {
+		if (batch.size() >= static_cast<size_t>(scriptingParams().parallel_batch) && toast::ThreadPool::workerCount() > 1) {
 			std::unordered_map<size_t, size_t> job_of_interpreter;
 			for (size_t index = 0; index < batch.size(); ++index) {
 				const auto [slot, inserted] = job_of_interpreter.try_emplace(batch[index].vm_index, jobs.size());

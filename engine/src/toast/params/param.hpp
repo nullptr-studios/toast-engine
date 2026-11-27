@@ -12,6 +12,7 @@
 #include <cmath>
 #include <functional>
 #include <limits>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <span>
@@ -99,6 +100,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto anchor() const -> const void* {
+		return m_anchor;
+	}
+
+	[[nodiscard]]
 	virtual auto type() const -> Type = 0;
 
 	[[nodiscard]]
@@ -145,6 +151,7 @@ protected:
 		bool requires_restart = false;
 		std::string_view asset_type;
 		std::string_view unit;
+		const void* anchor = nullptr;
 	};
 
 	explicit ParamBase(const Info& info);
@@ -166,6 +173,7 @@ private:
 	std::string_view m_asset_type;
 	std::string_view m_unit;
 	GroupBase* m_group = nullptr;
+	const void* m_anchor = nullptr;
 	std::array<std::optional<Value>, k_layer_count> m_layers;
 	std::vector<std::function<void(const Value&)>> m_callbacks;
 	mutable std::mutex m_snapshot_mutex;
@@ -265,27 +273,25 @@ class Param final : public ParamBase {
 public:
 	using Element = typename Traits<T>::Element;
 
-	Param(Id id, T default_value, Meta<T> meta = {})
+	Param(T* target, Id id, T default_value, Meta<T> meta = {})
 	    : ParamBase(
-	          Info {id, meta.name, meta.description, meta.kind, meta.options, meta.requires_restart, meta.asset_type, meta.unit}
+	          Info {
+	            id, meta.name, meta.description, meta.kind, meta.options, meta.requires_restart, meta.asset_type, meta.unit, target
+	          }
 	      ),
-	      m_value(default_value),
+	      m_target(target),
 	      m_default(std::move(default_value)),
 	      m_meta(meta) {
-		publish(toValue(m_value));
+		publish(toValue(m_default));
 	}
 
 	[[nodiscard]]
 	auto get() const -> const T& {
-		return m_value;
-	}
-
-	operator const T&() const {    // NOLINT(google-explicit-constructor) - the whole point is reading it like a T
-		return m_value;
+		return *m_target;
 	}
 
 	void onChange(std::function<void(const T&)> callback) {
-		callback(m_value);
+		callback(*m_target);
 		onChangeValue([callback = std::move(callback)](const Value& v) {
 			if (auto typed = fromValue<T>(v)) {
 				callback(*typed);
@@ -305,7 +311,7 @@ public:
 
 	[[nodiscard]]
 	auto value() const -> Value override {
-		return toValue(m_value);
+		return toValue(*m_target);
 	}
 
 	[[nodiscard]]
@@ -345,19 +351,48 @@ public:
 		} else {
 			detail::clampElement(*parsed, m_meta.min, m_meta.max);
 		}
-		if (*parsed == m_value) {
+		if (*parsed == *m_target) {
 			return true;
 		}
-		m_value = std::move(*parsed);
-		publish(toValue(m_value));
+		*m_target = std::move(*parsed);
+		publish(toValue(*m_target));
 		notify();
 		return true;
 	}
 
 private:
-	T m_value;
+	T* m_target;
 	T m_default;
 	Meta<T> m_meta;
 };
+
+namespace detail {
+
+TOAST_API void adopt(const void* anchor, std::unique_ptr<ParamBase> param);
+
+[[nodiscard]]
+TOAST_API auto paramAt(const void* anchor) -> ParamBase*;
+
+}
+
+/// Registers `*self` (a plain field of a Group) as a parameter and returns its default so it can
+/// initialise the field: `float gravity = param(&gravity, "world.gravity", -9.8f, {...});`
+template<typename T>
+auto declare(T* self, Id id, std::type_identity_t<T> default_value, Meta<std::type_identity_t<T>> meta = {}) -> T {
+	T initial = default_value;
+	detail::adopt(self, std::make_unique<Param<T>>(self, id, std::move(default_value), meta));
+	return initial;
+}
+
+/// The Param behind a field of a Group: `of(settings.gravity).request(...)`
+template<typename T>
+auto of(const T& field) -> Param<T>& {
+	return static_cast<Param<T>&>(*detail::paramAt(&field));
+}
+
+template<typename T>
+void onChange(const T& field, std::type_identity_t<std::function<void(const T&)>> callback) {
+	of(field).onChange(std::move(callback));
+}
 
 }

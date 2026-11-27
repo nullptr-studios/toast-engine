@@ -27,7 +27,7 @@ auto pcallTraceback(lua_State* state, int nargs, int nresults) noexcept -> int {
 	return status;
 }
 
-ScriptDepthGuard::ScriptDepthGuard() noexcept : m_allowed(t_script_depth < scriptingParams().max_call_depth.get()) {
+ScriptDepthGuard::ScriptDepthGuard() noexcept : m_allowed(t_script_depth < scriptingParams().max_call_depth) {
 	if (m_allowed) {
 		++t_script_depth;
 	}

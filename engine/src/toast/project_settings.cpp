@@ -20,8 +20,8 @@ struct ProjectGroups {
 namespace {
 
 template<typename T>
-auto handleFrom(const params::Param<params::AssetRef>& param) -> assets::Handle<T> {
-	const std::string& uri = param.get().uri;
+auto handleFrom(const params::AssetRef& asset) -> assets::Handle<T> {
+	const std::string& uri = asset.uri;
 	if (uri.empty()) {
 		return {};
 	}
@@ -41,7 +41,7 @@ ProjectSettings::ProjectSettings(const std::filesystem::path& path, params::File
 		files->load(m_groups->ui);
 	}
 
-	m_databases = m_groups->project.databases.get();
+	m_databases = m_groups->project.databases;
 	if (m_databases.empty()) {
 		m_databases.emplace_back("assets");
 	}
@@ -51,7 +51,7 @@ ProjectSettings::ProjectSettings(const std::filesystem::path& path, params::File
 	m_gameplay_settings.m_player = handleFrom<assets::Prefab>(m_groups->gameplay.player);
 
 	m_ui_settings.m_color_scheme = handleFrom<assets::ColorScheme>(m_groups->ui.color_scheme);
-	m_ui_settings.m_languages = m_groups->ui.languages.get();
+	m_ui_settings.m_languages = m_groups->ui.languages;
 	if (m_ui_settings.m_languages.empty()) {
 		m_ui_settings.m_languages.emplace_back("en");
 	}
