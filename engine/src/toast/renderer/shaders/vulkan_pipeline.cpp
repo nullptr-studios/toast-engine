@@ -6,9 +6,44 @@
 
 #include "toast/renderer/shaders/spirv_entry_points.hpp"
 
+#include <format>
+
 namespace renderer {
 
 namespace {
+auto statisticsFlags(const VulkanCore& core) -> vk::PipelineCreateFlags {
+	return core.isPipelineStatsEnabled() ? vk::PipelineCreateFlagBits::eCaptureStatisticsKHR : vk::PipelineCreateFlags {};
+}
+
+/// One line per stage the driver compiled, with whatever it reports such as register count, see TOAST_PIPELINE_STATS
+void logPipelineStatistics(const VulkanCore& core, vk::Pipeline pipeline, const std::string& name) {
+	if (!core.isPipelineStatsEnabled()) {
+		return;
+	}
+	const auto& device = core.getDevice();
+	const auto executables = device.getPipelineExecutablePropertiesKHR(vk::PipelineInfoKHR(pipeline));
+	for (uint32_t index = 0; index < executables.size(); ++index) {
+		std::string line;
+		for (const auto& statistic : device.getPipelineExecutableStatisticsKHR(vk::PipelineExecutableInfoKHR(pipeline, index))) {
+			switch (statistic.format) {
+				case vk::PipelineExecutableStatisticFormatKHR::eBool32:
+					line += std::format("{}={} ", statistic.name.data(), statistic.value.b32 != VK_FALSE);
+					break;
+				case vk::PipelineExecutableStatisticFormatKHR::eInt64:
+					line += std::format("{}={} ", statistic.name.data(), statistic.value.i64);
+					break;
+				case vk::PipelineExecutableStatisticFormatKHR::eUint64:
+					line += std::format("{}={} ", statistic.name.data(), statistic.value.u64);
+					break;
+				case vk::PipelineExecutableStatisticFormatKHR::eFloat64:
+					line += std::format("{}={:.2f} ", statistic.name.data(), statistic.value.f64);
+					break;
+			}
+		}
+		TOAST_INFO("Render", "Pipeline stats {} [{}]: {}", name, executables[index].name.data(), line);
+	}
+}
+
 auto createShaderModule(const vk::raii::Device& device, std::span<const std::byte> spirv) -> vk::raii::ShaderModule {
 	if (spirv.empty()) {
 		TOAST_CRITICAL("Render", "Shader SPIR-V bytecode is empty!");
@@ -270,6 +305,7 @@ auto createGraphicsPipelineImpl(
 	}
 
 	vk::GraphicsPipelineCreateInfo pipeline_ci {};
+	pipeline_ci.flags = statisticsFlags(core);
 	pipeline_ci.pNext = &rendering_ci;
 	pipeline_ci.stageCount = static_cast<uint32_t>(shader_stages.size());
 	pipeline_ci.pStages = shader_stages.data();
@@ -303,7 +339,7 @@ auto createComputePipelineImpl(
 	    {}, vk::ShaderStageFlagBits::eCompute, *shader_module, compute_entry.c_str()
 	);
 
-	const vk::ComputePipelineCreateInfo pipeline_ci({}, shader_stage_ci, pipeline_layout);
+	const vk::ComputePipelineCreateInfo pipeline_ci(statisticsFlags(core), shader_stage_ci, pipeline_layout);
 	auto pipelines = device.createComputePipelines(core.getPipelineCache(), pipeline_ci);
 	return std::move(pipelines[0]);
 }
@@ -362,6 +398,7 @@ auto VulkanPipeline::rebuild(const VulkanCore& core, const Config& config) -> vo
 		setDebugName(core, **m_shader_module, config.debug_name + " ShaderModule");
 		setDebugName(core, *m_pipeline, config.debug_name + " Pipeline");
 	}
+	logPipelineStatistics(core, *m_pipeline, config.debug_name);
 }
 
 auto VulkanPipeline::reset() -> void {

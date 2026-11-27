@@ -56,6 +56,8 @@ void AssetManager::mountPack(std::string_view scheme, const std::filesystem::pat
 
 AssetManager::AssetManager() {
 	instance = this;
+	// A manager destroyed earlier (another project, another test) left handles not counting
+	Asset::setFreeingAll(false);
 
 	AssetRegistry::init();
 	reloadManifest();
@@ -505,6 +507,22 @@ auto AssetManager::openDatabase(const std::filesystem::path& db_file) -> bool {
 		db_path = db_file;
 	}
 	return ok;
+}
+
+AssetManager::~AssetManager() {
+	// Assets hold handles to other assets, so unreferenced ones go first, round after round, before the map frees the rest
+	// in hash order; freeing a referenced asset first would let its holder release freed memory
+	for (size_t remaining = cache.size() + retired_assets.size();;) {
+		std::erase_if(cache, [](const auto& item) { return item.second->refCount() == 0; });
+		std::erase_if(retired_assets, [](const auto& asset) { return asset->refCount() == 0; });
+		const size_t left = cache.size() + retired_assets.size();
+		if (left == remaining) {
+			break;
+		}
+		remaining = left;
+	}
+	// What is left is still held, by each other or by nodes a world never freed, so its handles stop counting
+	Asset::setFreeingAll(true);
 }
 
 void AssetManager::clearUnusedAssets() {

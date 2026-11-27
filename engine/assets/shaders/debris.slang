@@ -144,7 +144,8 @@ static const float kInertia = 0.667;
 static const float kAirDrag = 0.15;
 static const float kSpinDrag = 0.3;
 static const float kRollDrag = 6.0;
-static const float kSpawnGrace = 0.25;      // seconds a new piece ignores being buried
+static const float kEmissiveDecay = 0.4;    // seconds for the glow to fall to 1/e
+static const float kSpawnGrace = 0.25;     // seconds a new piece ignores being buried
 static const uint kGridCells = 1u << 16;    // mirrors DebrisSimulation::k_grid_cells
 static const uint kGridStride = 8;          // mirrors DebrisSimulation::k_grid_stride
 static const uint kGridSlots = kGridStride - 1u;
@@ -484,6 +485,8 @@ void integrateMain(uint3 id : SV_DispatchThreadID, uint3 groupThread : SV_GroupT
     DebrisMotion motion = gMotion[i];
     const float stepTime = gParams.dt * float(gParams.substeps);
     motion.age += stepTime;
+    // Glow cools off shortly after the break
+    particle.emissive *= exp(-stepTime / kEmissiveDecay);
     if (motion.age > motion.lifetime) {
         particle.packed = 0u;
         gCurrent[i] = particle;

@@ -34,6 +34,19 @@ void memoryBarrier(
 	cmd.pipelineBarrier2(dependency);
 }
 
+/// Tints lose their brightness first so the pickers only tint and the offsets only brighten
+auto prepareLiftGammaGain(const PostProcessSettings::ColorGrading& grade) -> std::array<glm::vec3, 3> {
+	const auto balanced = [](float r, float g, float b) {
+		const glm::vec3 tint(r, g, b);
+		return tint - glm::dot(tint, glm::vec3(0.2126f, 0.7152f, 0.0722f));
+	};
+	const glm::vec3 lift = (balanced(grade.lift_r, grade.lift_g, grade.lift_b) + grade.lift_offset) * 0.15f;
+	// Symmetric in log space so -1 and +1 are equal and opposite, 1/(1+x) reached 1000 at -1 and overflowed
+	const glm::vec3 gamma_inv = glm::exp2(-(balanced(grade.gamma_r, grade.gamma_g, grade.gamma_b) + grade.gamma_offset));
+	const glm::vec3 gain = 1.0f + balanced(grade.gain_r, grade.gain_g, grade.gain_b) + grade.gain_offset;
+	return {lift, gamma_inv, gain};
+}
+
 }
 
 TonemapPass::TonemapPass(const VulkanCore& core, vk::Format ldr_format, vk::Extent2D extent)
@@ -295,6 +308,35 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		m_was_metering = false;
 	}
 
+	const auto grade = frame != nullptr ? frame->post_process.color_grading : PostProcessSettings::ColorGrading {};
+	const auto [lift, gamma_inv, gain] = prepareLiftGammaGain(grade);
+
+	// A LUT still uploading or failed grades nothing rather than sampling an unready image
+	vk::ImageView lut_view = nullptr;
+	uint64_t lut_generation = 0;
+	bool lut_srgb = false;
+	if (grade.lut_intensity > 0.0f && grade.lut.hasValue()) {
+		const VulkanTexture& lut = grade.lut->gpuTexture();
+		if (lut.isReady()) {
+			const auto& lut_params = lut.params();
+			const uint32_t size = lut_params.extent.height;
+			const bool strip = lut_params.extent.width == size * size && lut_params.layer_count == 1 && !lut_params.is_cubemap;
+			if (strip) {
+				lut_view = lut.getView();
+				lut_generation = lut.generation();
+				// Default texture imports are sRGB, the sampler then hands back linear values the shader re-encodes
+				lut_srgb = vk::to_string(lut.getFormat()).contains("Srgb");
+			} else if (std::exchange(m_rejected_lut, lut.generation()) != lut.generation()) {
+				TOAST_WARN(
+				    "Render",
+				    "Colour grading LUT is {}x{}, it needs a strip of N slices of NxN like 1024x32; the image stays ungraded",
+				    lut_params.extent.width,
+				    size
+				);
+			}
+		}
+	}
+
 	const Params params {
 	  .exposure = settings.exposure,
 	  .mode = settings.mode,
@@ -310,6 +352,12 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 	  .peak_scale = VulkanRenderer::instance->hdrPeakScale(),
 	  .gt_toe = settings.gt_contrast_dip,
 	  .chromatic_aberration = settings.chromatic_aberration,
+	  .temperature = grade.temperature,
+	  .tint = grade.tint,
+	  .color_filter = {grade.color_filter_r, grade.color_filter_g, grade.color_filter_b, grade.hue_shift},
+	  .lift = {lift, 0.0f},
+	  .gamma_inv = {gamma_inv, lut_srgb ? 1.0f : 0.0f},
+	  .gain = {gain, lut_view ? grade.lut_intensity : 0.0f},
 	};
 
 	if (m_params_buffers[frame_index].gpu_buffer.has_value()) {
@@ -320,16 +368,22 @@ auto TonemapPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageV
 		}
 	}
 
-	if (m_bound_views.update(frame_index, source_view)) {
-		vk::DescriptorImageInfo image_info {};
-		image_info.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		image_info.imageView = source_view;
-		image_info.sampler = *m_sampler;
-
-		const vk::WriteDescriptorSet write(
-		    *m_descriptor_sets[frame_index], 1, 0, 1, vk::DescriptorType::eCombinedImageSampler, &image_info
-		);
-		m_core->getDevice().updateDescriptorSets(write, {});
+	if (m_bound_views.update(frame_index, {source_view, lut_view, lut_generation})) {
+		DescriptorWriter writer;
+		const auto image = [&](uint32_t binding, vk::ImageView view) {
+			writer.image(
+			    *m_descriptor_sets[frame_index],
+			    binding,
+			    vk::DescriptorType::eCombinedImageSampler,
+			    *m_sampler,
+			    view,
+			    vk::ImageLayout::eShaderReadOnlyOptimal
+			);
+		};
+		image(1, source_view);
+		// The scene stands in so the set stays valid; the shader skips the LUT when its intensity is 0
+		image(3, lut_view ? lut_view : source_view);
+		writer.flush(m_core->getDevice());
 	}
 
 	m_target.beginScope(cmd);

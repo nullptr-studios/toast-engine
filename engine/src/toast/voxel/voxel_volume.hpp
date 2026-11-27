@@ -9,14 +9,29 @@
 #include "brick_pool.hpp"
 #include "voxel_constants.hpp"
 
+#include <cassert>
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <optional>
 #include <span>
 #include <toast/export.hpp>
+#include <utility>
 #include <vector>
 
 namespace voxel {
+
+static_assert(k_brick_dim == 8, "brickOf and localOf shift and mask by 3 and 7");
+
+/// @brief Arithmetic shift so voxel -1 lands in brick -1
+[[nodiscard]]
+inline auto brickOf(glm::ivec3 voxel) noexcept -> glm::ivec3 {
+	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
+}
+
+[[nodiscard]]
+inline auto localOf(glm::ivec3 voxel) noexcept -> BrickCoord {
+	return BrickCoord {static_cast<uint32_t>(voxel.x & 7), static_cast<uint32_t>(voxel.y & 7), static_cast<uint32_t>(voxel.z & 7)};
+}
 
 class TOAST_API Volume {
 public:
@@ -42,6 +57,9 @@ public:
 	/// @brief Shares every brick with @p source until written
 	[[nodiscard]]
 	static auto instanceOf(const Volume& source) -> Volume;
+
+	/// @brief Same result as assigning instanceOf(source) but only retains and frees the bricks that differ
+	void reshareFrom(const Volume& source);
 
 	[[nodiscard]]
 	static auto adoptResized(Volume& source, glm::ivec3 brick_offset, glm::uvec3 brick_dims) -> Volume;
@@ -70,19 +88,44 @@ public:
 	}
 
 	[[nodiscard]]
-	auto containsBrick(glm::ivec3 brick) const noexcept -> bool;
+	auto containsBrick(glm::ivec3 brick) const noexcept -> bool {
+		return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && std::cmp_less(brick.x, m_brick_dims.x) &&
+		       std::cmp_less(brick.y, m_brick_dims.y) && std::cmp_less(brick.z, m_brick_dims.z);
+	}
 
 	[[nodiscard]]
-	auto containsVoxel(glm::ivec3 voxel) const noexcept -> bool;
+	auto containsVoxel(glm::ivec3 voxel) const noexcept -> bool {
+		return containsBrick(brickOf(voxel));
+	}
 
 	[[nodiscard]]
-	auto entryAt(glm::ivec3 brick) const noexcept -> BrickEntry;
+	auto entryAt(glm::ivec3 brick) const noexcept -> BrickEntry {
+		if (!containsBrick(brick)) {
+			return BrickEntry {};
+		}
+		return m_entries[entryIndex(brick)];
+	}
 
 	[[nodiscard]]
-	auto materialAt(glm::ivec3 voxel) const noexcept -> uint8_t;
+	auto materialAt(glm::ivec3 voxel) const noexcept -> uint8_t {
+		if (!containsVoxel(voxel)) {
+			return k_empty_palette_index;
+		}
+
+		const BrickEntry entry = m_entries[entryIndex(brickOf(voxel))];
+		switch (entry.tag()) {
+			case BrickTag::empty: return k_empty_palette_index;
+			case BrickTag::uniform: return static_cast<uint8_t>(entry.payload());
+			default: break;
+		}
+		const BrickCoord local = localOf(voxel);
+		return m_pool->material(entry.payload())[localIndex(local.x, local.y, local.z)];
+	}
 
 	[[nodiscard]]
-	auto isSolidAt(glm::ivec3 voxel) const noexcept -> bool;
+	auto isSolidAt(glm::ivec3 voxel) const noexcept -> bool {
+		return materialAt(voxel) != k_empty_palette_index;
+	}
 
 	auto setVoxel(glm::ivec3 voxel, uint8_t material) -> VoxelWrite;
 
@@ -119,13 +162,44 @@ public:
 
 	/// @brief Null when the brick holds nothing
 	[[nodiscard]]
-	auto occupancyPointer(glm::ivec3 brick) const noexcept -> const BrickOccupancy*;
+	auto occupancyPointer(glm::ivec3 brick) const noexcept -> const BrickOccupancy* {
+		const BrickEntry entry = entryAt(brick);
+		switch (entry.tag()) {
+			case BrickTag::empty: return nullptr;
+			case BrickTag::uniform: return &k_full_brick;
+			default: return &std::as_const(*m_pool).occupancy(entry.payload());
+		}
+	}
 
 	[[nodiscard]]
 	auto neighbourhoodOf(glm::ivec3 brick) const noexcept -> BrickNeighbourhood;
 
 	[[nodiscard]]
-	auto solidVoxelCount() const -> uint32_t;
+	auto solidVoxelCount() const noexcept -> uint32_t {
+		return m_solid_voxels;
+	}
+
+	/// Solid voxels of one brick, 0 outside the volume
+	[[nodiscard]]
+	auto brickSolidCount(glm::ivec3 brick) const noexcept -> uint32_t {
+		return containsBrick(brick) ? m_brick_solid[entryIndex(brick)] : 0u;
+	}
+
+	/**
+	 * Calls visit(brick, slot) for every brick that holds a solid voxel in slot order, which is z then y then x
+	 * @note Skips empty space 64 bricks at a time so a sparse volume costs what is in it
+	 */
+	template<typename Visit>
+	void forEachSolidBrick(Visit&& visit) const {
+		for (size_t word_index = 0; word_index < m_solid_mask.size(); ++word_index) {
+			uint64_t word = m_solid_mask[word_index];
+			while (word != 0ull) {
+				const auto slot = static_cast<uint32_t>((word_index << 6u) + static_cast<size_t>(std::countr_zero(word)));
+				word &= word - 1ull;
+				visit(brickAtIndex(slot), slot);
+			}
+		}
+	}
 
 	[[nodiscard]]
 	auto ownedBrickCount() const -> uint32_t;
@@ -164,17 +238,30 @@ private:
 	void markDirty(glm::ivec3 brick);
 
 	[[nodiscard]]
-	auto entryIndex(glm::ivec3 brick) const noexcept -> uint32_t;
+	auto entryIndex(glm::ivec3 brick) const noexcept -> uint32_t {
+		assert(containsBrick(brick));
+		return static_cast<uint32_t>(brick.x) + (static_cast<uint32_t>(brick.y) * m_brick_dims.x) +
+		       (static_cast<uint32_t>(brick.z) * m_brick_dims.x * m_brick_dims.y);
+	}
 
 	auto makeWritable(uint32_t entry_index) -> uint32_t;
 
 	void releaseOwned();
+
+	void syncBrick(uint32_t index) noexcept;
+
+	void recountAll() noexcept;
 
 	BrickPool* m_pool = nullptr;
 	glm::uvec3 m_brick_dims {0};
 
 	glm::ivec3 m_texture_origin {0};
 	std::vector<BrickEntry> m_entries;
+
+	std::vector<uint16_t> m_brick_solid;
+	/// One bit per slot that holds a solid voxel
+	std::vector<uint64_t> m_solid_mask;
+	uint32_t m_solid_voxels = 0;
 
 	uint32_t m_revision = 0;
 

@@ -656,10 +656,14 @@ private:
 	auto correctPositions(std::span<const size_t> manifold_indices) -> size_t;
 	void publishProfile(std::span<const SimulationIsland> islands);
 
+	/// @param deferred_dirty when set only carves and collects the dirty bricks, finishSourceCarve does the rest once
 	void clearFragmentFromSource(
 	    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
-	    const RemovedVoxels* already_removed = nullptr
+	    const RemovedVoxels* already_removed = nullptr, std::vector<glm::ivec3>* deferred_dirty = nullptr
 	);
+
+	/// Surface repair, bounds, mass and the small or empty leftovers of a source after one or more carves
+	void finishSourceCarve(ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, std::span<const glm::ivec3> dirty_bricks);
 
 	void emitDebris(
 	    ShapeID shape_id, std::span<const DebrisVoxel> voxels, const DebrisBlast* blast, const FragmentPush* push, uint64_t seed,
@@ -669,7 +673,10 @@ private:
 	void emitComponentDebris(ShapeID shape_id, const DetachedComponent& component, const FragmentPush* push);
 
 	[[nodiscard]]
-	auto spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr) -> bool;
+	auto spawnFragmentBody(
+	    ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push = nullptr,
+	    std::vector<glm::ivec3>* deferred_dirty = nullptr
+	) -> bool;
 	auto smashShape(ShapeID shape_id, const SmashVolume& volume, const CapsuleSmash& smash, bool chunks) -> uint32_t;
 	auto explodeShape(ShapeID shape_id, const ExplosionDamage& explosion) -> uint32_t;
 	[[nodiscard]]

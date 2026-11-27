@@ -1161,27 +1161,29 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 	}
 
 	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
-	private async Task CompileGameRelease() {
+	private Task CompileGameDevelopment() => CompileGame("RelWithDebInfo");
+
+	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
+	private Task CompileGameRelease() => CompileGame("Release");
+
+	private async Task CompileGame(string gameConfig) {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
+
+		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", gameConfig, "toast_engine"));
+		if (!File.Exists(Path.Combine(toastPath, "bin", OperatingSystem.IsWindows() ? "toast_engine.dll" : "libtoast_engine.so"))) {
+			Log.Error($"Cannot build the game in {gameConfig}: the {gameConfig} engine was not built ({toastPath})");
+			return;
+		}
 		if (!await SaveBeforeBuild(owner)) return;
 
 		var playerPath =
 			Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
-		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
 		var packerBin = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "packer",
 			$"packer{(OperatingSystem.IsWindows() ? ".exe" : "")}"));
 		var outputDir = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
 		var stageRoot = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, ".toast", "pack_stage"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
-
-#if DEBUG
-		const string gameConfig = "Debug";
-#elif RELWITHDEBINFO
-		const string gameConfig = "RelWithDebInfo";
-#else
-		const string gameConfig = "Release";
-#endif
 		var cmakeCache = $".toast/cmake_release_cache_{gameConfig}";
 
 		Directory.CreateDirectory(outputDir);
@@ -1259,6 +1261,24 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 				var exitCode = TerminalReader.Run(proc, log);
 				if (exitCode != 0)
 					throw new Exception($"packer exited with code {exitCode} for configs");
+			});
+		}
+
+		async Task CopyCrashReporter(Action<string> log) {
+			var src = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "crash_reporter"));
+			if (!Directory.Exists(src)) {
+				log($"warning: crash reporter not found: {src}");
+				return;
+			}
+
+			var dest = Path.Combine(outputDir, "crash_reporter");
+			log("  copy crash_reporter/");
+			await Task.Run(() => {
+				foreach (var file in Directory.EnumerateFiles(src, "*", SearchOption.AllDirectories)) {
+					var target = Path.Combine(dest, Path.GetRelativePath(src, file));
+					Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+					File.Copy(file, target, true);
+				}
 			});
 		}
 
@@ -1352,6 +1372,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),
+			LoaderTask.Do("copy crash reporter", CopyCrashReporter),
 			LoaderTask.Do("copy project.toast", CopyProjectToast),
 			LoaderTask.Do("cook configs", CookConfigs),
 			LoaderTask.Do("copy baked lighting", CopyBakedLighting)

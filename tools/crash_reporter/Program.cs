@@ -9,6 +9,7 @@ internal static class Program {
 		if (crash is null) {
 			Console.Error.WriteLine(
 				"usage: crash_reporter --pid <pid> --tid <tid> --pointers <address> --message <address> --kind <kind> [--dump-dir <dir>]\n" +
+				"       crash_reporter --pid <pid> --handoff <address>\n" +
 				"Launched by the engine's crash handler (engine/src/toast/crash_handler.cpp), not by hand"
 			);
 			return 2;

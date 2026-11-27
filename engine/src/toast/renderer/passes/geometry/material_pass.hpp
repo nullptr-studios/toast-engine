@@ -160,6 +160,7 @@ private:
 
 	std::atomic_bool m_rebuild_pending {false};
 	std::atomic_bool m_values_dirty {false};
+	float m_last_mip_bias = 0.0f;
 };
 
 }

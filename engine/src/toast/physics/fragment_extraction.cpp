@@ -4,48 +4,25 @@ namespace physics {
 
 namespace {
 
-auto unitBrickMoments() -> const voxel::MassMoments& {
-	static const voxel::MassMoments unit = [] {
-		voxel::MassMoments moments;
-		for (int32_t z = 0; std::cmp_less(z, voxel::k_brick_dim); ++z) {
-			for (int32_t y = 0; std::cmp_less(y, voxel::k_brick_dim); ++y) {
-				for (int32_t x = 0; std::cmp_less(x, voxel::k_brick_dim); ++x) {
-					moments.add(x, y, z, 1);
-				}
-			}
-		}
-		return moments;
-	}();
-	return unit;
-}
-
-template<typename Callback>
-void forEachSetVoxel(const voxel::BrickOccupancy& mask, Callback&& callback) {
-	for (uint32_t z = 0; z < voxel::k_brick_dim; ++z) {
-		uint64_t word = mask[z];
-		while (word != 0ull) {
-			const auto bit = static_cast<uint32_t>(std::countr_zero(word));
-			word &= word - 1ull;
-			callback((z * voxel::k_brick_dim * voxel::k_brick_dim) + bit, bit & 7u, bit >> 3u, z);
-		}
-	}
-}
-
 auto materialOf(const voxel::Volume& source, voxel::BrickEntry entry, uint32_t index) -> uint8_t {
 	return entry.tag() == voxel::BrickTag::uniform ? static_cast<uint8_t>(entry.payload())
 	                                               : source.pool()->material(entry.payload())[index];
+}
+
 }
 
 auto maskedMoments(
     const voxel::Volume& source, voxel::BrickEntry entry, const voxel::BrickOccupancy& mask, bool whole, glm::ivec3 origin,
     const DensityTable& density
 ) -> voxel::MassMoments {
-	if (whole && entry.tag() == voxel::BrickTag::uniform) {
-		return unitBrickMoments().scaled(density[entry.payload()]).shifted(origin.x, origin.y, origin.z);
+	if (entry.tag() == voxel::BrickTag::uniform) {
+		static constexpr voxel::MassMoments k_full = voxel::maskMoments(voxel::k_full_brick);
+		const voxel::MassMoments unit = whole ? k_full : voxel::maskMoments(mask);
+		return unit.scaled(density[entry.payload()]).shifted(origin.x, origin.y, origin.z);
 	}
 
 	voxel::MassMoments moments;
-	forEachSetVoxel(mask, [&](uint32_t index, uint32_t x, uint32_t y, uint32_t z) {
+	voxel::forEachSetVoxel(mask, [&](uint32_t index, uint32_t x, uint32_t y, uint32_t z) {
 		moments.add(
 		    origin.x + static_cast<int32_t>(x),
 		    origin.y + static_cast<int32_t>(y),
@@ -55,6 +32,8 @@ auto maskedMoments(
 	});
 	return moments;
 }
+
+namespace {
 
 struct BrickMask {
 	glm::ivec3 brick {0};
@@ -154,7 +133,9 @@ auto extractFragmentVolume(voxel::Volume& source, const DetachedComponent& compo
 		}
 
 		bytes.fill(voxel::k_empty_palette_index);
-		forEachSetVoxel(mask, [&](uint32_t index, uint32_t, uint32_t, uint32_t) { bytes[index] = materialOf(source, entry, index); });
+		voxel::forEachSetVoxel(mask, [&](uint32_t index, uint32_t, uint32_t, uint32_t) {
+			bytes[index] = materialOf(source, entry, index);
+		});
 		fragment.setBrickMaterial(local, bytes);
 
 		if (whole) {
@@ -191,7 +172,7 @@ void restoreFragment(voxel::Volume& source, voxel::Volume& fragment, glm::ivec3 
 				}
 
 				const voxel::BrickOccupancy* occupancy = fragment.occupancyPointer(local);
-				forEachSetVoxel(*occupancy, [&](uint32_t index, uint32_t vx, uint32_t vy, uint32_t vz) {
+				voxel::forEachSetVoxel(*occupancy, [&](uint32_t index, uint32_t vx, uint32_t vy, uint32_t vz) {
 					const glm::ivec3 voxel_pos = (brick * static_cast<int32_t>(voxel::k_brick_dim)) +
 					                             glm::ivec3(static_cast<int32_t>(vx), static_cast<int32_t>(vy), static_cast<int32_t>(vz));
 					source.setVoxel(voxel_pos, materialOf(fragment, entry, index));

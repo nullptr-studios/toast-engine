@@ -57,15 +57,8 @@ inline constexpr std::array<std::string_view, 5> shadows_punctual_resolution {"2
 inline constexpr std::array<std::string_view, 5> volumetrics_quality {"Low", "Medium", "High", "Epic", "Custom"};
 inline constexpr std::array<std::string_view, 2> volumetrics_resolution {"Half", "Quarter"};
 inline constexpr std::array<std::string_view, 3> quality_ray_tracing {"Auto", "On", "Off"};
+inline constexpr std::array<std::string_view, 2> antialiasing {"TAA", "DLSS"};
 inline constexpr std::array<std::string_view, 5> gi_quality {"Low", "Medium", "High", "Epic", "Custom"};
-inline constexpr std::array<std::string_view, 3> gi_ray_resolution {"Full", "Half", "Quarter"};
-inline constexpr std::array<std::string_view, 7> gi_debug_view {
-  "Off", "Cascade 0", "Cascade 1", "Cascade 2", "Cascade 3", "Cascade 4", "Cascade 5"
-};
-inline constexpr std::array<std::string_view, 6> gi_debug_mode {
-  "Probe cells", "Interval radiance", "Coverage", "Irradiance", "History depth", "Irradiance change"
-};
-inline constexpr std::array<std::string_view, 2> gi_backend {"Radiance cascades", "Radiance clipmap"};
 inline constexpr std::array<std::string_view, 3> gi_clip_resolution {"64", "128", "192"};
 inline constexpr std::array<std::string_view, 7> gi_clip_debug_view {
   "Off", "Level 0", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"
@@ -122,9 +115,10 @@ struct RendererParams : toast::params::Group<"renderer"> {
 	double quality_render_scale = param(
 	    &quality_render_scale, "quality.render_scale", 1.0,
 	    {.name = "Render scale",
-			 .min = 0.5,
+			 .min = 0.1,
 			 .max = 1.0,
-			 .description = "Share of the screen resolution the world renders at. Custom preset only"}
+			 .description = "Share of the screen resolution the world renders at. Presets cap it at 0.67 (DLSS Quality) on a "
+			                "laptop GPU with DLSS. Custom preset only"}
 	);
 	bool quality_bloom =
 	    param(&quality_bloom, "quality.bloom", true, {.name = "Bloom", .description = "Glow around bright highlights"});
@@ -182,6 +176,12 @@ struct RendererParams : toast::params::Group<"renderer"> {
 	    param(&quality_fxaa, "quality.fxaa", true, {.name = "FXAA", .description = "Cheap edge smoothing. Off while TAA is on"});
 	bool quality_taa =
 	    param(&quality_taa, "quality.taa", true, {.name = "TAA", .description = "Smooths edges over several frames"});
+	int64_t quality_antialiasing = param(
+	    &quality_antialiasing, "quality.antialiasing", 1,
+	    {.name = "Anti-aliasing",
+			 .description = "DLSS on NVIDIA RTX GPUs, TAA everywhere else. Needs TAA on",
+			 .options = options::antialiasing}
+	);
 	double quality_taa_history = param(
 	    &quality_taa_history, "quality.taa_history", 0.9,
 	    {.name = "TAA history",
@@ -560,135 +560,18 @@ struct RendererParams : toast::params::Group<"renderer"> {
 	);
 	bool gi_enabled = param(
 	    &gi_enabled, "gi.enabled", true,
-	    {.name = "Radiance cascades", .description = "World space radiance probes. Custom preset only"}
+	    {.name = "Radiance clipmap",
+			 .description = "World space voxel clipmap that cones gather bounce light from. Custom preset only"}
 	);
 	int64_t gi_quality = param(
 	    &gi_quality, "gi.quality", 2,
 	    {.name = "Quality",
-			 .description = "Rays, cascades, probe spacing and update rate together. Custom uses the ones below",
+			 .description = "Clipmap resolution and level count together. Custom uses the ones below",
 			 .options = options::gi_quality}
-	);
-	int64_t gi_update_interval = param(
-	    &gi_update_interval, "gi.update_interval", 1,
-	    {.name = "Update interval",
-			 .min = 1,
-			 .max = 4,
-			 .unit = "frames",
-			 .description = "Frames between GI updates. Custom quality only"}
-	);
-	int64_t gi_secondary_points = param(
-	    &gi_secondary_points, "gi.secondary_points", 65536,
-	    {.name = "Multibounce points",
-			 .min = 1024,
-			 .max = 65536,
-			 .kind = Kind::advanced,
-			 .description = "Off screen hits kept per frame for the second bounce. Custom quality only"}
-	);
-	bool gi_multibounce = param(
-	    &gi_multibounce, "gi.multibounce", true,
-	    {.name = "Multibounce",
-			 .description = "Light keeps bouncing off screen, for about half again the rays. Custom quality only"}
-	);
-	double gi_probe_spacing = param(
-	    &gi_probe_spacing, "gi.probe_spacing", 0.1,
-	    {.name = "Probe spacing",
-			 .min = 0.025,
-			 .max = 1.0,
-			 .unit = "m",
-			 .description = "Metres between the nearest probes. Doubles with every cascade. Custom quality only"}
-	);
-	double gi_lod_distance = param(
-	    &gi_lod_distance, "gi.lod_distance", 4.0,
-	    {.name = "LOD distance",
-			 .min = 0.5,
-			 .max = 64.0,
-			 .unit = "m",
-			 .description = "Distance where probe spacing starts doubling. Custom quality only"}
-	);
-	int64_t gi_cascades = param(
-	    &gi_cascades, "gi.cascades", 5,
-	    {.name = "Cascades",
-			 .min = 1,
-			 .max = 6,
-			 .description = "Each reaches four times as far as the one below. Custom quality only"}
-	);
-	int64_t gi_ray_resolution = param(
-	    &gi_ray_resolution, "gi.ray_resolution", 1,
-	    {.name = "Ray resolution",
-			 .description = "Pixels that place probes and trace rays. Custom quality only",
-			 .options = options::gi_ray_resolution}
-	);
-	int64_t gi_probe_lifetime = param(
-	    &gi_probe_lifetime, "gi.probe_lifetime", 60,
-	    {.name = "Probe lifetime",
-			 .min = 1,
-			 .max = 600,
-			 .unit = "frames",
-			 .kind = Kind::advanced,
-			 .description = "Frames a probe lives after nothing needs it"}
-	);
-	double gi_history_seconds = param(
-	    &gi_history_seconds, "gi.history_seconds", 0.3,
-	    {.name = "History length",
-			 .min = 0.0,
-			 .max = 5.0,
-			 .unit = "s",
-			 .description =
-			     "Seconds of light each probe direction averages. 0 keeps none. Longer is smoother and slower to follow lights"}
-	);
-	bool gi_history_per_frame = param(
-	    &gi_history_per_frame, "gi.history_per_frame", false,
-	    {.name = "Per frame history",
-			 .kind = Kind::advanced,
-			 .description = "Blend a fixed share of each frame instead of a length in seconds"}
-	);
-	double gi_history = param(
-	    &gi_history, "gi.history", 0.03,
-	    {.name = "History blend",
-			 .min = 0.005,
-			 .max = 1.0,
-			 .description = "Share of each new frame blended in. Lower is smoother and slower to follow lights"}
-	);
-	double gi_motion_threshold = param(
-	    &gi_motion_threshold, "gi.motion_threshold", 0.01,
-	    {.name = "Motion threshold",
-			 .min = 0.0,
-			 .max = 0.2,
-			 .unit = "m",
-			 .description = "How far a voxel body moves in a frame before nearby probes forget their history"}
-	);
-	double gi_max_ray_radiance = param(
-	    &gi_max_ray_radiance, "gi.max_ray_radiance", 16.0,
-	    {.name = "Ray brightness clamp",
-			 .min = 0.5,
-			 .max = 1000.0,
-			 .kind = Kind::advanced,
-			 .description = "Brightest a single ray may count. Lower is steadier"}
 	);
 	double gi_intensity = param(
 	    &gi_intensity, "gi.intensity", 2.0,
 	    {.name = "Bounce intensity", .min = 0.0, .max = 8.0, .description = "Strength of the bounced light. 1 is physical"}
-	);
-	int64_t gi_debug_view = param(
-	    &gi_debug_view, "gi.debug_view", 0,
-	    {.name = "Probe view",
-			 .kind = Kind::debug,
-			 .description = "Draws the probe cells of one cascade over the scene",
-			 .options = options::gi_debug_view}
-	);
-	int64_t gi_debug_mode = param(
-	    &gi_debug_mode, "gi.debug_mode", 0,
-	    {.name = "Probe view shows",
-			 .kind = Kind::debug,
-			 .description = "What the probe view colors cells by",
-			 .options = options::gi_debug_mode}
-	);
-	int64_t gi_backend = param(
-	    &gi_backend, "gi.backend", 0,
-	    {.name = "Backend",
-			 .kind = Kind::advanced,
-			 .description = "Radiance clipmap is unfinished: it only fills its voxel clipmap so far",
-			 .options = options::gi_backend}
 	);
 	double gi_clip_cell = param(
 	    &gi_clip_cell, "gi.clip_cell", 0.2,
@@ -721,6 +604,14 @@ struct RendererParams : toast::params::Group<"renderer"> {
 			 .kind = Kind::debug,
 			 .description = "What the clipmap view draws per cell",
 			 .options = options::gi_clip_debug_mode}
+	);
+	int64_t video_frame_cache_mb = param(
+	    &video_frame_cache_mb, "video.frame_cache_mb", 512,
+	    {.name = "Video frame cache",
+			 .min = 0,
+			 .unit = "MB",
+			 .description = "RAM for decoded video loops. A video that does not fit keeps decoding every frame. 0 disables the "
+			                "cache. Applies to videos loaded after the change"}
 	);
 };
 

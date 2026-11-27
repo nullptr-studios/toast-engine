@@ -25,6 +25,7 @@
 #include "toast/renderer/raytracing/ray_tracing_scene.hpp"
 #include "toast/renderer/raytracing/skinned_blas_pool.hpp"
 #include "toast/renderer/resources/blue_noise.hpp"
+#include "toast/renderer/resources/video_textures.hpp"
 #include "toast/renderer/settings/renderer_settings.hpp"
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer_detail.hpp"
@@ -261,6 +262,7 @@ void VulkanRenderer::stop() {
 		for (auto& frame : m_frames) {
 			frame.retired.clear();
 		}
+		VideoTextures::shutdown();
 		m_core->savePipelineCache();
 	}
 

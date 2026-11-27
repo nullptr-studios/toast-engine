@@ -50,6 +50,12 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 	[ObservableProperty] private string m_unit = "";
 	[ObservableProperty] private bool m_variantVisible = true;
 
+	// Drawn by a widget on the parent (x-toast-widget) instead of as its own row
+	[ObservableProperty] private bool m_ownedByWidget;
+
+	// x-toast-widget of this field
+	[ObservableProperty] private string m_widget = "";
+
 	[ObservableProperty] private float m_x, m_y, m_z, m_w;
 
 	public IReadOnlyList<string> FieldTypes { get; set; } = AllFieldTypes;
@@ -108,7 +114,9 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 
 	public bool ShouldSplitRow => NameEditable;
 
-	public bool RowVisible => VariantVisible;
+	public bool RowVisible => VariantVisible && !OwnedByWidget;
+
+	public bool IsColorWheels => IsObject && Widget == "color_wheels";
 
 	// IStructRow: true only for a struct (object) array element (no name, not editable, object type)
 	public bool IsStructRow => IsArrayItem && IsObject;
@@ -117,6 +125,14 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 	partial void OnVariantVisibleChanged(bool value) {
 		OnPropertyChanged(nameof(RowVisible));
 		NotifyDirty?.Invoke();
+	}
+
+	partial void OnOwnedByWidgetChanged(bool value) {
+		OnPropertyChanged(nameof(RowVisible));
+	}
+
+	partial void OnWidgetChanged(string value) {
+		OnPropertyChanged(nameof(IsColorWheels));
 	}
 
 	partial void OnChildrenLockedChanged(bool value) {
@@ -135,6 +151,7 @@ public partial class GenericFieldVM : ObservableObject, IRowSplittable, IRowVisi
 		OnPropertyChanged(nameof(IsColor3));
 		OnPropertyChanged(nameof(IsColor4));
 		OnPropertyChanged(nameof(IsObject));
+		OnPropertyChanged(nameof(IsColorWheels));
 		OnPropertyChanged(nameof(IsArray));
 		OnPropertyChanged(nameof(IsEnum));
 		OnPropertyChanged(nameof(IsVectorLayout));
@@ -435,6 +452,9 @@ public record SchemaFieldDescriptor(
 	public string DisplayName { get; init; } = "";
 
 	public string Unit { get; init; } = "";
+
+	/// Custom editor for the whole field (x-toast-widget), empty uses the default rows
+	public string Widget { get; init; } = "";
 }
 
 public record TypeSwitchCase(string TypeKey, string DefaultStr);

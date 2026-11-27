@@ -299,7 +299,8 @@ public partial class ImportWindowViewModel : ViewModelBase {
 			new AudioStringImporter(AudioStringSettings),
 			new FontImporter(),
 			new UIImageImporter(),
-			new HdrImporter()
+			new HdrImporter(),
+			new VideoImporter()
 		];
 		m_allowedExtensions = [];
 		foreach (var importer in m_importers)

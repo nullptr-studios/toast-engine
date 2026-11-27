@@ -87,6 +87,8 @@ internal static class KtxWriter {
 				break;
 			case TextureCompression.None:
 			default:
+				// An RGB source would stay 24 bit, which the engine refuses to upload
+				sb.Append("--target_type RGBA ");
 				break;
 		}
 

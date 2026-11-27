@@ -18,17 +18,14 @@ namespace voxel {
 
 inline constexpr uint32_t k_no_component = 0xFFFFFFFFu;
 
-/// @brief Edge or corner contact does not connect
-[[nodiscard]]
-inline auto brickComponents(const BrickOccupancy& brick) -> std::vector<BrickOccupancy> {
-	if (isEmpty(brick)) {
-		return {};
-	}
+/// @brief Edge or corner contact does not connect, visits each component without allocating
+template<typename Visit>
+void forEachBrickComponent(const BrickOccupancy& brick, Visit&& visit) {
 	if (isFull(brick)) {
-		return std::vector<BrickOccupancy>(1, brick);
+		visit(brick);
+		return;
 	}
 
-	std::vector<BrickOccupancy> out;
 	BrickOccupancy remaining = brick;
 	while (!isEmpty(remaining)) {
 		// x & (~x + 1) isolates the lowest set bit
@@ -48,9 +45,15 @@ inline auto brickComponents(const BrickOccupancy& brick) -> std::vector<BrickOcc
 			region = grown;
 		}
 
-		out.push_back(region);
+		visit(region);
 		remaining = remaining & ~region;
 	}
+}
+
+[[nodiscard]]
+inline auto brickComponents(const BrickOccupancy& brick) -> std::vector<BrickOccupancy> {
+	std::vector<BrickOccupancy> out;
+	forEachBrickComponent(brick, [&](const BrickOccupancy& part) { out.push_back(part); });
 	return out;
 }
 
@@ -92,7 +95,19 @@ struct Connectivity {
 	}
 };
 
+/// What one analysis leaves for the next so a brick that did not change keeps its pieces without a flood fill
+struct ConnectivityCache {
+	glm::uvec3 dims {0};
+	/// In slot order like Connectivity::pieces
+	std::vector<BrickPiece> pieces;
+	std::vector<BrickFaces> faces;
+};
+
+/**
+ * @param cache when set its unchanged bricks are reused and it is refilled, the result is the same as without it
+ * @note One analysis at a time per cache
+ */
 [[nodiscard]]
-TOAST_API auto analyseConnectivity(const Volume& volume) -> Connectivity;
+TOAST_API auto analyseConnectivity(const Volume& volume, ConnectivityCache* cache = nullptr) -> Connectivity;
 
 }

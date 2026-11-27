@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <format>
+#include <toast/renderer/settings/post_process_profile.hpp>
 #include <vector>
 
 namespace assets {
@@ -24,6 +25,7 @@ void AssetRegistry::init() {
 	// Raw binary loaders
 	s_raw["mesh"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Mesh>(d); };
 	s_raw["texture"] = [](std::vector<uint8_t> d) { return std::make_unique<Texture>(std::move(d)); };
+	s_raw["video"] = [](std::vector<uint8_t> d) { return std::make_unique<Video>(std::move(d)); };
 	s_raw["schema"] = [](std::vector<uint8_t> d) {
 		std::string_view json(reinterpret_cast<const char*>(d.data()), d.size());
 		return std::make_unique<Schema>(json);
@@ -41,6 +43,7 @@ void AssetRegistry::init() {
 	s_raw["animation"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Animation>(d); };
 	s_raw["skeleton"] = [](const std::vector<uint8_t>& d) { return std::make_unique<Skeleton>(d); };
 	s_raw["voxel_model"] = [](const std::vector<uint8_t>& d) { return std::make_unique<VoxelModel>(d); };
+	s_raw["environment_map"] = [](const std::vector<uint8_t>&) { return std::make_unique<EnvironmentMap>(); };
 
 	// Plain TOML loaders
 	s_toml["curve"] = [](const toml::table& t) { return Curve::fromToml(t); };
@@ -86,10 +89,14 @@ void AssetRegistry::init() {
 	s_schema_toml["destruction_material"] = [](const toml::table& t, Handle<Schema> s) {
 		return std::make_unique<DestructionMaterial>(t, std::move(s));
 	};
+	s_schema_toml["post_process_profile"] = [](const toml::table& t, Handle<Schema> s) {
+		return std::make_unique<PostProcessProfile>(t, std::move(s));
+	};
 
 	// Lua global names
 	s_lua_names["mesh"] = "Mesh";
 	s_lua_names["texture"] = "Texture";
+	s_lua_names["video"] = "Video";
 	s_lua_names["data"] = "Data";
 	s_lua_names["material"] = "Material";
 	s_lua_names["material_instance"] = "MaterialInstance";
@@ -121,6 +128,7 @@ void AssetRegistry::init() {
 	s_lua_names["detail_texture"] = "DetailTexture";
 	s_lua_names["animation"] = "Animation";
 	s_lua_names["physics_material"] = "PhysicsMaterial";
+	s_lua_names["post_process_profile"] = "PostProcessProfile";
 }
 
 void AssetRegistry::registerLuaName(std::string_view type, std::string_view lua_name) {

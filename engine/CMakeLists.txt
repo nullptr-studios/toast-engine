@@ -43,6 +43,7 @@ find_package(RmlUi CONFIG REQUIRED)
 find_package(Lua REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 find_package(cpptrace CONFIG REQUIRED)
+find_package(FFMPEG REQUIRED)
 find_path(LUABRIDGE3_INCLUDE_DIRS "luabridge3/LuaBridge/Array.h")
 
 # External paths
@@ -97,7 +98,7 @@ set(TOAST_ENGINE_OUTPUT_ROOT "${OUTPUT_ROOT}/$<CONFIG>/toast_engine")
 set(TOAST_ENGINE_BIN_DIR "${TOAST_ENGINE_OUTPUT_ROOT}/bin")
 
 target_include_directories(toast_engine
-        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}" ${LUA_INCLUDE_DIR} ${LUABRIDGE3_INCLUDE_DIRS}
+        PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}" "${EXTERNAL_INC_DIR}" ${LUA_INCLUDE_DIR} ${LUABRIDGE3_INCLUDE_DIRS} ${FFMPEG_INCLUDE_DIRS}
         PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/ffi" "${CMAKE_CURRENT_SOURCE_DIR}/generated"
 )
 
@@ -118,6 +119,7 @@ target_link_libraries(toast_engine
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>
         $<$<NOT:$<CONFIG:Debug>>:${EXTERNAL_LIBS_RELEASE}>
         ${LUA_LIBRARIES}
+        ${FFMPEG_LIBRARIES}
         PUBLIC
         $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:Tracy::TracyClient> glm::glm nlohmann_json::nlohmann_json GPUOpen::VulkanMemoryAllocator
 )
@@ -137,6 +139,28 @@ foreach (config IN ITEMS Debug Release RelWithDebInfo MinSizeRel)
 endforeach ()
 
 target_compile_definitions(toast_engine PRIVATE TOAST_EXPORT)
+
+# Only x86_64 Windows and Linux are wired up, a missing package builds without DLSS instead of failing
+include(CMakeDependentOption)
+cmake_dependent_option(TOAST_DLSS "NVIDIA DLSS" ON "WIN32 OR CMAKE_SYSTEM_NAME STREQUAL Linux;ARCH STREQUAL x86_64" OFF)
+if (TOAST_DLSS)
+    find_package(nvidia-dlss CONFIG QUIET)
+    if (nvidia-dlss_FOUND)
+        target_link_libraries(toast_engine PRIVATE nvidia::dlss)
+        target_compile_definitions(toast_engine PRIVATE TOAST_DLSS=1)
+        # The vcpkg DLL glob below only covers the manifest tree, a package found through CMAKE_PREFIX_PATH needs this
+        # The runtime's license has to ship with it, the port installs it as share/nvidia-dlss/copyright
+        get_filename_component(_nvidia_dlss_license "${NVIDIA_DLSS_RUNTIME_DLL}/../../share/nvidia-dlss/copyright" ABSOLUTE)
+        add_custom_command(TARGET toast_engine POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVIDIA_DLSS_RUNTIME_DLL}" "${TOAST_ENGINE_BIN_DIR}"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_nvidia_dlss_license}" "${TOAST_ENGINE_BIN_DIR}/NVIDIA_DLSS_LICENSE.txt"
+                COMMENT "Copying the DLSS runtime"
+                VERBATIM
+        )
+    else ()
+        message(STATUS "TOAST_DLSS: nvidia-dlss package not found, building without DLSS")
+    endif ()
+endif ()
 
 if (WIN32)
     target_compile_definitions(toast_engine PRIVATE NOMINMAX)
@@ -175,7 +199,7 @@ target_include_directories(toast_engine PUBLIC "${_toast_build_config_dir}")
 # Replaces global operator new and delete so Tracy lists every heap allocation, only active where Tracy is
 option(TOAST_TRACK_HEAP "Report C++ heap allocations to Tracy" ON)
 # 0 records no callstack, around 8 to 16 shows who allocates but slows allocation heavy code down a lot
-set(TOAST_HEAP_CALLSTACK_DEPTH 0 CACHE STRING "Callstack frames Tracy captures per heap allocation")    
+set(TOAST_HEAP_CALLSTACK_DEPTH 8 CACHE STRING "Callstack frames Tracy captures per heap allocation")    
 target_compile_definitions(toast_engine PRIVATE
         $<$<AND:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>,$<BOOL:${TOAST_TRACK_HEAP}>>:TOAST_TRACK_HEAP>
         TOAST_HEAP_CALLSTACK_DEPTH=${TOAST_HEAP_CALLSTACK_DEPTH}
@@ -301,6 +325,11 @@ if (WIN32)
     set(_vcpkg_prefix "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
     file(GLOB _vcpkg_dlls_debug CONFIGURE_DEPENDS "${_vcpkg_prefix}/debug/bin/*.dll")
     file(GLOB _vcpkg_dlls_release CONFIGURE_DEPENDS "${_vcpkg_prefix}/bin/*.dll")
+    # The manifest always installs nvidia-dlss, so a build without DLSS must not ship its runtime
+    if (NOT TOAST_DLSS OR NOT nvidia-dlss_FOUND)
+        list(FILTER _vcpkg_dlls_debug EXCLUDE REGEX "/nvngx_dlss\\.dll$")
+        list(FILTER _vcpkg_dlls_release EXCLUDE REGEX "/nvngx_dlss\\.dll$")
+    endif ()
     add_custom_command(TARGET toast_engine POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_RUNTIME_DLLS:toast_engine>
@@ -311,6 +340,11 @@ if (WIN32)
             COMMAND_EXPAND_LISTS
             VERBATIM
     )
+else ()
+    if (NOT TOAST_DLSS OR NOT nvidia-dlss_FOUND)
+        list(FILTER _vcpkg_dlls_debug EXCLUDE REGEX "/nvngx_dlss\\.so$")
+        list(FILTER _vcpkg_dlls_release EXCLUDE REGEX "/nvngx_dlss\\.so$")
+    endif ()
 endif ()
 
 

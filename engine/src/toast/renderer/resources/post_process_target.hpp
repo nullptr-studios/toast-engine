@@ -26,7 +26,19 @@ public:
 		return {width > 0 ? width : 1u, height > 0 ? height : 1u};
 	}
 
-	void create(const VulkanCore& core, vk::Extent2D extent, vk::Format format, std::string_view debug_name);
+	/// Image behind a live target view or null. Post passes only hand on views and NGX also needs the image
+	[[nodiscard]]
+	static auto imageOf(vk::ImageView view) -> vk::Image;
+
+	PostProcessTarget() = default;
+	~PostProcessTarget();
+	PostProcessTarget(const PostProcessTarget&) = delete;
+	auto operator=(const PostProcessTarget&) -> PostProcessTarget& = delete;
+
+	/// @p usage adds to colour attachment and sampled
+	void create(
+	    const VulkanCore& core, vk::Extent2D extent, vk::Format format, std::string_view debug_name, vk::ImageUsageFlags usage = {}
+	);
 
 	void beginScope(vk::CommandBuffer cmd) const;
 
@@ -38,6 +50,12 @@ public:
 	[[nodiscard]]
 	auto view() const -> vk::ImageView {
 		return m_view.has_value() ? **m_view : vk::ImageView {};
+	}
+
+	/// For barriers recorded outside the scopes, such as a compute write
+	[[nodiscard]]
+	auto state() const noexcept -> sync::ImageState& {
+		return m_state;
 	}
 
 	[[nodiscard]]

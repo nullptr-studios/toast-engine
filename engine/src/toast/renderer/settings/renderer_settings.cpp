@@ -46,7 +46,7 @@ struct PresetKnobs {
 	float glass_reflection_reach = 32.0f;
 };
 
-/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT. Radiance cascades run in every tier
+/// Low Medium High Epic without ray tracing, then Low RT Medium RT High RT Epic RT. The radiance clipmap runs in every tier
 constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
   {
    // Without ray tracing
@@ -150,7 +150,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 		 .glass_lit_surfaces = 1,
 		 .glass_reflection_reach = 8.0f},
    {.ssr = true,
-	   .ssao = true,
+	   .ssao = false,
 	   .traced_specular = false,
 	   .specular_roughness = 0.4f,
 	   .specular_reach = 24.0f,
@@ -169,7 +169,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .glass_lit_surfaces = 2,
 	   .glass_reflection_reach = 16.0f},
    {.ssr = true,
-	   .ssao = true,
+	   .ssao = false,
 	   .traced_specular = true,
 	   .specular_roughness = 0.45f,
 	   .specular_reach = 24.0f,
@@ -189,7 +189,7 @@ constexpr std::array<PresetKnobs, k_preset_custom> k_preset_tiers {
 	   .glass_lit_surfaces = 3,
 	   .glass_reflection_reach = 24.0f},
    {.ssr = true,
-	   .ssao = true,
+	   .ssao = false,
 	   .traced_specular = true,
 	   .specular_roughness = 0.6f,
 	   .specular_reach = 32.0f,
@@ -222,16 +222,31 @@ struct PresetState {
 
 PresetState g_preset;
 
-/// RT tiers fall back to the non RT tier of the same level when not tracing
-auto activeKnobs() -> const PresetKnobs& {
+/// DLSS Quality input share
+constexpr float k_laptop_render_scale = 2.0f / 3.0f;
+
+/// NVIDIA names its mobile parts "... Laptop GPU", and native size on one cost about 40% of the frame in the 4060 Laptop capture
+auto laptopWithDlss(const VulkanCore& core) -> bool {
+	static const bool laptop = core.dlssExtensionsEnabled() &&
+	                           std::string_view(core.getPhysicalDevice().getProperties().deviceName.data()).contains("Laptop");
+	return laptop;
+}
+
+/// RT tiers fall back to the non RT tier of the same level when not tracing, and laptops render tiers at DLSS Quality at most
+auto activeKnobs() -> PresetKnobs {
 	if (g_preset.preset >= k_preset_custom) {
 		return g_preset.knobs;
 	}
+	const VulkanCore& core = g_preset.renderer->getCore();
 	uint32_t tier = g_preset.preset;
-	if (tier >= k_tiers_per_branch && !g_preset.renderer->getCore().isRayTracingSupported()) {
+	if (tier >= k_tiers_per_branch && !core.isRayTracingSupported()) {
 		tier -= k_tiers_per_branch;
 	}
-	return k_preset_tiers[tier];
+	PresetKnobs knobs = k_preset_tiers[tier];
+	if (laptopWithDlss(core)) {
+		knobs.render_scale = std::min(knobs.render_scale, k_laptop_render_scale);
+	}
+	return knobs;
 }
 
 void applyPreset() {
@@ -422,6 +437,8 @@ void registerQuality(VulkanRenderer& renderer) {
 
 	toast::params::onChange(p.quality_taa, [&renderer](bool enabled) { renderer.setTaaEnabled(enabled); });
 
+	toast::params::onChange(p.quality_antialiasing, [&renderer](int64_t mode) { renderer.setDlssRequested(mode == 1); });
+
 	toast::params::onChange(p.quality_taa_history, [&renderer](double v) { renderer.setTaaHistoryWeight(static_cast<float>(v)); });
 
 	toast::params::onChange(p.quality_traced_shadows, [&renderer](bool enabled) { renderer.setTracedShadowsEnabled(enabled); });
@@ -584,14 +601,10 @@ void registerEnvironment(VulkanRenderer& renderer) {
 	auto& p = rendererParams();
 	toast::params::onChange(p.environment_map, [&renderer](const toast::params::AssetRef& asset) {
 		const std::string& v = asset.uri;
-		auto* pass = renderer.getEnvironmentPassMutable();
-		if (pass == nullptr) {
-			return;
-		}
 		if (v.empty() || v.contains("://")) {
-			pass->setEnvironmentMap(v);
+			renderer.setGlobalEnvironmentMap(v);
 		} else {
-			pass->setEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
+			renderer.setGlobalEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
 		}
 	});
 
@@ -674,71 +687,8 @@ void registerGi(VulkanRenderer& renderer) {
 		                        return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom));
 	                        }));
 
-	toast::params::onChange(p.gi_update_interval, [&gi](int64_t v) {
-		gi.update_interval.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4)), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_secondary_points, [&gi](int64_t v) {
-		gi.secondary_points.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1024, 65536)), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_multibounce, [&gi](bool enabled) { gi.multibounce.store(enabled, std::memory_order_relaxed); });
-
-	toast::params::onChange(p.gi_probe_spacing, [&gi](double v) {
-		gi.probe_spacing.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_lod_distance, [&gi](double v) {
-		gi.lod_distance.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_cascades, [&gi](int64_t v) {
-		gi.cascades.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 6)), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_ray_resolution, [&gi](int64_t v) {
-		constexpr std::array<uint32_t, 3> k_steps {1, 2, 4};
-		gi.ray_step.store(k_steps[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))], std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_probe_lifetime, [&gi](int64_t v) {
-		gi.probe_lifetime.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 600)), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_history_seconds, [&gi](double v) {
-		gi.history_seconds.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_history_per_frame, [&gi](bool enabled) {
-		gi.history_per_frame.store(enabled, std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_history, [&gi](double v) {
-		gi.history_blend.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_motion_threshold, [&gi](double v) {
-		gi.motion_threshold.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_max_ray_radiance, [&gi](double v) {
-		gi.max_ray_radiance.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
 	toast::params::onChange(p.gi_intensity, [&gi](double v) {
 		gi.intensity.store(static_cast<float>(v), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_debug_view, [&gi](int64_t v) {
-		gi.debug_view.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 6)), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_debug_mode, [&gi](int64_t v) {
-		gi.debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 5)), std::memory_order_relaxed);
-	});
-
-	toast::params::onChange(p.gi_backend, [&gi](int64_t v) {
-		gi.backend.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 1)), std::memory_order_relaxed);
 	});
 
 	toast::params::onChange(p.gi_clip_cell, [&gi](double v) {

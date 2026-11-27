@@ -62,13 +62,15 @@ private:
 	static constexpr vk::Format k_trace_format = vk::Format::eR16G16B16A16Sfloat;
 	/// voxel_specular.slang packSurface
 	static constexpr vk::Format k_surface_format = vk::Format::eR32G32B32A32Uint;
+	/// voxel_specular.slang gHit, the distance and a flag where the trace left a voxel hit for the shade pass
+	static constexpr vk::Format k_hit_format = vk::Format::eR32G32Uint;
 
 	/// Last frame resolve box filtered to half resolution then halved per level so rough screen hits read it blurred
 	static constexpr vk::Format k_pyramid_format = vk::Format::eR16G16B16A16Sfloat;
 	/// Mirrors voxel_specular.slang kPyramidLevels
 	static constexpr uint32_t k_pyramid_levels = 6;
 
-	static constexpr uint32_t k_image_bindings = 16;
+	static constexpr uint32_t k_image_bindings = 17;
 
 	void createSets(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
@@ -85,6 +87,7 @@ private:
 	ShaderLayout m_layout;
 	VulkanPipeline m_surface_pipeline;
 	VulkanPipeline m_trace_pipeline;
+	VulkanPipeline m_shade_pipeline;
 	VulkanPipeline m_resolve_pipeline;
 	VulkanPipeline m_temporal_pipeline;
 	VulkanPipeline m_composite_pipeline;
@@ -106,6 +109,7 @@ private:
 
 	PostProcessTarget m_surface;
 	PostProcessTarget m_trace;
+	PostProcessTarget m_hit;
 	PostProcessTarget m_resolved;
 	/// The temporal pass reads one and writes the other
 	std::array<PostProcessTarget, 2> m_history;

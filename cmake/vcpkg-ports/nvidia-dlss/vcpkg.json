@@ -1,0 +1,8 @@
+{
+  "name": "nvidia-dlss",
+  "version-string": "310.9.16",
+  "description": "NVIDIA DLSS SDK (NGX headers, static loader library and the Super Resolution runtime) from github.com/NVIDIA/DLSS",
+  "homepage": "https://github.com/NVIDIA/DLSS",
+  "license": null,
+  "supports": "(windows | linux) & x64"
+}

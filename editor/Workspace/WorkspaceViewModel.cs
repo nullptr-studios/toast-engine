@@ -248,7 +248,8 @@ public partial class WorkspaceViewModel : Document, IAutosavable, IDisposable {
 	}
 
 	private async Task<bool> SaveNativeAsync(string target, string path) {
-		if (m_pendingSave is not null) return false;
+		// A closed tab dropped its listener, so the completion would never arrive and Save would stay disabled forever
+		if (m_disposed || m_pendingSave is not null) return false;
 		var request = m_nextSaveRequest++;
 		m_pendingSaveRequest = request;
 		m_pendingSave =
