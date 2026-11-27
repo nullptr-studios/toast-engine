@@ -35,6 +35,14 @@
  * // end(), also before the game module unloads
  * renderer::destroyGamePass(std::exchange(m_pass, nullptr));
  * @endcode
+ *
+ * To draw into a texture, create a view and point passes at it. RmlUi shows it with <img src="view://Minimap"/>
+ * @code
+ * m_view = renderer::createGameView({.name = "Minimap", .width = 256, .height = 256, .depth = true});
+ * m_pass = renderer::createGamePass({.name = "Blips", .shader_uri = "...", .view = m_view, .instance_stride = 16});
+ * renderer::destroyGamePass(std::exchange(m_pass, nullptr));
+ * renderer::destroyGameView(std::exchange(m_view, nullptr));
+ * @endcode
  */
 
 namespace renderer {
@@ -54,9 +62,29 @@ enum class GamePassBlend : uint8_t {
 	additive,
 };
 
+class GameView;
+
+/// RGBA8 unorm with premultiplied alpha
+struct GameViewDesc {
+	/// Unique and without /
+	const char* name = nullptr;
+	uint32_t width = 256;
+	uint32_t height = 256;
+	std::array<float, 4> clear_color = {0.0f, 0.0f, 0.0f, 0.0f};
+	/// Own depth attachment cleared every frame
+	bool depth = false;
+};
+
+auto TOAST_API createGameView(const GameViewDesc& desc) -> GameView*;
+
+/// Passes still pointing at the view stop drawing
+void TOAST_API destroyGameView(GameView* view);
+
 struct GamePassDesc {
 	const char* name = "Game pass";
 	const char* shader_uri = nullptr;
+	/// Draws into this view instead of the scene, ignoring stage and reactive
+	GameView* view = nullptr;
 	GamePassStage stage = GamePassStage::world;
 	GamePassBlend blend = GamePassBlend::additive;
 	bool depth_test = true;

@@ -147,8 +147,8 @@ void forEachSolidVoxel(const voxel::Volume& volume, const glm::vec3& low, const 
 
 	// yeah this is O(n^6) 🥀
 	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-	const glm::ivec3 first_brick = first / brick_dim;
-	const glm::ivec3 last_brick = last / brick_dim;
+	const glm::ivec3 first_brick = voxel::brickOf(first);
+	const glm::ivec3 last_brick = voxel::brickOf(last);
 	for (int32_t bz = first_brick.z; bz <= last_brick.z; ++bz) {
 		for (int32_t by = first_brick.y; by <= last_brick.y; ++by) {
 			for (int32_t bx = first_brick.x; bx <= last_brick.x; ++bx) {

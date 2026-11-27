@@ -148,7 +148,10 @@ auto ShaderCache::loadFromDisk(toast::UID uid) -> EntryPtr {
 
 	auto spirv_bytes = manager.tryLoadBytes(spirvUri(uid));
 	auto json_bytes = manager.tryLoadBytes(reflectionUri(uid));
-	if (!spirv_bytes || spirv_bytes->empty() || !json_bytes) {
+	// A truncated file would abort in createShaderModule instead of recompiling
+	constexpr uint32_t k_spirv_magic = 0x07230203;
+	if (!spirv_bytes || spirv_bytes->size() < sizeof(uint32_t) || spirv_bytes->size() % sizeof(uint32_t) != 0 || !json_bytes ||
+	    std::memcmp(spirv_bytes->data(), &k_spirv_magic, sizeof(k_spirv_magic)) != 0) {
 		return nullptr;
 	}
 

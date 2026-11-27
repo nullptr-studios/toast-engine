@@ -45,7 +45,7 @@ struct PushConstants
 PushConstants gPush;
 
 /// Relative since voxel cells raster as quads in the scene and march here
-static const float kDepthSlack = 0.002;
+static const float kDepthSlack = 0.05;
 
 /// The mask shares the scene jitter so both depths sample the same point
 bool unoccluded(int2 pixel, float depth)

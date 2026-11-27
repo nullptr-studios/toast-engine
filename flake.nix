@@ -24,6 +24,7 @@
 
 		libraries = with pkgs; [
 			lua5_4
+			ffmpeg
 			lua54Packages.luafilesystem
 			llvmPackages_23.clang
 			llvmPackages_23.llvm
@@ -103,6 +104,7 @@
 				grpc
 				pkg-config
 				vcpkg
+				nasm
 				dotnet-sdk
 				clang-tools
 				buf
@@ -130,6 +132,7 @@
 				doxygen
 				graphviz
 				util-linux
+				nasm
 
 			];
 
@@ -158,6 +161,7 @@
 				export PROTOBUF_PROTOC="${pkgs.protobuf}/bin/protoc"
 				export GRPC_PROTOC_PLUGIN="${pkgs.grpc}/bin/grpc_csharp_plugin"
 				export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d:${pkgs.vulkan-extension-layer}/share/vulkan/explicit_layer.d";
+				export LD_LIBRARY_PATH="/usr/lib''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 				'';
 		};
 	};

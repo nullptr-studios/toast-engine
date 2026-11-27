@@ -12,6 +12,7 @@
 #include <bit>
 #include <cstdint>
 #include <glm/glm.hpp>
+#include <memory>
 #include <span>
 #include <toast/export.hpp>
 #include <unordered_map>
@@ -221,7 +222,8 @@ private:
 
 	glm::uvec3 m_brick_dims {0};
 
-	std::unordered_map<uint32_t, std::vector<SurfaceVoxel>> m_bricks;
+	/// Immutable lists shared by every copy, so copying a surface for a query snapshot only bumps reference counts
+	std::unordered_map<uint32_t, std::shared_ptr<const std::vector<SurfaceVoxel>>> m_bricks;
 };
 
 }

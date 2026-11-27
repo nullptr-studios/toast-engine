@@ -63,28 +63,38 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 		return;
 	}
 
-	const auto build_pipeline =
-	    [&](VulkanPipeline& pipeline, vk::Format format, vk::Extent2D target_extent, const char* entry, const char* debug_name) {
-		    VulkanPipeline::Config config;
-		    config.pipeline_type = VulkanPipeline::PipelineType::graphics;
-		    config.debug_name = debug_name;
-		    config.color_format = format;
-		    // Roughness and the no trace mark live in alpha
-		    config.write_color_alpha = true;
-		    config.extent = target_extent;
-		    config.shader_spirv = shader->spirv;
-		    config.fragment_entry = entry;
-		    config.pipeline_layout = *m_layout.getPipelineLayout();
-		    config.vertex_bindings = {};
-		    config.vertex_attributes = {};
-		    config.cull_mode = vk::CullModeFlagBits::eNone;
-		    config.depth_test = false;
-		    config.depth_write = false;
-		    pipeline.rebuild(core, config);
-	    };
+	const auto build_pipeline = [&](VulkanPipeline& pipeline,
+	                                vk::Format format,
+	                                vk::Extent2D target_extent,
+	                                const char* entry,
+	                                const char* debug_name,
+	                                std::optional<vk::Format> extra = std::nullopt) {
+		VulkanPipeline::Config config;
+		if (extra.has_value()) {
+			config.extra_color_formats = {*extra};
+			config.write_extra_color = true;
+			config.extra_blend_mask = 0u;
+		}
+		config.pipeline_type = VulkanPipeline::PipelineType::graphics;
+		config.debug_name = debug_name;
+		config.color_format = format;
+		// Roughness and the no trace mark live in alpha
+		config.write_color_alpha = true;
+		config.extent = target_extent;
+		config.shader_spirv = shader->spirv;
+		config.fragment_entry = entry;
+		config.pipeline_layout = *m_layout.getPipelineLayout();
+		config.vertex_bindings = {};
+		config.vertex_attributes = {};
+		config.cull_mode = vk::CullModeFlagBits::eNone;
+		config.depth_test = false;
+		config.depth_write = false;
+		pipeline.rebuild(core, config);
+	};
 	const vk::Extent2D half = PostProcessTarget::halfExtent(extent);
 	build_pipeline(m_surface_pipeline, k_surface_format, half, "surfaceMain", "TracedSpecular Surface");
-	build_pipeline(m_trace_pipeline, k_trace_format, half, "traceMain", "TracedSpecular Trace");
+	build_pipeline(m_trace_pipeline, k_trace_format, half, "traceMain", "TracedSpecular Trace", k_hit_format);
+	build_pipeline(m_shade_pipeline, k_trace_format, half, "shadeMain", "TracedSpecular Shade");
 	build_pipeline(m_resolve_pipeline, k_trace_format, half, "resolveMain", "TracedSpecular Resolve");
 	build_pipeline(m_temporal_pipeline, k_trace_format, half, "temporalMain", "TracedSpecular Temporal");
 	build_pipeline(m_composite_pipeline, scene_format, extent, "compositeMain", "TracedSpecular Composite");
@@ -98,9 +108,9 @@ TracedSpecularPass::TracedSpecularPass(const VulkanCore& core, vk::Format scene_
 	createSets(core);
 	createTargets(core, extent);
 
-	m_ready = m_surface_pipeline.isReady() && m_trace_pipeline.isReady() && m_resolve_pipeline.isReady() &&
-	          m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() && m_pyramid_pipeline.isReady() &&
-	          m_filter_pipeline.isReady() && !m_scene_sets.empty() && !m_storage_sets.empty();
+	m_ready = m_surface_pipeline.isReady() && m_trace_pipeline.isReady() && m_shade_pipeline.isReady() &&
+	          m_resolve_pipeline.isReady() && m_temporal_pipeline.isReady() && m_composite_pipeline.isReady() &&
+	          m_pyramid_pipeline.isReady() && m_filter_pipeline.isReady() && !m_scene_sets.empty() && !m_storage_sets.empty();
 	if (m_ready) {
 		TOAST_INFO("Render", "TracedSpecularPass ready (GGX rays traced at half resolution)");
 	}
@@ -164,6 +174,7 @@ void TracedSpecularPass::createTargets(const VulkanCore& core, vk::Extent2D exte
 	m_target.create(core, extent, m_scene_format, "TracedSpecular");
 	m_surface.create(core, half, k_surface_format, "TracedSpecular Surface");
 	m_trace.create(core, half, k_trace_format, "TracedSpecular Trace");
+	m_hit.create(core, half, k_hit_format, "TracedSpecular Hit");
 	m_resolved.create(core, half, k_trace_format, "TracedSpecular Resolved");
 	m_history[0].create(core, half, k_trace_format, "TracedSpecular History0");
 	m_history[1].create(core, half, k_trace_format, "TracedSpecular History1");
@@ -324,6 +335,7 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 	  m_pyramid_view.has_value() ? **m_pyramid_view : vk::ImageView {},
 	  m_hiz.view(),
 	  m_filtered.view(),
+	  m_hit.view(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return source_view;
@@ -387,6 +399,8 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 		target.endScope(cmd);
 	};
 
+	// The pyramid draws bind the same set before the surface draw first writes it
+	m_surface.makeSampleable(cmd);
 	if (previous_view) {
 		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, "TracedSpecular colour pyramid");
 		recordPyramid(cmd, layout, sets, params);
@@ -394,7 +408,49 @@ auto TracedSpecularPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk:
 		sync::transition(cmd, m_pyramid_state, sync::Usage::shader_sampled);
 	}
 	draw(m_surface, m_surface_pipeline, "TracedSpecular surface");
-	draw(m_trace, m_trace_pipeline, "TracedSpecular trace");
+
+	// Trace and shade apart so the walk never holds the hit lighting registers, the shade draw loads the trace and lights its hits
+	const auto draw_into = [&](std::span<const PostProcessTarget* const> targets,
+	                           vk::AttachmentLoadOp load,
+	                           const VulkanPipeline& pipeline,
+	                           std::string_view scope_name) {
+		const GpuScope scope(renderer->gpuTimer(), frame_index, cmd, scope_name);
+		sync::BarrierBatch to_attachment;
+		std::array<vk::RenderingAttachmentInfo, 2> attachments {};
+		for (size_t i = 0; i < targets.size(); ++i) {
+			to_attachment.image(targets[i]->state(), sync::Usage::color_attachment);
+			attachments[i].imageView = targets[i]->view();
+			attachments[i].imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			attachments[i].loadOp = load;
+			attachments[i].storeOp = vk::AttachmentStoreOp::eStore;
+		}
+		to_attachment.flush(cmd);
+		const vk::Extent2D extent = targets[0]->extent();
+		vk::RenderingInfo rendering_info {};
+		rendering_info.renderArea = vk::Rect2D({0, 0}, extent);
+		rendering_info.layerCount = 1;
+		rendering_info.colorAttachmentCount = static_cast<uint32_t>(targets.size());
+		rendering_info.pColorAttachments = attachments.data();
+		cmd.beginRendering(rendering_info);
+		cmd.setViewport(
+		    0, std::array {vk::Viewport(0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f)}
+		);
+		cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, extent)});
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, pipeline.getPipeline());
+		cmd.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, layout, k_specular_scene_set, sets, {});
+		cmd.pushConstants(layout, vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
+		cmd.draw(3, 1, 0, 0);
+		cmd.endRendering();
+		sync::BarrierBatch to_sampled;
+		for (const PostProcessTarget* target : targets) {
+			to_sampled.image(target->state(), sync::Usage::shader_sampled);
+		}
+		to_sampled.flush(cmd);
+	};
+	const std::array<const PostProcessTarget*, 2> trace_targets {&m_trace, &m_hit};
+	draw_into(trace_targets, vk::AttachmentLoadOp::eDontCare, m_trace_pipeline, "TracedSpecular trace");
+	const std::array<const PostProcessTarget*, 1> shade_targets {&m_trace};
+	draw_into(shade_targets, vk::AttachmentLoadOp::eLoad, m_shade_pipeline, "TracedSpecular shade");
 	draw(m_resolved, m_resolve_pipeline, "TracedSpecular resolve");
 	draw(history_write, m_temporal_pipeline, "TracedSpecular temporal");
 	draw(m_filtered, m_filter_pipeline, "TracedSpecular filter");

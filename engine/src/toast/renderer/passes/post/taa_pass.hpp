@@ -8,13 +8,16 @@
 
 #include "toast/renderer/core/descriptor_cache.hpp"
 #include "toast/renderer/core/vulkan_common.hpp"
+#include "toast/renderer/passes/post/motion_fill.hpp"
 #include "toast/renderer/passes/post_process_pass_base.hpp"
 #include "toast/renderer/resources/post_process_target.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
 #include "toast/renderer/shaders/vulkan_pipeline.hpp"
+#include "toast/renderer/upscale/dlss_upscaler.hpp"
 
 #include <array>
 #include <glm/glm.hpp>
+#include <string>
 #include <vector>
 
 namespace renderer {
@@ -47,23 +50,35 @@ public:
 		return m_history_valid ? m_targets[m_write ^ 1u].view() : vk::ImageView {};
 	}
 
+	/// Empty when DLSS is available
+	[[nodiscard]]
+	auto dlssFailureReason() const -> std::string {
+		return m_dlss.failureReason();
+	}
+
 private:
 	/// Mirrors taa.slang TaaParams
 	struct Params {
-		glm::mat4 reprojection {1.0f};
 		glm::vec4 texel {0.0f};
 		glm::vec4 tuning {0.0f};
 		/// xy render size zw jitter in uv
 		glm::vec4 source {0.0f};
-		/// x 1 when the source is smaller than the output
-		glm::vec4 upscale {0.0f};
+		/// x output pixels of motion at which the history weight halves
+		glm::vec4 adapt {0.0f};
 	};
 
 	void createResources(const VulkanCore& core);
 	void createTargets(const VulkanCore& core, vk::Extent2D extent);
+	/// Resolves into @p target with DLSS, false when the caller must run the TAA draw instead
+	auto recordDlss(
+	    vk::CommandBuffer cmd, vk::ImageView source_view, const PostProcessTarget& target, glm::vec2 jitter_pixels, bool reset
+	) -> bool;
 
 	const VulkanCore* m_core = nullptr;
 	vk::Format m_scene_format = vk::Format::eUndefined;
+
+	DlssUpscaler m_dlss;
+	MotionFill m_motion_fill;
 
 	ShaderLayout m_shader_layout;
 	VulkanPipeline m_pipeline;
@@ -72,14 +87,15 @@ private:
 	vk::raii::Sampler m_point_sampler = nullptr;
 
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
-	/// Source then history last written into each set
-	DescriptorCache<std::array<vk::ImageView, 2>> m_bound_views;
+	/// Source, history and filled motion last written into each set
+	DescriptorCache<std::array<vk::ImageView, 3>> m_bound_views;
 
 	/// Last frame output is this frame history
 	std::array<PostProcessTarget, 2> m_targets;
 	uint32_t m_write = 0;
 
 	bool m_history_valid = false;
+	bool m_dlss_source_logged = false;
 	uint64_t m_last_sequence = 0;
 	glm::mat4 m_last_view_projection {1.0f};
 };

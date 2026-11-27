@@ -18,6 +18,7 @@
 #include "curve.hpp"
 #include "data.hpp"
 #include "data_value.hpp"
+#include "environment_map.hpp"
 #include "material.hpp"
 #include "material_instance.hpp"
 #include "mesh.hpp"
@@ -27,6 +28,7 @@
 #include "shader.hpp"
 #include "skeleton.hpp"
 #include "texture.hpp"
+#include "video.hpp"
 
 #include <toast/audio/assets.hpp>
 #include <toast/input/assets.hpp>

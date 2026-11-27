@@ -222,6 +222,10 @@
 										           HorizontalAlignment="Center"
 										           VerticalAlignment="Center" Classes="compact-text" />
 									</ToggleButton>
+									<Panel IsVisible="{Binding Expanded}">
+										<vm:ColorWheelsPanel Margin="0,8,0,0"
+										                     IsVisible="{Binding IsColorWheels}" />
+									</Panel>
 									<elements:ArrayBox Margin="0,8,0,0"
 									                   Background="Transparent"
 									                   Padding="0"

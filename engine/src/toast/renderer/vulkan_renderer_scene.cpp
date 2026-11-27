@@ -43,6 +43,7 @@
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/window/window_events.hpp>
+#include <toast/world/ambient_light.hpp>
 #include <toast/world/camera.hpp>
 #include <toast/world/directional_light.hpp>
 #include <toast/world/fog_volume.hpp>
@@ -255,7 +256,8 @@ auto VulkanRenderer::ownerTransform(const toast::Node& node) const -> const glm:
 
 auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -> PostProcessSettings {
 	ZoneScoped;
-	PostProcessSettings result = m_post_process_settings;
+	PostProcessParams& result = m_blend_params;
+	copyBaseParams(result);
 
 	auto& volumes = m_tick_post_volumes;
 	{
@@ -280,10 +282,35 @@ auto VulkanRenderer::blendPostProcessVolumes(const glm::vec3& camera_position) -
 		if (influence <= 0.0f) {
 			continue;
 		}
-		blendPostProcess(result, volume->settings(), influence);
+		result.blend(volume->params(), influence);
 	}
 
-	return result;
+	return result.resolve();
+}
+
+void VulkanRenderer::repairBaseParamsLocked() {
+	// Built before the asset manager could load the schema, so it holds no slots
+	if (m_base_params.layout()->slots.empty()) {
+		m_base_params = PostProcessParams {};
+	}
+}
+
+void VulkanRenderer::copyBaseParams(PostProcessParams& out) {
+	const std::lock_guard lock(m_base_params_mutex);
+	repairBaseParamsLocked();
+	out = m_base_params;
+}
+
+auto VulkanRenderer::setPostProcessNumber(std::string_view name, float value) -> bool {
+	const std::lock_guard lock(m_base_params_mutex);
+	repairBaseParamsLocked();
+	return m_base_params.setNumber(name, value);
+}
+
+auto VulkanRenderer::setPostProcessColor(std::string_view name, const glm::vec3& value) -> bool {
+	const std::lock_guard lock(m_base_params_mutex);
+	repairBaseParamsLocked();
+	return m_base_params.setColor(name, value);
 }
 
 void VulkanRenderer::gatherFogVolumes(RenderFrame& frame, const glm::vec3& camera_position) {
@@ -604,14 +631,8 @@ void VulkanRenderer::resetFrameBuild(RenderFrame& frame) {
 	frame.sequence = ++m_frame_sequence_counter;
 	frame.render_mode = m_render_mode;
 
-	{
-		const std::lock_guard lock(m_pending_post_settings_mutex);
-		if (m_pending_post_settings.has_value()) {
-			m_post_process_settings = *m_pending_post_settings;
-			m_pending_post_settings.reset();
-		}
-	}
-	frame.post_process = m_post_process_settings;
+	copyBaseParams(m_blend_params);
+	frame.post_process = m_blend_params.resolve();
 }
 
 void VulkanRenderer::gatherMeshProxies(RenderFrame& frame) {
@@ -967,6 +988,8 @@ auto VulkanRenderer::gatherLights(RenderFrame& frame) -> LightGather {
 	const auto& light_nodes_snapshot = m_tick_light_nodes;
 
 	glm::vec3 ambient_sum(0.0f);
+	// First enabled ambient light carrying its own HDRI wins over the global map
+	uint64_t environment_override = 0;
 	uint32_t directional_count = 0;
 	frame.lights.reserve(light_nodes_snapshot.size());
 
@@ -1094,6 +1117,9 @@ auto VulkanRenderer::gatherLights(RenderFrame& frame) -> LightGather {
 		switch (light->lightType()) {
 			case toast::LightType::ambient: {
 				ambient_sum += light->color() * light->intensity();
+				if (environment_override == 0) {
+					environment_override = static_cast<const toast::AmbientLight*>(light)->environmentMapUid().data();
+				}
 				break;
 			}
 			case toast::LightType::directional: {
@@ -1185,6 +1211,28 @@ auto VulkanRenderer::gatherLights(RenderFrame& frame) -> LightGather {
 				break;
 			}
 			default: break;
+		}
+	}
+
+	if (m_environment_pass != nullptr) {
+		std::string global;
+		{
+			std::scoped_lock lock(m_environment_mutex);
+			global = m_global_environment_uri;
+		}
+		// Resolved from the UID the field holds, so picking another asset changes it on the very next tick
+		if (environment_override != m_ambient_environment_uid) {
+			m_ambient_environment_uid = environment_override;
+			m_ambient_environment_uri =
+			    environment_override != 0 ? assets::AssetManager::getURI(toast::UID(environment_override)) : std::string {};
+		}
+		std::string wanted = m_ambient_environment_uri.empty() ? global : m_ambient_environment_uri;
+		if (wanted != m_requested_environment_uri) {
+			m_requested_environment_uri = wanted;
+			// A light still pointing at a deleted or reimported HDRI must not hide the global map
+			if (!m_environment_pass->setEnvironmentMap(wanted) && wanted != global) {
+				std::ignore = m_environment_pass->setEnvironmentMap(global);
+			}
 		}
 	}
 
@@ -1494,13 +1542,33 @@ void VulkanRenderer::updateTemporalAA(RenderFrame& frame, vk::Extent2D render_ex
 
 	frame.jitter_ndc = glm::vec2(0.0f);
 	if (taa && render_extent.width > 0 && render_extent.height > 0) {
-		// R2 low discrepancy sequence from the plastic number
-		constexpr double k_plastic = 1.32471795724474602596;
-		const auto n = static_cast<double>(++m_taa_history.jitter_index);
-		const glm::vec2 pixel_offset(
-		    static_cast<float>(std::fmod(0.5 + (n / k_plastic), 1.0)) - 0.5f,
-		    static_cast<float>(std::fmod(0.5 + (n / (k_plastic * k_plastic)), 1.0)) - 0.5f
-		);
+		const uint64_t index = ++m_taa_history.jitter_index;
+		glm::vec2 pixel_offset;
+		if (dlssActive()) {
+			// Halton(2,3) with enough phases per output pixel as NVIDIA's DLSS guide asks
+			const float ratio = frame.output_extent.x / static_cast<float>(render_extent.width);
+			const auto phases = static_cast<uint64_t>(std::ceil(8.0f * ratio * ratio));
+			const auto halton = [](uint64_t i, uint64_t base) {
+				float fraction = 1.0f;
+				float result = 0.0f;
+				for (; i > 0; i /= base) {
+					fraction /= static_cast<float>(base);
+					result += fraction * static_cast<float>(i % base);
+				}
+				return result;
+			};
+			// Halton index 0 is the corner so the cycle starts at 1
+			const uint64_t phase = (index % std::max<uint64_t>(phases, 1)) + 1;
+			pixel_offset = glm::vec2(halton(phase, 2) - 0.5f, halton(phase, 3) - 0.5f);
+		} else {
+			// R2 low discrepancy sequence from the plastic number
+			constexpr double k_plastic = 1.32471795724474602596;
+			const auto n = static_cast<double>(index);
+			pixel_offset = glm::vec2(
+			    static_cast<float>(std::fmod(0.5 + (n / k_plastic), 1.0)) - 0.5f,
+			    static_cast<float>(std::fmod(0.5 + (n / (k_plastic * k_plastic)), 1.0)) - 0.5f
+			);
+		}
 		const glm::vec2 ndc_offset =
 		    2.0f * pixel_offset / glm::vec2(static_cast<float>(render_extent.width), static_cast<float>(render_extent.height));
 		frame.jitter_ndc = ndc_offset;

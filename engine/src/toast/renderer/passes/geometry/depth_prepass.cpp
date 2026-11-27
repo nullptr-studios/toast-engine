@@ -33,8 +33,8 @@ DepthPrepass::DepthPrepass(const VulkanCore& core, vk::Format depth_format, vk::
 	config.shader_spirv = shader->spirv;
 	config.pipeline_layout = *m_shader_layout.getPipelineLayout();
 	config.vertex_bindings = {vertexBindingDescription()};
-	const auto vertex_attributes = vertexAttributeDescriptions();
-	config.vertex_attributes.assign(vertex_attributes.begin(), vertex_attributes.end());
+	// Position only, the shader reads nothing else
+	config.vertex_attributes = {vertexAttributeDescriptions()[0]};
 	config.cull_mode = vk::CullModeFlagBits::eBack;
 	config.depth_test = true;
 	config.depth_write = true;

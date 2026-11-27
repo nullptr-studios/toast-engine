@@ -26,6 +26,7 @@
 #include <toast/voxel/assets/voxel_model.hpp>
 #include <toast/voxel/mass_accumulator.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
+#include <toast/voxel/voxel_edit.hpp>
 #include <toast/world/world_events.hpp>
 
 namespace physics {
@@ -118,36 +119,14 @@ auto placeholderMaterialLibrary() -> const voxel::MaterialLibrary& {
 auto computeOccupiedBounds(const voxel::Volume& volume) -> AABB {
 	ZoneScopedN("physics::ComputeOccupiedBounds");
 
-	const glm::ivec3 brick_dims = glm::ivec3(volume.brickDims());
-	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-	glm::ivec3 min {std::numeric_limits<int32_t>::max()};
-	glm::ivec3 max {std::numeric_limits<int32_t>::min()};
-
-	for (int32_t z = 0; z < brick_dims.z; ++z) {
-		for (int32_t y = 0; y < brick_dims.y; ++y) {
-			for (int32_t x = 0; x < brick_dims.x; ++x) {
-				const glm::ivec3 brick {x, y, z};
-				const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
-				if (occupancy == nullptr || voxel::isEmpty(*occupancy)) {
-					continue;
-				}
-
-				const voxel::BrickExtent extent = voxel::occupiedExtent(*occupancy);
-				const glm::ivec3 brick_base = brick * brick_dim;
-				min = glm::min(min, brick_base + glm::ivec3(extent.min.x, extent.min.y, extent.min.z));
-				max = glm::max(max, brick_base + glm::ivec3(extent.max.x, extent.max.y, extent.max.z));
-			}
-		}
-	}
-
-	if (glm::any(glm::greaterThan(min, max))) {
+	const std::optional<voxel::EditBounds> bounds = voxel::occupiedBounds(volume);
+	if (not bounds.has_value()) {
 		// nothing left
 		return {};
 	}
-
 	return {
-	  .min = glm::vec3(min) * voxel::k_voxel_size,
-	  .max = glm::vec3(max + glm::ivec3(1)) * voxel::k_voxel_size,
+	  .min = glm::vec3(bounds->min) * voxel::k_voxel_size,
+	  .max = glm::vec3(bounds->max + glm::ivec3(1)) * voxel::k_voxel_size,
 	};
 }
 
@@ -157,31 +136,11 @@ auto accumulateMassMoments(const voxel::Volume& volume, const voxel::Palette& pa
 	ZoneScopedN("physics::AccumulateMassMoments");
 
 	voxel::MassMoments moments;
-	const glm::ivec3 brick_dims = glm::ivec3(volume.brickDims());
+	const DensityTable density = voxel::densityTable(palette, materials);
 	const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-	for (int32_t bz = 0; bz < brick_dims.z; ++bz) {
-		for (int32_t by = 0; by < brick_dims.y; ++by) {
-			for (int32_t bx = 0; bx < brick_dims.x; ++bx) {
-				const glm::ivec3 brick {bx, by, bz};
-				if (volume.entryAt(brick).tag() == voxel::BrickTag::empty) {
-					continue;
-				}
-				for (int32_t lz = 0; lz < brick_dim; ++lz) {
-					for (int32_t ly = 0; ly < brick_dim; ++ly) {
-						for (int32_t lx = 0; lx < brick_dim; ++lx) {
-							const glm::ivec3 v = brick * brick_dim + glm::ivec3(lx, ly, lz);
-							const uint8_t palette_index = volume.materialAt(v);
-							if (palette_index == voxel::k_empty_palette_index) {
-								continue;
-							}
-							const uint32_t material_index = voxel::resolveMaterialIndex(palette, materials, palette_index);
-							moments.add(v.x, v.y, v.z, materials.materials[material_index].density);
-						}
-					}
-				}
-			}
-		}
-	}
+	volume.forEachSolidBrick([&](glm::ivec3 brick, uint32_t) {
+		moments += maskedMoments(volume, volume.entryAt(brick), *volume.occupancyPointer(brick), true, brick * brick_dim, density);
+	});
 	return moments;
 }
 }
@@ -331,14 +290,21 @@ void Simulator::publishQuerySnapshot() {
 				}
 			}
 			if (source.data) {
-				auto data = std::make_shared<VoxelShapeData>();
+				std::shared_ptr<const VoxelShapeData>& recycled = snapshot->voxels[index].data;
+				std::shared_ptr<VoxelShapeData> data = recycled.use_count() == 1
+				                                           ? std::const_pointer_cast<VoxelShapeData>(std::move(recycled))
+				                                           : std::make_shared<VoxelShapeData>();
 				data->surface = source.data->surface;
 				data->palette = source.data->palette;
 				data->materials = source.data->materials;
-				if (volume) {
+				if (volume == nullptr) {
+					data->owned_volume.reset();
+				} else if (data->owned_volume) {
+					data->owned_volume->reshareFrom(*volume);
+				} else {
 					data->owned_volume = std::make_unique<voxel::Volume>(voxel::Volume::instanceOf(*volume));
-					data->volume = data->owned_volume.get();
 				}
+				data->volume = data->owned_volume.get();
 				key.data = std::move(data);
 			}
 			snapshot->voxels[index] = std::move(key);
@@ -885,7 +851,7 @@ void Simulator::publishProfile(std::span<const SimulationIsland> islands) {
 
 void Simulator::clearFragmentFromSource(
     ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, const DetachedComponent& component,
-    const RemovedVoxels* already_removed
+    const RemovedVoxels* already_removed, std::vector<glm::ivec3>* deferred_dirty
 ) {
 	ZoneScoped;
 
@@ -897,13 +863,27 @@ void Simulator::clearFragmentFromSource(
 		                                  : discardComponent(source, component, voxel::densityTable(data.palette, data.materials));
 		data.moments -= removed.moments;
 		data.solid_voxel_count -= std::min(data.solid_voxel_count, removed.voxels);
+	}
 
-		std::vector<glm::ivec3> dirty_bricks;
-		dirty_bricks.reserve(component.pieces.size());
-		for (const auto& p : component.pieces) {
-			dirty_bricks.emplace_back(p.brick);
-		}
+	std::vector<glm::ivec3> dirty_bricks;
+	std::vector<glm::ivec3>& dirty = deferred_dirty != nullptr ? *deferred_dirty : dirty_bricks;
+	dirty.reserve(dirty.size() + component.pieces.size());
+	for (const auto& p : component.pieces) {
+		dirty.emplace_back(p.brick);
+	}
+	if (deferred_dirty == nullptr) {
+		finishSourceCarve(shape_id, data, source, dirty_bricks);
+	}
+}
 
+void Simulator::finishSourceCarve(
+    ShapeID shape_id, VoxelShapeData& data, voxel::Volume& source, std::span<const glm::ivec3> dirty_bricks
+) {
+	ZoneScoped;
+	ZoneValue(static_cast<uint64_t>(dirty_bricks.size()));
+
+	{
+		std::scoped_lock voxel_lock {voxelDataMutex()};
 		// Not tryCollapseUniform here since clearing a voxel only unfills a brick and never passes isFull
 		data.surface.repairBricks(source, dirty_bricks);
 	}
@@ -952,13 +932,9 @@ auto Simulator::debrisIfSmall(ShapeID shape_id) -> bool {
 
 	DetachedComponent whole;
 	whole.voxel_count = solid;
-	for (uint32_t index = 0; index < data->volume->brickCount(); ++index) {
-		const glm::ivec3 brick = data->volume->brickAtIndex(index);
-		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(brick);
-		if (occupancy != nullptr && not voxel::isEmpty(*occupancy)) {
-			whole.pieces.push_back({.brick = brick, .voxels = *occupancy});
-		}
-	}
+	data->volume->forEachSolidBrick([&](glm::ivec3 brick, uint32_t) {
+		whole.pieces.push_back({.brick = brick, .voxels = *data->volume->occupancyPointer(brick)});
+	});
 
 	emitComponentDebris(shape_id, whole, nullptr);
 	shape = tryGetShape(shape_id);
@@ -1017,16 +993,7 @@ void Simulator::emitDebris(
 	const glm::vec3 push_direction = push != nullptr ? push->direction : glm::vec3 {0.0f};
 	const float push_length = glm::length(push_direction);
 
-	const glm::ivec3 dims = data->volume != nullptr ? glm::ivec3(data->volume->voxelDims()) : glm::ivec3(0);
-	const auto solid_at = [&](const glm::ivec3& v) {
-		if (glm::any(glm::lessThan(v, glm::ivec3(0))) || glm::any(glm::greaterThanEqual(v, dims))) {
-			return false;
-		}
-		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-		const voxel::BrickOccupancy* occupancy = data->volume->occupancyPointer(v / brick_dim);
-		const glm::uvec3 in_brick = glm::uvec3(v % brick_dim);
-		return occupancy != nullptr && voxel::isSolid(*occupancy, in_brick.x, in_brick.y, in_brick.z);
-	};
+	const auto solid_at = [&](const glm::ivec3& v) { return data->volume != nullptr && data->volume->isSolidAt(v); };
 	const auto blocked_ahead = [&](const glm::vec3& from, const glm::vec3& direction, glm::vec3& normal_local) {
 		glm::ivec3 previous = glm::ivec3(glm::floor(from));
 		for (float t = 0.25f; t <= k_debris_lookahead_voxels; t += 0.25f) {
@@ -1179,16 +1146,10 @@ void Simulator::emitComponentDebris(ShapeID shape_id, const DetachedComponent& c
 		}
 		const voxel::BrickOccupancy mask = piece.voxels & *occupancy;
 		const glm::ivec3 base = piece.brick * static_cast<int32_t>(voxel::k_brick_dim);
-		for (uint32_t z = 0; z < voxel::k_brick_dim; ++z) {
-			uint64_t word = mask[z];
-			while (word != 0ull) {
-				const auto bit = static_cast<uint32_t>(std::countr_zero(word));
-				word &= word - 1ull;
-				const glm::ivec3 v =
-				    base + glm::ivec3(static_cast<int32_t>(bit & 7u), static_cast<int32_t>(bit >> 3u), static_cast<int32_t>(z));
-				voxels.push_back({.voxel = v, .material = data->volume->materialAt(v)});
-			}
-		}
+		voxel::forEachSetVoxel(mask, [&](uint32_t, uint32_t x, uint32_t y, uint32_t z) {
+			const glm::ivec3 v = base + glm::ivec3(glm::uvec3(x, y, z));
+			voxels.push_back({.voxel = v, .material = data->volume->materialAt(v)});
+		});
 	}
 	if (voxels.empty()) {
 		return;
@@ -1659,7 +1620,9 @@ void Simulator::unlockSleep(BodyID id) {
 	m_fragments[it->second].sequence = m_next_fragment_sequence++;
 }
 
-auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push) -> bool {
+auto Simulator::spawnFragmentBody(
+    ShapeID source_shape_id, const DetachedComponent& component, const FragmentPush* push, std::vector<glm::ivec3>* deferred_dirty
+) -> bool {
 	ZoneScopedN("physics::SpawnFragment");
 	ZoneValue(static_cast<uint64_t>(component.voxel_count));
 
@@ -1761,7 +1724,7 @@ auto Simulator::spawnFragmentBody(ShapeID source_shape_id, const DetachedCompone
 	shape = tryGetShape(source_shape_id);
 	if (shape != nullptr) {
 		if (VoxelShapeData* source_data = tryGetVoxelData(shape->voxel.data)) {
-			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component, &removed);
+			clearFragmentFromSource(source_shape_id, *source_data, *source_data->volume, component, &removed, deferred_dirty);
 		}
 	}
 	if (toast::VoxelNode* node = voxelNodeFor(source_shape_id)) {
@@ -5069,8 +5032,8 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 		}
 
 		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-		const glm::ivec3 first_brick = first / brick_dim;
-		const glm::ivec3 last_brick = last / brick_dim;
+		const glm::ivec3 first_brick = voxel::brickOf(first);
+		const glm::ivec3 last_brick = voxel::brickOf(last);
 
 		struct Doomed {
 			// we 100% need to remove this voxels
@@ -5180,7 +5143,7 @@ void Simulator::applyDamageCommand(const DamageCommand& c) {
 			data->connectivity_dirty = true;
 			++removed;
 			removed_sum += glm::vec3(v);
-			const glm::ivec3 brick = v / brick_dim;
+			const glm::ivec3 brick = voxel::brickOf(v);
 			if (dirty_seen.insert(voxelKey(brick)).second) {
 				dirty_bricks.push_back(brick);
 			}
@@ -5749,8 +5712,8 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 		}
 
 		const auto brick_dim = static_cast<int32_t>(voxel::k_brick_dim);
-		const glm::ivec3 first_brick = first / brick_dim;
-		const glm::ivec3 last_brick = last / brick_dim;
+		const glm::ivec3 first_brick = voxel::brickOf(first);
+		const glm::ivec3 last_brick = voxel::brickOf(last);
 		const auto mark = [&](BrickMask& entry, const glm::ivec3& v, const glm::ivec3& brick) {
 			entry.brick = brick;
 			const glm::ivec3 local = v - (brick * brick_dim);
@@ -5770,6 +5733,22 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 
 					const glm::ivec3 brick_first = glm::max(first, brick * brick_dim);
 					const glm::ivec3 brick_last = glm::min(last, (brick * brick_dim) + (brick_dim - 1));
+					const glm::vec3 to_box =
+					    glm::clamp(
+					        local_point, glm::vec3(brick_first) * voxel::k_voxel_size, glm::vec3(brick_last + 1) * voxel::k_voxel_size
+					    ) -
+					    local_point;
+					if (glm::dot(to_box, to_box) > scan * scan) {
+						continue;
+					}
+
+					const voxel::BrickEntry entry = volume.entryAt(brick);
+					const bool uniform = entry.tag() == voxel::BrickTag::uniform;
+					if (uniform && not exploded_materials[entry.payload()].breakable) {
+						continue;
+					}
+					const uint8_t* brick_material = uniform ? nullptr : std::as_const(*volume.pool()).material(entry.payload()).data();
+
 					BrickMask* brick_debris = nullptr;
 					BrickMask* chunk_mask = nullptr;
 					uint64_t chunk_mask_key = 0;
@@ -5791,7 +5770,11 @@ auto Simulator::explodeShape(ShapeID shape_id, const ExplosionDamage& explosion)
 									continue;
 								}
 
-								const uint8_t palette_index = volume.materialAt(v);
+								const uint8_t palette_index =
+								    uniform ? static_cast<uint8_t>(entry.payload())
+										        : brick_material[voxel::localIndex(
+								                  static_cast<uint32_t>(local.x), static_cast<uint32_t>(local.y), static_cast<uint32_t>(local.z)
+								              )];
 								const ExplodedMaterial& exploded = exploded_materials[palette_index];
 								if (not exploded.breakable) {
 									continue;
@@ -6003,13 +5986,15 @@ auto Simulator::breakPieces(
 
 	std::ranges::sort(picked.pieces, std::greater {}, &DetachedComponent::voxel_count);
 
+	std::vector<glm::ivec3> carved_bricks;
 	size_t flown = 0;
 	for (const DetachedComponent& piece : picked.pieces) {
 		const bool may_fly = chunks && flown < spawn_cap && piece.voxel_count >= tunables().min_fragment_voxels;
 		if (may_fly) {
 			const std::optional<FragmentPush> push = push_for(piece);
 			const size_t before = m_fragments.size();
-			if (spawnFragmentBody(shape_id, piece, push.has_value() ? &*push : nullptr) && m_fragments.size() > before) {
+			if (spawnFragmentBody(shape_id, piece, push.has_value() ? &*push : nullptr, &carved_bricks) &&
+			    m_fragments.size() > before) {
 				++flown;
 				continue;
 			}
@@ -6024,12 +6009,17 @@ auto Simulator::breakPieces(
 		shape = tryGetShape(shape_id);
 		data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
 		if (data != nullptr && data->volume != nullptr) {
-			clearFragmentFromSource(shape_id, *data, *data->volume, piece);
+			clearFragmentFromSource(shape_id, *data, *data->volume, piece, nullptr, &carved_bricks);
 		}
 	}
 
 	shape = tryGetShape(shape_id);
 	data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	if (data != nullptr && data->volume != nullptr && not carved_bricks.empty()) {
+		finishSourceCarve(shape_id, *data, *data->volume, carved_bricks);
+		shape = tryGetShape(shape_id);
+		data = shape != nullptr ? tryGetVoxelData(shape->voxel.data) : nullptr;
+	}
 	if (data == nullptr) {
 		return 0;
 	}
@@ -6082,14 +6072,19 @@ auto Simulator::runConnectivityAnalysis() -> std::vector<ConnectivityResult> {
 		ShapeID id {.slot = static_cast<uint32_t>(index), .generation = slot.generation};
 		uint32_t revision = data->surface_revision;
 		data->connectivity_dirty = false;
+		if (data->connectivity_cache == nullptr) {
+			data->connectivity_cache = std::make_unique<voxel::ConnectivityCache>();
+		}
+		// The voxel lock is held until every job is awaited below so the cache and the volume stay put
+		voxel::ConnectivityCache* cache = data->connectivity_cache.get();
 
 		// clang-format off
 		pending.emplace_back(PendingJob {
 			.shape = id,
 			.revision = revision,
-			.future = toast::ThreadPool::push([volume] {
+			.future = toast::ThreadPool::push([volume, cache] {
 				ZoneScopedN("physics::ConnectivityBatch");    // NOLINT
-				return voxel::analyseConnectivity(*volume);
+				return voxel::analyseConnectivity(*volume, cache);
 			})
 		});
 		// clang-format on

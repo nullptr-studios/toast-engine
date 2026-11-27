@@ -14,6 +14,7 @@
 #include <optional>
 #include <toast/assets/material.hpp>
 #include <toast/assets/texture.hpp>
+#include <toast/assets/video.hpp>
 #include <unordered_map>
 #include <vector>
 #include <vulkan/vulkan_raii.hpp>
@@ -44,6 +45,8 @@ public:
 
 	void markValuesDirty() { m_values_dirty = true; }
 
+	void markTexturesDirty() { m_textures_dirty = true; }
+
 	struct UboBlob {
 		uint32_t set = 0;
 		uint32_t binding = 0;
@@ -73,6 +76,7 @@ public:
 		uint32_t set = 0;
 		uint32_t binding = 0;
 		assets::Handle<assets::Texture> texture;
+		assets::Handle<assets::Video> video;    // evety texture can also hold a video texture
 		vk::Sampler sampler;
 		std::string default_fallback;
 		bool linear_data = false;

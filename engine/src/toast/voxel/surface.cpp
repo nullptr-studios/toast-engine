@@ -4,16 +4,6 @@
 
 namespace voxel {
 
-namespace {
-
-/// @brief Arithmetic shift so voxel -1 lands in brick -1
-[[nodiscard]]
-auto brickContaining(glm::ivec3 voxel) noexcept -> glm::ivec3 {
-	return {voxel.x >> 3, voxel.y >> 3, voxel.z >> 3};
-}
-
-}
-
 auto VolumeSurface::contains(glm::ivec3 brick) const noexcept -> bool {
 	return brick.x >= 0 && brick.y >= 0 && brick.z >= 0 && std::cmp_less(brick.x, m_brick_dims.x) &&
 	       std::cmp_less(brick.y, m_brick_dims.y) && std::cmp_less(brick.z, m_brick_dims.z);
@@ -30,13 +20,7 @@ void VolumeSurface::rebuild(const Volume& volume) {
 	m_brick_dims = volume.brickDims();
 	m_bricks.clear();
 
-	for (int32_t z = 0; std::cmp_less(z, m_brick_dims.z); ++z) {
-		for (int32_t y = 0; std::cmp_less(y, m_brick_dims.y); ++y) {
-			for (int32_t x = 0; std::cmp_less(x, m_brick_dims.x); ++x) {
-				rebuildBrick(volume, glm::ivec3 {x, y, z});
-			}
-		}
-	}
+	volume.forEachSolidBrick([&](glm::ivec3 brick, uint32_t) { rebuildBrick(volume, brick); });
 }
 
 void VolumeSurface::rebuildBrick(const Volume& volume, glm::ivec3 brick) {
@@ -52,11 +36,25 @@ void VolumeSurface::rebuildBrick(const Volume& volume, glm::ivec3 brick) {
 		return;
 	}
 
-	std::vector<SurfaceVoxel>& list = m_bricks[slot];
-	list.clear();
-	buildBrickSurfaceInto(*occupancy, volume.neighbourhoodOf(brick), list);
-	if (list.empty()) {
-		m_bricks.erase(slot);
+	thread_local std::vector<SurfaceVoxel> scratch;
+	scratch.clear();
+	buildBrickSurfaceInto(*occupancy, volume.neighbourhoodOf(brick), scratch);
+	const auto it = m_bricks.find(slot);
+	if (scratch.empty()) {
+		if (it != m_bricks.end()) {
+			m_bricks.erase(it);
+		}
+		return;
+	}
+	// A neighbour repaired for nothing keeps its list, and with it the one every copy of this surface shares
+	if (it != m_bricks.end() && *it->second == scratch) {
+		return;
+	}
+	auto list = std::make_shared<const std::vector<SurfaceVoxel>>(scratch);
+	if (it != m_bricks.end()) {
+		it->second = std::move(list);
+	} else {
+		m_bricks.emplace(slot, std::move(list));
 	}
 }
 
@@ -66,7 +64,7 @@ void VolumeSurface::repairAround(const Volume& volume, glm::ivec3 voxel) {
 		return;
 	}
 
-	const glm::ivec3 brick = brickContaining(voxel);
+	const glm::ivec3 brick = brickOf(voxel);
 	const glm::ivec3 local {voxel.x & 7, voxel.y & 7, voxel.z & 7};
 	const int32_t last = static_cast<int32_t>(k_brick_dim) - 1;
 
@@ -124,13 +122,13 @@ auto VolumeSurface::brickSurface(glm::ivec3 brick) const -> std::span<const Surf
 	if (it == m_bricks.end()) {
 		return {};
 	}
-	return {it->second};
+	return {*it->second};
 }
 
 auto VolumeSurface::surfaceVoxelCount() const -> size_t {
 	size_t total = 0;
 	for (const auto& [slot, list] : m_bricks) {
-		total += list.size();
+		total += list->size();
 	}
 	return total;
 }

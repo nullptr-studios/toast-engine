@@ -157,6 +157,8 @@ void Panel::loadDocument() {
 	preprocess_ctx.inject_data_model = true;
 	preprocess_ctx.style_uris = ui.globalStyleUris();
 	preprocess_ctx.color_resolver = [&ui](std::string_view name) { return ui.colorHex(name); };
+	preprocess_ctx.document_uri = std::string(m_element.path());
+	preprocess_ctx.template_loader = &ui::UISystem::loadTemplateSource;
 
 	const auto scan = ui::preprocessDocument(m_element->source(), preprocess_ctx);
 	m_bind_store->reconcile(scan);

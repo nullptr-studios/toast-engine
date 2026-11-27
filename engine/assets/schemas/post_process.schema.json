@@ -1,0 +1,620 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "core://schemas/post_process.schema.json",
+  "title": "Post Process Profile (.tpp)",
+  "type": "object",
+  "properties": {
+    "bloom": {
+      "x-toast-type": "bloom"
+    },
+    "lens_flare": {
+      "x-toast-type": "lens_flare"
+    },
+    "tonemap": {
+      "x-toast-type": "tonemap"
+    },
+    "color_grading": {
+      "x-toast-type": "color_grading",
+      "x-toast-widget": "color_wheels"
+    },
+    "fxaa": {
+      "x-toast-type": "fxaa"
+    },
+    "ssr": {
+      "x-toast-type": "ssr"
+    },
+    "ssao": {
+      "x-toast-type": "ssao"
+    },
+    "fog": {
+      "x-toast-type": "fog"
+    }
+  },
+  "definitions": {
+    "bloom": {
+      "type": "object",
+      "properties": {
+        "threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Luminance above which pixels bloom",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 10
+        },
+        "knee": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Softness of the threshold edge",
+          "default": 0.5,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "filter_radius": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Blur radius of the upsample chain",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "strength": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Share of the bloom added to the image",
+          "default": 0.05,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "lens_flare": {
+      "type": "object",
+      "properties": {
+        "intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Overall flare strength",
+          "default": 0.009,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Luminance a pixel needs to flare",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 20
+        },
+        "threshold_range": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Width of the threshold ramp",
+          "default": 1.0,
+          "minimum": 0.01,
+          "maximum": 10
+        },
+        "ghost_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Ghost copies strength",
+          "default": 2.0,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "chroma_shift": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Colour split between ghosts",
+          "default": 0.015,
+          "minimum": 0,
+          "maximum": 0.1
+        },
+        "halo_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Halo ring strength",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "halo_width": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Halo radius",
+          "default": 0.41,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "halo_mask": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Where the halo starts to fade",
+          "default": 0.124,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "halo_compression": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Halo fisheye",
+          "default": 1.0,
+          "minimum": 0.05,
+          "maximum": 4
+        },
+        "glare_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Glare strength",
+          "default": 0.2,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "glare_divider": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Glare falloff divider",
+          "default": 162.0,
+          "minimum": 1,
+          "maximum": 200
+        },
+        "anamorphic_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Anamorphic streak strength",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "anamorphic_tint": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Share of the streak pulled toward blue",
+          "default": 0.6,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "dirt_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Lens dirt strength",
+          "default": 0.0,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "halo_thickness": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Spread of the ring along its radius",
+          "default": 0.09,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "halo_dispersion": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Colour split across the halo",
+          "default": 0.056,
+          "minimum": 0,
+          "maximum": 0.1
+        },
+        "halo_tint": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Halo colour",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "dirt_texture": {
+          "type": "string",
+          "x-toast-type": "asset",
+          "description": "Lens dirt texture",
+          "x-toast-asset-type": "texture"
+        }
+      }
+    },
+    "tonemap": {
+      "type": "object",
+      "properties": {
+        "exposure": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Exposure multiplier, a compensation when auto exposure is on",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 8
+        },
+        "mode": {
+          "type": "string",
+          "x-toast-type": "enum",
+          "description": "Tonemap curve, switches at the halfway point of a blend",
+          "enum": [
+            "Reinhard",
+            "ACES",
+            "GT7"
+          ],
+          "default": "GT7"
+        },
+        "gt_contrast_dip": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "GT7 toe exponent under the grey point",
+          "default": 1.28,
+          "minimum": 1,
+          "maximum": 2
+        },
+        "chromatic_aberration": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Colour fringing toward the edges",
+          "default": 0.0,
+          "minimum": 0,
+          "maximum": 0.05
+        },
+        "gamma": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Output gamma",
+          "default": 2.2,
+          "minimum": 1,
+          "maximum": 3
+        },
+        "contrast": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Contrast",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "saturation": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Saturation",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "vignette": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Corner darkening",
+          "default": 0.0,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "grain": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Film grain",
+          "default": 0.0,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "auto_exposure": {
+          "type": "boolean",
+          "x-toast-type": "bool",
+          "description": "Meter the scene and adapt exposure",
+          "default": true
+        },
+        "auto_exposure_min": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "log2 of the dimmest average scene luminance the meter may settle on",
+          "default": -5.0,
+          "minimum": -16,
+          "maximum": 16
+        },
+        "auto_exposure_max": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "log2 of the brightest average scene luminance the meter may settle on",
+          "default": 8.0,
+          "minimum": -16,
+          "maximum": 16
+        },
+        "adapt_speed_up": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Per second toward a brighter scene",
+          "default": 3.0,
+          "minimum": 0,
+          "maximum": 20
+        },
+        "adapt_speed_down": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Per second toward a darker scene",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 20
+        }
+      }
+    },
+    "color_grading": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "White balance, warmer above 0",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "tint": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "White balance, magenta above 0",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "color_filter": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Multiplies the image",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "hue_shift": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Hue rotation in degrees",
+          "default": 0.0,
+          "minimum": -180,
+          "maximum": 180
+        },
+        "lift": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Shadow tint",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "lift_offset": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Shadow brightness",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "gamma": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Midtone tint",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "gamma_offset": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Midtone brightness",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "gain": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Highlight tint",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "gain_offset": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Highlight brightness",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "lut": {
+          "type": "string",
+          "x-toast-type": "asset",
+          "description": "LUT strip, imported linear without compression or mipmaps",
+          "x-toast-asset-type": "texture"
+        },
+        "lut_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Mix toward the LUT grade",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "fxaa": {
+      "type": "object",
+      "properties": {
+        "contrast_threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Minimum local contrast to smooth",
+          "default": 0.0312,
+          "minimum": 0,
+          "maximum": 0.2
+        },
+        "relative_threshold": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Contrast relative to the brightest neighbour",
+          "default": 0.125,
+          "minimum": 0,
+          "maximum": 0.5
+        },
+        "subpixel_blending": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Sub-pixel smoothing",
+          "default": 0.75,
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "ssr": {
+      "type": "object",
+      "properties": {
+        "intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Reflection strength",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "max_roughness": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Roughest surface that still reflects",
+          "default": 0.6,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "thickness": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Surface thickness in meters",
+          "default": 0.5,
+          "minimum": 0.01,
+          "maximum": 5
+        },
+        "stride": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "March step in meters",
+          "default": 0.15,
+          "minimum": 0.01,
+          "maximum": 1
+        },
+        "max_steps": {
+          "type": "integer",
+          "x-toast-type": "int",
+          "description": "Maximum march steps",
+          "default": 48,
+          "minimum": 1,
+          "maximum": 256
+        }
+      }
+    },
+    "ssao": {
+      "type": "object",
+      "properties": {
+        "radius": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Sampling radius in meters",
+          "default": 0.5,
+          "minimum": 0.01,
+          "maximum": 10
+        },
+        "strength": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Occlusion strength",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "range_cutoff": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Occluders further than this are ignored, in meters",
+          "default": 1.0,
+          "minimum": 0.01,
+          "maximum": 10
+        },
+        "sample_count": {
+          "type": "integer",
+          "x-toast-type": "int",
+          "description": "Samples per pixel",
+          "default": 16,
+          "minimum": 1,
+          "maximum": 64
+        }
+      }
+    },
+    "fog": {
+      "type": "object",
+      "properties": {
+        "density": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Extinction per meter at the base height, 0 turns volumetrics off",
+          "default": 0.005,
+          "minimum": 0,
+          "maximum": 1
+        },
+        "height": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Base height in meters",
+          "default": 0.0,
+          "minimum": -1000,
+          "maximum": 1000
+        },
+        "height_falloff": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Per meter above the base height, 0 is uniform",
+          "default": 0.0,
+          "minimum": 0,
+          "maximum": 2
+        },
+        "albedo": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Scattering colour",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "anisotropy": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Henyey Greenstein g, above 0 scatters forward",
+          "default": 0.3,
+          "minimum": -0.9,
+          "maximum": 0.9
+        },
+        "ambient": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Ambient light scattered by the fog",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 4
+        },
+        "distance": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Meters a view ray marches before the sky",
+          "default": 64.0,
+          "minimum": 1,
+          "maximum": 1000
+        }
+      }
+    }
+  }
+}

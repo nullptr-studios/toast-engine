@@ -1160,28 +1160,33 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		return true;
 	}
 
+	/// Engine and game in RelWithDebInfo: optimized, with the dev tools, Tracy and full symbols
 	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
-	private async Task CompileGameRelease() {
+	private Task CompileGameDevelopment() => CompileGame("RelWithDebInfo");
+
+	/// Engine and game in Release: full optimization, no dev tools or Tracy
+	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
+	private Task CompileGameRelease() => CompileGame("Release");
+
+	private async Task CompileGame(string gameConfig) {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
+
+		// The game links against the engine of the same config, which sits next to the editor's own out/<config>/
+		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", gameConfig, "toast_engine"));
+		if (!File.Exists(Path.Combine(toastPath, "bin", OperatingSystem.IsWindows() ? "toast_engine.dll" : "libtoast_engine.so"))) {
+			Log.Error($"Cannot build the game in {gameConfig}: the {gameConfig} engine was not built ({toastPath})");
+			return;
+		}
 		if (!await SaveBeforeBuild(owner)) return;
 
 		var playerPath =
 			Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "player"));
-		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "toast_engine"));
 		var packerBin = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "packer",
 			$"packer{(OperatingSystem.IsWindows() ? ".exe" : "")}"));
 		var outputDir = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, "build"));
 		var stageRoot = Path.GetFullPath(Path.Combine(ProjectContext.ProjectPath, ".toast", "pack_stage"));
 		var cmakeGenerator = OperatingSystem.IsWindows() ? "-G \"Visual Studio 18 2026\"" : "-G \"Ninja\"";
-
-#if DEBUG
-		const string gameConfig = "Debug";
-#elif RELWITHDEBINFO
-		const string gameConfig = "RelWithDebInfo";
-#else
-		const string gameConfig = "Release";
-#endif
 		var cmakeCache = $".toast/cmake_release_cache_{gameConfig}";
 
 		Directory.CreateDirectory(outputDir);
@@ -1233,6 +1238,25 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			var dest = Path.Combine(outputDir, Path.GetFileName(toastFile));
 			log($"  copy {Path.GetFileName(toastFile)}");
 			await Task.Run(() => File.Copy(toastFile, dest, true));
+		}
+
+		// The engine's crash handler looks for crash_reporter/ next to toast_engine.dll; runtimes/ holds its native libraries
+		async Task CopyCrashReporter(Action<string> log) {
+			var src = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "crash_reporter"));
+			if (!Directory.Exists(src)) {
+				log($"warning: crash reporter not found: {src}");
+				return;
+			}
+
+			var dest = Path.Combine(outputDir, "crash_reporter");
+			log("  copy crash_reporter/");
+			await Task.Run(() => {
+				foreach (var file in Directory.EnumerateFiles(src, "*", SearchOption.AllDirectories)) {
+					var target = Path.Combine(dest, Path.GetRelativePath(src, file));
+					Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+					File.Copy(file, target, true);
+				}
+			});
 		}
 
 		// Baked lighting (irradiance volume SH, reflection probe captures) lives in cache://, which belongs to no content
@@ -1325,6 +1349,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			),
 			// Copy Engine libs
 			LoaderTask.Do("copy libraries", CopyDlls),
+			LoaderTask.Do("copy crash reporter", CopyCrashReporter),
 			LoaderTask.Do("copy project.toast", CopyProjectToast),
 			LoaderTask.Do("copy baked lighting", CopyBakedLighting)
 		};

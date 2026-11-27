@@ -479,7 +479,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		// walk the inheritance chain most-derived -> base
 		var current = Bare(type);
 		while (ReflectionDatabase.Nodes.TryGetValue(current, out var info)) {
-			Cards.Add(BuildCard(info, ref colorCounter));
+			Cards.Add(BuildCard(info, ref colorCounter, HiddenGroups(Bare(type), info.Name)));
 			if (info.Parent is null) break;
 			current = Bare(info.Parent.Name);
 		}
@@ -520,7 +520,15 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		}
 	}
 
-	private ClassCardVM BuildCard(NodeInfo info, ref int colorCounter) {
+	// Groups an inherited class card must not show for a given concrete type
+	private static readonly string[] s_noGroups = [];
+	private static readonly string[] s_ambientLightHidden = ["Optimization", "Area"];
+
+	// ambient light has no position, shadow or shape, so Light's shadow/cull and area groups mean nothing there
+	private static string[] HiddenGroups(string type, string cardClass) =>
+		type == "AmbientLight" && cardClass == "Light" ? s_ambientLightHidden : s_noGroups;
+
+	private ClassCardVM BuildCard(NodeInfo info, ref int colorCounter, string[] hiddenGroups) {
 		// class cards show the bare type name; the namespaced form lives in the header label only
 		var typeName = info.Name;
 		var card = new ClassCardVM(typeName, ReflectionDatabase.ResolveColor(typeName),
@@ -529,6 +537,7 @@ public partial class InspectorViewModel : Tool, IDisposable, IInspectorClipboard
 		foreach (var f in info.GlobalFields) AddField(card.Fields, f);
 
 		foreach (var g in info.Groups) {
+			if (hiddenGroups.Contains(g.Name)) continue;
 			var colorKey = Palette[colorCounter++ % Palette.Length];
 			var group = new GroupVM(g.Name, colorKey, $"group:{typeName}/{g.Name}", m_state!, this);
 			foreach (var f in g.Fields) AddField(group.Fields, f);

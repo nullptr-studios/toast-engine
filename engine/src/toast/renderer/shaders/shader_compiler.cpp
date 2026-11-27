@@ -67,9 +67,15 @@ public:
 	}
 
 	void release(Slang::ComPtr<slang::IGlobalSession> session) {
+		std::vector<Slang::ComPtr<slang::IGlobalSession>> idle;
 		{
 			const std::lock_guard lock(m_mutex);
 			m_free.push_back(std::move(session));
+			// Each session keeps gigabytes cached after a compile wave, so they go once nothing compiles
+			if (m_free.size() == m_created) {
+				idle.swap(m_free);
+				m_created = 0;
+			}
 		}
 		m_available.notify_one();
 	}
@@ -362,7 +368,18 @@ auto compileModule(std::string_view module_name, std::string_view source_path, s
 }
 
 auto ShaderCompiler::compile(toast::UID uid, std::string_view source, std::string_view source_uri) -> CompiledShaderCode {
-	return compileModule(uid.get(), source_uri, source);
+	// Slang's own mimalloc keeps what a thread freed until that thread exits, gigabytes on a long-lived pool worker
+	CompiledShaderCode result;
+	std::exception_ptr error;
+	std::thread([&] {
+		try {
+			result = compileModule(uid.get(), source_uri, source);
+		} catch (...) { error = std::current_exception(); }
+	}).join();
+	if (error) {
+		std::rethrow_exception(error);
+	}
+	return result;
 }
 
 }

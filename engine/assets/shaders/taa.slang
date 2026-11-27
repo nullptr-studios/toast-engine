@@ -3,16 +3,14 @@ import depth_convention;
 
 struct TaaParams
 {
-    // Current unjittered clip to previous clip when motion is not written
-    float4x4 reprojection;
     // xy 1 over size zw size
     float4 texel;
-    // x history weight y 1 resets history z 1 ignores written motion w 1 draws the motion debug view
+    // x history weight y 1 resets history z unused w 1 draws the motion debug view
     float4 tuning;
     // xy render size zw jitter in uv
     float4 source;
-    // x 1 when the source is smaller than the output
-    float4 upscale;
+    // x output pixels of motion at which the history weight halves
+    float4 adapt;
 };
 
 [[vk::push_constant]]
@@ -113,7 +111,7 @@ float3 motionColor(float4 motion)
 }
 
 /// Jitter aware Gaussian of the render texels around this output pixel
-float4 resolveUpscaled(float2 uv)
+float4 resolve(float2 uv)
 {
     const float2 renderSize = gParams.source.xy;
     const float2 renderTexel = 1.0 / renderSize;
@@ -165,16 +163,7 @@ float4 resolveUpscaled(float2 uv)
         return float4(motionColor(motion), 1.0);
     }
 
-    float2 previousUv;
-    if (motion.w > 0.5 && gParams.tuning.z < 0.5)
-    {
-        previousUv = uv - motion.xy;
-    }
-    else
-    {
-        const float4 previousClip = mul(gParams.reprojection, float4(closestUv * 2.0 - 1.0, closestDepth, 1.0));
-        previousUv = uv + previousClip.xy / previousClip.w * 0.5 + 0.5 - closestUv;
-    }
+    const float2 previousUv = uv - motion.xy;
 
     const bool offscreen = any(previousUv < float2(0.0, 0.0)) || any(previousUv > float2(1.0, 1.0));
     [branch]
@@ -187,7 +176,10 @@ float4 resolveUpscaled(float2 uv)
     const float3 sigma = sqrt(max(moment2 / 9.0 - mean * mean, float3(0.0, 0.0, 0.0)));
     const float3 history = clipToBox(toYCoCg(compress(sampleHistory(previousUv))), mean - sigma, mean + sigma);
 
-    const float currentWeight = (1.0 - gParams.tuning.x * (1.0 - saturate(motion.z))) * nearest;
+    // Fast motion trusts the history less since its reprojection is least reliable
+    const float speedPx = length(motion.xy * gParams.texel.zw);
+    const float historyWeight = gParams.tuning.x * gParams.adapt.x / (gParams.adapt.x + speedPx);
+    const float currentWeight = (1.0 - historyWeight * (1.0 - saturate(motion.z))) * nearest;
     float3 resolved = lerp(history, filtered, currentWeight);
     if (any(isnan(resolved)))
     {
@@ -199,87 +191,5 @@ float4 resolveUpscaled(float2 uv)
 [shader("fragment")]
 float4 fragmentMain(VSOutput input) : SV_Target0
 {
-    float2 uv = input.uv;
-    float2 texel = gParams.texel.xy;
-
-    [branch]
-    if (gParams.upscale.x > 0.5)
-    {
-        return resolveUpscaled(uv);
-    }
-
-    float3 center = float3(0.0, 0.0, 0.0);
-    float3 moment1 = float3(0.0, 0.0, 0.0);
-    float3 moment2 = float3(0.0, 0.0, 0.0);
-    float closestDepth = kFarDepth;
-    float2 closestUv = uv;
-
-    [unroll]
-    for (int y = -1; y <= 1; ++y)
-    {
-        [unroll]
-        for (int x = -1; x <= 1; ++x)
-        {
-            float2 sampleUv = uv + float2(x, y) * texel;
-            float3 value = toYCoCg(compress(gCurrent.SampleLevel(sampleUv, 0.0).rgb));
-            moment1 += value;
-            moment2 += value * value;
-            if (x == 0 && y == 0)
-            {
-                center = value;
-            }
-
-            // Cross pattern for the closest depth saves four fetches
-            if (abs(x) + abs(y) <= 1)
-            {
-                float depth = gDepth.SampleLevel(sampleUv, 0.0).r;
-                if (isCloserDepth(depth, closestDepth))
-                {
-                    closestDepth = depth;
-                    closestUv = sampleUv;
-                }
-            }
-        }
-    }
-
-    float4 motion = gMotion.SampleLevel(closestUv, 0.0);
-
-    [branch]
-    if (gParams.tuning.w > 0.5)
-    {
-        return float4(motionColor(motion), 1.0);
-    }
-
-    float2 previousUv;
-    if (motion.w > 0.5 && gParams.tuning.z < 0.5)
-    {
-        previousUv = uv - motion.xy;
-    }
-    else
-    {
-        float4 previousClip = mul(gParams.reprojection, float4(closestUv * 2.0 - 1.0, closestDepth, 1.0));
-        previousUv = uv + previousClip.xy / previousClip.w * 0.5 + 0.5 - closestUv;
-    }
-
-    bool offscreen = any(previousUv < float2(0.0, 0.0)) || any(previousUv > float2(1.0, 1.0));
-    [branch]
-    if (gParams.tuning.y > 0.5 || offscreen)
-    {
-        return float4(expand(fromYCoCg(center)), 1.0);
-    }
-
-    float3 mean = moment1 / 9.0;
-    float3 sigma = sqrt(max(moment2 / 9.0 - mean * mean, float3(0.0, 0.0, 0.0)));
-    float3 history = toYCoCg(compress(sampleHistory(previousUv)));
-    history = clipToBox(history, mean - sigma, mean + sigma);
-
-    float historyWeight = gParams.tuning.x * (1.0 - saturate(motion.z));
-    float3 resolved = lerp(center, history, historyWeight);
-
-    // A NaN would otherwise live in the history until the next reset
-    if (any(isnan(resolved)))
-    {
-        resolved = center;
-    }
-    return float4(expand(fromYCoCg(resolved)), 1.0);
+    return resolve(input.uv);
 }

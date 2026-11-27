@@ -38,6 +38,8 @@
 		<KeyBinding Gesture="F7"
 		            Command="{Binding ReloadGameCommand}" />
 		<KeyBinding Gesture="F8"
+		            Command="{Binding CompileGameDevelopmentCommand}" />
+		<KeyBinding Gesture="Ctrl+F8"
 		            Command="{Binding CompileGameReleaseCommand}" />
 		<KeyBinding Gesture="F1"
 		            Command="{Binding OpenDocumentationCommand}" />
@@ -280,9 +282,14 @@
 					<MenuItem Header="_Reload project"
 					          InputGesture="F7"
 					          Command="{Binding ReloadGameCommand}" />
-					<MenuItem Header="_Build project"
+					<MenuItem Header="_Build project (development, RelWithDebInfo)"
 					          InputGesture="F8"
-					          Command="{Binding CompileGameReleaseCommand}" />
+					          Command="{Binding CompileGameDevelopmentCommand}"
+					          ToolTip.Tip="Optimized build with the dev tools, Tracy and full symbols" />
+					<MenuItem Header="Build project (_release)"
+					          InputGesture="Ctrl+F8"
+					          Command="{Binding CompileGameReleaseCommand}"
+					          ToolTip.Tip="Maximum optimization, no dev tools or Tracy" />
 					<Separator />
 					<MenuItem Header="_Clean baked lighting cache"
 					          Command="{Binding CleanBakedLightingCacheCommand}"

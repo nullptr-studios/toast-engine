@@ -40,9 +40,6 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1
 
@@ -116,8 +113,6 @@ jobs:
 
       - name: Build editor
         run: nix develop --command bash -c "
-          rustup toolchain install stable --no-self-update &&
-          rustup default stable &&
           cmake -B build/package -G Ninja
             -DCMAKE_C_COMPILER=clang
             -DCMAKE_CXX_COMPILER=clang++

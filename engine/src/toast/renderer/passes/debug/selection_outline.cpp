@@ -222,8 +222,8 @@ void SelectionOutline::createMaskPipelines(vk::Extent2D extent) {
 	mesh.vertex_entry = "meshVertex";
 	mesh.fragment_entry = "meshFragment";
 	mesh.vertex_bindings = {vertexBindingDescription()};
-	const auto vertex_attributes = vertexAttributeDescriptions();
-	mesh.vertex_attributes.assign(vertex_attributes.begin(), vertex_attributes.end());
+	// Position only, the mask shader reads nothing else
+	mesh.vertex_attributes = {vertexAttributeDescriptions()[0]};
 	// Mirrored and single sided meshes still cover their silhouette
 	mesh.cull_mode = vk::CullModeFlagBits::eNone;
 	m_mesh_pipeline.rebuild(*m_core, mesh);

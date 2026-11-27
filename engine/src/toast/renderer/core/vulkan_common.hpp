@@ -50,6 +50,8 @@ inline constexpr vk::Format k_voxel_noisy_format = vk::Format::eB10G11R11UfloatP
 inline constexpr vk::Format k_voxel_denoised_indirect_format = vk::Format::eR16G16B16A16Sfloat;
 /// Half resolution clipmap gather with a signed alpha marking pixels that gathered nothing
 inline constexpr vk::Format k_voxel_gi_format = vk::Format::eR16G16B16A16Sfloat;
+/// voxel_lighting.slang gAmbientOcclusion, half resolution with below 0 for none
+inline constexpr vk::Format k_voxel_ao_format = vk::Format::eR16Sfloat;
 
 /// voxel_lighting.slang packReservoir
 inline constexpr vk::Format k_voxel_reservoir_format = vk::Format::eR32G32B32A32Uint;

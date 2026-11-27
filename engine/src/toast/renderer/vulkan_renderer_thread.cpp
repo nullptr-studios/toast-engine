@@ -70,7 +70,7 @@ namespace renderer {
 void VulkanRenderer::waitForOutputImage() {
 	ZoneScoped;
 	using clock = std::chrono::steady_clock;
-	constexpr auto k_budget = std::chrono::milliseconds(8);
+	constexpr auto k_budget = std::chrono::milliseconds(16);
 	constexpr auto k_step = std::chrono::milliseconds(1);
 	const auto deadline = clock::now() + k_budget;
 	while (clock::now() < deadline) {
@@ -348,6 +348,9 @@ void VulkanRenderer::mainRenderThread() try {
 } catch (const vk::DeviceLostError& error) {
 	// Nothing recovers a lost device and the abort would otherwise drop the queued logs
 	TOAST_CRITICAL("Render", "GPU device lost on the render thread, shutting down: {}", error.what());
+} catch (const std::exception& error) {
+	// Escaping the thread would terminate without the reason in the log
+	TOAST_CRITICAL("Render", "Unhandled exception on the render thread: {}", error.what());
 }
 
 void VulkanRenderer::acquireFrameSlot() noexcept {
@@ -390,6 +393,10 @@ auto VulkanRenderer::previousResolvedColour() const noexcept -> vk::ImageView {
 		return {};
 	}
 	return m_taa_pass->resolvedHistory();
+}
+
+auto VulkanRenderer::dlssFailureReason() const -> std::string {
+	return m_taa_pass != nullptr ? m_taa_pass->dlssFailureReason() : std::string {};
 }
 
 void VulkanRenderer::submitFrame() noexcept {

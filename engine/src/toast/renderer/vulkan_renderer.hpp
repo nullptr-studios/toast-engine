@@ -21,6 +21,7 @@
 #include "toast/renderer/resources/vulkan_mesh.hpp"
 #include "toast/renderer/resources/vulkan_texture.hpp"
 #include "toast/renderer/settings/gi_settings.hpp"
+#include "toast/renderer/settings/post_process_params.hpp"
 #include "toast/renderer/settings/post_process_settings.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
 #include "toast/renderer/shaders/vulkan_pipeline.hpp"
@@ -93,7 +94,6 @@ class SelectionOutline;
 class SkinningPass;
 class VoxelPass;
 class DebrisPass;
-class GiPass;
 class GiClipmapPass;
 class TracedSpecularPass;
 class TaaPass;
@@ -297,6 +297,11 @@ public:
 		return m_scene_color.view.has_value() ? **m_scene_color.view : vk::ImageView {};
 	}
 
+	[[nodiscard]]
+	auto getSceneColorImage() const noexcept -> vk::Image {
+		return m_scene_color.state.image;
+	}
+
 	/// xyz world normal w roughness
 
 	void setVoxelDetailTexture(assets::Handle<assets::DetailTexture> detail);
@@ -364,6 +369,11 @@ public:
 	[[nodiscard]]
 	auto getVoxelGiView() const noexcept -> vk::ImageView {
 		return m_voxel_gi.view.has_value() ? **m_voxel_gi.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelAmbientOcclusionView() const noexcept -> vk::ImageView {
+		return m_voxel_ao.view.has_value() ? **m_voxel_ao.view : vk::ImageView {};
 	}
 
 	/// Marched and sampled diffuse over albedo before denoising
@@ -821,6 +831,17 @@ public:
 		return m_depth_resources.view.has_value() ? **m_depth_resources.view : vk::ImageView {};
 	}
 
+	/// For a pass that needs another layout briefly and restores the tracked usage
+	[[nodiscard]]
+	auto getDepthState() const noexcept -> const sync::ImageState& {
+		return m_depth_resources.state;
+	}
+
+	[[nodiscard]]
+	auto getDepthFormat() const noexcept -> vk::Format {
+		return m_depth_format;
+	}
+
 	[[nodiscard]]
 	auto getOverlayDepthView() const noexcept -> vk::ImageView {
 		return m_output_depth.view.has_value() ? **m_output_depth.view : getDepthView();
@@ -943,6 +964,12 @@ public:
 
 	void setEnvironmentPass(EnvironmentPass* pass) noexcept { m_environment_pass = pass; }
 
+	/// The Renderer Settings map, used whenever no enabled AmbientLight carries its own. Applied on the next tick
+	void setGlobalEnvironmentMap(std::string uri) {
+		std::scoped_lock lock(m_environment_mutex);
+		m_global_environment_uri = std::move(uri);
+	}
+
 	[[nodiscard]]
 	auto getEnvironmentPass() const noexcept -> const EnvironmentPass* {
 		return m_environment_pass;
@@ -957,8 +984,6 @@ public:
 	auto getDebrisPass() const noexcept -> const DebrisPass* {
 		return m_debris_pass;
 	}
-
-	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
 
 	void setGiClipmapPass(GiClipmapPass* pass) noexcept { m_gi_clipmap_pass = pass; }
 
@@ -990,11 +1015,6 @@ public:
 	[[nodiscard]]
 	auto glassBackdropCaptured() const noexcept -> bool {
 		return m_glass_backdrop_captured;
-	}
-
-	[[nodiscard]]
-	auto giPass() const noexcept -> GiPass* {
-		return m_gi_pass;
 	}
 
 	[[nodiscard]]
@@ -1264,6 +1284,38 @@ public:
 		return m_taa_enabled.load(std::memory_order_relaxed);
 	}
 
+	/// DLSS replaces the temporal resolve when it is available
+	void setDlssRequested(bool requested) noexcept { m_dlss_requested.store(requested, std::memory_order_relaxed); }
+
+	[[nodiscard]]
+	auto dlssRequested() const noexcept -> bool {
+		return m_dlss_requested.load(std::memory_order_relaxed);
+	}
+
+	/// Set by TaaPass after each record
+	void setDlssActive(bool active) noexcept { m_dlss_active.store(active, std::memory_order_relaxed); }
+
+	/// True while DLSS produced the last resolved frame
+	[[nodiscard]]
+	auto dlssActive() const noexcept -> bool {
+		return m_dlss_active.load(std::memory_order_relaxed);
+	}
+
+	/// Why DLSS cannot run, empty when it can
+	[[nodiscard]]
+	auto dlssFailureReason() const -> std::string;
+
+	/// Sharper material mips offset the lower render resolution so the temporal resolve recovers detail
+	[[nodiscard]]
+	auto materialMipBias() const noexcept -> float {
+		const float scale_bias = std::log2(m_applied_render_scale.load(std::memory_order_relaxed));
+		// NVIDIA's DLSS guidance is one level sharper than the resolution ratio
+		if (dlssActive()) {
+			return scale_bias - 1.0f;
+		}
+		return taaEnabled() ? scale_bias : 0.0f;
+	}
+
 	void setTaaHistoryWeight(float weight) noexcept { m_taa_history_weight.store(weight, std::memory_order_relaxed); }
 
 	[[nodiscard]]
@@ -1271,18 +1323,12 @@ public:
 		return m_taa_history_weight.load(std::memory_order_relaxed);
 	}
 
-	void setPostProcessSettings(const PostProcessSettings& settings) noexcept { m_post_process_settings = settings; }
+	/// Sets a knob of the base grade that post process volumes blend over, by its path in post_process.schema.json
+	/// ("bloom.strength"), clamped to the schema range. Safe from any thread
+	/// @returns false when the name is unknown or not a scalar
+	auto setPostProcessNumber(std::string_view name, float value) -> bool;
 
-	[[nodiscard]]
-	auto getPostProcessSettings() const noexcept -> const PostProcessSettings& {
-		return m_post_process_settings;
-	}
-
-	/// Safe from any thread
-	void requestPostProcessSettings(const PostProcessSettings& settings) {
-		const std::lock_guard lock(m_pending_post_settings_mutex);
-		m_pending_post_settings = settings;
-	}
+	auto setPostProcessColor(std::string_view name, const glm::vec3& value) -> bool;
 
 	/// nullptr renders every owner. Main thread only
 	void setRenderOwnerFilter(const toast::INodeOwner* owner) {
@@ -1528,13 +1574,18 @@ private:
 	const ShadowPass* m_shadow_pass = nullptr;
 
 	EnvironmentPass* m_environment_pass = nullptr;
+	std::mutex m_environment_mutex;
+	std::string m_global_environment_uri;
+	/// Last map the tick asked the pass for, so a map that fails to load is not retried every frame
+	std::string m_requested_environment_uri;
+	uint64_t m_ambient_environment_uid = 0;
+	std::string m_ambient_environment_uri;
 
 	ReflectionProbePass* m_reflection_probe_pass = nullptr;
 
 	VoxelPass* m_voxel_pass = nullptr;
 
 	DebrisPass* m_debris_pass = nullptr;
-	GiPass* m_gi_pass = nullptr;
 	GiClipmapPass* m_gi_clipmap_pass = nullptr;
 	bool m_glass_backdrop_captured = false;
 	bool m_glass_nearest_valid = false;
@@ -1598,6 +1649,7 @@ private:
 	bool m_voxel_denoised_indirect_frame = false;
 	/// Half the render extent
 	SceneColorResources m_voxel_gi;
+	SceneColorResources m_voxel_ao;
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
 	std::array<SceneColorResources, 2> m_voxel_reservoirs;
@@ -1692,13 +1744,20 @@ private:
 
 	void gatherFogVolumes(RenderFrame& frame, const glm::vec3& camera_position);
 
-	PostProcessSettings m_post_process_settings;
+	PostProcessParams m_base_params;
+	std::mutex m_base_params_mutex;
+	/// Scratch for the per-frame blend, tick thread only
+	PostProcessParams m_blend_params;
+	void repairBaseParamsLocked();
+	void copyBaseParams(PostProcessParams& out);
 
 	std::atomic_bool m_traced_shadows_enabled {false};
 	/// Logs once each time the fallback starts
 	bool m_traced_shadows_voxel_fallback_logged = false;
 
 	std::atomic_bool m_taa_enabled {true};
+	std::atomic_bool m_dlss_requested {true};
+	std::atomic_bool m_dlss_active {false};
 	std::atomic<float> m_render_scale {1.0f};
 	std::mutex m_setting_request_mutex;
 	std::vector<std::pair<std::string, toast::settings::Value>> m_setting_requests;
@@ -1724,9 +1783,6 @@ private:
 
 	void beginDebugLineCollection(RenderFrame& frame);
 	void endDebugLineCollection();
-
-	std::mutex m_pending_post_settings_mutex;
-	std::optional<PostProcessSettings> m_pending_post_settings;
 
 	const toast::INodeOwner* m_render_owner_filter = nullptr;
 
@@ -1809,6 +1865,7 @@ private:
 		uint32_t record = 0;
 		bool mirrored = false;
 		uint64_t frame = 0;
+		VoxelCollisionWorld::Volume collision;
 	};
 
 	std::unordered_map<uint64_t, VoxelProxyMath> m_voxel_proxy_math;
@@ -1820,6 +1877,8 @@ private:
 	/// What the published collision world was built from so a still scene keeps it
 	const VoxelGpuStorage* m_voxel_collision_storage = nullptr;
 	size_t m_voxel_collision_count = 0;
+	/// Collision entries of this frame's drawn proxies, scratch that keeps its capacity
+	std::vector<VoxelCollisionWorld::Volume> m_voxel_collision_volumes;
 	std::unordered_map<uint64_t, glm::mat4> m_mesh_previous_models;
 	bool m_voxel_upload_failed_warned = false;
 

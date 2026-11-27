@@ -1,5 +1,7 @@
 #include "toast/renderer/resources/material_runtime.hpp"
 
+#include "toast/renderer/vulkan_renderer.hpp"
+
 namespace renderer {
 
 using assets::DataType;
@@ -404,7 +406,19 @@ void MaterialRuntime::bakeTextures() {
 		if (v != nullptr) {
 			const toast::UID uid = readTextureUID(*v);
 			if (uid.data() != 0) {
-				slot.texture = assets::load<assets::Texture>(uid);
+				// The typed load casts without checking, so a video uid must not reach Handle<Texture>
+				auto base = assets::load(uid);
+				const std::string_view type = base.hasValue() ? base.get().type() : std::string_view {"texture"};
+				if (type == "video") {
+					slot.video = assets::Handle<assets::Video>(&base.get(), base.uid(), base.path());
+				} else if (type == "texture") {
+					slot.texture = assets::Handle<assets::Texture>(base.hasValue() ? &base.get() : nullptr, base.uid(), base.path());
+				} else {
+					TOAST_WARN(
+					    "Render", "Material '{}' slot '{}' points at a {} asset, not a texture", m_material->name(), binding.name, type
+					);
+					slot.texture = assets::Handle<assets::Texture>(nullptr, base.uid(), base.path());
+				}
 			}
 			slot.sampler = samplerFor(v, binding.name);
 		} else {
@@ -426,8 +440,9 @@ auto MaterialRuntime::samplerFor(const DataValue* params, std::string_view debug
 		anisotropy = (*params)["anisotropy"].value<bool>().value_or(true);
 	}
 
-	const std::string state =
-	    repeat_u + "|" + repeat_v + "|" + min_filter + "|" + mag_filter + "|" + mipmap_mode + "|" + (anisotropy ? "1" : "0");
+	const float mip_bias = VulkanRenderer::instance->materialMipBias();
+	const std::string state = repeat_u + "|" + repeat_v + "|" + min_filter + "|" + mag_filter + "|" + mipmap_mode + "|" +
+	                          (anisotropy ? "1" : "0") + "|" + std::to_string(mip_bias);
 	const uint64_t key = ShaderCache::fnv1a(state.data(), state.size());
 
 	if (const auto it = m_samplers.find(key); it != m_samplers.end()) {
@@ -446,7 +461,7 @@ auto MaterialRuntime::samplerFor(const DataValue* params, std::string_view debug
 	info.compareEnable = vk::False;
 	info.compareOp = vk::CompareOp::eAlways;
 	info.unnormalizedCoordinates = vk::False;
-	info.mipLodBias = 0.0f;
+	info.mipLodBias = mip_bias;
 	info.minLod = 0.0f;
 	info.maxLod = VK_LOD_CLAMP_NONE;
 
