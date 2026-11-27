@@ -106,6 +106,8 @@ auto Data::serialize(SaveMode mode) const -> std::vector<uint8_t> {
 		auto j = m_root.toJson();
 		if (m_schema.hasValue()) {
 			j["schema"] = m_schema.uid().get();
+		} else {
+			TOAST_ERROR("AssetManager", "Missing schema while serializing!!!");
 		}
 		auto bson = json_t::to_bson(j);
 		return bson;
@@ -115,6 +117,8 @@ auto Data::serialize(SaveMode mode) const -> std::vector<uint8_t> {
 
 	if (m_schema.hasValue()) {
 		tbl.insert_or_assign("schema", m_schema.uid().get());
+	} else {
+		TOAST_ERROR("AssetManager", "Missing schema while serializing!!!");
 	}
 
 	if (m_root.type() == DataType::object_t) {

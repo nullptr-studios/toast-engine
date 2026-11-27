@@ -13,6 +13,10 @@
     "tonemap": {
       "x-toast-type": "tonemap"
     },
+    "color_grading": {
+      "x-toast-type": "color_grading",
+      "x-toast-widget": "color_wheels"
+    },
     "fxaa": {
       "x-toast-type": "fxaa"
     },
@@ -328,6 +332,113 @@
           "default": 1.0,
           "minimum": 0,
           "maximum": 20
+        }
+      }
+    },
+    "color_grading": {
+      "type": "object",
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "White balance, warmer above 0",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "tint": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "White balance, magenta above 0",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "color_filter": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Multiplies the image",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "hue_shift": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Hue rotation in degrees",
+          "default": 0.0,
+          "minimum": -180,
+          "maximum": 180
+        },
+        "lift": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Shadow tint",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "lift_offset": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Shadow brightness",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "gamma": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Midtone tint",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "gamma_offset": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Midtone brightness",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "gain": {
+          "type": "array",
+          "x-toast-type": "color3",
+          "description": "Highlight tint",
+          "default": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        "gain_offset": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Highlight brightness",
+          "default": 0.0,
+          "minimum": -1,
+          "maximum": 1
+        },
+        "lut": {
+          "type": "string",
+          "x-toast-type": "asset",
+          "description": "LUT strip, imported linear without compression or mipmaps",
+          "x-toast-asset-type": "texture"
+        },
+        "lut_intensity": {
+          "type": "number",
+          "x-toast-type": "float",
+          "description": "Mix toward the LUT grade",
+          "default": 1.0,
+          "minimum": 0,
+          "maximum": 1
         }
       }
     },

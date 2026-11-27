@@ -10,10 +10,10 @@ public class PostProcessProfileAsset : BaseAsset {
 	public override string Extension => ".tpp";
 	public override string DisplayName => "Post Process Profile";
 	public override string ChipText => "POST";
-	public override string ChipColor => "Purple";
+	public override string ChipColor => "Orange";
 	public override LucideIconKind Icon => LucideIconKind.Sun;
 	public override bool CanBeCreated => true;
-	public override string Category => "Rendering";
+	public override string Category => "Visual";
 	public override bool HasThumbnail => false;
 	public override bool CanBeEdited => true;
 	public override string EditorTool => "GenericEditor";
@@ -23,7 +23,9 @@ public class PostProcessProfileAsset : BaseAsset {
 
 	public override Task CreateAsync(string path) {
 		const string schemaUid = "PostProcSc4";
-		File.WriteAllText(path, $"# Toast Post Process Profile\nschema = \"{schemaUid}\"\n");
+				File.WriteAllText(path,
+        			$"# Toast post process profile\n" +
+        			$"schema = \"{schemaUid}\"\n");
 		return Task.CompletedTask;
 	}
 }

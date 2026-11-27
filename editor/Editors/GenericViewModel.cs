@@ -344,6 +344,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		field.Variants = desc.Variants;
 		field.DisplayName = desc.DisplayName;
 		field.Unit = desc.Unit;
+		field.Widget = desc.Widget;
 		field.NameEditable = false;
 
 		if (desc.TypeSwitch is not null)
@@ -679,7 +680,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		// Preserve schema UID reference
 		if (!SchemaLocked && !string.IsNullOrEmpty(SchemaUid))
 			table["schema"] = SchemaUid;
-		else if (!SchemaLocked) {
+		else {
 			// Check if the original file had a schema key and preserve it
 			var realPath = ProjectContext.Resolve(CurrentPath);
 			if (File.Exists(realPath)) {
@@ -690,6 +691,11 @@ public partial class GenericViewModel : Tool, IAutosavable {
 					// ignored
 				}
 			}
+
+			// A type with a fixed schema gets its UID back if the file lost it
+			if (!table.ContainsKey("schema") && Definition is { SchemaPath: { Length: > 0 } schemaPath } and not ProjectSettingsAsset &&
+			    MetaFile.ReadHeader(ProjectContext.Resolve(schemaPath)) is { } header)
+				table["schema"] = header.Uid;
 		}
 
 		foreach (var field in Fields) {
@@ -782,7 +788,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 				typeSwitch
 			) {
 				DisplayName = val?["x-toast-display-name"]?.GetValue<string>() ?? "",
-				Unit = val?["x-toast-unit"]?.GetValue<string>() ?? ""
+				Unit = val?["x-toast-unit"]?.GetValue<string>() ?? "",
+				Widget = val?["x-toast-widget"]?.GetValue<string>() ?? ""
 			});
 		}
 
