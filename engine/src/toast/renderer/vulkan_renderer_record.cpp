@@ -23,6 +23,7 @@
 #include "toast/renderer/raytracing/ray_tracing_scene.hpp"
 #include "toast/renderer/raytracing/skinned_blas_pool.hpp"
 #include "toast/renderer/resources/blue_noise.hpp"
+#include "toast/renderer/resources/video_textures.hpp"
 #include "toast/renderer/settings/renderer_settings.hpp"
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
@@ -969,6 +970,8 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			retire(std::move(buffer));
 		}
 	}
+
+	VideoTextures::record(*frame.command_buffer, m_current_frame);
 
 	// Graphics queue since this frame reads it and the compute queue belongs to AsyncCompute
 	if (!m_compute_passes.empty()) {

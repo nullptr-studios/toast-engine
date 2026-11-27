@@ -152,6 +152,12 @@
     },
     {
       "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "avcodec",
+        "avformat",
+        "swscale"
+      ],
       "version>=": "9.0.2#7"
     }
   ],

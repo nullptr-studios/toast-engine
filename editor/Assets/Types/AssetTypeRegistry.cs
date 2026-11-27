@@ -25,7 +25,7 @@ public static class AssetTypeRegistry {
 	public static IReadOnlyList<(string Category, IReadOnlyList<BaseAsset> Types)> CreatableByCategory { get; }
 
 	public static BaseAsset? ByExtension(string ext) {
-		return All.FirstOrDefault(a => a.Extension.Equals(ext, StringComparison.OrdinalIgnoreCase));
+		return All.FirstOrDefault(a => a.AllExtensions.Any(e => e.Equals(ext, StringComparison.OrdinalIgnoreCase)));
 	}
 
 	public static BaseAsset? ByType(string type) {

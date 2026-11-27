@@ -52,7 +52,8 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		new HdrImporter(),
 		new VoxImporter(new VoxImporter.Settings()),
 		new AudioBankImporter(),
-		new AudioStringImporter(new AudioStringImporter.Settings())
+		new AudioStringImporter(new AudioStringImporter.Settings()),
+		new VideoImporter()
 	];
 
 	private static readonly HashSet<string> s_artworkExts = new(
@@ -60,7 +61,7 @@ public class AssetBrowserViewModel : Tool, INotifyPropertyChanged, IDisposable {
 		StringComparer.OrdinalIgnoreCase);
 
 	private static readonly HashSet<string> s_assetExts = new(
-		AssetTypeRegistry.All.Select(a => a.Extension),
+		AssetTypeRegistry.All.SelectMany(a => a.AllExtensions),
 		StringComparer.OrdinalIgnoreCase);
 
 	private static readonly HashSet<string> s_reservedNames = ["root", "world", "global"];
