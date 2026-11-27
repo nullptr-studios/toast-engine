@@ -26,9 +26,11 @@ internal sealed class CrashArgs {
 		ulong? pointers = null, message = null;
 		CrashKind? kind = null;
 		string? dumpDir = null;
+		ulong? handoff = null;
 
 		for (var i = 0; i < args.Length - 1; ++i) {
 			switch (args[i]) {
+				case "--handoff": handoff = ParseAddress(args[++i]); break;
 				case "--pid": pid = uint.Parse(args[++i], CultureInfo.InvariantCulture); break;
 				case "--tid": tid = uint.Parse(args[++i], CultureInfo.InvariantCulture); break;
 				case "--pointers": pointers = ParseAddress(args[++i]); break;
@@ -38,8 +40,31 @@ internal sealed class CrashArgs {
 			}
 		}
 
+		if (pid is not null && handoff is not null) return ReadHandoff(pid.Value, handoff.Value);
 		if (pid is null || tid is null || pointers is null || message is null || kind is null) return null;
 		return new CrashArgs { Pid = pid.Value, Tid = tid.Value, Pointers = pointers.Value, Message = message.Value, Kind = kind.Value, DumpDir = dumpDir };
+	}
+
+	/// Resumed by the engine with ReporterHandoff filled in (crash_handler.cpp)
+	private static unsafe CrashArgs? ReadHandoff(uint pid, ulong address) {
+		const int size = 24 + 260 * sizeof(char);
+		var process = Native.OpenProcess(Native.ProcessVmRead | Native.ProcessQueryInformation, false, pid);
+		if (process == IntPtr.Zero) return null;
+		try {
+			var block = stackalloc byte[size];
+			if (!Native.ReadProcessMemory(process, address, block, size, out _)) return null;
+			var dumpDir = new string((char*)(block + 24));
+			return new CrashArgs {
+				Pid = pid,
+				Tid = *(uint*)block,
+				Kind = (CrashKind)(*(int*)(block + 4)),
+				Pointers = *(ulong*)(block + 8),
+				Message = *(ulong*)(block + 16),
+				DumpDir = dumpDir.Length > 0 ? dumpDir : null,
+			};
+		} finally {
+			Native.CloseHandle(process);
+		}
 	}
 
 	private static ulong ParseAddress(string text) {

@@ -18,6 +18,7 @@
 #include <deque>
 #include <memory>
 #include <mutex>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -195,12 +196,22 @@ private:
 		Rml::Vector2f m_translate;
 	};
 
+	/// Descriptor set of a view:// texture, retained by the command buffers that bind it
+	struct view_binding_t {
+		VkDescriptorSet m_p_vk_descriptor_set = nullptr;
+		std::shared_ptr<const void> m_keepalive;
+	};
+
 	struct texture_data_t {
 		VkImage m_p_vk_image;
 		VkImageView m_p_vk_image_view;
 		VkSampler m_p_vk_sampler;
 		VkDescriptorSet m_p_vk_descriptor_set;
 		VmaAllocation m_p_vma_allocation;
+
+		/// Set for view:// textures, looked up on every draw
+		std::string m_view_name;
+		std::shared_ptr<view_binding_t> m_view_binding;
 	};
 
 	struct geometry_handle_t {
@@ -665,6 +676,9 @@ private:
 	void DestroyResource_StagingBuffer(const buffer_data_t& data) noexcept;
 
 	void Destroy_Texture(const texture_data_t& p_texture) noexcept;
+	Rml::TextureHandle LoadViewTexture(Rml::Vector2i& texture_dimensions, const Rml::String& view_name);
+	/// False while the view does not exist, the geometry is then skipped
+	bool BindViewTexture(texture_data_t& texture);
 	bool RetainResource(const void* resource);
 	void ReleaseResource(const void* resource);
 

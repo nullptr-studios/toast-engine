@@ -347,7 +347,7 @@ void queryVoxelRay(
 			return;
 		}
 
-		const glm::ivec3 brick = cell >> 3;
+		const glm::ivec3 brick = voxel::brickOf(cell);
 		const glm::ivec3 brick_min = brick * k_brick;
 		const voxel::BrickEntry entry = volume.entryAt(brick);
 
@@ -366,7 +366,7 @@ void queryVoxelRay(
 			palette_index = static_cast<uint8_t>(entry.payload());
 		} else {
 			const voxel::BrickOccupancy* occupancy = volume.occupancyPointer(brick);
-			const glm::uvec3 local = glm::uvec3(cell - brick_min);
+			const voxel::BrickCoord local = voxel::localOf(cell);
 			if (occupancy != nullptr && voxel::isSolid(*occupancy, local.x, local.y, local.z)) {
 				palette_index = volume.materialAt(cell);
 			}

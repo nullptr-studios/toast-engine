@@ -13,7 +13,9 @@ namespace renderer {
 
 TaaPass::TaaPass(const VulkanCore& core, vk::Format scene_format, vk::Extent2D extent)
     : m_core(&core),
-      m_scene_format(scene_format) {
+      m_scene_format(scene_format),
+      m_dlss(core),
+      m_motion_fill(core, VulkanRenderer::instance->renderExtent()) {
 	ZoneScoped;
 	static_assert(sizeof(Params) <= 128, "Vulkan guarantees 128 bytes of push constants");
 
@@ -76,15 +78,23 @@ void TaaPass::createResources(const VulkanCore& core) {
 }
 
 void TaaPass::createTargets(const VulkanCore& core, vk::Extent2D extent) {
-	m_targets[0].create(core, extent, m_scene_format, "TaaPass History A");
-	m_targets[1].create(core, extent, m_scene_format, "TaaPass History B");
+	// DLSS writes the resolve as a storage image, R16G16B16A16Sfloat storage support is mandatory in Vulkan
+	// and clears it on a reset so it needs the transfer destination too
+	const vk::ImageUsageFlags usage =
+	    m_dlss.available() ? vk::ImageUsageFlagBits::eStorage | vk::ImageUsageFlagBits::eTransferDst : vk::ImageUsageFlags {};
+	m_targets[0].create(core, extent, m_scene_format, "TaaPass History A", usage);
+	m_targets[1].create(core, extent, m_scene_format, "TaaPass History B", usage);
 	m_bound_views.invalidate();
 	m_history_valid = false;
 }
 
 void TaaPass::onResize(vk::Extent2D extent) {
 	if (m_core != nullptr) {
+		// The renderer waits for the device before resizing so the feature is idle
+		m_dlss.releaseFeature();
 		createTargets(*m_core, extent);
+		// The renderer applies a new render scale before resizing the passes
+		m_motion_fill.onResize(VulkanRenderer::instance->renderExtent());
 	}
 }
 
@@ -97,25 +107,26 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	const bool upscale = frame != nullptr && frame->viewport_extent != output_size && frame->viewport_extent.x > 0.0f;
 	if (!active && !show_motion && !upscale) {
 		m_history_valid = false;
+		VulkanRenderer::instance->setDlssActive(false);
 		return source_view;
 	}
 
 	const vk::ImageView depth_view = VulkanRenderer::instance->getDepthView();
-	const vk::ImageView motion_view = VulkanRenderer::instance->getSceneMotionView();
+	const vk::ImageView motion_view = m_motion_fill.motionView();
 	if (!m_pipeline.isReady() || frame_index >= m_descriptor_sets.size() || !source_view || !depth_view || !motion_view ||
 	    !m_targets[0].isReady() || !m_targets[1].isReady()) {
 		m_history_valid = false;
+		VulkanRenderer::instance->setDlssActive(false);
 		return source_view;
 	}
 
-	// A repeated snapshot carries no new sample
+	// A repeated snapshot carries no new sample and keeps the last resolve's DLSS state
 	if (active && m_history_valid && frame->sequence == m_last_sequence) {
 		return m_targets[m_write ^ 1u].view();
 	}
 
 	const PostProcessTarget& target = m_targets[m_write];
 	const PostProcessTarget& history = m_targets[m_write ^ 1u];
-	// Upsample only without TAA
 	const bool reset = !m_history_valid || frame->taa_reset || !active;
 	if (reset) {
 		// Only for a legal layout since a reset frame never reads the history
@@ -123,7 +134,7 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 		history.endScope(cmd);
 	}
 
-	const std::array<vk::ImageView, 2> wanted {source_view, history.view()};
+	const std::array<vk::ImageView, 3> wanted {source_view, history.view(), motion_view};
 	if (m_bound_views.update(frame_index, wanted)) {
 		const std::array image_infos {
 		  vk::DescriptorImageInfo(*m_point_sampler, source_view, vk::ImageLayout::eShaderReadOnlyOptimal),
@@ -145,33 +156,50 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	const glm::mat4 current_view_projection = frame->frame_data.view_projection;
 	const glm::mat4 previous_view_projection = m_history_valid ? m_last_view_projection : current_view_projection;
 
-	// A skipped frame breaks written motion so only depth reprojection is trusted
+	// A skipped frame breaks written motion so the fill falls back to camera reprojection
 	const bool frames_skipped = m_history_valid && frame->sequence != m_last_sequence + 1;
 
 	const auto width = static_cast<float>(target.extent().width);
 	const auto height = static_cast<float>(target.extent().height);
 
-	Params params {};
-	params.reprojection = previous_view_projection * glm::inverse(current_view_projection);
-	params.texel = glm::vec4(1.0f / width, 1.0f / height, width, height);
-	params.tuning = glm::vec4(
-	    VulkanRenderer::instance->taaHistoryWeight(), reset ? 1.0f : 0.0f, frames_skipped ? 1.0f : 0.0f, show_motion ? 1.0f : 0.0f
-	);
-	params.source = glm::vec4(frame->viewport_extent, frame->jitter_ndc * 0.5f);
-	params.upscale = glm::vec4(upscale ? 1.0f : 0.0f, 0.0f, 0.0f, 0.0f);
+	const glm::mat4 reprojection = previous_view_projection * glm::inverse(current_view_projection);
 
-	target.beginScope(cmd);
-	cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
-	cmd.bindDescriptorSets(
-	    vk::PipelineBindPoint::eGraphics,
-	    *m_shader_layout.getPipelineLayout(),
-	    0,
-	    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
-	    {}
-	);
-	cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
-	cmd.draw(3, 1, 0, 0);
-	target.endScope(cmd);
+	Params params {};
+	params.texel = glm::vec4(1.0f / width, 1.0f / height, width, height);
+	params.tuning = glm::vec4(VulkanRenderer::instance->taaHistoryWeight(), reset ? 1.0f : 0.0f, 0.0f, show_motion ? 1.0f : 0.0f);
+	params.source = glm::vec4(frame->viewport_extent, frame->jitter_ndc * 0.5f);
+	params.adapt = glm::vec4(16.0f, 0.0f, 0.0f, 0.0f);
+
+	if (!m_motion_fill.record(cmd, frame_index, reprojection, frames_skipped)) {
+		m_history_valid = false;
+		VulkanRenderer::instance->setDlssActive(false);
+		return source_view;
+	}
+
+	// DLSS keeps its own history, so it restarts after any frame it did not resolve
+	const bool dlss = active && !show_motion && VulkanRenderer::instance->dlssRequested() && m_dlss.available() &&
+	                  recordDlss(
+	                      cmd,
+	                      source_view,
+	                      target,
+	                      frame->jitter_ndc * 0.5f * frame->viewport_extent,
+	                      frame->taa_reset || !VulkanRenderer::instance->dlssActive()
+	                  );
+	if (!dlss) {
+		target.beginScope(cmd);
+		cmd.bindPipeline(vk::PipelineBindPoint::eGraphics, m_pipeline.getPipeline());
+		cmd.bindDescriptorSets(
+		    vk::PipelineBindPoint::eGraphics,
+		    *m_shader_layout.getPipelineLayout(),
+		    0,
+		    std::array<vk::DescriptorSet, 1> {*m_descriptor_sets[frame_index]},
+		    {}
+		);
+		cmd.pushConstants(*m_shader_layout.getPipelineLayout(), vk::ShaderStageFlagBits::eAll, 0, sizeof(Params), &params);
+		cmd.draw(3, 1, 0, 0);
+		target.endScope(cmd);
+	}
+	VulkanRenderer::instance->setDlssActive(dlss);
 
 	const vk::ImageView output = target.view();
 	m_write ^= 1u;
@@ -181,6 +209,67 @@ auto TaaPass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::ImageView 
 	m_last_sequence = frame->sequence;
 	m_last_view_projection = current_view_projection;
 	return output;
+}
+
+auto TaaPass::recordDlss(
+    vk::CommandBuffer cmd, vk::ImageView source_view, const PostProcessTarget& target, glm::vec2 jitter_pixels, bool reset
+) -> bool {
+	ZoneScoped;
+	auto* renderer = VulkanRenderer::instance;
+	const vk::Image color_image =
+	    source_view == renderer->getSceneColorView() ? renderer->getSceneColorImage() : PostProcessTarget::imageOf(source_view);
+	const sync::ImageState& depth = renderer->getDepthState();
+	if (!color_image || !depth || !m_motion_fill.motionImage() || !m_motion_fill.reactiveImage()) {
+		/*const char* missing = !color_image ? "the TAA source view is neither the scene colour nor a post process target"
+		                      : !depth     ? "the depth image is missing"
+		                      : !m_motion_fill.motionImage() ? "the motion image is missing"
+		                                                     : "the reactive image is missing";
+		m_dlss.setRuntimeReason(missing);
+		if (!m_dlss_source_logged) {
+		  m_dlss_source_logged = true;
+		  TOAST_WARN("Render", "DLSS skipped: {}; using TAA", missing);
+		}*/
+		return false;
+	}
+
+	const vk::Extent2D render_extent = renderer->renderExtent();
+	m_dlss.ensureFeature(cmd, render_extent, target.extent());
+
+	// NGX samples the inputs from compute in shader read layouts and writes the output as a storage image
+	sync::BarrierBatch barriers;
+	barriers.image(target.state(), sync::Usage::compute_storage_write);
+	barriers.image(depth.image, depth.range, depth.usage, sync::Usage::shader_sampled);
+	barriers.flush(cmd);
+	// NGX clears the output on a reset before it writes it, and only a later dependency orders after the layout transition
+	barriers.memory(sync::Usage::compute_storage_write, sync::Usage::transfer_dst);
+	barriers.flush(cmd);
+
+	DlssInputs inputs {};
+	inputs.color = source_view;
+	inputs.depth = renderer->getDepthView();
+	inputs.motion = m_motion_fill.motionView();
+	inputs.reactive = m_motion_fill.reactiveView();
+	inputs.output = target.view();
+	inputs.color_image = color_image;
+	inputs.depth_image = depth.image;
+	inputs.motion_image = m_motion_fill.motionImage();
+	inputs.reactive_image = m_motion_fill.reactiveImage();
+	inputs.output_image = target.state().image;
+	inputs.color_format = m_scene_format;
+	inputs.depth_format = renderer->getDepthFormat();
+	inputs.render_extent = render_extent;
+	inputs.output_extent = target.extent();
+	inputs.jitter_pixels = jitter_pixels;
+	inputs.reset = reset;
+	const bool evaluated = m_dlss.evaluate(cmd, inputs);
+
+	// The overlay and later passes expect the tracked depth layout back
+	barriers.image(depth.image, depth.range, sync::Usage::shader_sampled, depth.usage);
+	if (evaluated) {
+		barriers.image(target.state(), sync::Usage::shader_sampled);
+	}
+	barriers.flush(cmd);
+	return evaluated;
 }
 
 }

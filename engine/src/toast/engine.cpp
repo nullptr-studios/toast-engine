@@ -35,7 +35,6 @@
 #include "toast/renderer/passes/geometry/voxel_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
 #include "toast/renderer/passes/lighting/gi_clipmap_pass.hpp"
-#include "toast/renderer/passes/lighting/gi_pass.hpp"
 #include "toast/renderer/passes/lighting/reflection_probe_pass.hpp"
 #include "toast/renderer/passes/lighting/shadow_pass.hpp"
 #include "toast/renderer/passes/lighting/ssao_pass.hpp"
@@ -126,9 +125,7 @@ auto addScenePasses(
 	// World-stage passes render into the HDR scene target
 	const auto scene_format = renderer.getSceneColorFormat();
 
-	// Before the passes whose scene sets bind its cascades
-	auto gi_pass = std::make_unique<renderer::GiPass>(core, scene_format, extent);
-	renderer.setGiPass(gi_pass.get());
+	// Before the passes whose scene sets bind its clipmap
 	auto gi_clipmap_pass = std::make_unique<renderer::GiClipmapPass>(core, scene_format, extent);
 	renderer.setGiClipmapPass(gi_clipmap_pass.get());
 
@@ -142,7 +139,6 @@ auto addScenePasses(
 	renderer.addRenderPass(std::make_unique<ui::WorldUIPass>(core, scene_format, depth_format, extent));
 
 	// First in the chain so the probes read depth before any post pass
-	renderer.addPostProcessPass(std::move(gi_pass));
 	renderer.addPostProcessPass(std::move(gi_clipmap_pass));
 
 	if (core.isRayTracingSupported()) {
@@ -232,6 +228,8 @@ Engine::Engine() noexcept {
 	 *	Initialize in Engine::init() instead, unless it genuinely cannot wait.
 	 *	This runs before the working directory is set and before the project exists,
 	 *	so only the logger and the thread pool it depends on belong here.
+	 *	toasty tosted is tost
+	 *	all toasters tost toast
 	 *	- xein <3
 	 */
 }
@@ -409,6 +407,8 @@ Engine::~Engine() noexcept {
 		m->input_system.reset();
 		m->physics_simulator.reset();
 		m->audio_system.reset();
+		// lua_close finalizers release assets, which must still exist
+		m->lua_state.reset();
 		m->renderer.reset();
 		m->asset_manager.reset();
 		m->vulkan_core.reset();
@@ -704,7 +704,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// Compile every stale shader up front
 	renderer::ShaderCompiler::setFullOptimization(true);
-	renderer::ShaderCompiler::setMaxParallelCompiles(std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 8));
+	renderer::ShaderCompiler::setMaxParallelCompiles(std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 16));
 	{
 		StartupSplash splash;
 		renderer::ShaderCache::get().compileAllAtStartup([&splash](const renderer::ShaderCache::StartupProgress& progress) {
@@ -776,7 +776,18 @@ void Engine::createAvaloniaWindow() {
 
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(std::span<const char* const> {}, std::span<const char* const> {});
 
-	renderer::ShaderCache::get().compileAllAtStartup();
+	// Compile every stale shader up front
+	renderer::ShaderCompiler::setFullOptimization(false);
+	renderer::ShaderCompiler::setMaxParallelCompiles(std::clamp<size_t>(std::thread::hardware_concurrency(), 2, 16));
+	{
+		StartupSplash splash;
+		renderer::ShaderCache::get().compileAllAtStartup([&splash](const renderer::ShaderCache::StartupProgress& progress) {
+			splash.update(progress.finished, progress.total, progress.compiling);
+		});
+		if (splash.closeRequested()) {
+			event::send<event::ExitApplication>();
+		}
+	}
 
 	auto output_target = std::make_unique<renderer::SharedTextureOutputTarget>(*m->vulkan_core, vk::Extent2D(1080, 720));
 	auto color_format = output_target->getColorFormat();

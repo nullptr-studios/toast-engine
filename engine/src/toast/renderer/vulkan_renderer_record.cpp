@@ -262,7 +262,7 @@ void VulkanRenderer::updateVoxelTraceScene() {
 	const VoxelGpuStorage* storage = render_frame->voxel_storage.get();
 	if (storage != nullptr && storage->isReady()) {
 		// The clipmap fill reads this list so a capped volume would vanish from GI
-		const bool clipmap = m_gi_settings.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_clipmap;
+		const bool clipmap = m_gi_settings.enabled.load(std::memory_order_relaxed);
 		const auto cap =
 		    clipmap ? VoxelTraceScene::k_max_volumes : std::min<size_t>(voxelShadowInstances(), VoxelTraceScene::k_max_volumes);
 		// Drawn volumes first so the cap drops off screen ones
@@ -520,9 +520,13 @@ auto VulkanRenderer::recordVoxelScopes(
 	    m_scene_color.view.has_value() && m_scene_normal.view.has_value() && m_scene_indirect.view.has_value() &&
 	    m_scene_ambient_specular.view.has_value() && m_scene_motion.view.has_value() && m_voxel_noisy_diffuse.view.has_value() &&
 	    m_voxel_noisy_specular.view.has_value() && m_voxel_reservoirs[0].view.has_value() &&
-	    m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value();
+	    m_voxel_reservoirs[1].view.has_value() && m_voxel_candidate_reservoirs.view.has_value() && m_voxel_ao.view.has_value();
 	if (m_voxel_pass == nullptr || !m_voxel_pass->isEnabled() || !targets_ready ||
 	    m_depth_resources.state.usage != sync::Usage::depth_attachment || !m_voxel_pass->prepare(m_current_frame)) {
+		// SSAO binds it every frame, so it must leave the undefined layout even when no voxel scope records
+		if (m_voxel_denoised_indirect.view.has_value()) {
+			sync::transition(*frame.command_buffer, m_voxel_denoised_indirect.state, sync::Usage::fragment_sampled);
+		}
 		return false;
 	}
 	// Decided once since voxel lighting and the post pass must agree on which pixels lost their environment specular
@@ -684,16 +688,22 @@ auto VulkanRenderer::recordVoxelScopes(
 	barriers.image(lighting_reservoirs.state, sync::Usage::color_attachment);
 	barriers.image(m_voxel_reservoirs[1 - m_voxel_reservoir_parity].state, sync::Usage::fragment_sampled);
 	barriers.image(m_scene_motion.state, sync::Usage::fragment_sampled);
+	// The G-buffer set binds it every frame and only the ambient upsample reads it
+	barriers.image(m_voxel_ao.state, sync::Usage::fragment_sampled);
 	barriers.flush(cmd);
 
 	if (m_voxel_gi.view.has_value()) {
 		if (m_voxel_pass->giGatherActive()) {
 			barriers.image(m_voxel_gi.state, sync::Usage::color_attachment);
 			barriers.flush(cmd);
-			const vk::Rect2D half {
+			vk::Rect2D half {
 			  {                             0,                               0},
         {(scissor.extent.width + 1) / 2, (scissor.extent.height + 1) / 2}
 			};
+			// Only the checkerboard pixels, two per texel of a row
+			if (m_voxel_pass->giGatherPacked()) {
+				half.extent.width = (half.extent.width + 1) / 2;
+			}
 			const std::array gather_attachments {attachment(m_voxel_gi, vk::AttachmentLoadOp::eDontCare, clear_zero)};
 			vk::RenderingInfo gather_info {};
 			gather_info.renderArea = half;
@@ -759,6 +769,36 @@ auto VulkanRenderer::recordVoxelScopes(
 
 	// Before the marched scope so occlusion scales only the indirect
 	if (m_voxel_pass->ambientRaysActive()) {
+		// One ray per 2x2 block, upsampled by the full resolution scope below
+		barriers.image(m_voxel_ao.state, sync::Usage::color_attachment);
+		barriers.flush(cmd);
+		const vk::Rect2D half {
+		  {                             0,                               0},
+      {(scissor.extent.width + 1) / 2, (scissor.extent.height + 1) / 2}
+		};
+		const std::array trace_attachments {attachment(m_voxel_ao, vk::AttachmentLoadOp::eDontCare, clear_zero)};
+		vk::RenderingInfo trace_info {};
+		trace_info.renderArea = half;
+		trace_info.layerCount = 1;
+		trace_info.colorAttachmentCount = static_cast<uint32_t>(trace_attachments.size());
+		trace_info.pColorAttachments = trace_attachments.data();
+		cmd.beginRendering(trace_info);
+		cmd.setViewport(
+		    0,
+		    std::array {
+		      vk::Viewport {0.0f, 0.0f, static_cast<float>(half.extent.width), static_cast<float>(half.extent.height), 0.0f, 1.0f}
+		}
+		);
+		cmd.setScissor(0, std::array {half});
+		{
+			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelAmbientTrace");
+			const GpuScope scope(m_gpu_timer.get(), m_current_frame, cmd, "Voxel ambient trace");
+			m_voxel_pass->recordAmbientTrace(cmd, m_current_frame);
+		}
+		cmd.endRendering();
+		barriers.image(m_voxel_ao.state, sync::Usage::fragment_sampled);
+		barriers.flush(cmd);
+
 		const std::array ambient_attachments {attachment(m_voxel_noisy_diffuse, vk::AttachmentLoadOp::eLoad, clear_zero)};
 		vk::RenderingInfo ambient_info {};
 		ambient_info.renderArea = scissor;
@@ -838,6 +878,8 @@ auto VulkanRenderer::recordVoxelScopes(
 		barriers.image(m_voxel_noisy_diffuse.state, sync::Usage::fragment_sampled);
 		barriers.image(m_voxel_noisy_specular.state, sync::Usage::fragment_sampled);
 		barriers.image(m_scene_motion.state, sync::Usage::fragment_sampled);
+		// The temporal pass writes its luminance for the composite taps
+		barriers.image(m_scene_indirect.state, sync::Usage::fragment_sampled);
 		barriers.flush(cmd);
 		{
 			TracyVkZone(m_tracy_vk_ctx, cmd, "VoxelDenoiseTemporal");
@@ -959,6 +1001,12 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 	{
 		const GpuScope offscreen_scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, "Off-screen");
 		std::lock_guard lock(m_pass_mutex);
+		// Game views first since UIPass::recordPre executes the UI that samples them
+		for (auto& pass : m_render_passes) {
+			if (pass->isEnabled() && pass->stage() == RenderStage::view) {
+				pass->record(*frame.command_buffer, m_current_frame, image_index);
+			}
+		}
 		for (auto& pass : m_render_passes) {
 			const GpuScope scope(m_gpu_timer.get(), m_current_frame, *frame.command_buffer, pass->name());
 			pass->recordPre(*frame.command_buffer, m_current_frame, image_index);
@@ -1188,6 +1236,9 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 			to_nearest.image(m_glass_mask.state, sync::Usage::color_attachment);
 			to_nearest.image(m_glass_nearest_normal.state, sync::Usage::color_attachment);
 			to_nearest.image(m_glass_nearest_motion.state, sync::Usage::color_attachment);
+			// The nearest pipeline binds the storage set that holds the backdrop just copied
+			to_nearest.image(m_glass_backdrop.state, sync::Usage::fragment_sampled);
+			to_nearest.image(m_glass_backdrop_depth.state, sync::Usage::depth_sampled);
 			to_nearest.flush(cmd);
 
 			vk::RenderingAttachmentInfo nearest_mask {};
@@ -1384,7 +1435,24 @@ auto VulkanRenderer::recordFrame(FrameContext& frame, uint32_t image_index) noex
 
 	const vk::Image image = m_output_target->getColorImage(image_index);
 	sync::Usage& output_usage = m_output_image_usage.at(image_index);
-	barriers.image(image, colorSubresourceRange(), output_usage, sync::Usage::color_attachment);
+	if (output_usage == sync::Usage::none) {
+		// A fresh image has no tracked stage, but its transition must still wait for the acquire, which waits at color output
+		const vk::ImageMemoryBarrier2 first_use(
+		    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		    vk::AccessFlagBits2::eNone,
+		    vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+		    vk::AccessFlagBits2::eColorAttachmentWrite,
+		    vk::ImageLayout::eUndefined,
+		    vk::ImageLayout::eColorAttachmentOptimal,
+		    VK_QUEUE_FAMILY_IGNORED,
+		    VK_QUEUE_FAMILY_IGNORED,
+		    image,
+		    colorSubresourceRange()
+		);
+		frame.command_buffer.pipelineBarrier2(vk::DependencyInfo({}, {}, {}, first_use));
+	} else {
+		barriers.image(image, colorSubresourceRange(), output_usage, sync::Usage::color_attachment);
+	}
 	output_usage = sync::Usage::color_attachment;
 	barriers.flush(*frame.command_buffer);
 

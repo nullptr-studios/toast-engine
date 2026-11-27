@@ -5,8 +5,11 @@
  */
 
 #pragma once
+#include "brick.hpp"
 #include "voxel_constants.hpp"
 
+#include <array>
+#include <bit>
 #include <cassert>
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -149,6 +152,54 @@ private:
 		assert(m_xx < k_moment_safe_limit && m_yy < k_moment_safe_limit && m_zz < k_moment_safe_limit);
 	}
 };
+
+/**
+ * Moments of the set voxels of a brick at density 1, in brick local coordinates
+ * @note Sums of x, x * x and x * y come from popcounts of the bits of each coordinate so a dense mask costs no voxel walk
+ */
+[[nodiscard]]
+constexpr auto maskMoments(const BrickOccupancy& mask) noexcept -> MassMoments {
+	// slice bit index is y * 8 + x, these pick the bits whose x or y has bit k set
+	constexpr std::array<uint64_t, 3> x_bit {0xAAAAAAAAAAAAAAAAull, 0xCCCCCCCCCCCCCCCCull, 0xF0F0F0F0F0F0F0F0ull};
+	constexpr std::array<uint64_t, 3> y_bit {0xFF00FF00FF00FF00ull, 0xFFFF0000FFFF0000ull, 0xFFFFFFFF00000000ull};
+
+	MassMoments out;
+	for (uint32_t z = 0; z < k_brick_dim; ++z) {
+		const uint64_t word = mask[z];
+		if (word == 0ull) {
+			continue;
+		}
+		const auto count = [word](uint64_t bits) { return static_cast<int64_t>(std::popcount(word & bits)); };
+		int64_t sx = 0;
+		int64_t sy = 0;
+		int64_t sxx = 0;
+		int64_t syy = 0;
+		int64_t sxy = 0;
+		for (uint32_t j = 0; j < 3; ++j) {
+			sx += count(x_bit[j]) << j;
+			sy += count(y_bit[j]) << j;
+			// a * b is the sum over bit pairs of 2^(j + k) when both bits are set
+			for (uint32_t k = 0; k < 3; ++k) {
+				sxx += count(x_bit[j] & x_bit[k]) << (j + k);
+				syy += count(y_bit[j] & y_bit[k]) << (j + k);
+				sxy += count(x_bit[j] & y_bit[k]) << (j + k);
+			}
+		}
+		const auto n = static_cast<int64_t>(std::popcount(word));
+		const auto lz = static_cast<int64_t>(z);
+		out.mass += n;
+		out.m_x += sx;
+		out.m_y += sy;
+		out.m_z += lz * n;
+		out.m_xx += sxx;
+		out.m_yy += syy;
+		out.m_zz += lz * lz * n;
+		out.m_xy += sxy;
+		out.m_xz += lz * sx;
+		out.m_yz += lz * sy;
+	}
+	return out;
+}
 
 struct MassProperties {
 	/// kg

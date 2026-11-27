@@ -286,37 +286,50 @@ auto LensFlarePass::record(vk::CommandBuffer cmd, uint32_t frame_index, vk::Imag
 	};
 	const uint32_t glare_instances = ((m_quarter_a.extent.width + 1) / 2) * ((m_quarter_a.extent.height + 1) / 2);
 
+	// One scope per stage so the perf window splits the pass cost
+	GpuTimer* timer = VulkanRenderer::instance->gpuTimer();
 	using Load = vk::AttachmentLoadOp;
-	params.texel = texel(output, m_quarter_a.extent, 2.0f);
-	draw(cmd, m_threshold_pipeline, *sets.sets[step_threshold], m_quarter_a, params, Load::eDontCare, 3, 1);
-
-	params.texel = texel(m_quarter_a.extent, m_glare_target.extent, 1.0f);
-	draw(cmd, m_glare_pipeline, *sets.sets[step_glare], m_glare_target, params, Load::eClear, k_glare_vertices, glare_instances);
-
-	for (uint32_t level = 0; level < k_streak_levels; ++level) {
-		const vk::Extent2D from = level == 0 ? m_quarter_a.extent : m_streak[level - 1].extent;
-		params.texel = texel(from, m_streak[level].extent, 1.0f);
-		draw(cmd, m_streak_down_pipeline, *sets.sets[step_streak_down + level], m_streak[level], params, Load::eDontCare, 3, 1);
+	{
+		const GpuScope scope(timer, frame_index, cmd, "Lens flare threshold");
+		params.texel = texel(output, m_quarter_a.extent, 2.0f);
+		draw(cmd, m_threshold_pipeline, *sets.sets[step_threshold], m_quarter_a, params, Load::eDontCare, 3, 1);
 	}
-	for (uint32_t level = k_streak_levels - 1; level-- > 0;) {
-		params.texel = texel(m_streak[level + 1].extent, m_streak[level].extent, 1.0f);
-		draw(cmd, m_streak_up_pipeline, *sets.sets[step_streak_up + level], m_streak[level], params, Load::eLoad, 3, 1);
+	{
+		const GpuScope scope(timer, frame_index, cmd, "Lens flare glare");
+		params.texel = texel(m_quarter_a.extent, m_glare_target.extent, 1.0f);
+		draw(cmd, m_glare_pipeline, *sets.sets[step_glare], m_glare_target, params, Load::eClear, k_glare_vertices, glare_instances);
 	}
+	{
+		const GpuScope scope(timer, frame_index, cmd, "Lens flare streaks");
+		for (uint32_t level = 0; level < k_streak_levels; ++level) {
+			const vk::Extent2D from = level == 0 ? m_quarter_a.extent : m_streak[level - 1].extent;
+			params.texel = texel(from, m_streak[level].extent, 1.0f);
+			draw(cmd, m_streak_down_pipeline, *sets.sets[step_streak_down + level], m_streak[level], params, Load::eDontCare, 3, 1);
+		}
+		for (uint32_t level = k_streak_levels - 1; level-- > 0;) {
+			params.texel = texel(m_streak[level + 1].extent, m_streak[level].extent, 1.0f);
+			draw(cmd, m_streak_up_pipeline, *sets.sets[step_streak_up + level], m_streak[level], params, Load::eLoad, 3, 1);
+		}
+	}
+	{
+		const GpuScope scope(timer, frame_index, cmd, "Lens flare ghosts and halo");
+		params.texel = texel(m_quarter_a.extent, m_eighth.extent, 1.0f);
+		draw(cmd, m_blur_down_pipeline, *sets.sets[step_blur_down], m_eighth, params, Load::eDontCare, 3, 1);
 
-	params.texel = texel(m_quarter_a.extent, m_eighth.extent, 1.0f);
-	draw(cmd, m_blur_down_pipeline, *sets.sets[step_blur_down], m_eighth, params, Load::eDontCare, 3, 1);
+		params.texel = texel(m_eighth.extent, m_quarter_b.extent, 1.0f);
+		draw(cmd, m_blur_up_pipeline, *sets.sets[step_blur_up], m_quarter_b, params, Load::eDontCare, 3, 1);
 
-	params.texel = texel(m_eighth.extent, m_quarter_b.extent, 1.0f);
-	draw(cmd, m_blur_up_pipeline, *sets.sets[step_blur_up], m_quarter_b, params, Load::eDontCare, 3, 1);
-
-	draw(cmd, m_chroma_pipeline, *sets.sets[step_chroma], m_quarter_a, params, Load::eDontCare, 3, 1);
-	draw(cmd, m_ghosts_pipeline, *sets.sets[step_ghosts], m_flares, params, Load::eDontCare, 3, 1);
-	draw(cmd, m_halo_pipeline, *sets.sets[step_halo], m_flares, params, Load::eLoad, 3, 1);
-
-	params.texel = texel(m_flares.extent, output, 1.0f);
-	params.texel.z = 1.0f / static_cast<float>(m_glare_target.extent.width);
-	params.texel.w = 1.0f / static_cast<float>(m_glare_target.extent.height);
-	draw(cmd, m_mix_pipeline, *sets.sets[step_mix], m_composite, params, Load::eDontCare, 3, 1);
+		draw(cmd, m_chroma_pipeline, *sets.sets[step_chroma], m_quarter_a, params, Load::eDontCare, 3, 1);
+		draw(cmd, m_ghosts_pipeline, *sets.sets[step_ghosts], m_flares, params, Load::eDontCare, 3, 1);
+		draw(cmd, m_halo_pipeline, *sets.sets[step_halo], m_flares, params, Load::eLoad, 3, 1);
+	}
+	{
+		const GpuScope scope(timer, frame_index, cmd, "Lens flare mix");
+		params.texel = texel(m_flares.extent, output, 1.0f);
+		params.texel.z = 1.0f / static_cast<float>(m_glare_target.extent.width);
+		params.texel.w = 1.0f / static_cast<float>(m_glare_target.extent.height);
+		draw(cmd, m_mix_pipeline, *sets.sets[step_mix], m_composite, params, Load::eDontCare, 3, 1);
+	}
 
 	return **m_composite.view;
 }

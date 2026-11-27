@@ -253,6 +253,19 @@ void MaterialPass::update(uint32_t frame_index, float dt) {
 			res.runtime->markValuesDirty();
 		}
 	}
+
+	// Samplers are baked per slot so a bias change rebakes them and rewrites every set
+	if (m_built != nullptr) {
+		if (const float bias = VulkanRenderer::instance->materialMipBias(); bias != m_last_mip_bias) {
+			m_last_mip_bias = bias;
+			for (auto& [material, res] : m_built->instances) {
+				res.runtime->markTexturesDirty();
+				for (auto& views : res.bound_views) {
+					views.assign(views.size(), InstanceResources::BoundView {});
+				}
+			}
+		}
+	}
 }
 
 void MaterialPass::finishPendingBuild() {

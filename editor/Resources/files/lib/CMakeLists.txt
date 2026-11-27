@@ -73,6 +73,9 @@ target_compile_options(my_game PRIVATE
 
 if (MSVC)
   target_compile_options(my_game PRIVATE /MP)
+  # Release keeps a PDB so the crash reporter can name frames in the game
+  target_compile_options(my_game PRIVATE $<$<CONFIG:Release>:/Zi>)
+  target_link_options(my_game PRIVATE $<$<CONFIG:Release>:/DEBUG /OPT:REF /OPT:ICF>)
 endif ()
 
 find_program(CLANG_FORMAT NAMES clang-format)

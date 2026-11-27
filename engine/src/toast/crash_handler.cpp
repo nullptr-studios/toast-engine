@@ -45,6 +45,21 @@ SharedState g_shared;
 Kind g_kind = Kind::exception;
 DWORD g_crashed_thread = 0;
 
+/// Read by the pre-started reporter, mirrors CrashArgs.ReadHandoff
+struct ReporterHandoff {
+	DWORD tid = 0;
+	int32_t kind = 0;
+	uint64_t pointers = 0;
+	uint64_t message = 0;
+	std::array<wchar_t, MAX_PATH> dump_directory {};
+};
+
+static_assert(offsetof(ReporterHandoff, dump_directory) == 24);
+
+ReporterHandoff g_handoff;
+/// Started suspended, since a crash can hold the heap lock CreateProcess needs
+PROCESS_INFORMATION g_standby {};
+
 std::array<wchar_t, MAX_PATH> g_reporter_path {};
 std::array<wchar_t, MAX_PATH> g_dump_directory {};
 std::array<wchar_t, 4 * MAX_PATH> g_command_line {};
@@ -101,11 +116,21 @@ auto resolveReporter() noexcept -> bool {
 	}
 
 	std::array<wchar_t, MAX_PATH> candidate {};
-	for (const wchar_t* relative : {L"\\..\\..\\crash_reporter\\crash_reporter.exe", L"\\crash_reporter\\crash_reporter.exe"}) {
+	for (const wchar_t* relative :
+	     {L"\\..\\..\\crash_reporter\\crash_reporter.exe", L"\\crash_reporter\\crash_reporter.exe", L"\\crash_reporter.exe"}) {
 		if (swprintf_s(candidate.data(), candidate.size(), L"%ls%ls", directory.data(), relative) < 0) {
 			continue;
 		}
-		if (GetFullPathNameW(candidate.data(), MAX_PATH, g_reporter_path.data(), nullptr) > 0 && fileExists(g_reporter_path.data())) {
+		if (GetFullPathNameW(candidate.data(), MAX_PATH, g_reporter_path.data(), nullptr) == 0 ||
+		    !fileExists(g_reporter_path.data())) {
+			continue;
+		}
+		// Old exports lack the runtimeconfig, so .NET shows an install dialog
+		std::array<wchar_t, MAX_PATH> config {};
+		const size_t stem = wcslen(g_reporter_path.data()) - 4;
+		if (swprintf_s(config.data(), config.size(), L"%.*ls.runtimeconfig.json", static_cast<int>(stem), g_reporter_path.data()) >
+		        0 &&
+		    fileExists(config.data())) {
 			return true;
 		}
 	}
@@ -140,6 +165,49 @@ auto WINAPI launchReporter(LPVOID) -> DWORD {
 	CloseHandle(process.hThread);
 	CloseHandle(process.hProcess);
 	return 0;
+}
+
+/// Kills the waiting reporter with this process when nothing crashed
+void startStandbyReporter() noexcept {
+	g_handoff.pointers = reinterpret_cast<std::uintptr_t>(&g_shared.pointers);
+	g_handoff.message = reinterpret_cast<std::uintptr_t>(g_shared.message.data());
+	swprintf_s(
+	    g_command_line.data(),
+	    g_command_line.size(),
+	    L"\"%ls\" --pid %lu --handoff 0x%llx",
+	    g_reporter_path.data(),
+	    GetCurrentProcessId(),
+	    static_cast<unsigned long long>(reinterpret_cast<std::uintptr_t>(&g_handoff))
+	);
+
+	HANDLE job = CreateJobObjectW(nullptr, nullptr);
+	JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits {};
+	limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+	if (job == nullptr || !SetInformationJobObject(job, JobObjectExtendedLimitInformation, &limits, sizeof(limits))) {
+		if (job != nullptr) {
+			CloseHandle(job);
+		}
+		return;
+	}
+
+	STARTUPINFOW startup {};
+	startup.cb = sizeof(startup);
+	PROCESS_INFORMATION process {};
+	if (!CreateProcessW(
+	        nullptr, g_command_line.data(), nullptr, nullptr, FALSE, CREATE_SUSPENDED, nullptr, nullptr, &startup, &process
+	    )) {
+		CloseHandle(job);
+		return;
+	}
+	if (!AssignProcessToJobObject(job, process.hProcess)) {
+		TerminateProcess(process.hProcess, 0);
+		CloseHandle(process.hThread);
+		CloseHandle(process.hProcess);
+		CloseHandle(job);
+		return;
+	}
+	// The job handle stays open for the life of the process on purpose
+	g_standby = process;
 }
 
 auto WINAPI flushLogsThread(LPVOID) -> DWORD {
@@ -209,8 +277,15 @@ void report(Kind kind, const EXCEPTION_POINTERS* pointers, const char* message) 
 
 	flushLogs(pointers, message);
 
-	// Fresh thread since after a stack overflow this one has too little stack to start a process
-	if (HANDLE thread = CreateThread(nullptr, 256 * 1024, launchReporter, nullptr, 0, nullptr)) {
+	// Resuming allocates nothing, so it works under the heap lock
+	if (g_standby.hProcess != nullptr) {
+		g_handoff.tid = g_crashed_thread;
+		g_handoff.kind = static_cast<int32_t>(g_kind);
+		wcsncpy_s(g_handoff.dump_directory.data(), g_handoff.dump_directory.size(), g_dump_directory.data(), _TRUNCATE);
+		ResumeThread(g_standby.hThread);
+		WaitForSingleObject(g_standby.hProcess, INFINITE);
+	} else if (HANDLE thread = CreateThread(nullptr, 256 * 1024, launchReporter, nullptr, 0, nullptr)) {
+		// Fresh thread, a stack overflow leaves this one too little stack
 		WaitForSingleObject(thread, INFINITE);
 		CloseHandle(thread);
 	}
@@ -410,6 +485,7 @@ void install() noexcept {
 	}
 
 	if (g_reporter_ready) {
+		startStandbyReporter();
 		// First in the chain so managed faults pass through untouched
 		AddVectoredExceptionHandler(1, onVectoredException);
 	} else {

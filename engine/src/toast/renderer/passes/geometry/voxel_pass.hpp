@@ -78,6 +78,12 @@ public:
 		return m_gi_gather;
 	}
 
+	/// The denoised gather shades a checkerboard packed into the left half of the GI target, see voxel_lighting giGatherHalf
+	[[nodiscard]]
+	auto giGatherPacked() const noexcept -> bool {
+		return m_gi_gather && m_denoise_active;
+	}
+
 	/// Inside a scope over the half resolution GI target and before recordLighting() which upsamples it
 	void recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::Extent2D viewport);
 
@@ -86,6 +92,9 @@ public:
 	auto ambientRaysActive() const noexcept -> bool {
 		return m_ambient_rays;
 	}
+
+	/// Inside a half resolution scope over the ambient occlusion target before recordAmbient() upsamples it
+	void recordAmbientTrace(vk::CommandBuffer cmd, uint32_t frame_index);
 
 	/// Inside a scope over noisy diffuse alone with the scene normal sampleable and before recordMarched()
 	void recordAmbient(vk::CommandBuffer cmd, uint32_t frame_index);
@@ -390,7 +399,7 @@ private:
 	uint32_t m_shadow_instance_count = 0;
 
 	/// Albedo face normal material and depth last written into each set
-	DescriptorCache<std::array<vk::ImageView, 12>> m_bound_gbuffer;
+	DescriptorCache<std::array<vk::ImageView, 13>> m_bound_gbuffer;
 	auto updateGbufferSet(uint32_t frame_index) -> bool;
 	VulkanPipeline m_gi_gather_pipeline;
 	bool m_gi_gather = false;
@@ -399,6 +408,7 @@ private:
 	VulkanPipeline m_spatial_opaque_pipeline;
 	VulkanPipeline m_marched_pipeline;
 	VulkanPipeline m_ambient_pipeline;
+	VulkanPipeline m_ambient_trace_pipeline;
 	VulkanPipeline m_marched_composite_pipeline;
 	bool m_spatial_active = false;
 	bool m_scene_glass = false;
@@ -427,8 +437,10 @@ private:
 
 	/// rgb filtered term a linear depth it was written at
 	static constexpr vk::Format k_denoise_history_format = vk::Format::eR16G16B16A16Sfloat;
+	/// voxel_denoise.slang gLuma
+	static constexpr vk::Format k_denoise_luma_format = vk::Format::eR16G16Sfloat;
 	/// Bindings of voxel_denoise.slang in order
-	static constexpr size_t k_denoise_bindings = 11;
+	static constexpr size_t k_denoise_bindings = 12;
 
 	/// Change regions of a newly published storage that voxel.slang marks reactive
 	void writeFreshRegions(uint32_t frame_index, const VoxelGpuStorage& storage);
@@ -446,6 +458,8 @@ private:
 	DescriptorCache<std::array<vk::ImageView, k_denoise_bindings>> m_denoise_bound;
 	/// [term][parity] where the temporal pass writes the parity and reads the other
 	std::array<std::array<PostProcessTarget, 2>, 2> m_denoise_history;
+	/// This frame only, written beside the histories
+	PostProcessTarget m_denoise_luma;
 	uint32_t m_denoise_parity = 0;
 	/// Histories hold the previous frame
 	bool m_denoise_valid = false;

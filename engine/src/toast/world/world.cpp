@@ -1186,6 +1186,19 @@ auto testNodeInfos() -> std::unordered_map<const Node*, NodeInfo>& {
 }
 
 void WorldTestAccess::WorldDeleter::operator()(World* world) const noexcept {
+	// A Box never frees its node, so nodes a test left behind would keep their script runtimes and Lua placements alive
+	std::vector<Box<Node>> roots;
+	{
+		std::scoped_lock lock(world->nodes_mutex);
+		world->forEachNode([&roots](const ControlBox& control) {
+			if (control.node != nullptr && !control.node->m_parent.exists()) {
+				roots.emplace_back(control.node->box());
+			}
+		});
+	}
+	world->trees = {};
+	world->trees.destroy_queue = std::move(roots);
+	world->drainDestroyQueue();
 	delete world;
 }
 

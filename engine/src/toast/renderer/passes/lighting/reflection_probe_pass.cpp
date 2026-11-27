@@ -880,6 +880,11 @@ auto ReflectionProbePass::loadProbe(uint32_t probe, std::string_view uri) -> boo
 		TOAST_WARN("Render", "{} is not a probe capture this build understands; it will be re-baked", uri);
 		return false;
 	}
+	// Same bounds as setProbeResolution, a larger face would overrun the staging cube
+	if (header.face_size < 32 || header.face_size > k_max_face_size) {
+		TOAST_WARN("Render", "{} has a face size of {}px; it will be re-baked", uri, header.face_size);
+		return false;
+	}
 	if (header.format != static_cast<uint32_t>(m_format) || header.mip_levels != m_mip_levels) {
 		TOAST_WARN("Render", "{} was written for a different render target layout; it will be re-baked", uri);
 		return false;

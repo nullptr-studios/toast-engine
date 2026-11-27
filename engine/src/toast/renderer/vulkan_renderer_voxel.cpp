@@ -7,6 +7,7 @@
 #include "vulkan_renderer.hpp"
 
 #include <SDL3/SDL_keycode.h>
+#include <ranges>
 #include <toast/assets/animation.hpp>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/material.hpp>
@@ -64,6 +65,32 @@ auto packedGlassBricks(const voxel::gpu::PackedScene& scene) -> std::vector<std:
 	return out;
 }
 
+/// What the debris pass collides against for one drawn volume, it culls by the box of the volume
+[[nodiscard]]
+auto collisionVolume(const glm::mat4& model, const glm::mat4& inverse, const glm::vec4& sphere, glm::uvec3 dims, uint32_t record)
+    -> VoxelCollisionWorld::Volume {
+	const glm::vec3 extent = voxel::localExtent(dims);
+	glm::vec3 box_min {std::numeric_limits<float>::max()};
+	glm::vec3 box_max {std::numeric_limits<float>::lowest()};
+	for (int corner = 0; corner < 8; ++corner) {
+		const glm::vec3 local(
+		    (corner & 1) != 0 ? extent.x : 0.0f, (corner & 2) != 0 ? extent.y : 0.0f, (corner & 4) != 0 ? extent.z : 0.0f
+		);
+		const glm::vec3 world = glm::vec3(model * glm::vec4(local, 1.0f));
+		box_min = glm::min(box_min, world);
+		box_max = glm::max(box_max, world);
+	}
+	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
+	return VoxelCollisionWorld::Volume {
+	  .world_to_voxel = to_voxel_units * inverse,
+	  .bounds_center = glm::vec3(sphere),
+	  .bounds_radius = sphere.w,
+	  .box_min = box_min,
+	  .box_max = box_max,
+	  .record_index = record,
+	};
+}
+
 auto brickCoord(const voxel::gpu::VolumeRecord& record, uint32_t index) -> uint32_t {
 	const uint32_t x = index % record.brick_dims_x;
 	const uint32_t y = (index / record.brick_dims_x) % record.brick_dims_y;
@@ -103,22 +130,23 @@ auto packedBrickLists(
 	std::vector<std::shared_ptr<const VoxelBrickList>> out(scene.records.size());
 	for (uint32_t r = 0; r < scene.records.size(); ++r) {
 		const voxel::gpu::VolumeRecord& record = scene.records[r];
-		auto list = std::make_shared<VoxelBrickList>();
-		list->dims = glm::uvec3(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
-		for (const uint32_t index : glass[r]) {
-			list->glass.push_back(brickCoord(record, index));
-		}
+		const glm::uvec3 dims(record.brick_dims_x, record.brick_dims_y, record.brick_dims_z);
+		const auto glass_coords = glass[r] | std::views::transform([&](uint32_t index) { return brickCoord(record, index); });
 
 		const uint64_t rid = storage.nodeRid(r);
 		const auto kept = previous != nullptr && rid != 0 && !dirty.contains(rid) ? previous->recordIndexOf(rid) : std::nullopt;
 		const VoxelBrickList* old = kept.has_value() ? previous->brickList(*kept).get() : nullptr;
-		if (old != nullptr && old->dims != list->dims) {
+		if (old != nullptr && old->dims != dims) {
 			old = nullptr;
 		}
-		if (old != nullptr && old->glass == list->glass) {
+		if (old != nullptr && std::ranges::equal(old->glass, glass_coords)) {
 			out[r] = previous->brickList(*kept);
 			continue;
 		}
+
+		auto list = std::make_shared<VoxelBrickList>();
+		list->dims = dims;
+		list->glass.assign(glass_coords.begin(), glass_coords.end());
 		if (old != nullptr) {
 			list->occupied = old->occupied;
 		} else {
@@ -550,6 +578,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 	// Existing keys are rewritten in place so a steady scene allocates nothing here
 	const uint64_t proxy_frame = ++m_voxel_proxy_frame;
 	frame.voxel_instances.reserve(gathered.size());
+	m_voxel_collision_volumes.clear();
 	bool collision_changed = m_voxel_collision_storage != m_voxel_storage.get();
 
 	for (const Gathered& entry : gathered) {
@@ -594,9 +623,11 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 			math.dims = dims;
 			math.record = *record;
 			math.mirrored = glm::determinant(model) < 0.0f;
+			math.collision = collisionVolume(model, math.inverse, math.sphere, dims, *record);
 			collision_changed = true;
 		}
 		math.frame = proxy_frame;
+		m_voxel_collision_volumes.push_back(math.collision);
 
 		const auto previous = m_voxel_previous_models.find(node_rid);
 		const bool has_previous = previous != m_voxel_previous_models.end();
@@ -637,32 +668,7 @@ void VulkanRenderer::buildVoxelProxies(RenderFrame& frame) {
 
 	auto collision = std::make_shared<VoxelCollisionWorld>();
 	collision->storage = m_voxel_storage;
-	collision->volumes.reserve(frame.voxel_instances.size());
-	const glm::mat4 to_voxel_units = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f / voxel::k_voxel_size));
-	for (const VoxelVolumeProxy& proxy : frame.voxel_instances) {
-		// the debris pass culls by the box of the volume
-		const glm::vec3 extent = voxel::localExtent(proxy.brick_dims);
-		glm::vec3 box_min {std::numeric_limits<float>::max()};
-		glm::vec3 box_max {std::numeric_limits<float>::lowest()};
-		for (int corner = 0; corner < 8; ++corner) {
-			const glm::vec3 local(
-			    (corner & 1) != 0 ? extent.x : 0.0f, (corner & 2) != 0 ? extent.y : 0.0f, (corner & 4) != 0 ? extent.z : 0.0f
-			);
-			const glm::vec3 world = glm::vec3(proxy.model * glm::vec4(local, 1.0f));
-			box_min = glm::min(box_min, world);
-			box_max = glm::max(box_max, world);
-		}
-		collision->volumes.push_back(
-		    VoxelCollisionWorld::Volume {
-		      .world_to_voxel = to_voxel_units * proxy.inverse_model,
-		      .bounds_center = proxy.bounds_center,
-		      .bounds_radius = proxy.bounds_radius,
-		      .box_min = box_min,
-		      .box_max = box_max,
-		      .record_index = proxy.record_index,
-		    }
-		);
-	}
+	collision->volumes = m_voxel_collision_volumes;
 	std::scoped_lock lock(m_voxel_collision_mutex);
 	m_voxel_collision_world = std::move(collision);
 }
