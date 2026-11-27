@@ -4,5 +4,5 @@
   "description": "NVIDIA DLSS SDK (NGX headers, static loader library and the Super Resolution runtime) from github.com/NVIDIA/DLSS",
   "homepage": "https://github.com/NVIDIA/DLSS",
   "license": null,
-  "supports": "windows & x64"
+  "supports": "(windows | linux) & x64"
 }

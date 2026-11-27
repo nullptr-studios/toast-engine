@@ -1,4 +1,4 @@
-// Temporal per term then spatial diffuse and composite of the voxel_lighting.slang noisy terms
+// Temporal over both terms in one draw then spatial diffuse and composite of the voxel_lighting.slang noisy terms
 // Specular is temporal only since a spatial filter erases highlights
 import fullscreen;
 import depth_convention;
@@ -10,7 +10,7 @@ struct DenoisePush
     /// Jittered since depth was rasterized with it
     float4x4 inverseViewProjection;
     float4x4 previousViewProjection;
-    /// x term 0 diffuse 1 specular y 1 with a valid history z spiral rotation in turns w spiral radius in pixels
+    /// x unused y 1 with a valid history z spiral rotation in turns w spiral radius in pixels
     float4 params;
     float4 viewport;
 };
@@ -53,6 +53,10 @@ Sampler2D gSpecularCurrent;
 /// This frame's noisy clipmap GI voxel_lighting.slang left for SSAO which tells its share of the noisy diffuse
 [[vk::binding(10, 0)]]
 Sampler2D gSceneIndirect;
+
+/// x luminance of gSceneIndirect y luminance of albedo times noisy diffuse, from temporalMain so each composite tap reads one texel
+[[vk::binding(11, 0)]]
+Sampler2D gLuma;
 
 struct CompositeOutput
 {
@@ -200,20 +204,39 @@ bool reprojectHistory(float2 previousUv, float expectedDepth, out float4 diffuse
     return found;
 }
 
-[shader("fragment")]
-float4 temporalMain(VSOutput input) : SV_Target0
+/// Both terms in one draw since they share the neighbourhood, the reprojection and the history reads
+struct TemporalOutput
 {
+    /// rgb term a linear depth
+    float4 diffuse : SV_Target0;
+    /// rgb term a frames accumulated
+    float4 specular : SV_Target1;
+    /// See gLuma
+    float2 luma : SV_Target2;
+};
+
+[shader("fragment")]
+TemporalOutput temporalMain(VSOutput input)
+{
+    TemporalOutput output;
+    output.diffuse = float4(0.0, 0.0, 0.0, 0.0);
+    output.specular = float4(0.0, 0.0, 0.0, 0.0);
+    output.luma = float2(0.0, 0.0);
     const int2 pixel = int2(input.position.xy);
     if (!litVoxelAt(pixel))
     {
-        return float4(0.0, 0.0, 0.0, 0.0);
+        return output;
     }
 
-    const bool specular = gPush.params.x > 0.5;
-    const float3 current = noisyAt(pixel, specular);
+    const float3 currentDiffuse = noisyAt(pixel, false);
+    output.luma = float2(luminance(gSceneIndirect.Load(int3(pixel, 0)).rgb),
+                         luminance(gAlbedo.Load(int3(pixel, 0)).rgb * currentDiffuse));
+    const float3 currentSpecular = noisyAt(pixel, true);
 
-    float3 mean = float3(0.0, 0.0, 0.0);
-    float3 meanSquared = float3(0.0, 0.0, 0.0);
+    float3 meanDiffuse = float3(0.0, 0.0, 0.0);
+    float3 meanSquaredDiffuse = float3(0.0, 0.0, 0.0);
+    float3 meanSpecular = float3(0.0, 0.0, 0.0);
+    float3 meanSquaredSpecular = float3(0.0, 0.0, 0.0);
     float count = 0.0;
     const int2 size = int2(gPush.viewport.xy);
     [unroll]
@@ -225,19 +248,25 @@ float4 temporalMain(VSOutput input) : SV_Target0
             const int2 wanted = pixel + int2(x, y);
             const int2 tap = clamp(wanted, int2(0, 0), size - 1);
             const float weight = all(tap == wanted) && litVoxelAt(tap) ? 1.0 : 0.0;
-            const float3 value = noisyAt(tap, specular);
-            mean += value * weight;
-            meanSquared += value * value * weight;
+            const float3 diffuse = noisyAt(tap, false);
+            const float3 specular = noisyAt(tap, true);
+            meanDiffuse += diffuse * weight;
+            meanSquaredDiffuse += diffuse * diffuse * weight;
+            meanSpecular += specular * weight;
+            meanSquaredSpecular += specular * specular * weight;
             count += weight;
         }
     }
-    mean /= count;
-    const float3 sigma = sqrt(max(meanSquared / count - mean * mean, float3(0.0, 0.0, 0.0)));
+    meanDiffuse /= count;
+    meanSpecular /= count;
+    const float3 sigmaDiffuse = sqrt(max(meanSquaredDiffuse / count - meanDiffuse * meanDiffuse, float3(0.0, 0.0, 0.0)));
+    const float3 sigmaSpecular = sqrt(max(meanSquaredSpecular / count - meanSpecular * meanSpecular, float3(0.0, 0.0, 0.0)));
 
     const float depth = gDepth.Load(int3(pixel, 0)).r;
     const float2 uv = (float2(pixel) + 0.5) / gPush.viewport.xy;
     const float linearDepth = linearDepthAt(uv, depth);
-    const float4 reset = float4(current, specular ? 1.0 : linearDepth);
+    output.diffuse = float4(currentDiffuse, linearDepth);
+    output.specular = float4(currentSpecular, 1.0);
 
     // Camera reprojection when voxel motion is missing
     const float4 motion = gMotion.Load(int3(pixel, 0));
@@ -254,7 +283,7 @@ float4 temporalMain(VSOutput input) : SV_Target0
         const float4 previousClip = mul(gPush.previousViewProjection, float4(world, 1.0));
         if (previousClip.w <= 0.0)
         {
-            return reset;
+            return output;
         }
         previousUv = previousClip.xy / previousClip.w * 0.5 + 0.5;
         expectedDepth = previousClip.w;
@@ -265,7 +294,7 @@ float4 temporalMain(VSOutput input) : SV_Target0
     // Reactive pixels drop their history
     if (gPush.params.y < 0.5 || !inside || motion.z > 0.5)
     {
-        return reset;
+        return output;
     }
 
     // Depth lives in the diffuse history
@@ -273,15 +302,17 @@ float4 temporalMain(VSOutput input) : SV_Target0
     float4 specularHistory;
     if (!reprojectHistory(previousUv, expectedDepth, diffuseHistory, specularHistory))
     {
-        return reset;
+        return output;
     }
 
     const float historyLength = min(max(specularHistory.a, 1.0) + 1.0, kMaxHistoryLength);
-    const float4 history = specular ? specularHistory : diffuseHistory;
-    const float clip = specular ? kSpecularClip : kDiffuseClip;
-    const float3 clipped = clamp(history.rgb, mean - clip * sigma, mean + clip * sigma);
-    const float blend = max(1.0 / historyLength, specular ? kSpecularBlend : kDiffuseBlend);
-    return float4(lerp(clipped, current, blend), specular ? historyLength : linearDepth);
+    const float3 clippedDiffuse =
+        clamp(diffuseHistory.rgb, meanDiffuse - kDiffuseClip * sigmaDiffuse, meanDiffuse + kDiffuseClip * sigmaDiffuse);
+    const float3 clippedSpecular =
+        clamp(specularHistory.rgb, meanSpecular - kSpecularClip * sigmaSpecular, meanSpecular + kSpecularClip * sigmaSpecular);
+    output.diffuse = float4(lerp(clippedDiffuse, currentDiffuse, max(1.0 / historyLength, kDiffuseBlend)), linearDepth);
+    output.specular = float4(lerp(clippedSpecular, currentSpecular, max(1.0 / historyLength, kSpecularBlend)), historyLength);
+    return output;
 }
 
 // Interleaved gradient noise
@@ -317,8 +348,9 @@ CompositeOutput compositeMain(VSOutput input)
     float3 diffuse = gDiffuseCurrent.Load(int3(pixel, 0)).rgb;
     float weightSum = 1.0;
     // GI and everything noisy over the same taps since a ratio of single noisy pixels flickers
-    float giSum = luminance(gSceneIndirect.Load(int3(pixel, 0)).rgb);
-    float noisySum = luminance(albedo.rgb * gNoisyDiffuse.Load(int3(pixel, 0)).rgb);
+    const float2 centreLuma = gLuma.Load(int3(pixel, 0)).xy;
+    float giSum = centreLuma.x;
+    float noisySum = centreLuma.y;
     float s, c;
     sincos(rotation, s, c);
     const float2 turn = float2(c, s) * radius;
@@ -344,8 +376,9 @@ CompositeOutput compositeMain(VSOutput input)
         weightSum += weight;
         if (weight > 0.0)
         {
-            giSum += weight * luminance(gSceneIndirect.Load(int3(tap, 0)).rgb);
-            noisySum += weight * luminance(gAlbedo.Load(int3(tap, 0)).rgb * gNoisyDiffuse.Load(int3(tap, 0)).rgb);
+            const float2 tapLuma = gLuma.Load(int3(tap, 0)).xy;
+            giSum += weight * tapLuma.x;
+            noisySum += weight * tapLuma.y;
         }
     }
     diffuse /= weightSum;

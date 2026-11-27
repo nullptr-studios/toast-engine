@@ -94,7 +94,6 @@ class SelectionOutline;
 class SkinningPass;
 class VoxelPass;
 class DebrisPass;
-class GiPass;
 class GiClipmapPass;
 class TracedSpecularPass;
 class TaaPass;
@@ -370,6 +369,11 @@ public:
 	[[nodiscard]]
 	auto getVoxelGiView() const noexcept -> vk::ImageView {
 		return m_voxel_gi.view.has_value() ? **m_voxel_gi.view : vk::ImageView {};
+	}
+
+	[[nodiscard]]
+	auto getVoxelAmbientOcclusionView() const noexcept -> vk::ImageView {
+		return m_voxel_ao.view.has_value() ? **m_voxel_ao.view : vk::ImageView {};
 	}
 
 	/// Marched and sampled diffuse over albedo before denoising
@@ -960,6 +964,12 @@ public:
 
 	void setEnvironmentPass(EnvironmentPass* pass) noexcept { m_environment_pass = pass; }
 
+	/// The Renderer Settings map, used whenever no enabled AmbientLight carries its own. Applied on the next tick
+	void setGlobalEnvironmentMap(std::string uri) {
+		std::scoped_lock lock(m_environment_mutex);
+		m_global_environment_uri = std::move(uri);
+	}
+
 	[[nodiscard]]
 	auto getEnvironmentPass() const noexcept -> const EnvironmentPass* {
 		return m_environment_pass;
@@ -974,8 +984,6 @@ public:
 	auto getDebrisPass() const noexcept -> const DebrisPass* {
 		return m_debris_pass;
 	}
-
-	void setGiPass(GiPass* pass) noexcept { m_gi_pass = pass; }
 
 	void setGiClipmapPass(GiClipmapPass* pass) noexcept { m_gi_clipmap_pass = pass; }
 
@@ -1007,11 +1015,6 @@ public:
 	[[nodiscard]]
 	auto glassBackdropCaptured() const noexcept -> bool {
 		return m_glass_backdrop_captured;
-	}
-
-	[[nodiscard]]
-	auto giPass() const noexcept -> GiPass* {
-		return m_gi_pass;
 	}
 
 	[[nodiscard]]
@@ -1571,13 +1574,18 @@ private:
 	const ShadowPass* m_shadow_pass = nullptr;
 
 	EnvironmentPass* m_environment_pass = nullptr;
+	std::mutex m_environment_mutex;
+	std::string m_global_environment_uri;
+	/// Last map the tick asked the pass for, so a map that fails to load is not retried every frame
+	std::string m_requested_environment_uri;
+	uint64_t m_ambient_environment_uid = 0;
+	std::string m_ambient_environment_uri;
 
 	ReflectionProbePass* m_reflection_probe_pass = nullptr;
 
 	VoxelPass* m_voxel_pass = nullptr;
 
 	DebrisPass* m_debris_pass = nullptr;
-	GiPass* m_gi_pass = nullptr;
 	GiClipmapPass* m_gi_clipmap_pass = nullptr;
 	bool m_glass_backdrop_captured = false;
 	bool m_glass_nearest_valid = false;
@@ -1641,6 +1649,7 @@ private:
 	bool m_voxel_denoised_indirect_frame = false;
 	/// Half the render extent
 	SceneColorResources m_voxel_gi;
+	SceneColorResources m_voxel_ao;
 	SceneColorResources m_voxel_noisy_specular;
 	/// The voxel lighting writes the parity one and reads the other
 	std::array<SceneColorResources, 2> m_voxel_reservoirs;

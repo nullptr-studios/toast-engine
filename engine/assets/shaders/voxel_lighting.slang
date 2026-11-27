@@ -11,7 +11,7 @@ struct LightingPushConstants
 {
     // Must be jittered since depth was rasterized with it
     float4x4 inverseViewProjection;
-    // xy viewport size
+    // xy viewport size z 1 when gGiGather holds only the checkerboard pixels packed two to a texel, see giGatherHalf
     float4 viewport;
     // x instances with bounds y light candidates z nonzero when fragmentMarched shades w sun reach in meters
     uint4 lighting;
@@ -86,6 +86,10 @@ Sampler2D gDetailNormal;
 /// Half resolution fragmentGiGather with xyz irradiance over pi w open sky share and below 0 for none
 [[vk::binding(11, 2)]]
 Sampler2D gGiGather;
+
+/// Half resolution fragmentAmbientTrace occlusion at giGatherPixel and below 0 for none
+[[vk::binding(12, 2)]]
+Sampler2D gAmbientOcclusion;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -808,10 +812,36 @@ SpatialOutput fragmentSpatialOpaque(VSOutput input)
     return spatialReuse(input, false);
 }
 
+/// Kept out of line since the NVIDIA compiler gave fragmentMain 128 registers instead of 96 with the cone inlined, measured
+/// with tools/shader_registers once the radiance cascades fallback that used to sit beside it was deleted
+[noinline]
+float4 giCheapCall(float3 position, float3 normal)
+{
+    return giCheap(position, normal);
+}
+
 /// Pixel of each 2x2 block the gather shades which never changes so the result holds still
 int2 giGatherPixel(int2 half)
 {
     return min(half * 2, int2(gPush.viewport.xy) - 1);
+}
+
+bool giGatherPacked()
+{
+    return gPush.viewport.z > 0.5;
+}
+
+/// Checkerboard flipping each frame since every 2 by 2 upsample still finds a diagonal pair and the history fills the rest
+bool giGatherShaded(int2 half)
+{
+    return ((uint(half.x + half.y) + uint(gCamera.noiseParams.z)) & 1u) == 0u;
+}
+
+/// Half resolution pixel a packed texel shades: the row keeps only its checkerboard pixels side by side
+/// Packed since early outs in a fragment shader keep their warp slot, so a checkerboard over the full target saves nothing
+int2 giGatherHalf(int2 packed)
+{
+    return int2(2 * packed.x + int((uint(packed.y) + uint(gCamera.noiseParams.z)) & 1u), packed.y);
 }
 
 [shader("fragment")]
@@ -819,9 +849,8 @@ float4 fragmentGiGather(VSOutput input) : SV_Target0
 {
     const float4 none = float4(0.0, 0.0, 0.0, -1.0);
     const bool denoised = (gPush.reuse.x & kGiDenoise) != 0u;
-    const int2 half = int2(input.position.xy);
-    // Checkerboard flipping each frame since every 2 by 2 upsample still finds a diagonal pair and the history fills the rest
-    if (denoised && ((uint(half.x + half.y) + uint(gCamera.noiseParams.z)) & 1u) != 0u)
+    const int2 half = giGatherPacked() ? giGatherHalf(int2(input.position.xy)) : int2(input.position.xy);
+    if (!giGatherPacked() && denoised && !giGatherShaded(half))
     {
         return none;
     }
@@ -860,7 +889,12 @@ float4 giGatherAt(int2 pixel, float3 position, float3 normal)
     {
         const int2 half = clamp(base + int2(tap & 1, tap >> 1), int2(0, 0), size - 1);
         source[tap] = giGatherPixel(half);
-        gathered[tap] = gGiGather.Load(int3(half, 0));
+        gathered[tap] = gGiGather.Load(int3(giGatherPacked() ? int2(half.x >> 1, half.y) : half, 0));
+        // A packed target holds no texel for the other checkerboard colour
+        if (giGatherPacked() && !giGatherShaded(half))
+        {
+            gathered[tap].a = -1.0;
+        }
         sourceEncoded[tap] = gFaceNormal.Load(int3(source[tap], 0));
         sourceDepth[tap] = gDepth.Load(int3(source[tap], 0)).r;
     }
@@ -943,17 +977,13 @@ FSOutput fragmentMain(VSOutput input)
     surface.viewSpaceZ = mul(gCamera.view, float4(position, 1.0)).z;
     surface.pixel = input.position.xy;
 
-    if ((gPush.reuse.x & kGiClipmap) == 0u)
-    {
-        gGiGathered = giCascades(position, normal);
-    }
-    else
+    if ((gPush.reuse.x & kGiClipmap) != 0u)
     {
         gGiGathered = (gPush.reuse.x & kGiGather) != 0u ? giGatherAt(pixel, position, faceNormal) : float4(0.0, 0.0, 0.0, -1.0);
         // One cone for pixels with no gather pixel on their surface since a full gather here stalls the neighbourhood
         if (gGiGathered.w < 0.0)
         {
-            gGiGathered = giCheap(position, faceNormal);
+            gGiGathered = giCheapCall(position, faceNormal);
         }
     }
 
@@ -1072,27 +1102,83 @@ MarchedOutput fragmentMarched(VSOutput input)
     return output;
 }
 
-/// Ambient rays alone so fragmentMarched keeps fewer live registers
-[shader("fragment")]
-float4 fragmentAmbient(VSOutput input) : SV_Target0
+/// Occlusion of the lit voxel at @p pixel with @p noisePixel picking the ray, shared by the half resolution trace and its fallback
+float ambientAt(int2 pixel, float2 noisePixel)
 {
-    const int2 pixel = int2(input.position.xy);
     const int3 texel = int3(pixel, 0);
-    if (!isLitVoxel(gAlbedo.Load(texel).a) || isShadowDebugMode(gCamera.renderModePad.x) || isSurfaceDebugMode(gCamera.renderModePad.x))
-    {
-        discard;
-    }
-
     const float3 position = positionAt(pixel);
     const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(texel));
     const float3 sceneNormal = gSceneNormal.Load(texel).xyz;
     const float3 normal = dot(sceneNormal, sceneNormal) > 1e-4 ? normalize(sceneNormal) : faceNormal;
 
-    // Under the cascades the rays only add the contact detail their probe spacing blurs
+    // Under the clipmap the rays only add the contact detail its cells blur
     const float reach = float(gPush.reuse.w) * 0.01;
-    const float contactReach = giCover(position, normal) ? giContactReach(position) : 0.0;
+    const float contactReach = giClipCovers(position) ? giContactReach(position) : 0.0;
     const float3 shadowOrigin = position + faceNormal * (kShadowOriginOffset * kVoxelSize);
-    const float occlusion = ambientOcclusion(normal, input.position.xy, shadowOrigin, contactReach > 0.0 ? min(reach, contactReach) : reach);
+    return ambientOcclusion(normal, noisePixel, shadowOrigin, contactReach > 0.0 ? min(reach, contactReach) : reach);
+}
+
+bool ambientSkipped(int2 pixel)
+{
+    return !isLitVoxel(gAlbedo.Load(int3(pixel, 0)).a) || isShadowDebugMode(gCamera.renderModePad.x) ||
+           isSurfaceDebugMode(gCamera.renderModePad.x);
+}
+
+/// One ray per 2x2 block at the pixel the GI gather also shades, the blue noise indexed at half resolution so it stays blue
+[shader("fragment")]
+float fragmentAmbientTrace(VSOutput input) : SV_Target0
+{
+    const int2 pixel = giGatherPixel(int2(input.position.xy));
+    return ambientSkipped(pixel) ? -1.0 : ambientAt(pixel, input.position.xy);
+}
+
+/// Half resolution occlusion carried to every pixel on the same surface, w below 0 where no neighbour shares it
+float ambientUpsampled(int2 pixel, float3 position, float3 normal)
+{
+    const int2 size = (int2(gPush.viewport.xy) + 1) / 2;
+    const float2 at = float2(pixel) * 0.5;
+    const int2 base = int2(floor(at));
+    const float2 blend = at - float2(base);
+    float sum = 0.0;
+    float total = 0.0;
+    [unroll]
+    for (int tap = 0; tap < 4; ++tap)
+    {
+        const int2 corner = int2(tap & 1, tap >> 1);
+        const int2 half = clamp(base + corner, int2(0, 0), size - 1);
+        const int2 source = giGatherPixel(half);
+        const float occlusion = gAmbientOcclusion.Load(int3(half, 0)).r;
+        const float4 sourceEncoded = gFaceNormal.Load(int3(source, 0));
+        if (occlusion < 0.0 || sourceEncoded.a <= 0.5)
+        {
+            continue;
+        }
+        const float2 side = lerp(1.0 - blend, blend, float2(corner));
+        const float facing = saturate(dot(normal, decodeFaceNormal(sourceEncoded)));
+        const float plane = saturate(1.0 - abs(dot(positionAt(source) - position, normal)) / kGiGatherPlane);
+        const float weight = (side.x * side.y + 0.01) * facing * facing * facing * facing * plane;
+        sum += occlusion * weight;
+        total += weight;
+    }
+    return total > 1e-4 ? sum / total : -1.0;
+}
+
+/// Ambient rays alone so fragmentMarched keeps fewer live registers, traced at half resolution and upsampled here
+/// A pixel with no neighbour on its surface traces its own ray so thin edges keep their contact shadow
+[shader("fragment")]
+float4 fragmentAmbient(VSOutput input) : SV_Target0
+{
+    const int2 pixel = int2(input.position.xy);
+    if (ambientSkipped(pixel))
+    {
+        discard;
+    }
+    const float3 faceNormal = decodeFaceNormal(gFaceNormal.Load(int3(pixel, 0)));
+    float occlusion = ambientUpsampled(pixel, positionAt(pixel), faceNormal);
+    if (occlusion < 0.0)
+    {
+        occlusion = ambientAt(pixel, input.position.xy);
+    }
     // Premultiplied so the indirect fragmentMain left in noisy diffuse scales by occlusion
     return float4(0.0, 0.0, 0.0, 1.0 - occlusion);
 }

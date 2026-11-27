@@ -70,7 +70,6 @@ static const float kTemporalBlend = 0.1;
 static const float kFogStepMeters = 0.5;
 static const uint kFogMinSteps = 4u;
 /// Marched light shadows trace on one step in this many, rotated over 2 by 2 texels and frames
-static const uint kMarchedInterleave = 4u;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -304,16 +303,19 @@ void ambientMain(uint3 group : SV_GroupID, uint index : SV_GroupIndex)
     }
 }
 
-/// One marched light per step traces a ray since none has a shadow map
+/// One marched light at one step of the whole ray traces a shadow ray since none has a shadow map, picked by contribution
+/// so the single trace stays unbiased over every step and light, and the trace sits after the march loop
 struct MarchedPick
 {
     float total;
     float weight;
+    /// Already scaled by the step weight and scattering
     float3 light;
+    float3 origin;
     float3 segment;
 };
 
-void offerMarched(inout MarchedPick pick, float3 light, float3 segment, inout uint random)
+void offerMarched(inout MarchedPick pick, float3 light, float3 origin, float3 segment, inout uint random)
 {
     const float weight = dot(light, float3(0.2126, 0.7152, 0.0722));
     if (weight <= 0.0)
@@ -325,19 +327,16 @@ void offerMarched(inout MarchedPick pick, float3 light, float3 segment, inout ui
     {
         pick.weight = weight;
         pick.light = light;
+        pick.origin = origin;
         pick.segment = segment;
     }
 }
 
-/// Sun and froxel lights toward the camera with marched ones only when @p traceMarched
-float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, bool traceMarched, inout uint random)
+/// Sun and froxel lights toward the camera, marched ones offered to @p pick times @p marchedWeight instead of added
+float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, float3 marchedWeight, inout MarchedPick pick,
+                       inout uint random)
 {
     const bool shadowed = gParams.quality.z > 0.5;
-    MarchedPick pick;
-    pick.total = 0.0;
-    pick.weight = 0.0;
-    pick.light = float3(0.0, 0.0, 0.0);
-    pick.segment = float3(0.0, 0.0, 0.0);
 
     float3 light = float3(0.0, 0.0, 0.0);
     const uint casterIndex = uint(gCamera.shadowParams.x) - 1u;
@@ -352,10 +351,7 @@ float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, 
         }
         else if (shadowed && sun.direction.w > 0.0)
         {
-            if (traceMarched)
-            {
-                offerMarched(pick, sunLight, L * gCamera.fogReach.z, random);
-            }
+            offerMarched(pick, sunLight * marchedWeight, position, L * gCamera.fogReach.z, random);
         }
         else
         {
@@ -390,18 +386,11 @@ float3 directInScatter(float3 position, float3 toCamera, float2 pixel, float g, 
             {
                 light += localLight * volumeLocalShadow(local, position);
             }
-            else if (traceMarched)
+            else
             {
-                offerMarched(pick, localLight, samplePoint - position, random);
+                offerMarched(pick, localLight * marchedWeight, position, samplePoint - position, random);
             }
         }
-    }
-
-    // Scaled up since only one step in kMarchedInterleave traces
-    if (pick.weight > 0.0)
-    {
-        const float3 picked = pick.light * (pick.total / pick.weight) * float(kMarchedInterleave);
-        light += picked * traceVisibility(position, pick.segment, kFogShadowCone, false).x;
     }
     return light;
 }
@@ -432,12 +421,15 @@ float4 scatterMain(VSOutput input) : SV_Target0
     // Short indoor rays take fewer steps
     const uint maxSteps = max(uint(gParams.marching.y), 1u);
     const uint steps = clamp(uint(ceil(span / kFogStepMeters)), min(kFogMinSteps, maxSteps), maxSteps);
-    const uint2 texel = uint2(input.position.xy);
-    const uint phase = (texel.x & 1u) + ((texel.y & 1u) << 1u) + uint(gCamera.noiseParams.z);
-
     uint random = giHash(uint(pixel.x) ^ giHash(uint(pixel.y) ^ giHash(uint(gCamera.noiseParams.z))));
     float3 scattered = float3(0.0, 0.0, 0.0);
     float transmittance = 1.0;
+    MarchedPick pick;
+    pick.total = 0.0;
+    pick.weight = 0.0;
+    pick.light = float3(0.0, 0.0, 0.0);
+    pick.origin = float3(0.0, 0.0, 0.0);
+    pick.segment = float3(0.0, 0.0, 0.0);
     for (uint i = 0u; i < steps; ++i)
     {
         // Squared so steps crowd near the camera where a shaft spans the most pixels
@@ -450,18 +442,21 @@ float4 scatterMain(VSOutput input) : SV_Target0
         {
             continue;
         }
-        // Before the shadow trace so less is live across it
         const float stepExtinction = exp(-medium.extinction * (far - near));
         const float stepWeight = transmittance * (1.0 - stepExtinction) / medium.extinction;
         scattered += (medium.ambientScatter + medium.emission) * stepWeight;
         const float3 directWeight = medium.scattering * stepWeight;
         transmittance *= stepExtinction;
-        scattered += directWeight *
-                     directInScatter(position, toCamera, float2(pixel), medium.anisotropy, (i + phase) % kMarchedInterleave == 0u, random);
+        scattered += directWeight * directInScatter(position, toCamera, float2(pixel), medium.anisotropy, directWeight, pick, random);
         if (transmittance < 1e-3)
         {
             break;
         }
+    }
+    // One shadow ray for the whole ray, weighted back up by the share of every offer its pick stood for
+    if (pick.weight > 0.0)
+    {
+        scattered += pick.light * (pick.total / pick.weight) * traceVisibility(pick.origin, pick.segment, kFogShadowCone, false).x;
     }
     return float4(scattered, transmittance);
 }

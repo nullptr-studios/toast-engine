@@ -449,9 +449,27 @@ void VulkanCore::createInstance(std::span<const char* const> required_instance_e
 	std::vector<const char*> layers;
 #ifdef DEBUG
 	if (m_validation_enabled) {
-		// layers.push_back("VK_LAYER_KHRONOS_validation");
+		layers.push_back("VK_LAYER_KHRONOS_validation");
 	}
 #endif
+
+	// TOAST_CRASH_DIAGNOSTIC=1 loads the LunarG crash diagnostic layer in any build to dump in-flight work after a device lost
+	if (const char* crash_env = std::getenv("TOAST_CRASH_DIAGNOSTIC");
+	    crash_env != nullptr && crash_env[0] != '\0' && crash_env[0] != '0') {
+		constexpr const char* k_crash_layer = "VK_LAYER_LUNARG_crash_diagnostic";
+		const auto available = m_context.enumerateInstanceLayerProperties();
+		const bool found = std::ranges::any_of(available, [&](const vk::LayerProperties& layer) {
+			return std::string_view(layer.layerName) == k_crash_layer;
+		});
+		if (!found) {
+			TOAST_WARN("Render", "TOAST_CRASH_DIAGNOSTIC is set but {} is not installed (needs the Vulkan SDK)", k_crash_layer);
+		} else if (const auto debugger = vulkanCoreAttachedGraphicsDebugger(); debugger.has_value()) {
+			TOAST_WARN("Render", "{} is attached so the crash diagnostic layer stays off", *debugger);
+		} else {
+			layers.push_back(k_crash_layer);
+			TOAST_INFO("Render", "Crash diagnostic layer: enabled");
+		}
+	}
 
 	std::vector extensions(required_instance_extensions.begin(), required_instance_extensions.end());
 	m_debug_utils_enabled = checkInstanceExtensionSupport(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -495,6 +513,10 @@ void VulkanCore::createInstance(std::span<const char* const> required_instance_e
 	// GPU assisted validation with only the ray query checks on since the rest instruments every shader
 	constexpr VkBool32 k_on = VK_TRUE;
 	constexpr VkBool32 k_off = VK_FALSE;
+	// TOAST_GPUAV_FULL=1 turns on the out-of-bounds checks behind most device lost crashes, at a large shader cost
+	const char* gpuav_full_env = std::getenv("TOAST_GPUAV_FULL");
+	const bool gpuav_full = gpuav_full_env != nullptr && gpuav_full_env[0] != '\0' && gpuav_full_env[0] != '0';
+	const VkBool32 k_full = gpuav_full ? VK_TRUE : VK_FALSE;
 	const auto setting = [](const char* name, const VkBool32& value) {
 		return vk::LayerSettingEXT("VK_LAYER_KHRONOS_validation", name, vk::LayerSettingTypeEXT::eBool32, 1, &value);
 	};
@@ -503,17 +525,19 @@ void VulkanCore::createInstance(std::span<const char* const> required_instance_e
 	  setting("gpuav_shader_instrumentation", k_on),
 	  setting("gpuav_validate_ray_query", k_on),
 	  setting("gpuav_descriptor_checks", k_on),
-	  setting("gpuav_post_process_descriptor_indexing", k_off),
-	  setting("gpuav_buffer_address_oob", k_off),
+	  setting("gpuav_post_process_descriptor_indexing", k_full),
+	  setting("gpuav_buffer_address_oob", k_full),
 	  setting("gpuav_mesh_shading", k_on),
 	  setting("gpuav_validate_trace_ray", k_on),
-	  setting("gpuav_vertex_attribute_fetch_oob", k_off),
-	  setting("gpuav_shader_sanitizer", k_off),
+	  setting("gpuav_vertex_attribute_fetch_oob", k_full),
+	  setting("gpuav_shader_sanitizer", k_full),
 	  setting("gpuav_shared_memory_data_race", k_off),
-	  setting("gpuav_buffers_validation", k_off),
+	  setting("gpuav_buffers_validation", k_full),
+	  // Skips the per-access storage and uniform bounds checks the layer warns make shaders very slow, robust accesses cannot fault
+	  setting("gpuav_force_on_robustness", k_on),
 	};
 	vk::LayerSettingsCreateInfoEXT layer_settings(gpuav_settings);
-	if (m_validation_enabled && validate_ray_query) {
+	if (m_validation_enabled && (validate_ray_query || gpuav_full)) {
 		layer_settings.pNext = instance_ci.pNext;
 		instance_ci.pNext = &layer_settings;
 	}
@@ -591,7 +615,7 @@ void VulkanCore::activateNsightGpuTraceIfNeeded() const {
 	if (m_nsight_mode != NsightMode::gpu_trace || m_nsight_gputrace_activated) {
 		return;
 	}
-	NGFX_GPUTrace_ActivateTrace_Vulkan_Params params {NGFX_GPUTrace_ActivateTrace_Vulkan_Params_VER};
+	NGFX_GPUTrace_ActivateTrace_Vulkan_Params params {.version = NGFX_GPUTrace_ActivateTrace_Vulkan_Params_VER};
 	params.queue = m_graphics_queue;
 
 	if (NGFX_GPUTrace_ActivateTrace_Vulkan(&params) == NGFX_Result_Success) {
@@ -980,6 +1004,27 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 		}
 	}
 
+	// Opt in since capturing statistics slows every pipeline compile
+	if (/*const char* stats = std::getenv("TOAST_PIPELINE_STATS"); stats != nullptr && stats[0] == '1'*/ true) {
+		const auto available = m_physical_device.enumerateDeviceExtensionProperties();
+		const bool extension_present = std::ranges::any_of(available, [](const vk::ExtensionProperties& ext) {
+			return std::string_view(ext.extensionName.data()) == VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME;
+		});
+		if (extension_present) {
+			vk::PhysicalDeviceFeatures2 probe {};
+			vk::PhysicalDevicePipelineExecutablePropertiesFeaturesKHR stats_probe {};
+			probe.pNext = &stats_probe;
+			(*m_physical_device).getFeatures2(&probe);
+			m_pipeline_stats_enabled = stats_probe.pipelineExecutableInfo == VK_TRUE;
+		}
+		if (m_pipeline_stats_enabled) {
+			device_extensions.push_back(VK_KHR_PIPELINE_EXECUTABLE_PROPERTIES_EXTENSION_NAME);
+			TOAST_INFO("Render", "TOAST_PIPELINE_STATS: every pipeline logs its driver statistics");
+		} else {
+			TOAST_WARN("Render", "TOAST_PIPELINE_STATS set but the driver lacks pipelineExecutableInfo");
+		}
+	}
+
 	if (m_dlss_reason.empty()) {
 		constexpr uint32_t k_vendor_nvidia = 0x10DE;
 		const auto props = m_physical_device.getProperties();
@@ -1021,6 +1066,8 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 
 	vk::PhysicalDeviceFrameBoundaryFeaturesEXT frame_boundary_features {};
 	frame_boundary_features.frameBoundary = VK_TRUE;
+	vk::PhysicalDevicePipelineExecutablePropertiesFeaturesKHR pipeline_stats_features {};
+	pipeline_stats_features.pipelineExecutableInfo = VK_TRUE;
 	vk::PhysicalDeviceVulkan12Features vulkan12_features {};
 	vk::PhysicalDeviceVulkan13Features vulkan13_features {};
 	vk::PhysicalDeviceVulkan11Features vulkan11_features {};
@@ -1054,6 +1101,10 @@ void VulkanCore::createLogicalDeviceAndAllocator(std::span<const char* const> re
 	if (m_fragment_shading_rate_supported) {
 		*chain_tail = &shading_rate_features;
 		chain_tail = &shading_rate_features.pNext;
+	}
+	if (m_pipeline_stats_enabled) {
+		*chain_tail = &pipeline_stats_features;
+		chain_tail = &pipeline_stats_features.pNext;
 	}
 	if (m_ray_tracing_supported) {
 		*chain_tail = &acceleration_structure_features;

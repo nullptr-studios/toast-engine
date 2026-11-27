@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using Lucide.Avalonia;
 
 namespace editor.Assets.Types;
 
 public sealed class EnvironmentMapAsset : BaseAsset {
 	public override string Type => "environment_map";
+	public override IReadOnlyList<string> CppTypeNames => ["EnvironmentMap"];
 	public override string Extension => ".hdr";
 	public override string DisplayName => "Environment Map";
 	public override string ChipText => "HDRI";

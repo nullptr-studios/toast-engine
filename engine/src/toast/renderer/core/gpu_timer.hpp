@@ -17,7 +17,7 @@ class VulkanCore;
 /// @note Render thread only
 class GpuTimer {
 public:
-	static constexpr uint32_t k_max_scopes = 64;
+	static constexpr uint32_t k_max_scopes = 96;
 	static constexpr uint32_t k_no_scope = ~uint32_t {0};
 
 	/// Copied since a pass can be destroyed before its frame is read back

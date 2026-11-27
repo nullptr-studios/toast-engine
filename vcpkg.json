@@ -1,7 +1,7 @@
 {
   "name": "engine",
   "version-string": "1.0.0",
-  "builtin-baseline": "e06564091c10e0b042900800c9fd48aad7f00643",
+  "builtin-baseline": "7281d8d64321f945f296e696d8561f68c8186c67",
   "vcpkg-configuration": {
     "overlay-ports": [
       "./cmake/vcpkg-ports"
@@ -148,7 +148,11 @@
     },
     {
       "name": "nvidia-dlss",
-      "platform": "windows & x64"
+      "platform": "(windows | linux) & x64"
+    },
+    {
+      "name": "ffmpeg",
+      "version>=": "9.0.2#7"
     }
   ],
   "overrides": [

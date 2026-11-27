@@ -84,6 +84,14 @@ Sampler2D gHiz;
 [[vk::binding(15, 2)]]
 Sampler2D gFiltered;
 
+/// x asuint(t) y kHitShade where traceMain left a voxel hit for shadeMain
+[[vk::binding(16, 2)]]
+Sampler2D<uint4> gHit;
+
+static const uint kHitShade = 1u;
+/// Meters either side of the stored hit shadeMain traces again to find its voxel
+static const float kHitRefind = 0.25;
+
 /// Mirrors voxel_lighting.slang
 static const float kTracedMark = 2.0;
 static const float kVoxelSize = 0.1;
@@ -431,33 +439,75 @@ uint4 surfaceMain(VSOutput input) : SV_Target0
     return packSurface(surface, stratum);
 }
 
+/// The ray of a half resolution texel, shared so shadeMain rebuilds exactly the ray traceMain cast instead of storing it
+struct SpecularRay
+{
+    float3 origin;
+    float3 direction;
+    /// Rough lobes blur what they hit so their marches take a cone floor
+    float coneSlope;
+    /// Each stratum ray covers its share of the lobe so its screen hit reads a matching blur
+    float rayTan;
+};
+
+SpecularRay specularRay(TracedPixel surface, int2 texel)
+{
+    // Quantized like the resolve regenerates it
+    const uint4 packed = gSurface.Load(int3(texel, 0));
+    float pdf;
+    SpecularRay ray;
+    ray.direction = rayDirection(unpackSurface(packed, surface.face), lobeStratumSample(packedStratum(packed)), pdf);
+    ray.coneSlope = 0.25 * surface.roughness * surface.roughness;
+    ray.origin = surface.position + surface.face * (kOriginOffset * kVoxelSize);
+    ray.rayTan = surface.roughness > kMirrorRoughness ? lobeTanHalf(surface.roughness) / sqrt(float(kLobeStrata)) : 0.0;
+    return ray;
+}
+
+/// Frame in the seed so history averages the light pick instead of freezing it
+uint hitRandom(int2 texel)
+{
+    return giHash((uint(texel.x) | (uint(texel.y) << 16)) ^ giHash(uint(gCamera.noiseParams.z)));
+}
+
+struct TraceOutput
+{
+    float4 trace : SV_Target0;
+    /// See gHit, zero unless shadeMain lights this texel
+    uint4 hit : SV_Target1;
+};
+
+TraceOutput traceResult(float4 trace)
+{
+    TraceOutput output;
+    output.trace = trace;
+    output.hit = uint4(0u, 0u, 0u, 0u);
+    return output;
+}
+
 /// A miss returns the environment term lighting would have added
+/// A voxel hit is left to shadeMain so the trace never holds the hit lighting registers
 [shader("fragment")]
-float4 traceMain(VSOutput input) : SV_Target0
+TraceOutput traceMain(VSOutput input)
 {
     const int2 pixel = int2(input.position.xy) * 2;
     const TracedPixel surface = tracedPixelAt(pixel);
     if (!surface.traced)
     {
-        return float4(0.0, 0.0, 0.0, kNoTrace);
+        return traceResult(float4(0.0, 0.0, 0.0, kNoTrace));
     }
 
     const int2 texel = int2(input.position.xy);
-    // Quantized like the resolve regenerates it
-    const uint4 packed = gSurface.Load(int3(texel, 0));
-    float pdf;
-    const float3 L = rayDirection(unpackSurface(packed, surface.face), lobeStratumSample(packedStratum(packed)), pdf);
+    const SpecularRay ray = specularRay(surface, texel);
+    const float3 L = ray.direction;
     const float3 mirror = reflect(-normalize(gCamera.position - surface.position), surface.normal);
     if (dot(L, surface.face) <= 0.0)
     {
-        return float4(ambientSpecularRadiance(surface.position, mirror, surface.roughness), kMissDistance);
+        return traceResult(float4(ambientSpecularRadiance(surface.position, mirror, surface.roughness), kMissDistance));
     }
 
-    // Rough lobes blur what they hit so their marches take a cone floor
-    const float coneSlope = 0.25 * surface.roughness * surface.roughness;
-    const float3 origin = surface.position + surface.face * (kOriginOffset * kVoxelSize);
-    // Each stratum ray covers its share of the lobe so its screen hit reads a matching blur
-    const float rayTan = surface.roughness > kMirrorRoughness ? lobeTanHalf(surface.roughness) / sqrt(float(kLobeStrata)) : 0.0;
+    const float coneSlope = ray.coneSlope;
+    const float3 origin = ray.origin;
+    const float rayTan = ray.rayTan;
 
     // Screen first so a hit the depth buffer shows skips the voxel trace and the hit lighting
     if (gParams.march.y > 0.5)
@@ -484,7 +534,7 @@ float4 traceMain(VSOutput input) : SV_Target0
             if (dot(gSceneNormal.Load(int3(hitPixel, 0)).xyz, L) < 0.0)
             {
                 const float t = length(hitPosition - origin);
-                return float4(screenColour(hitPixel, length(gCamera.position - hitPosition), 2.0 * rayTan * t), t);
+                return traceResult(float4(screenColour(hitPixel, length(gCamera.position - hitPosition), 2.0 * rayTan * t), t));
             }
         }
     }
@@ -492,11 +542,37 @@ float4 traceMain(VSOutput input) : SV_Target0
     const SceneHit hit = traceScene(origin, L, 0.0, gParams.tracing.x, coneSlope);
     if (!hit.hit)
     {
+        return traceResult(float4(ambientSpecularRadiance(surface.position, mirror, surface.roughness), kMissDistance));
+    }
+    // The distance alone since carrying the volume, material and axis through the walk cost 16 registers
+    TraceOutput output = traceResult(float4(0.0, 0.0, 0.0, hit.t));
+    output.hit = uint4(asuint(hit.t), kHitShade, 0u, 0u);
+    return output;
+}
+
+/// Lights the voxel hits traceMain left over the trace it wrote, a pass of its own so neither holds the other's registers
+[shader("fragment")]
+float4 shadeMain(VSOutput input) : SV_Target0
+{
+    const int2 texel = int2(input.position.xy);
+    const uint2 record = gHit.Load(int3(texel, 0)).xy;
+    if ((record.y & kHitShade) == 0u)
+    {
+        discard;
+    }
+    const int2 pixel = texel * 2;
+    const TracedPixel surface = tracedPixelAt(pixel);
+    const SpecularRay ray = specularRay(surface, texel);
+    // Everything before the stored distance is empty and the cone floor grows from t 0, so the short walk lands on the same voxel
+    const float t = asfloat(record.x);
+    const SceneHit hit = traceScene(ray.origin, ray.direction, max(t - kHitRefind, 0.0), t + kHitRefind, ray.coneSlope);
+    if (!hit.hit)
+    {
+        const float3 mirror = reflect(-normalize(gCamera.position - surface.position), surface.normal);
         return float4(ambientSpecularRadiance(surface.position, mirror, surface.roughness), kMissDistance);
     }
-    // Frame in the seed so history averages the light pick instead of freezing it
-    uint random = giHash((uint(texel.x) | (uint(texel.y) << 16)) ^ giHash(uint(gCamera.noiseParams.z)));
-    return float4(hitRadiance(hit, origin, L, coneSlope, rayTan, float2(pixel), random), hit.t);
+    uint random = hitRandom(texel);
+    return float4(hitRadiance(hit, ray.origin, ray.direction, ray.coneSlope, ray.rayTan, float2(pixel), random), hit.t);
 }
 
 float specularLuma(float3 colour)

@@ -43,6 +43,7 @@
 #include <toast/voxel/volume_bounds.hpp>
 #include <toast/voxel/voxel_constants.hpp>
 #include <toast/window/window_events.hpp>
+#include <toast/world/ambient_light.hpp>
 #include <toast/world/camera.hpp>
 #include <toast/world/directional_light.hpp>
 #include <toast/world/fog_volume.hpp>
@@ -987,6 +988,8 @@ auto VulkanRenderer::gatherLights(RenderFrame& frame) -> LightGather {
 	const auto& light_nodes_snapshot = m_tick_light_nodes;
 
 	glm::vec3 ambient_sum(0.0f);
+	// First enabled ambient light carrying its own HDRI wins over the global map
+	uint64_t environment_override = 0;
 	uint32_t directional_count = 0;
 	frame.lights.reserve(light_nodes_snapshot.size());
 
@@ -1114,6 +1117,9 @@ auto VulkanRenderer::gatherLights(RenderFrame& frame) -> LightGather {
 		switch (light->lightType()) {
 			case toast::LightType::ambient: {
 				ambient_sum += light->color() * light->intensity();
+				if (environment_override == 0) {
+					environment_override = static_cast<const toast::AmbientLight*>(light)->environmentMapUid().data();
+				}
 				break;
 			}
 			case toast::LightType::directional: {
@@ -1205,6 +1211,28 @@ auto VulkanRenderer::gatherLights(RenderFrame& frame) -> LightGather {
 				break;
 			}
 			default: break;
+		}
+	}
+
+	if (m_environment_pass != nullptr) {
+		std::string global;
+		{
+			std::scoped_lock lock(m_environment_mutex);
+			global = m_global_environment_uri;
+		}
+		// Resolved from the UID the field holds, so picking another asset changes it on the very next tick
+		if (environment_override != m_ambient_environment_uid) {
+			m_ambient_environment_uid = environment_override;
+			m_ambient_environment_uri =
+			    environment_override != 0 ? assets::AssetManager::getURI(toast::UID(environment_override)) : std::string {};
+		}
+		std::string wanted = m_ambient_environment_uri.empty() ? global : m_ambient_environment_uri;
+		if (wanted != m_requested_environment_uri) {
+			m_requested_environment_uri = wanted;
+			// A light still pointing at a deleted or reimported HDRI must not hide the global map
+			if (!m_environment_pass->setEnvironmentMap(wanted) && wanted != global) {
+				std::ignore = m_environment_pass->setEnvironmentMap(global);
+			}
 		}
 	}
 

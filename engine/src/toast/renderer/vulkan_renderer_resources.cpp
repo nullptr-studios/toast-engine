@@ -359,6 +359,7 @@ void VulkanRenderer::createSceneColorResources() {
 	create(m_voxel_denoised_indirect, k_voxel_denoised_indirect_format, "VoxelDenoisedIndirect");
 	create(m_voxel_noisy_specular, k_voxel_noisy_format, "VoxelNoisySpecular");
 	create(m_voxel_gi, k_voxel_gi_format, "VoxelGi", {}, 2);
+	create(m_voxel_ao, k_voxel_ao_format, "VoxelAmbientOcclusion", {}, 2);
 	create(m_voxel_reservoirs[0], k_voxel_reservoir_format, "VoxelReservoirs0");
 	create(m_voxel_reservoirs[1], k_voxel_reservoir_format, "VoxelReservoirs1");
 	create(m_voxel_candidate_reservoirs, k_voxel_reservoir_format, "VoxelCandidateReservoirs");

@@ -1568,7 +1568,7 @@ auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 	float collider_t = std::numeric_limits<float>::max();
 
 	// Colliders are tested against the shape the debug draw shows, from outside only so a surrounding trigger never eats clicks
-	const auto pickCollider = [&](physics::Collider& collider, const Box<Node>& node) {
+	const auto pick_collider = [&](physics::Collider& collider, const Box<Node>& node) {
 		if (!collider.draw_debug) {
 			return;
 		}
@@ -1589,7 +1589,7 @@ auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 		} else if (const auto sphere = node.as<physics::SphereCollider>(); sphere.exists()) {
 			t = rayBallEntry(origin, local_direction, glm::vec3(0.0f), sphere->radius);
 		} else if (const auto capsule = node.as<physics::CapsuleCollider>(); capsule.exists()) {
-			t = rayCapsuleEntry(origin, local_direction, capsule->radius, std::max(capsule->height * 0.5f - capsule->radius, 0.0f));
+			t = rayCapsuleEntry(origin, local_direction, capsule->radius, std::max((capsule->height * 0.5f) - capsule->radius, 0.0f));
 		}
 		if (t.has_value() && *t < collider_t) {
 			collider_t = *t;
@@ -1602,7 +1602,7 @@ auto Workspace::pickSceneHit() -> std::optional<SceneHit> {
 			return;
 		}
 		if (auto* collider = reflect_cast<physics::Collider>(&*node)) {
-			pickCollider(*collider, node);
+			pick_collider(*collider, node);
 		} else if (auto* voxels = reflect_cast<VoxelNode>(&*node)) {
 			voxels->syncTransform();
 			const auto add = [&](const voxel::Volume* volume, const glm::mat4& model) {

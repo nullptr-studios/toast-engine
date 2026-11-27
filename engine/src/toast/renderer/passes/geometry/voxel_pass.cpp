@@ -527,6 +527,14 @@ void VoxelPass::createLighting(const VulkanCore& core, vk::Format scene_format, 
 	config.extra_color_formats = {};
 	config.extra_blend_mask = 0u;
 	m_ambient_pipeline.rebuild(core, config);
+	{
+		VulkanPipeline::Config trace = config;
+		trace.debug_name = "VoxelAmbientTrace";
+		trace.fragment_entry = "fragmentAmbientTrace";
+		trace.color_format = k_voxel_ao_format;
+		trace.blend_preset = VulkanPipeline::BlendPreset::none;
+		m_ambient_trace_pipeline.rebuild(core, trace);
+	}
 
 	config.debug_name = "VoxelMarchedComposite";
 	config.fragment_entry = "fragmentMarchedComposite";
@@ -985,8 +993,7 @@ auto VoxelPass::prepare(uint32_t frame_index) -> bool {
 	// Debug views and probe captures skip the denoiser
 	const bool capture = frame->probe_capture_index >= 0 || frame->irradiance_capture_index >= 0;
 	const GiSettings& gi = VulkanRenderer::instance->giSettings();
-	m_gi_clipmap =
-	    gi.enabled.load(std::memory_order_relaxed) && gi.backend.load(std::memory_order_relaxed) == GiSettings::k_backend_clipmap;
+	m_gi_clipmap = gi.enabled.load(std::memory_order_relaxed);
 	// The gather target is sized for the main view so captures take the one cone path
 	m_gi_gather = m_gi_clipmap && !capture && m_gi_gather_pipeline.isReady();
 	// Clipmap GI goes through it too since its rotating cones only settle over frames
@@ -1529,7 +1536,7 @@ void VoxelPass::recordLighting(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	if (m_denoise_active) {
 		push = LightingPushConstants {
 		  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
-		  .viewport = glm::vec4(static_cast<float>(viewport.width), height, 0.0f, 0.0f),
+		  .viewport = glm::vec4(static_cast<float>(viewport.width), height, giGatherPacked() ? 1.0f : 0.0f, 0.0f),
 		  .lighting = glm::uvec4(
 		      std::min(m_shadow_instance_count, instance->voxelShadowInstances()),
 		      instance->voxelLightCandidates(),
@@ -1888,6 +1895,10 @@ void VoxelPass::createDenoise(const VulkanCore& core, vk::Format scene_format, v
 	config.cull_mode = vk::CullModeFlagBits::eNone;
 	config.depth_test = false;
 	config.depth_write = false;
+	// Diffuse into the colour attachment and specular and the composite lumas into the extra ones in a single draw
+	config.extra_color_formats = {k_denoise_history_format, k_denoise_luma_format};
+	config.write_extra_color = true;
+	config.extra_blend_mask = 0u;
 	m_denoise_temporal_pipeline.rebuild(core, config);
 
 	config.debug_name = "VoxelDenoise Composite";
@@ -1923,6 +1934,7 @@ void VoxelPass::createDenoiseTargets(vk::Extent2D extent) {
 			);
 		}
 	}
+	m_denoise_luma.create(*m_core, extent, k_denoise_luma_format, "VoxelDenoise Luma");
 	m_denoise_bound.resize(m_denoise_sets.size());
 	m_denoise_valid = false;
 }
@@ -1946,6 +1958,7 @@ void VoxelPass::bindDenoise(vk::CommandBuffer cmd, uint32_t frame_index, const V
 	  m_denoise_history[0][m_denoise_parity].view(),
 	  m_denoise_history[1][m_denoise_parity].view(),
 	  renderer->getSceneIndirectView(),
+	  m_denoise_luma.view(),
 	};
 
 	// Safe since the fence of this slot was waited on
@@ -1995,13 +2008,45 @@ void VoxelPass::recordDenoiseTemporal(vk::CommandBuffer cmd, uint32_t frame_inde
 		m_denoise_history[1][read].makeSampleable(cmd);
 	}
 
-	for (uint32_t term = 0; term < 2; ++term) {
-		const PostProcessTarget& target = m_denoise_history[term][m_denoise_parity];
-		target.beginScope(cmd);
-		bindDenoise(cmd, frame_index, m_denoise_temporal_pipeline, static_cast<float>(term));
-		cmd.draw(3, 1, 0, 0);
-		target.endScope(cmd);
+	const PostProcessTarget& diffuse = m_denoise_history[0][m_denoise_parity];
+	const PostProcessTarget& specular = m_denoise_history[1][m_denoise_parity];
+	if (!diffuse.isReady() || !specular.isReady() || !m_denoise_luma.isReady()) {
+		return;
 	}
+	sync::BarrierBatch to_attachment;
+	to_attachment.image(diffuse.state(), sync::Usage::color_attachment);
+	to_attachment.image(specular.state(), sync::Usage::color_attachment);
+	to_attachment.image(m_denoise_luma.state(), sync::Usage::color_attachment);
+	to_attachment.flush(cmd);
+
+	const std::array<vk::ImageView, 3> views {diffuse.view(), specular.view(), m_denoise_luma.view()};
+	std::array<vk::RenderingAttachmentInfo, 3> attachments {};
+	for (uint32_t term = 0; term < attachments.size(); ++term) {
+		attachments[term].imageView = views[term];
+		attachments[term].imageLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		attachments[term].loadOp = vk::AttachmentLoadOp::eDontCare;
+		attachments[term].storeOp = vk::AttachmentStoreOp::eStore;
+	}
+	const vk::Extent2D extent = diffuse.extent();
+	vk::RenderingInfo rendering_info {};
+	rendering_info.renderArea = vk::Rect2D({0, 0}, extent);
+	rendering_info.layerCount = 1;
+	rendering_info.colorAttachmentCount = static_cast<uint32_t>(attachments.size());
+	rendering_info.pColorAttachments = attachments.data();
+	cmd.beginRendering(rendering_info);
+	cmd.setViewport(
+	    0, std::array {vk::Viewport(0.0f, 0.0f, static_cast<float>(extent.width), static_cast<float>(extent.height), 0.0f, 1.0f)}
+	);
+	cmd.setScissor(0, std::array {vk::Rect2D({0, 0}, extent)});
+	bindDenoise(cmd, frame_index, m_denoise_temporal_pipeline, 0.0f);
+	cmd.draw(3, 1, 0, 0);
+	cmd.endRendering();
+
+	sync::BarrierBatch to_sampled;
+	to_sampled.image(diffuse.state(), sync::Usage::shader_sampled);
+	to_sampled.image(specular.state(), sync::Usage::shader_sampled);
+	to_sampled.image(m_denoise_luma.state(), sync::Usage::shader_sampled);
+	to_sampled.flush(cmd);
 }
 
 void VoxelPass::recordDenoiseComposite(vk::CommandBuffer cmd, uint32_t frame_index) {
@@ -2069,7 +2114,7 @@ void VoxelPass::recordMarched(vk::CommandBuffer cmd, uint32_t frame_index) {
 
 auto VoxelPass::updateGbufferSet(uint32_t frame_index) -> bool {
 	const auto* instance = VulkanRenderer::instance;
-	const std::array<vk::ImageView, 12> views {
+	const std::array<vk::ImageView, 13> views {
 	  instance->getVoxelAlbedoView(),
 	  instance->getVoxelFaceNormalView(),
 	  instance->getVoxelMaterialView(),
@@ -2082,6 +2127,7 @@ auto VoxelPass::updateGbufferSet(uint32_t frame_index) -> bool {
 	  instance->getVoxelNoisySpecularView(),
 	  instance->getVoxelDetailNormalView(),
 	  instance->getVoxelGiView(),
+	  instance->getVoxelAmbientOcclusionView(),
 	};
 	if (std::ranges::any_of(views, [](vk::ImageView view) { return !view; })) {
 		return false;
@@ -2116,7 +2162,8 @@ void VoxelPass::recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 
 	const LightingPushConstants push {
 	  .inverse_view_projection = glm::inverse(frame->frame_data.jittered_view_projection),
-	  .viewport = glm::vec4(static_cast<float>(viewport.width), static_cast<float>(viewport.height), 0.0f, 0.0f),
+	  .viewport =
+	      glm::vec4(static_cast<float>(viewport.width), static_cast<float>(viewport.height), giGatherPacked() ? 1.0f : 0.0f, 0.0f),
 	  .reuse = glm::uvec4(m_denoise_active ? k_gi_denoise : 0u, 0u, 0u, 0u),
 	};
 	const vk::PipelineLayout layout = *m_lighting_layout.getPipelineLayout();
@@ -2134,10 +2181,22 @@ void VoxelPass::recordGiGather(vk::CommandBuffer cmd, uint32_t frame_index, vk::
 	cmd.draw(3, 1, 0, 0);
 }
 
+void VoxelPass::recordAmbientTrace(vk::CommandBuffer cmd, uint32_t frame_index) {
+	ZoneScoped;
+	if (!m_ambient_rays || !m_ambient_trace_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
+	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+		return;
+	}
+	bindMarched(cmd, frame_index, m_ambient_trace_pipeline);
+	cmd.draw(3, 1, 0, 0);
+}
+
 void VoxelPass::recordAmbient(vk::CommandBuffer cmd, uint32_t frame_index) {
 	ZoneScoped;
-	if (!m_ambient_rays || !m_ambient_pipeline.isReady() || frame_index >= m_gbuffer_sets.size() ||
-	    frame_index >= m_lighting_storage_sets.size() || !m_lighting_scene_sets.get(frame_index)) {
+	// The upsample reads what recordAmbientTrace wrote this frame
+	if (!m_ambient_rays || !m_ambient_pipeline.isReady() || !m_ambient_trace_pipeline.isReady() ||
+	    frame_index >= m_gbuffer_sets.size() || frame_index >= m_lighting_storage_sets.size() ||
+	    !m_lighting_scene_sets.get(frame_index)) {
 		return;
 	}
 	bindMarched(cmd, frame_index, m_ambient_pipeline);
