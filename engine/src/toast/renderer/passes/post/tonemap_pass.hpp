@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <optional>
+#include <tuple>
 #include <vector>
 
 namespace renderer {
@@ -49,7 +50,7 @@ public:
 	void onResize(vk::Extent2D extent) override;
 
 private:
-	/// Mirrors tonemap.slang TonemapParams padded by std140 to 48 bytes
+	/// Mirrors tonemap.slang TonemapParams, 128 bytes under std140
 	struct Params {
 		float exposure = 1.0f;
 		uint32_t mode = static_cast<uint32_t>(TonemapMode::reinhard);
@@ -66,8 +67,17 @@ private:
 		float peak_scale = 1.0f;
 		float gt_toe = 1.28f;
 		float chromatic_aberration = 0.0f;
-		std::array<float, 2> pad1 {};
+		float temperature = 0.0f;
+		float tint = 0.0f;
+		/// w is the hue shift in degrees
+		glm::vec4 color_filter {1.0f, 1.0f, 1.0f, 0.0f};
+		glm::vec4 lift {0.0f};
+		glm::vec4 gamma_inv {1.0f, 1.0f, 1.0f, 0.0f};
+		/// w is the LUT intensity, 0 when no LUT is bound
+		glm::vec4 gain {1.0f, 1.0f, 1.0f, 0.0f};
 	};
+
+	static_assert(sizeof(Params) == 128);
 
 	/// Mirrors exposure.slang ExposureParams
 	struct ExposureParams {
@@ -102,7 +112,8 @@ private:
 	std::vector<vk::raii::DescriptorSet> m_descriptor_sets;
 	std::vector<FrameResources> m_params_buffers;
 
-	DescriptorCache<vk::ImageView> m_bound_views;
+	/// Scene view, LUT view and the LUT's generation since a reloaded LUT can reuse a destroyed view handle
+	DescriptorCache<std::tuple<vk::ImageView, vk::ImageView, uint64_t>> m_bound_views;
 
 	ShaderLayout m_exposure_layout;
 	VulkanPipeline m_histogram_pipeline;
@@ -118,6 +129,9 @@ private:
 
 	bool m_exposure_ready = false;
 	bool m_was_metering = false;
+
+	/// Generation of the last LUT warned about, so a wrong sized LUT warns once rather than every frame
+	uint64_t m_rejected_lut = 0;
 	std::chrono::steady_clock::time_point m_last_meter;
 };
 

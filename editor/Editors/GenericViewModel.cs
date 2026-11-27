@@ -344,6 +344,7 @@ public partial class GenericViewModel : Tool, IAutosavable {
 		field.Variants = desc.Variants;
 		field.DisplayName = desc.DisplayName;
 		field.Unit = desc.Unit;
+		field.Widget = desc.Widget;
 		field.NameEditable = false;
 
 		if (desc.TypeSwitch is not null)
@@ -782,7 +783,8 @@ public partial class GenericViewModel : Tool, IAutosavable {
 				typeSwitch
 			) {
 				DisplayName = val?["x-toast-display-name"]?.GetValue<string>() ?? "",
-				Unit = val?["x-toast-unit"]?.GetValue<string>() ?? ""
+				Unit = val?["x-toast-unit"]?.GetValue<string>() ?? "",
+				Widget = val?["x-toast-widget"]?.GetValue<string>() ?? ""
 			});
 		}
 

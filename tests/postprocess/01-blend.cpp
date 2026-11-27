@@ -49,6 +49,20 @@ TOAST_TEST_NAMED("postprocess", "postprocess/01-blend", test_postprocess_01_blen
 	assert(defaults.ssao.sample_count == fallback.ssao.sample_count);
 	assert(near(defaults.fog.distance, fallback.fog.distance));
 	assert(near(defaults.fog.albedo_b, fallback.fog.albedo_b));
+	assert(near(defaults.color_grading.temperature, fallback.color_grading.temperature));
+	assert(near(defaults.color_grading.color_filter_g, 1.0f));
+	assert(near(defaults.color_grading.gain_b, fallback.color_grading.gain_b));
+	assert(near(defaults.color_grading.lut_intensity, 1.0f));
+	assert(!defaults.color_grading.lut.hasValue());
+
+	// Grading sliders fade between volumes like every other float and colour
+	PostProcessParams ungraded(layout);
+	PostProcessParams graded(layout);
+	must(graded.setNumber("color_grading.temperature", 1.0f));
+	must(graded.setColor("color_grading.lift", {0.0f, 1.0f, 1.0f}));
+	ungraded.blend(graded, 0.5f);
+	assert(near(ungraded.resolve().color_grading.temperature, 0.5f));
+	assert(near(ungraded.resolve().color_grading.lift_r, 0.5f));
 
 	PostProcessParams target(layout);
 	PostProcessParams source(layout);
