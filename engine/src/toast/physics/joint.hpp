@@ -31,7 +31,8 @@ enum class JointType : uint8_t {
 	pin,
 	hinge,
 	slider,
-	fixed
+	fixed,
+	levitation,
 };
 
 // Material friction times pin radius in metres as torque per newton carried
@@ -77,7 +78,19 @@ struct FixedParams {
 	auto operator==(const FixedParams&) const -> bool = default;
 };
 
-using JointParams = std::variant<PinParams, HingeParams, SliderParams, FixedParams>;
+struct LevitationParams {
+	float stiffness_hz = 2.0f;
+	float damping_ratio = 0.7f;
+	float max_force = 100.0f;
+	float catch_radius = 0.5f;
+	float release_radius = 1.0f;
+	glm::bvec3 rotation_free = glm::bvec3(true);
+	float angular_damping = 1.0f;
+
+	auto operator==(const LevitationParams&) const -> bool = default;
+};
+
+using JointParams = std::variant<PinParams, HingeParams, SliderParams, FixedParams, LevitationParams>;
 
 struct JointFrame {
 	glm::vec3 position = {};
@@ -137,6 +150,10 @@ struct Joint {
 	JointVoxelEnd voxel_end_b;
 	float last_force = 0.0f;
 	float last_torque = 0.0f;
+	bool levitating = true;
+	float levitation_offset = 0.0f;
+	float levitation_force = 0.0f;
+	bool exclusion_active = false;
 };
 
 struct JointState {
@@ -144,6 +161,8 @@ struct JointState {
 	float position = 0.0f;
 	float force = 0.0f;
 	float torque = 0.0f;
+	bool levitating = true;
+	float offset = 0.0f;
 };
 
 struct JointSlot {

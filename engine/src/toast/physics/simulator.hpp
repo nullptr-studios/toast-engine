@@ -573,6 +573,7 @@ private:
 	void syncJointNodes();
 	void checkJointAnchors();
 	void breakOverloadedJoints(float dt);
+	void syncLevitationExclusions();
 	void breakJoint(JointID joint, JointBreakReason reason);
 	void publishJoints();
 	[[nodiscard]]
