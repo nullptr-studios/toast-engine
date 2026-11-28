@@ -10,6 +10,7 @@
 #include <toast/scripting/lua_state.hpp>
 #include <toast/scripting/script_dispatch.hpp>
 #include <toast/scripting/script_runtime.hpp>
+#include <toast/scripting/scripting_params.hpp>
 
 namespace toast {
 
@@ -380,8 +381,6 @@ void TickScheduler::runPhase(const std::vector<TickSchedule::Wave>& phase, TickF
 
 namespace {
 
-constexpr size_t k_min_scripts_for_parallel_lifecycle = 16;
-
 // tf is this
 auto serialLifecycleRequested() -> bool {
 	static const bool requested = [] {
@@ -441,7 +440,7 @@ void TickScheduler::runLifecycle(Node& root, TickFunctionList stage) const {
 		};
 		count(root);
 	}
-	if (scripted < k_min_scripts_for_parallel_lifecycle || interpreters.size() < 2) {
+	if (scripted < static_cast<size_t>(scripting::scriptingParams().parallel_lifecycle) || interpreters.size() < 2) {
 		one_node_at_a_time();
 		return;
 	}

@@ -5,14 +5,13 @@
 
 #include <fstream>
 #include <toast/voxel/voxel_constants.hpp>
+#include <toast/voxel/voxel_params.hpp>
 
 namespace {
 
 using voxel::k_brick_dim;
 using voxel::k_empty_palette_index;
 using voxel::Palette;
-
-constexpr uint32_t k_supersample = 4;
 
 struct RgbaF {
 	float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
@@ -259,6 +258,7 @@ auto toast_tvox_render_thumbnail(const char* tvox_path, const char* palette_path
 		}
 		const VoxThumbCamera cam = voxThumbBuildCamera(grid, *center_of_mass);
 
+		const uint32_t k_supersample = static_cast<uint32_t>(voxel::voxelParams().thumbnail_supersample);
 		const uint32_t super_size = thumb_size * k_supersample;
 		std::vector<RgbaF> samples(static_cast<size_t>(super_size) * super_size);
 
@@ -291,7 +291,7 @@ auto toast_tvox_render_thumbnail(const char* tvox_path, const char* palette_path
 						a += s.a;
 					}
 				}
-				constexpr float k_samples_per_texel = static_cast<float>(k_supersample * k_supersample);
+				const float k_samples_per_texel = static_cast<float>(k_supersample * k_supersample);
 				a /= k_samples_per_texel;
 				if (a > 1e-6f) {
 					const float inv_coverage_sum = 1.0f / (a * k_samples_per_texel);

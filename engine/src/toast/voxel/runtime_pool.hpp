@@ -14,8 +14,6 @@
 
 namespace voxel {
 
-inline constexpr uint32_t k_runtime_brick_capacity = 1u << 20;
-
 /// @note Main thread only
 [[nodiscard]]
 TOAST_API auto runtimeBrickPool() -> BrickPool&;

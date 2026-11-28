@@ -1,6 +1,7 @@
 #include "haptics_system.hpp"
 
 #include "input_events.hpp"
+#include "input_params.hpp"
 #include "input_system.hpp"
 
 #include <SDL3/SDL_gamepad.h>
@@ -8,8 +9,6 @@
 namespace input {
 
 namespace {
-
-constexpr uint32_t rumble_slack_ms = 50;
 
 auto toRumble(float value) -> uint16_t {
 	return static_cast<uint16_t>(std::clamp(value, 0.0f, 1.0f) * 65535.0f);
@@ -85,12 +84,14 @@ void HapticsSystem::tick() {
 	};
 
 	std::unordered_map<uint32_t, Blend> per_controller;
+	const InputParams& params = inputParams();
+	const float strength = params.haptics_enabled ? m_global_multiplier * params.haptics_strength : 0.0f;
 
 	for (const auto& pb : m_playbacks) {
 		const assets::Haptic& haptic = *pb.haptic;
 		const float duration = haptic.durationMs() / 1000.0f;
 		const float t01 = duration > 0.0f ? std::clamp(pb.elapsed / duration, 0.0f, 1.0f) : 0.0f;
-		const glm::vec2 motors = haptic.sample(t01) * m_global_multiplier;
+		const glm::vec2 motors = haptic.sample(t01) * strength;
 		const int priority = haptic.priority();
 
 		auto it = per_controller.find(pb.controller);
@@ -103,7 +104,7 @@ void HapticsSystem::tick() {
 		}
 	}
 
-	const uint32_t slice = static_cast<uint32_t>(Time::delta() * 1000.0f) + rumble_slack_ms;
+	const uint32_t slice = static_cast<uint32_t>(Time::delta() * 1000.0f) + static_cast<uint32_t>(params.haptics_slack);
 	std::unordered_set<uint32_t> active_now;
 	for (const auto& [controller, blend] : per_controller) {
 		SDL_Gamepad* pad = SDL_GetGamepadFromID(controller);

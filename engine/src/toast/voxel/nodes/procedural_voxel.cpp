@@ -10,6 +10,7 @@
 #include <toast/renderer/vulkan_renderer.hpp>
 #include <toast/voxel/assets/voxel_palette.hpp>
 #include <toast/voxel/runtime_pool.hpp>
+#include <toast/voxel/voxel_params.hpp>
 #include <toast/world/node_owner.hpp>
 #include <toast/world/workspace_events.hpp>
 
@@ -641,7 +642,7 @@ void ProceduralVoxel::applyComposed(ComposeOutput& output) {
 		    "Voxel",
 		    "'{}' is missing voxels: the procedural brick pool is out of its {} bricks",
 		    name(),
-		    voxel::k_procedural_brick_capacity
+		    voxel::voxelParams().procedural_bricks
 		);
 	}
 	if (result.too_many_parts && !result.region.has_value()) {

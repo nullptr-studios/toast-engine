@@ -5,16 +5,29 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Runtime.InteropServices;
 
 namespace editor.Engine;
 
-/// Storage type of a setting, mirroring toast::settings::Type
 public enum SettingType {
 	Bool = 0,
 	Int = 1,
 	Float = 2,
-	String = 3
+	String = 3,
+	Vec2 = 4,
+	Vec3 = 5,
+	Vec4 = 6,
+	Quat = 7,
+
+	Asset = 8
+}
+
+public enum SettingKind {
+	Normal = 0,
+	Advanced = 1,
+	Debug = 2,
+	User = 3
 }
 
 /// <summary>One setting as the engine describes it, copied out of the native registry</summary>
@@ -34,9 +47,15 @@ public sealed class SettingDescriptor {
 	public IReadOnlyList<string> Options { get; init; } = [];
 	public bool RequiresRestart { get; init; }
 	public bool Hidden { get; init; }
+	public SettingKind Kind { get; init; }
+	public bool IsArray { get; init; }
+
+	public SettingType ValueType { get; init; }
 
 	/// <summary>Non-empty turns a string setting into an asset picker of this type</summary>
 	public string AssetType { get; init; } = string.Empty;
+
+	public string Unit { get; init; } = string.Empty;
 
 	/// Equal bounds mean the engine declared none, so the editor shows a number box rather than a slider
 	public bool HasRange => Math.Abs(Max - Min) > double.Epsilon;
@@ -58,6 +77,9 @@ internal struct ToastSettingDesc {
 	public int optionCount;
 	public int requiresRestart;
 	public int hidden;
+	public int kind;
+	public int isArray;
+	public int valueType;
 }
 
 /// <summary>
@@ -97,7 +119,11 @@ public static partial class ToastSettings {
 				Options = options,
 				RequiresRestart = desc.requiresRestart != 0,
 				Hidden = desc.hidden != 0,
-				AssetType = Marshal.PtrToStringUTF8(toast_settings_get_asset_type(i)) ?? string.Empty
+				Kind = (SettingKind)desc.kind,
+				IsArray = desc.isArray != 0,
+				ValueType = (SettingType)desc.valueType,
+				AssetType = Marshal.PtrToStringUTF8(toast_settings_get_asset_type(i)) ?? string.Empty,
+				Unit = Marshal.PtrToStringUTF8(toast_settings_get_unit(i)) ?? string.Empty
 			});
 		}
 
@@ -118,13 +144,43 @@ public static partial class ToastSettings {
 	public static void SetFloat(string key, double value) => toast_settings_set_float(key, value);
 	public static void SetString(string key, string value) => toast_settings_set_string(key, value);
 
+	public static string GetText(string key) => Read(toast_settings_get_text(key));
+
+	public static string GetDefaultText(string key) => Read(toast_settings_get_default_text(key));
+
+	public static bool SetText(string key, string text, out string error) {
+		var ok = toast_settings_set_text(key, text) != 0;
+		error = ok ? string.Empty : Read(toast_settings_last_error());
+		return ok;
+	}
+
+	public static double Number(string key, double fallback) {
+		return double.TryParse(GetText(key), NumberStyles.Float, CultureInfo.InvariantCulture, out var value) ? value : fallback;
+	}
+
+	public static bool Flag(string key, bool fallback) {
+		return GetText(key) switch {
+			"true" => true,
+			"false" => false,
+			_ => fallback
+		};
+	}
+
+	public static bool IsOverridden(string key) => toast_settings_is_overridden(key) != 0;
+
+	private static string Read(IntPtr ptr) => ptr == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
+
 	public static void Reset(string key) => toast_settings_reset(key);
 	public static void ResetAll() => toast_settings_reset_all();
 
 	public static bool Save() => toast_settings_save() != 0;
+
+	public static void Restore() => toast_settings_restore();
+
+	public static bool Cook(string configDir, string toastFile, string stageDir) =>
+		toast_settings_cook(configDir, toastFile, stageDir) != 0;
 	public static bool IsDirty => toast_settings_is_dirty() != 0;
 
-	/// Where the active layer writes. The editor writes the project layer, so this is the file that ships
 	public static string ActivePath {
 		get {
 			var ptr = toast_settings_active_path();
@@ -143,6 +199,9 @@ public static partial class ToastSettings {
 
 	[LibraryImport(EngineLib)]
 	private static partial IntPtr toast_settings_get_asset_type(int index);
+
+	[LibraryImport(EngineLib)]
+	private static partial IntPtr toast_settings_get_unit(int index);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial int toast_settings_get_bool(string key);
@@ -171,6 +230,21 @@ public static partial class ToastSettings {
 	private static partial void toast_settings_set_string(string key, string value);
 
 	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial IntPtr toast_settings_get_text(string key);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial IntPtr toast_settings_get_default_text(string key);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial int toast_settings_set_text(string key, string text);
+
+	[LibraryImport(EngineLib)]
+	private static partial IntPtr toast_settings_last_error();
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial int toast_settings_is_overridden(string key);
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
 	private static partial void toast_settings_reset(string key);
 
 	[LibraryImport(EngineLib)]
@@ -178,6 +252,12 @@ public static partial class ToastSettings {
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_settings_save();
+
+	[LibraryImport(EngineLib)]
+	private static partial void toast_settings_restore();
+
+	[LibraryImport(EngineLib, StringMarshalling = StringMarshalling.Utf8)]
+	private static partial int toast_settings_cook(string configDir, string toastFile, string stageDir);
 
 	[LibraryImport(EngineLib)]
 	private static partial int toast_settings_is_dirty();

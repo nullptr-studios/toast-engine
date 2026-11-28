@@ -13,61 +13,11 @@
       "type": "array",
       "x-toast-type": "int[]",
       "description": "Project version as [major, minor, patch]",
-      "default": [1, 0, 0]
-    },
-    "databases": {
-      "type": "array",
-      "x-toast-type": "string[]",
-      "description": "Each entry X creates an X:// VFS scheme rooted at {ProjectPath}/X",
-      "default": ["assets"]
-    },
-    "max_tick_rate": {
-      "type": "integer",
-      "x-toast-type": "int",
-      "minimum": 0,
-      "description": "Maximum game ticks per second in the editor and the player; 0 is uncapped",
-      "default": 500
-    },
-    "gameplay": {
-      "x-toast-type": "gameplay",
-      "description": "Gameplay entry-point settings"
-    },
-    "ui": {
-      "x-toast-type": "ui",
-      "description": "UI settings"
-    }
-  },
-  "definitions": {
-    "ui": {
-      "type": "object",
-      "properties": {
-        "color_scheme": {
-          "x-toast-type": "asset",
-          "x-toast-asset-type": "color_scheme",
-          "description": "Global color scheme used as the fallback for ${color:...} formatting"
-        },
-        "languages": {
-          "type": "array",
-          "x-toast-type": "string[]",
-          "description": "Supported localization languages; the first entry is the default",
-          "default": ["en"]
-        }
-      }
-    },
-    "gameplay": {
-      "type": "object",
-      "properties": {
-        "init_scene": {
-          "x-toast-type": "asset",
-          "x-toast-asset-type": "node",
-          "description": "Initial scene loaded when the game starts"
-        },
-        "player": {
-          "x-toast-type": "asset",
-          "x-toast-asset-type": "node",
-          "description": "Player prefab spawned at game start"
-        }
-      }
+      "default": [
+        1,
+        0,
+        0
+      ]
     }
   }
 }

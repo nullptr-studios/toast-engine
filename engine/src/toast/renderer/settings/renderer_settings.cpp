@@ -3,16 +3,17 @@
 #include "toast/renderer/lighting/shadow_constants.hpp"
 #include "toast/renderer/lighting/shadow_slots.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
+#include "toast/renderer/settings/renderer_params.hpp"
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
+#include <algorithm>
 #include <toast/assets/asset_manager.hpp>
-#include <toast/settings/settings.hpp>
+#include <toast/params/registry.hpp>
+#include <toast/world/workspace_events.hpp>
 
 namespace renderer {
 namespace {
-
-using toast::settings::Meta;
 
 constexpr uint32_t k_tiers_per_branch = 4;
 constexpr uint32_t k_preset_custom = 2 * k_tiers_per_branch;
@@ -277,7 +278,7 @@ void applyPreset() {
 	shadows::setPointShadowBudget(knobs.point_budget);
 }
 
-using toast::settings::Value;
+using toast::params::Value;
 
 struct DrivenSetting {
 	std::string_view key;
@@ -316,9 +317,9 @@ const std::array<DrivenSetting, 22> k_driven {
 
 /// Custom starts from the tier it leaves
 void seedSettingsFrom(const PresetKnobs& tier) {
-	auto& settings = toast::settings::Settings::get();
+	auto& registry = toast::params::Registry::get();
 	for (const DrivenSetting& driven : k_driven) {
-		settings.setValue(driven.key, driven.get(tier), true);
+		registry.request(std::string {driven.key}, driven.get(tier), registry.authoringLayer());
 	}
 }
 
@@ -338,77 +339,28 @@ constexpr auto k_to_float = [](double v) { return static_cast<float>(v); };
 constexpr auto k_to_count = [](int64_t v) { return static_cast<uint32_t>(std::max<int64_t>(v, 0)); };
 
 void registerDisplay(VulkanRenderer& renderer) {
-	toast::settings::declareBool(
-	    "renderer.display.clamp_to_simulation",
-	    true,
-	    {.label = "Clamp to game thread",
-			 .category = "Display",
-			 .description = "On (default): the render thread waits for each new simulation frame instead of "
-			                "presenting it more than once, so it never draws faster than the game thread ticks. "
-			                "Off: the render thread never waits, repeating the last frame as fast as the GPU "
-			                "allows (100% GPU usage) between simulation updates."}
-	)
-	    .onChange([&renderer](bool clamp) { renderer.setClampToSimulation(clamp); });
+	auto& p = rendererParams();
+	toast::params::onChange(p.display_clamp_to_simulation, [&renderer](bool clamp) { renderer.setClampToSimulation(clamp); });
 
-	toast::settings::declareBool(
-	    "renderer.display.low_latency",
-	    true,
-	    {.label = "Low latency",
-			 .category = "Display",
-			 .description = "On (default): the render thread waits for the GPU to finish the previous frame before "
-			                "taking the next one, so input reaches the screen up to two frames sooner. Off: up to three "
-			                "frames queue on the GPU, which can raise the frame rate a little when GPU bound."}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setLowLatency(enabled); });
+	toast::params::onChange(p.display_low_latency, [&renderer](bool enabled) { renderer.setLowLatency(enabled); });
 
-	toast::settings::declareFloat(
-	    "renderer.display.frame_rate_limit",
-	    0.0,
-	    {.label = "Frame rate limit",
-			 .category = "Display",
-			 .description = "Hz the render thread draws and presents at. 0 runs uncapped. Applies in either mode.",
-			 .min = 0.0,
-			 .max = 360.0,
-			 .step = 1.0}
-	)
-	    .onChange([&renderer](double v) { renderer.setFrameRateLimit(v); });
+	toast::params::onChange(p.display_frame_rate_limit, [&renderer](double v) { renderer.setFrameRateLimit(v); });
 
 	static float hdr_paper_white = 0.0f;
 	static float hdr_peak = 0.0f;
-	toast::settings::declareFloat(
-	    "renderer.display.hdr_paper_white",
-	    0.0,
-	    {.label = "HDR paper white",
-			 .category = "Display",
-			 .description = "Nits that SDR white and the UI sit at when HDR output is on. 0 follows the Windows SDR content "
-			                "brightness slider",
-			 .min = 0.0,
-			 .max = 500.0,
-			 .step = 5.0}
-	)
-	    .onChange([&renderer](double v) {
-		    hdr_paper_white = static_cast<float>(v);
-		    renderer.setHdrNits(hdr_paper_white, hdr_peak);
-	    });
+	toast::params::onChange(p.display_hdr_paper_white, [&renderer](double v) {
+		hdr_paper_white = static_cast<float>(v);
+		renderer.setHdrNits(hdr_paper_white, hdr_peak);
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.display.hdr_peak",
-	    0.0,
-	    {.label = "HDR peak brightness",
-			 .category = "Display",
-			 .description = "Nits the tonemap rolls highlights off toward when HDR output is on. 0 uses what the display reports, "
-			                "1000 when it does not say",
-			 .min = 0.0,
-			 .max = 4000.0,
-			 .step = 50.0}
-	)
-	    .onChange([&renderer](double v) {
-		    hdr_peak = static_cast<float>(v);
-		    renderer.setHdrNits(hdr_paper_white, hdr_peak);
-	    });
+	toast::params::onChange(p.display_hdr_peak, [&renderer](double v) {
+		hdr_peak = static_cast<float>(v);
+		renderer.setHdrNits(hdr_paper_white, hdr_peak);
+	});
 }
 
 /// Dev builds keep Custom and players start on a tier for their GPU
+[[maybe_unused]]
 auto defaultPreset(VulkanRenderer& renderer) -> int64_t {
 #if defined(TOAST_DEV_TOOLS)
 	static_cast<void>(renderer);
@@ -423,1024 +375,345 @@ auto defaultPreset(VulkanRenderer& renderer) -> int64_t {
 }
 
 void registerQuality(VulkanRenderer& renderer) {
-	toast::settings::declareInt(
-	    "renderer.quality.preset",
-	    defaultPreset(renderer),
-	    {
-	      .label = "Preset",
-	      .category = "Quality",
-	      .description = "Reflections, AO, shadows, voxel lighting, volumetrics, GI and render scale together. The RT tiers need "
-	                     "hardware ray tracing and run the matching non RT tier without it. Custom uses each setting",
-	      .options = {"Low", "Medium", "High", "Epic", "Low RT", "Medium RT", "High RT", "Epic RT", "Custom"}
+	auto& p = rendererParams();
+	toast::params::onChange(p.quality_preset, [](int64_t v) {
+		const auto next = static_cast<uint32_t>(std::clamp<int64_t>(v, 0, k_preset_custom));
+		std::optional<PresetKnobs> seed;
+		{
+			const std::lock_guard lock(g_preset.mutex);
+			if (g_preset.ready && g_preset.preset < k_preset_custom && next == k_preset_custom) {
+				seed = activeKnobs();
+				g_preset.knobs = *seed;
+			}
+			g_preset.preset = next;
+		}
+		if (seed.has_value()) {
+			seedSettingsFrom(*seed);
+		}
+		if (next >= k_tiers_per_branch && next < k_preset_custom && !g_preset.renderer->getCore().isRayTracingSupported()) {
+			TOAST_INFO("Render", "Ray tracing is not in use on this device so the RT preset runs its non RT tier");
+		}
+		applyPreset();
+	});
+
+#if !defined(TOAST_DEV_TOOLS)
+	if (!toast::params::of(p.quality_preset).layerValue(toast::params::Layer::project) &&
+	    !toast::params::of(p.quality_preset).layerValue(toast::params::Layer::saved)) {
+		toast::params::of(p.quality_preset)
+		    .setLayer(toast::params::Layer::project, Value {toast::params::Scalar {defaultPreset(renderer)}});
 	}
-	)
-	    .onChange([](int64_t v) {
-		    const auto next = static_cast<uint32_t>(std::clamp<int64_t>(v, 0, k_preset_custom));
-		    std::optional<PresetKnobs> seed;
-		    {
-			    const std::lock_guard lock(g_preset.mutex);
-			    if (g_preset.ready && g_preset.preset < k_preset_custom && next == k_preset_custom) {
-				    seed = activeKnobs();
-				    g_preset.knobs = *seed;
-			    }
-			    g_preset.preset = next;
-		    }
-		    if (seed.has_value()) {
-			    seedSettingsFrom(*seed);
-		    }
-		    if (next >= k_tiers_per_branch && next < k_preset_custom && !g_preset.renderer->getCore().isRayTracingSupported()) {
-			    TOAST_INFO("Render", "Ray tracing is not in use on this device so the RT preset runs its non RT tier");
-		    }
-		    applyPreset();
-	    });
+#endif
 
-	toast::settings::declareFloat(
-	    "renderer.quality.render_scale",
-	    1.0,
-	    {.label = "Render scale",
-			 .category = "Quality",
-			 .description =
-			     "Share of the output resolution the world renders at before TAA upsamples it. Presets cap it at 0.67 (DLSS Quality) "
-			     "on a laptop GPU with DLSS. Preset Custom only",
-			 .min = 0.1,
-			 .max = 1.0,
-			 .step = 0.05}
-	)
-	    .onChange(presetKnob<float, double>(&PresetKnobs::render_scale, k_to_float));
+	toast::params::onChange(p.quality_render_scale, presetKnob<float, double>(&PresetKnobs::render_scale, k_to_float));
 
-	const auto pass_toggle = [&renderer](std::string_view key, std::string_view pass, bool default_value, std::string description) {
-		toast::settings::declareBool(
-		    key, default_value, {.label = std::string {pass}, .category = "Quality", .description = std::move(description)}
-		)
-		    .onChange([&renderer, pass](bool enabled) { renderer.setPostProcessPassEnabled(pass, enabled); });
-	};
+	toast::params::onChange(p.quality_bloom, [&renderer](bool enabled) { renderer.setPostProcessPassEnabled("Bloom", enabled); });
+	toast::params::onChange(p.quality_lens_flare, [&renderer](bool enabled) {
+		renderer.setPostProcessPassEnabled("Lens flare", enabled);
+	});
+	toast::params::onChange(p.quality_glass_glow_scale, [&renderer](double v) {
+		renderer.setGlassGlowScale(static_cast<float>(v));
+	});
+	toast::params::onChange(p.quality_ssr, presetKnob<bool, bool>(&PresetKnobs::ssr, k_same_bool));
+	toast::params::onChange(p.quality_ssao, presetKnob<bool, bool>(&PresetKnobs::ssao, k_same_bool));
 
-	pass_toggle("renderer.quality.bloom", "Bloom", true, "Glow around highlights bright enough to overwhelm a lens.");
-	pass_toggle(
-	    "renderer.quality.lens_flare",
-	    "Lens flare",
-	    true,
-	    "Ghosts, halo and glare streaks from the brightest pixels. Tuned on the post process volume."
-	);
-	toast::settings::declareFloat(
-	    "renderer.quality.glass_glow_scale",
-	    1.0,
-	    {.label = "Emissive behind glass",
-			 .category = "Quality",
-			 .description = "Scale on the light behind glass that bloom and lens flares see, so emissives the glass dims "
-			                "still glow and flare. 0 lets glass dim them like everything else, 1 sees them as if the glass "
-			                "were not there and higher boosts them. Lit surfaces behind glass are scaled too",
-			 .min = 0.0,
-			 .max = 16.0,
-			 .step = 0.1}
-	)
-	    .onChange([&renderer](double v) { renderer.setGlassGlowScale(static_cast<float>(v)); });
-	toast::settings::declareBool(
-	    "renderer.quality.ssr",
-	    true,
-	    {.label = "SSR", .category = "Quality", .description = "Screen-space reflections. Preset Custom only"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ssr, k_same_bool));
-	toast::settings::declareBool(
-	    "renderer.quality.ssao",
-	    true,
-	    {.label = "SSAO",
-			 .category = "Quality",
-			 .description = "Contact darkening where geometry meets geometry. Preset Custom only"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ssao, k_same_bool));
+	toast::params::onChange(p.quality_motion_blur, presetKnob<bool, bool>(&PresetKnobs::motion_blur, k_same_bool));
 
-	toast::settings::declareBool(
-	    "renderer.quality.motion_blur",
-	    false,
-	    {.label = "Motion blur",
-			 .category = "Quality",
-			 .description = "Blurs the image along the motion vectors of the frame. Preset Custom only"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::motion_blur, k_same_bool));
+	toast::params::onChange(p.quality_motion_blur_strength, [&renderer](double v) {
+		renderer.setMotionBlurStrength(static_cast<float>(v));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.quality.motion_blur_strength",
-	    0.5,
-	    {.label = "Motion blur shutter",
-			 .category = "Quality",
-			 .description = "Share of the frame the shutter stays open. 0.5 is a 180 degree shutter",
-			 .min = 0.0,
-			 .max = 1.0,
-			 .step = 0.05}
-	)
-	    .onChange([&renderer](double v) { renderer.setMotionBlurStrength(static_cast<float>(v)); });
+	toast::params::onChange(p.quality_motion_blur_max_length, [&renderer](double v) {
+		renderer.setMotionBlurMaxLength(static_cast<float>(v));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.quality.motion_blur_max_length",
-	    0.04,
-	    {.label = "Motion blur max length",
-			 .category = "Quality",
-			 .description = "Longest blur as a share of the screen height",
-			 .min = 0.005,
-			 .max = 0.2,
-			 .step = 0.005}
-	)
-	    .onChange([&renderer](double v) { renderer.setMotionBlurMaxLength(static_cast<float>(v)); });
+	toast::params::onChange(p.quality_motion_blur_samples, [&renderer](int64_t v) {
+		renderer.setMotionBlurSamples(static_cast<uint32_t>(std::max<int64_t>(v, 2)));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.quality.motion_blur_samples",
-	    12,
-	    {.label = "Motion blur samples",
-			 .category = "Quality",
-			 .description = "Taps along each blur. More is smoother and costs more",
-			 .min = 4.0,
-			 .max = 32.0}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setMotionBlurSamples(static_cast<uint32_t>(std::max<int64_t>(v, 2))); });
+	toast::params::onChange(p.quality_ssr_reach, presetKnob<float, double>(&PresetKnobs::ssr_reach, k_to_float));
 
-	toast::settings::declareFloat(
-	    "renderer.quality.ssr_reach",
-	    0.0,
-	    {.label = "SSR reach",
-			 .category = "Quality",
-			 .description = "Most meters an SSR ray travels before the screen edge stops it, with the steps below in place of the "
-			                "post process volume. Preset Custom only",
-			 .min = 0.0,
-			 .max = 500.0,
-			 .step = 1.0}
-	)
-	    .onChange(presetKnob<float, double>(&PresetKnobs::ssr_reach, k_to_float));
+	toast::params::onChange(p.quality_ssr_steps, presetKnob<uint32_t, int64_t>(&PresetKnobs::ssr_steps, k_to_count));
+	toast::params::onChange(p.quality_fxaa, [&renderer](bool enabled) { renderer.setPostProcessPassEnabled("FXAA", enabled); });
 
-	toast::settings::declareInt(
-	    "renderer.quality.ssr_steps",
-	    0,
-	    {.label = "SSR steps",
-			 .category = "Quality",
-			 .description = "Most depth pyramid steps an SSR ray takes. 0 keeps the post process volume values. Preset Custom only",
-			 .min = 0.0,
-			 .max = 256.0}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::ssr_steps, k_to_count));
-	pass_toggle("renderer.quality.fxaa", "FXAA", true, "Edge anti-aliasing on the tonemapped image. Skipped while TAA is on.");
+	toast::params::onChange(p.quality_taa, [&renderer](bool enabled) { renderer.setTaaEnabled(enabled); });
 
-	toast::settings::declareBool(
-	    "renderer.quality.taa",
-	    true,
-	    {.label = "TAA",
-			 .category = "Quality",
-			 .description = "Temporal anti-aliasing. Jitters the camera and resolves across frames in place of FXAA."}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setTaaEnabled(enabled); });
+	toast::params::onChange(p.quality_antialiasing, [&renderer](int64_t mode) { renderer.setDlssRequested(mode == 1); });
 
-	toast::settings::declareInt(
-	    "renderer.quality.antialiasing",
-	    1,
-	    {
-	      .label = "Anti-aliasing",
-	      .category = "Quality",
-	      .description = "DLSS on NVIDIA RTX GPUs, TAA everywhere else. Needs TAA on.",
-	      .options = {"TAA", "DLSS"}
-	}
-	)
-	    .onChange([&renderer](int64_t mode) { renderer.setDlssRequested(mode == 1); });
+	toast::params::onChange(p.quality_taa_history, [&renderer](double v) { renderer.setTaaHistoryWeight(static_cast<float>(v)); });
 
-	toast::settings::declareFloat(
-	    "renderer.quality.taa_history",
-	    0.9,
-	    {.label = "TAA history",
-			 .category = "Quality",
-			 .description = "Share of the previous frame each pixel keeps. Higher is smoother and ghosts more.",
-			 .min = 0.5,
-			 .max = 0.98,
-			 .step = 0.01}
-	)
-	    .onChange([&renderer](double v) { renderer.setTaaHistoryWeight(static_cast<float>(v)); });
-
-	toast::settings::declareBool(
-	    "renderer.quality.traced_shadows",
-	    false,
-	    {.label = "Traced shadows",
-			 .category = "Quality",
-			 .description = "Trace shadow rays against the acceleration structure instead of sampling the shadow "
-			                "maps. No effect on a device without ray query."}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setTracedShadowsEnabled(enabled); });
+	toast::params::onChange(p.quality_traced_shadows, [&renderer](bool enabled) { renderer.setTracedShadowsEnabled(enabled); });
 }
 
 void registerShadows() {
+	auto& p = rendererParams();
 	const auto resolutions = std::vector<std::string> {"256", "512", "1024", "2048", "4096"};
 
-	toast::settings::declareInt(
-	    "renderer.shadows.cascade_resolution",
-	    2,
-	    {.label = "Cascade resolution",
-			 .category = "Shadows",
-			 .description = "Per-cascade square resolution for directional shadows.",
-			 .options = resolutions,
-			 .requires_restart = true}
-	)
-	    .onChange([resolutions](int64_t index) {
-		    if (index >= 0 && std::cmp_less(index, resolutions.size())) {
-			    shadows::setCascadeResolution(static_cast<uint32_t>(std::stoul(resolutions[index])));
-		    }
-	    });
+	toast::params::onChange(p.shadows_cascade_resolution, [resolutions](int64_t index) {
+		if (index >= 0 && std::cmp_less(index, resolutions.size())) {
+			shadows::setCascadeResolution(static_cast<uint32_t>(std::stoul(resolutions[index])));
+		}
+	});
 
-	toast::settings::declareInt(
-	    "renderer.shadows.punctual_resolution",
-	    1,
-	    {.label = "Punctual resolution",
-			 .category = "Shadows",
-			 .description = "Full-size layer resolution for spot and point light shadows.",
-			 .options = resolutions,
-			 .requires_restart = true}
-	)
-	    .onChange([resolutions](int64_t index) {
-		    if (index >= 0 && std::cmp_less(index, resolutions.size())) {
-			    shadows::setPunctualResolution(static_cast<uint32_t>(std::stoul(resolutions[index])));
-		    }
-	    });
+	toast::params::onChange(p.shadows_punctual_resolution, [resolutions](int64_t index) {
+		if (index >= 0 && std::cmp_less(index, resolutions.size())) {
+			shadows::setPunctualResolution(static_cast<uint32_t>(std::stoul(resolutions[index])));
+		}
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.distance",
-	    shadows::k_shadow_distance,
-	    {.label = "Shadow distance",
-			 .category = "Shadows",
-			 .description = "How far from the camera directional shadows are fitted, in "
-			                "metres. The cascades cover this range, so lowering it buys "
-			                "sharpness rather than performance.",
-			 .min = 10.0,
-			 .max = 1000.0,
-			 .step = 5.0}
-	)
-	    .onChange(presetKnob<float, double>(&PresetKnobs::shadow_distance, k_to_float));
+	toast::params::onChange(p.shadows_distance, presetKnob<float, double>(&PresetKnobs::shadow_distance, k_to_float));
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.slot_retention",
-	    shadow_slots::k_default_retention,
-	    {.label = "Slot retention",
-			 .category = "Shadows",
-			 .description = "How many times more important than the weakest shadowed light another light must be to "
-			                "take its shadow slot. Higher keeps cached shadow maps longer.",
-			 .min = 1.0,
-			 .max = 4.0,
-			 .step = 0.05}
-	)
-	    .onChange([](double v) { shadow_slots::setRetention(static_cast<float>(v)); });
+	toast::params::onChange(p.shadows_slot_retention, [](double v) { shadow_slots::setRetention(static_cast<float>(v)); });
 
-	toast::settings::declareInt(
-	    "renderer.shadows.slot_grace",
-	    shadow_slots::k_default_grace_frames,
-	    {.label = "Slot grace",
-			 .category = "Shadows",
-			 .description = "Frames a shadowed light keeps its slot after leaving the view while another light wants "
-			                "it. Higher re-renders less when looking around, lower favours what is on screen.",
-			 .min = 0.0,
-			 .max = 300.0,
-			 .step = 1.0}
-	)
-	    .onChange([](int64_t frames) { shadow_slots::setGraceFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0))); });
+	toast::params::onChange(p.shadows_slot_grace, [](int64_t frames) {
+		shadow_slots::setGraceFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0)));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.shadows.spot_slots",
-	    shadows::k_default_spot_shadows,
-	    {.label = "Spot shadow slots",
-			 .category = "Shadows",
-			 .description = "Spot lights that can hold a shadow. Each slot is one punctual layer in every copy of the map, "
-			                "about 3 MB at 512",
-			 .min = 0.0,
-			 .max = static_cast<double>(shadows::k_max_spot_shadows),
-			 .step = 1.0,
-			 .requires_restart = true}
-	)
-	    .onChange([](int64_t slots) { shadows::setSpotShadowSlots(static_cast<uint32_t>(std::max<int64_t>(slots, 0))); });
+	toast::params::onChange(p.shadows_spot_slots, [](int64_t slots) {
+		shadows::setSpotShadowSlots(static_cast<uint32_t>(std::max<int64_t>(slots, 0)));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.shadows.point_slots",
-	    shadows::k_default_point_shadows,
-	    {.label = "Point shadow slots",
-			 .category = "Shadows",
-			 .description = "Point lights that can hold a shadow. Each slot is six punctual layers in every copy of the map, "
-			                "about 18 MB at 512",
-			 .min = 0.0,
-			 .max = static_cast<double>(shadows::k_max_point_shadows),
-			 .step = 1.0,
-			 .requires_restart = true}
-	)
-	    .onChange([](int64_t slots) { shadows::setPointShadowSlots(static_cast<uint32_t>(std::max<int64_t>(slots, 0))); });
+	toast::params::onChange(p.shadows_point_slots, [](int64_t slots) {
+		shadows::setPointShadowSlots(static_cast<uint32_t>(std::max<int64_t>(slots, 0)));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.shadows.spot_budget",
-	    shadows::k_max_spot_shadows,
-	    {.label = "Spot lights casting",
-			 .category = "Shadows",
-			 .description = "Of the spot shadow slots how many may be used at once, nearest lights first. Lowers live "
-			                "without a restart to compare costs",
-			 .min = 0.0,
-			 .max = static_cast<double>(shadows::k_max_spot_shadows),
-			 .step = 1.0}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::spot_budget, k_to_count));
+	toast::params::onChange(p.shadows_spot_budget, presetKnob<uint32_t, int64_t>(&PresetKnobs::spot_budget, k_to_count));
 
-	toast::settings::declareInt(
-	    "renderer.shadows.point_budget",
-	    shadows::k_max_point_shadows,
-	    {.label = "Point lights casting",
-			 .category = "Shadows",
-			 .description = "Of the point shadow slots how many may be used at once, nearest lights first. Each costs six "
-			                "shadow faces whenever its casters change",
-			 .min = 0.0,
-			 .max = static_cast<double>(shadows::k_max_point_shadows),
-			 .step = 1.0}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::point_budget, k_to_count));
+	toast::params::onChange(p.shadows_point_budget, presetKnob<uint32_t, int64_t>(&PresetKnobs::point_budget, k_to_count));
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.full_resolution_ranges",
-	    shadows::k_punctual_full_resolution_ranges,
-	    {.label = "Full resolution reach",
-			 .category = "Shadows",
-			 .description = "Camera distance in light ranges within which a spot or point shadow keeps its full "
-			                "resolution. Past it each doubling of the distance halves the shadow map",
-			 .min = 0.5,
-			 .max = 16.0,
-			 .step = 0.5}
-	)
-	    .onChange([](double ranges) { shadows::setPunctualFullResolutionRanges(static_cast<float>(ranges)); });
+	toast::params::onChange(p.shadows_full_resolution_ranges, [](double ranges) {
+		shadows::setPunctualFullResolutionRanges(static_cast<float>(ranges));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.cascade_split_lambda",
-	    shadows::k_cascade_split_lambda,
-	    {.label = "Cascade split",
-			 .category = "Shadows",
-			 .description = "0 spaces the cascades evenly and 1 logarithmically. Higher keeps more resolution near the "
-			                "camera",
-			 .min = 0.0,
-			 .max = 1.0,
-			 .step = 0.05}
-	)
-	    .onChange([](double lambda) { shadows::setCascadeSplitLambda(static_cast<float>(lambda)); });
+	toast::params::onChange(p.shadows_cascade_split_lambda, [](double lambda) {
+		shadows::setCascadeSplitLambda(static_cast<float>(lambda));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.cascade_padding",
-	    shadows::k_cascade_padding,
-	    {.label = "Cascade padding",
-			 .category = "Shadows",
-			 .description = "Extra share of its slice each cascade covers so it keeps its cached shadow map while the "
-			                "camera moves inside it. Higher re-renders less and blurs a little more",
-			 .min = 0.0,
-			 .max = 0.5,
-			 .step = 0.01}
-	)
-	    .onChange([](double padding) { shadows::setCascadePadding(static_cast<float>(padding)); });
+	toast::params::onChange(p.shadows_cascade_padding, [](double padding) {
+		shadows::setCascadePadding(static_cast<float>(padding));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.cascade_receiver_depth",
-	    shadows::k_cascade_receiver_depth_radii,
-	    {.label = "Cascade receiver depth",
-			 .category = "Shadows",
-			 .description = "How far along the light each cascade reaches in cascade radii. Lower draws fewer casters "
-			                "and loses shadows on surfaces far down the light",
-			 .min = 1.0,
-			 .max = 16.0,
-			 .step = 0.5}
-	)
-	    .onChange([](double radii) { shadows::setCascadeReceiverDepthRadii(static_cast<float>(radii)); });
+	toast::params::onChange(p.shadows_cascade_receiver_depth, [](double radii) {
+		shadows::setCascadeReceiverDepthRadii(static_cast<float>(radii));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.shadows.static_cache",
-	    true,
-	    {.label = "Static caster cache",
-			 .category = "Shadows",
-			 .description = "Resting voxel volumes render into a cached map that each shadow copies under the moving "
-			                "casters. Off draws every voxel caster whenever anything in that shadow changes"}
-	)
-	    .onChange([](bool enabled) { shadows::setStaticCasterCache(enabled); });
+	toast::params::onChange(p.shadows_static_cache, [](bool enabled) { shadows::setStaticCasterCache(enabled); });
 
-	toast::settings::declareFloat(
-	    "renderer.shadows.caster_tolerance",
-	    shadows::k_caster_tolerance,
-	    {.label = "Caster tolerance",
-			 .category = "Shadows",
-			 .description = "Meters a voxel volume may drift before its shadow follows. Higher keeps jittering bodies "
-			                "in the static cache, lower makes slow shadows step less",
-			 .min = 0.0,
-			 .max = 0.1,
-			 .step = 0.005}
-	)
-	    .onChange([](double meters) { shadows::setCasterTolerance(static_cast<float>(meters)); });
+	toast::params::onChange(p.shadows_caster_tolerance, [](double meters) {
+		shadows::setCasterTolerance(static_cast<float>(meters));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.shadows.voxel_mesh_shaders",
-	    true,
-	    {.label = "Mesh shader voxel casters",
-			 .category = "Shadows",
-			 .description = "Voxel casters rasterize task and mesh shader quads on GPUs that have them. Off marches "
-			                "every voxel caster per shadow texel"}
-	)
-	    .onChange([](bool enabled) { shadows::setVoxelMeshShadows(enabled); });
+	toast::params::onChange(p.shadows_voxel_mesh_shaders, [](bool enabled) { shadows::setVoxelMeshShadows(enabled); });
 }
 
 void registerVoxels(VulkanRenderer& renderer) {
-	toast::settings::declareInt(
-	    "renderer.voxels.light_candidates",
-	    8,
-	    {.label = "Light candidates",
-			 .category = "Voxels",
-			 .description = "Lights in Sampled voxel shadow mode share one marched ray per pixel chosen among this many "
-			                "candidates from the froxel. More is less noise and more shading work",
-			 .min = 1.0,
-			 .max = 32.0}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::light_candidates, [](int64_t v) {
-		    return static_cast<uint32_t>(std::max<int64_t>(v, 1));
-	    }));
+	auto& p = rendererParams();
+	toast::params::onChange(p.voxels_light_candidates, presetKnob<uint32_t, int64_t>(&PresetKnobs::light_candidates, [](int64_t v) {
+		                        return static_cast<uint32_t>(std::max<int64_t>(v, 1));
+	                        }));
 
-	toast::settings::declareBool(
-	    "renderer.voxels.shadow_maps_only",
-	    false,
-	    {.label = "Shadow maps only",
-			 .category = "Voxels",
-			 .description = "Every light shadows voxels with its shadow map whatever its Voxel Shadows mode says. Marched and "
-			                "Sampled shadows trace scene rays, through ray queries when the GPU traces and else by walking the "
-			                "software cell grid. Preset Custom only"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::shadow_maps_only, k_same_bool));
+	toast::params::onChange(p.voxels_shadow_maps_only, presetKnob<bool, bool>(&PresetKnobs::shadow_maps_only, k_same_bool));
 
-	toast::settings::declareBool(
-	    "renderer.voxels.ambient_rays",
-	    true,
-	    {.label = "Ambient rays",
-			 .category = "Voxels",
-			 .description = "Two super-sparse rays per voxel pixel occlude ambient light by how far they get, in place of "
-			                "SSAO. Off keeps SSAO on voxels"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::ambient_rays, k_same_bool));
+	toast::params::onChange(p.voxels_ambient_rays, presetKnob<bool, bool>(&PresetKnobs::ambient_rays, k_same_bool));
 
-	toast::settings::declareBool(
-	    "renderer.voxels.ambient_ray_query",
-	    true,
-	    {.label = "Ray query ambient rays",
-			 .category = "Voxels",
-			 .description = "Ambient rays take the exact first hit through hardware ray queries when the GPU has them. Off "
-			                "samples each volume eight times and can step over thin walls"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelAmbientRayQuery(enabled); });
+	toast::params::onChange(p.voxels_ambient_ray_query, [&renderer](bool enabled) { renderer.setVoxelAmbientRayQuery(enabled); });
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.ambient_reach",
-	    2.4,
-	    {.label = "Ambient reach",
-			 .category = "Voxels",
-			 .description = "Meters an ambient ray travels before it counts as open sky. Teardown clamps at 24 voxels",
-			 .min = 0.2,
-			 .max = 20.0,
-			 .step = 0.1}
-	)
-	    .onChange([&renderer](double v) { renderer.setVoxelAmbientReach(static_cast<float>(v)); });
+	toast::params::onChange(p.voxels_ambient_reach, [&renderer](double v) {
+		renderer.setVoxelAmbientReach(static_cast<float>(v));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.voxels.traced_specular",
-	    true,
-	    {.label = "Traced specular",
-			 .category = "Voxels",
-			 .description = "One GGX ray per reflective voxel pixel at half resolution in place of the environment and "
-			                "SSR. Off keeps both"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::traced_specular, k_same_bool));
+	toast::params::onChange(p.voxels_traced_specular, presetKnob<bool, bool>(&PresetKnobs::traced_specular, k_same_bool));
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.specular_roughness",
-	    0.6,
-	    {.label = "Traced specular roughness",
-			 .category = "Voxels",
-			 .description = "Rougher voxels keep the environment specular",
-			 .min = 0.0,
-			 .max = 1.0,
-			 .step = 0.05}
-	)
-	    .onChange(presetKnob<float, double>(&PresetKnobs::specular_roughness, k_to_float));
+	toast::params::onChange(p.voxels_specular_roughness, presetKnob<float, double>(&PresetKnobs::specular_roughness, k_to_float));
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.specular_reach",
-	    32.0,
-	    {.label = "Traced specular reach",
-			 .category = "Voxels",
-			 .description = "Meters a reflection ray travels before it reads the environment. Teardown uses 32",
-			 .min = 1.0,
-			 .max = 200.0,
-			 .step = 1.0}
-	)
-	    .onChange(presetKnob<float, double>(&PresetKnobs::specular_reach, k_to_float));
+	toast::params::onChange(p.voxels_specular_reach, presetKnob<float, double>(&PresetKnobs::specular_reach, k_to_float));
 
-	toast::settings::declareBool(
-	    "renderer.voxels.specular_hit_lights",
-	    true,
-	    {.label = "Traced specular hit lights",
-			 .category = "Voxels",
-			 .description = "Reflection rays that hit off screen take a local light and its shadow ray on top of the sun and GI. "
-			                "Preset Custom only"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::specular_hit_lights, k_same_bool));
+	toast::params::onChange(p.voxels_specular_hit_lights, presetKnob<bool, bool>(&PresetKnobs::specular_hit_lights, k_same_bool));
 
-	toast::settings::declareInt(
-	    "renderer.voxels.glass_lit_surfaces",
-	    4,
-	    {.label = "Glass lit surfaces",
-			 .category = "Voxels",
-			 .description = "Glass surfaces per brick and pixel that get full lighting and reflections. Layers past it "
-			                "only tint what is behind them",
-			 .min = 1.0,
-			 .max = 4.0}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::glass_lit_surfaces, [](int64_t v) {
+	toast::params::onChange(
+	    p.voxels_glass_lit_surfaces, presetKnob<uint32_t, int64_t>(&PresetKnobs::glass_lit_surfaces, [](int64_t v) {
 		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 4));
-	    }));
+	    })
+	);
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.glass_reflection_reach",
-	    32.0,
-	    {.label = "Glass reflection reach",
-			 .category = "Voxels",
-			 .description = "Meters the SSR or traced reflection of the front glass layer reaches. Shorter is cheaper and "
-			                "misses fall back to the environment",
-			 .min = 0.0,
-			 .max = 128.0}
-	)
-	    .onChange(presetKnob<float, double>(&PresetKnobs::glass_reflection_reach, k_to_float));
+	toast::params::onChange(
+	    p.voxels_glass_reflection_reach, presetKnob<float, double>(&PresetKnobs::glass_reflection_reach, k_to_float)
+	);
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.glass_coarse_distance",
-	    30.0,
-	    {.label = "Glass coarse shading distance",
-			 .category = "Voxels",
-			 .description = "Meters past which glass shades one lighting sample per 2x2 pixels on GPUs with variable rate "
-			                "shading. 0 shades every pixel",
-			 .min = 0.0,
-			 .max = 500.0,
-			 .step = 1.0}
-	)
-	    .onChange([&renderer](double v) { renderer.setVoxelGlassCoarseDistance(static_cast<float>(v)); });
+	toast::params::onChange(p.voxels_glass_coarse_distance, [&renderer](double v) {
+		renderer.setVoxelGlassCoarseDistance(static_cast<float>(v));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.voxels.glass_shadows",
-	    true,
-	    {.label = "Glass shadows",
-			 .category = "Voxels",
-			 .description = "Glass tints the light that reaches voxels behind it in every light mode. Off makes glass cast "
-			                "no shadow and lets marched shadow rays take coarse steps through it"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::glass_shadows, k_same_bool));
+	toast::params::onChange(p.voxels_glass_shadows, presetKnob<bool, bool>(&PresetKnobs::glass_shadows, k_same_bool));
 
-	toast::settings::declareInt(
-	    "renderer.voxels.glass_shadow_reach",
-	    50,
-	    {.label = "Glass shadow reach",
-			 .category = "Voxels",
-			 .description = "Meters a sun looks for glass between a voxel and the sky when its shadow comes from the "
-			                "shadow map",
-			 .min = 1.0,
-			 .max = 2000.0}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setVoxelGlassShadowReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+	toast::params::onChange(p.voxels_glass_shadow_reach, [&renderer](int64_t v) {
+		renderer.setVoxelGlassShadowReach(static_cast<uint32_t>(std::max<int64_t>(v, 1)));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.voxels.sun_reach",
-	    200,
-	    {.label = "Sun ray reach",
-			 .category = "Voxels",
-			 .description = "Meters a marched sun shadow ray travels through voxels. Longer finds distant occluders and "
-			                "costs more on open ground",
-			 .min = 10.0,
-			 .max = 2000.0}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+	toast::params::onChange(p.voxels_sun_reach, [&renderer](int64_t v) {
+		renderer.setVoxelSunReach(static_cast<uint32_t>(std::max<int64_t>(v, 1)));
+	});
 
-	toast::settings::declareString(
-	    "renderer.voxels.detail_texture",
-	    "",
-	    {.label = "Voxel detail texture",
-			 .category = "Voxels",
-			 .description = "The DetailTexture the engine packs into the texture array that palette detail ids read. "
-			                "None keeps the neutral default",
-			 .asset_type = "detail_texture"}
-	)
-	    .onChange([&renderer](const std::string& v) {
-		    if (v.empty()) {
-			    renderer.setVoxelDetailTexture({});
-		    } else if (v.contains("://")) {
-			    renderer.setVoxelDetailTexture(assets::load<assets::DetailTexture>(v));
-		    } else {
-			    renderer.setVoxelDetailTexture(assets::load<assets::DetailTexture>(toast::UID(toast::UID::fromString(v))));
-		    }
-	    });
+	toast::params::onChange(p.voxels_detail_texture, [&renderer](const toast::params::AssetRef& asset) {
+		const std::string& v = asset.uri;
+		if (v.empty()) {
+			renderer.setVoxelDetailTexture({});
+		} else if (v.contains("://")) {
+			renderer.setVoxelDetailTexture(assets::load<assets::DetailTexture>(v));
+		} else {
+			renderer.setVoxelDetailTexture(assets::load<assets::DetailTexture>(toast::UID(toast::UID::fromString(v))));
+		}
+	});
 
-	toast::settings::declareBool(
-	    "renderer.voxels.trace_bricks",
-	    true,
-	    {.label = "Brick BLAS",
-			 .category = "Voxels",
-			 .description = "Ray queries find the occupied bricks a ray crosses instead of whole volumes. Off marches every "
-			                "volume a ray crosses from end to end"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelTraceBricks(enabled); });
+	toast::params::onChange(p.voxels_trace_bricks, [&renderer](bool enabled) { renderer.setVoxelTraceBricks(enabled); });
 
-	toast::settings::declareInt(
-	    "renderer.voxels.blas_budget",
-	    262144,
-	    {.label = "BLAS bricks per frame",
-			 .category = "Voxels",
-			 .description = "Bricks of brick BLAS builds a frame may record. A volume waiting for its build traces as a whole",
-			 .min = 4096.0,
-			 .max = 4194304.0}
-	)
-	    .onChange([&renderer](int64_t v) {
-		    renderer.setVoxelBlasBudget(static_cast<uint32_t>(std::clamp<int64_t>(v, 4096, 4194304)));
-	    });
+	toast::params::onChange(p.voxels_blas_budget, [&renderer](int64_t v) {
+		renderer.setVoxelBlasBudget(static_cast<uint32_t>(std::clamp<int64_t>(v, 4096, 4194304)));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.trace_cell_size",
-	    4.0,
-	    {.label = "Trace grid cell",
-			 .category = "Voxels",
-			 .description = "Meters per cell of the camera centred grid marched voxel rays walk without ray queries. The grid "
-			                "is 32 cells across",
-			 .min = 0.5,
-			 .max = 32.0,
-			 .step = 0.5}
-	)
-	    .onChange([&renderer](double v) { renderer.setVoxelTraceCellSize(static_cast<float>(v)); });
+	toast::params::onChange(p.voxels_trace_cell_size, [&renderer](double v) {
+		renderer.setVoxelTraceCellSize(static_cast<float>(v));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.voxels.shadow_instances",
-	    256,
-	    {.label = "Shadow ray instances",
-			 .category = "Voxels",
-			 .description = "Nearest drawn voxel volumes a marched shadow ray tests against. Farther volumes cast no "
-			                "marched shadow",
-			 .min = 1.0,
-			 .max = 4096.0}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setVoxelShadowInstances(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+	toast::params::onChange(p.voxels_shadow_instances, [&renderer](int64_t v) {
+		renderer.setVoxelShadowInstances(static_cast<uint32_t>(std::max<int64_t>(v, 1)));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.voxels.cell_boxes",
-	    true,
-	    {.label = "Cell boxes",
-			 .category = "Voxels",
-			 .description = "On draws one box per non-empty 32 voxel cell front to back and marches only inside it. Off "
-			                "draws one box per volume and marches the whole volume, kept to compare the two."}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelCellBoxes(enabled); });
+	toast::params::onChange(p.voxels_cell_boxes, [&renderer](bool enabled) { renderer.setVoxelCellBoxes(enabled); });
 
-	toast::settings::declareBool(
-	    "renderer.voxels.occlusion",
-	    true,
-	    {.label = "Occlusion culling",
-			 .category = "Voxels",
-			 .description = "Skips cells hidden behind closer geometry using a depth pyramid. Needs cell boxes"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelOcclusion(enabled); });
+	toast::params::onChange(p.voxels_occlusion, [&renderer](bool enabled) { renderer.setVoxelOcclusion(enabled); });
 
-	toast::settings::declareBool(
-	    "renderer.voxels.mesh_shaders",
-	    true,
-	    {.label = "Mesh shaders",
-			 .category = "Voxels",
-			 .description = "Meshes near voxels in task and mesh shaders on GPUs that have them. Off uses the compute mesher, "
-			                "which every GPU runs"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVoxelMeshShaders(enabled); });
+	toast::params::onChange(p.voxels_mesh_shaders, [&renderer](bool enabled) { renderer.setVoxelMeshShaders(enabled); });
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.raster_pixels",
-	    4.0,
-	    {.label = "Raster voxel size",
-			 .category = "Voxels",
-			 .description = "Cells whose voxels cover at least this many pixels are meshed into quads and rasterized",
-			 .min = 0.0,
-			 .max = 32.0,
-			 .step = 0.5}
-	)
-	    .onChange([&renderer](double pixels) { renderer.setVoxelRasterPixels(static_cast<float>(pixels)); });
+	toast::params::onChange(p.voxels_raster_pixels, [&renderer](double pixels) {
+		renderer.setVoxelRasterPixels(static_cast<float>(pixels));
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.voxels.occlusion_min_hidden",
-	    0.05,
-	    {.label = "Occlusion idle below",
-			 .category = "Voxels",
-			 .description = "Share of cells occlusion culling must hide to keep running. Below it for a few frames it "
-			                "pauses since it costs more than it saves. 0 never pauses it",
-			 .min = 0.0,
-			 .max = 0.5,
-			 .step = 0.01}
-	)
-	    .onChange([&renderer](double share) { renderer.setVoxelOcclusionMinHidden(static_cast<float>(share)); });
+	toast::params::onChange(p.voxels_occlusion_min_hidden, [&renderer](double share) {
+		renderer.setVoxelOcclusionMinHidden(static_cast<float>(share));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.voxels.occlusion_idle_frames",
-	    120,
-	    {.label = "Occlusion idle frames",
-			 .category = "Voxels",
-			 .description = "Frames occlusion culling stays paused before it measures again",
-			 .min = 0.0,
-			 .max = 600.0,
-			 .step = 1.0}
-	)
-	    .onChange([&renderer](int64_t frames) {
-		    renderer.setVoxelOcclusionIdleFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0)));
-	    });
+	toast::params::onChange(p.voxels_occlusion_idle_frames, [&renderer](int64_t frames) {
+		renderer.setVoxelOcclusionIdleFrames(static_cast<uint32_t>(std::max<int64_t>(frames, 0)));
+	});
 }
 
 void registerEnvironment(VulkanRenderer& renderer) {
-	toast::settings::declareString(
-	    "renderer.environment.map",
-	    "",
-	    {.label = "Environment map",
-			 .category = "Environment",
-			 .description = "A Radiance .hdr equirectangular image used as the sky and image-based lighting. "
-			                "None keeps the generated sky",
-			 .asset_type = "environment_map"}
-	)
-	    .onChange([&renderer](const std::string& v) {
-		    if (v.empty() || v.contains("://")) {
-			    renderer.setGlobalEnvironmentMap(v);
-		    } else {
-			    renderer.setGlobalEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
-		    }
-	    });
+	auto& p = rendererParams();
+	toast::params::onChange(p.environment_map, [&renderer](const toast::params::AssetRef& asset) {
+		const std::string& v = asset.uri;
+		if (v.empty() || v.contains("://")) {
+			renderer.setGlobalEnvironmentMap(v);
+		} else {
+			renderer.setGlobalEnvironmentMap(assets::AssetManager::getURI(toast::UID(toast::UID::fromString(v))));
+		}
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.environment.sky_intensity",
-	    1.0,
-	    {.label = "Sky intensity",
-			 .category = "Environment",
-			 .description = "Brightness of the generated sky, folded into the environment maps. Changing it re-runs "
-			                "the precompute on the next frame.",
-			 .min = 0.0,
-			 .max = 20.0}
-	)
-	    .onChange([&renderer](double v) {
-		    if (auto* pass = renderer.getEnvironmentPassMutable()) {
-			    pass->setSkyIntensity(static_cast<float>(v));
-		    }
-	    });
+	toast::params::onChange(p.environment_sky_intensity, [&renderer](double v) {
+		if (auto* pass = renderer.getEnvironmentPassMutable()) {
+			pass->setSkyIntensity(static_cast<float>(v));
+		}
+	});
 }
 
 void registerVolumetrics(VulkanRenderer& renderer) {
-	toast::settings::declareBool(
-	    "renderer.volumetrics.enabled",
-	    true,
-	    {.label = "Volumetrics",
-			 .category = "Volumetrics",
-			 .description = "Marched height fog where a post process volume sets a fog density. Off skips the pass"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVolumetrics(enabled); });
+	auto& p = rendererParams();
+	toast::params::onChange(p.volumetrics_enabled, [&renderer](bool enabled) { renderer.setVolumetrics(enabled); });
 
-	toast::settings::declareInt(
-	    "renderer.volumetrics.quality",
-	    2,
-	    {
-	      .label = "Volumetric quality",
-	      .category = "Volumetrics",
-	      .description = "Steps, local lights, local light shadows and resolution. Custom uses the settings below",
-	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
-	}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::volumetric_quality, [](int64_t v) {
-		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, VulkanRenderer::k_volumetric_quality_custom));
-	    }));
+	toast::params::onChange(p.volumetrics_quality, presetKnob<uint32_t, int64_t>(&PresetKnobs::volumetric_quality, [](int64_t v) {
+		                        return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, VulkanRenderer::k_volumetric_quality_custom));
+	                        }));
 
-	toast::settings::declareInt(
-	    "renderer.volumetrics.steps",
-	    24,
-	    {.label = "Volumetric steps",
-			 .category = "Volumetrics",
-			 .description = "Samples along each view ray. Custom quality only",
-			 .min = 4.0,
-			 .max = 96.0}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setVolumetricSteps(static_cast<uint32_t>(std::max<int64_t>(v, 1))); });
+	toast::params::onChange(p.volumetrics_steps, [&renderer](int64_t v) {
+		renderer.setVolumetricSteps(static_cast<uint32_t>(std::max<int64_t>(v, 1)));
+	});
 
-	toast::settings::declareInt(
-	    "renderer.volumetrics.lights",
-	    8,
-	    {.label = "Volumetric lights",
-			 .category = "Volumetrics",
-			 .description = "Local lights of a froxel each step scatters. Custom quality only",
-			 .min = 0.0,
-			 .max = 32.0}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setVolumetricLights(static_cast<uint32_t>(std::max<int64_t>(v, 0))); });
+	toast::params::onChange(p.volumetrics_lights, [&renderer](int64_t v) {
+		renderer.setVolumetricLights(static_cast<uint32_t>(std::max<int64_t>(v, 0)));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.volumetrics.light_shadows",
-	    true,
-	    {.label = "Volumetric light shadows",
-			 .category = "Volumetrics",
-			 .description = "Local lights cast shadows into the fog. Custom quality only"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setVolumetricLightShadows(enabled); });
+	toast::params::onChange(p.volumetrics_light_shadows, [&renderer](bool enabled) {
+		renderer.setVolumetricLightShadows(enabled);
+	});
 
-	toast::settings::declareInt(
-	    "renderer.volumetrics.resolution",
-	    0,
-	    {
-	      .label = "Volumetric resolution",
-	      .category = "Volumetrics",
-	      .description = "Custom quality only",
-	      .options = {"Half", "Quarter"}
-	}
-	)
-	    .onChange([&renderer](int64_t v) { renderer.setVolumetricQuarterResolution(v != 0); });
+	toast::params::onChange(p.volumetrics_resolution, [&renderer](int64_t v) { renderer.setVolumetricQuarterResolution(v != 0); });
 
-	toast::settings::declareFloat(
-	    "renderer.volumetrics.distance",
-	    100.0,
-	    {.label = "Volumetric distance",
-			 .category = "Volumetrics",
-			 .description = "Meters fog volumes stay visible. Height fog keeps its own Fog Distance",
-			 .min = 10.0,
-			 .max = 1000.0,
-			 .step = 5.0}
-	)
-	    .onChange([&renderer](double v) { renderer.setVolumetricDistance(static_cast<float>(v)); });
+	toast::params::onChange(p.volumetrics_distance, [&renderer](double v) {
+		renderer.setVolumetricDistance(static_cast<float>(v));
+	});
 }
 
 #if defined(TOAST_DEV_TOOLS)
 void registerDebug(VulkanRenderer& renderer) {
-	toast::settings::declareBool(
-	    k_debug_overlay_in_game,
-	    false,
-	    {.label = "Debug overlay in game",
-			 .category = "Debug",
-			 .description = "Draws the ImGui debug windows while a game camera is live and frees the cursor to use them. "
-			                "Off hides them in game and brings them back as they were in the editor. F3 in game flips it."}
-	)
-	    .onChange([&renderer](bool visible) { renderer.setDebugOverlayInGame(visible); });
+	auto& p = rendererParams();
+	toast::params::onChange(p.display_debug_overlay, [&renderer](bool visible) { renderer.setDebugOverlayInGame(visible); });
+	toast::params::onChange(p.view_mode, [](const int64_t& mode) {
+		event::send<event::SetRenderMode>(static_cast<uint32_t>(std::max<int64_t>(mode, 0)));
+	});
 
-	toast::settings::declareBool(
-	    "renderer.debug.glass_cost_view",
-	    false,
-	    {.label = "Glass cost view",
-			 .category = "Debug",
-			 .description = "Glass adds a colour for what each pixel cost instead of drawing itself. Green builds up per glass "
-			                "brick drawn, red per lit glass surface and blue per reflection traced or marched"}
-	)
-	    .onChange([&renderer](bool enabled) { renderer.setGlassCostView(enabled); });
+	toast::params::onChange(p.voxels_glass_cost_view, [&renderer](bool enabled) { renderer.setGlassCostView(enabled); });
 }
 #endif
 
 }
 
+auto rendererParams() -> RendererParams& {
+	static RendererParams params;
+	return params;
+}
+
+void testSetPreset(uint32_t preset) {
+	const std::lock_guard lock(g_preset.mutex);
+	g_preset.preset = preset;
+}
+
 void registerRendererStartupSettings() {
+	auto& p = rendererParams();
 	registerShadows();
 
-	toast::settings::declareBool(
-	    k_hdr_output,
-	    true,
-	    {.label = "HDR output",
-			 .category = "Display",
-			 .description = "Presents HDR when the display has it turned on in the operating system and SDR otherwise. Off keeps "
-			                "SDR on every display",
-			 .requires_restart = true}
-	);
+	toast::params::onChange(p.quality_ray_tracing, [](int64_t v) {
+		constexpr std::array<RayTracingMode, 3> k_modes {RayTracingMode::automatic, RayTracingMode::on, RayTracingMode::off};
+		ShaderCompiler::setRayTracingMode(k_modes[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))]);
+	});
 
-	toast::settings::declareInt(
-	    "renderer.quality.ray_tracing",
-	    0,
-	    {
-	      .label = "Hardware ray tracing",
-	      .category = "Quality",
-	      .description = "Auto traces only on GPUs with RT cores since drivers emulate ray query slowly elsewhere. Off keeps the "
-	                     "raster and software paths on every GPU, which is what the non RT presets are tuned for. On forces ray "
-	                     "query wherever the driver offers it",
-	      .options = {"Auto", "On", "Off"},
-	      .requires_restart = true
-	}
-	)
-	    .onChange([](int64_t v) {
-		    constexpr std::array<RayTracingMode, 3> k_modes {RayTracingMode::automatic, RayTracingMode::on, RayTracingMode::off};
-		    ShaderCompiler::setRayTracingMode(k_modes[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))]);
-	    });
-
-	toast::settings::declareBool(
-	    "renderer.voxels.trace_ray_query",
-	    true,
-	    {.label = "Ray query voxel rays",
-			 .category = "Voxels",
-			 .description = "Marched voxel rays find the volumes they cross through hardware ray queries when the GPU has them. "
-			                "Off walks the software cell grid on every GPU",
-			 .requires_restart = true}
-	)
-	    .onChange([](bool enabled) { ShaderCompiler::setTraceRayQuery(enabled); });
+	toast::params::onChange(p.voxels_trace_ray_query, [](bool enabled) { ShaderCompiler::setTraceRayQuery(enabled); });
 }
 
 void registerGi(VulkanRenderer& renderer) {
+	auto& p = rendererParams();
 	GiSettings& gi = renderer.giSettings();
-	toast::settings::declareBool(
-	    "renderer.gi.enabled",
-	    true,
-	    {.label = "Radiance clipmap",
-			 .category = "Global illumination",
-			 .description = "World space voxel clipmap that cones gather bounce light from. Preset Custom only"}
-	)
-	    .onChange(presetKnob<bool, bool>(&PresetKnobs::gi_enabled, k_same_bool));
+	toast::params::onChange(p.gi_enabled, presetKnob<bool, bool>(&PresetKnobs::gi_enabled, k_same_bool));
 
-	toast::settings::declareInt(
-	    "renderer.gi.quality",
-	    2,
-	    {
-	      .label = "Quality",
-	      .category = "Global illumination",
-	      .description = "Clipmap resolution and level count. Custom uses the knobs below",
-	      .options = {"Low", "Medium", "High", "Epic", "Custom"}
-	}
-	)
-	    .onChange(presetKnob<uint32_t, int64_t>(&PresetKnobs::gi_quality, [](int64_t v) {
-		    return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom));
-	    }));
+	toast::params::onChange(p.gi_quality, presetKnob<uint32_t, int64_t>(&PresetKnobs::gi_quality, [](int64_t v) {
+		                        return static_cast<uint32_t>(std::clamp<int64_t>(v, 0, GiSettings::k_quality_custom));
+	                        }));
 
-	toast::settings::declareFloat(
-	    "renderer.gi.intensity",
-	    2.0,
-	    {.label = "Bounce intensity",
-			 .category = "Global illumination",
-			 .description = "Multiplies the light GI bounces onto surfaces. 1 is physically based and higher makes colour bleed "
-			                "and bounce stand out more",
-			 .min = 0.0,
-			 .max = 8.0,
-			 .step = 0.1}
-	)
-	    .onChange([&gi](double v) { gi.intensity.store(static_cast<float>(v), std::memory_order_relaxed); });
+	toast::params::onChange(p.gi_intensity, [&gi](double v) {
+		gi.intensity.store(static_cast<float>(v), std::memory_order_relaxed);
+	});
 
-	toast::settings::declareFloat(
-	    "renderer.gi.clip_cell",
-	    0.2,
-	    {.label = "Clipmap cell",
-			 .category = "Global illumination",
-			 .description = "Meters per cell of clipmap level 0. Every level doubles it",
-			 .min = 0.1,
-			 .max = 1.0,
-			 .step = 0.1}
-	)
-	    .onChange([&gi](double v) {
-		    gi.clip_cell.store(std::clamp(static_cast<float>(v), 0.1f, 1.0f), std::memory_order_relaxed);
-	    });
+	toast::params::onChange(p.gi_clip_cell, [&gi](double v) {
+		gi.clip_cell.store(std::clamp(static_cast<float>(v), 0.1f, 1.0f), std::memory_order_relaxed);
+	});
 
-	toast::settings::declareInt(
-	    "renderer.gi.clip_resolution",
-	    1,
-	    {
-	      .label = "Clipmap resolution",
-	      .category = "Global illumination",
-	      .description = "Cells per side of every clipmap level. Custom quality only",
-	      .options = {"64", "128", "192"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    constexpr std::array<uint32_t, 3> k_resolutions {64, 128, 192};
-		    gi.clip_resolution.store(k_resolutions[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))], std::memory_order_relaxed);
-	    });
+	toast::params::onChange(p.gi_clip_resolution, [&gi](int64_t v) {
+		constexpr std::array<uint32_t, 3> k_resolutions {64, 128, 192};
+		gi.clip_resolution.store(k_resolutions[static_cast<size_t>(std::clamp<int64_t>(v, 0, 2))], std::memory_order_relaxed);
+	});
 
-	toast::settings::declareInt(
-	    "renderer.gi.clip_levels",
-	    4,
-	    {.label = "Clipmap levels",
-			 .category = "Global illumination",
-			 .description = "Clipmap levels around the camera. Custom quality only",
-			 .min = 1.0,
-			 .max = 6.0}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.clip_levels.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 6)), std::memory_order_relaxed);
-	    });
+	toast::params::onChange(p.gi_clip_levels, [&gi](int64_t v) {
+		gi.clip_levels.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 1, 6)), std::memory_order_relaxed);
+	});
 
-	toast::settings::declareInt(
-	    "renderer.gi.clip_debug_view",
-	    0,
-	    {
-	      .label = "Clipmap view",
-	      .category = "Global illumination",
-	      .description = "Draws the cells of one clipmap level in place of the scene",
-	      .options = {"Off", "Level 0", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.clip_debug_view.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 6)), std::memory_order_relaxed);
-	    });
+	toast::params::onChange(p.gi_clip_debug_view, [&gi](int64_t v) {
+		gi.clip_debug_view.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 6)), std::memory_order_relaxed);
+	});
 
-	toast::settings::declareInt(
-	    "renderer.gi.clip_debug_mode",
-	    0,
-	    {
-	      .label = "Clipmap view shows",
-	      .category = "Global illumination",
-	      .description = "What the clipmap view draws per cell",
-	      .options = {"Albedo", "Emission", "Opacity", "Radiance"}
-	}
-	)
-	    .onChange([&gi](int64_t v) {
-		    gi.clip_debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 3)), std::memory_order_relaxed);
-	    });
+	toast::params::onChange(p.gi_clip_debug_mode, [&gi](int64_t v) {
+		gi.clip_debug_mode.store(static_cast<uint32_t>(std::clamp<int64_t>(v, 0, 3)), std::memory_order_relaxed);
+	});
 }
 
-auto presetDrivenValue(std::string_view key) -> std::optional<toast::settings::Value> {
+auto presetDrivenValue(std::string_view key) -> std::optional<toast::params::Value> {
 	const std::lock_guard lock(g_preset.mutex);
 	if (g_preset.preset >= k_preset_custom) {
 		return std::nullopt;
@@ -1453,17 +726,6 @@ auto presetDrivenValue(std::string_view key) -> std::optional<toast::settings::V
 	return std::nullopt;
 }
 
-static void registerVideo() {
-	toast::settings::declareInt(
-	    "renderer.video.frame_cache_mb",
-	    512,
-	    {.label = "Video frame cache (MB)",
-			 .category = "Video",
-			 .description = "RAM for decoded video loops. A video that does not fit keeps decoding every frame. 0 disables the "
-			                "cache. Applies to videos loaded after the change"}
-	);
-}
-
 void registerRendererSettings(VulkanRenderer& renderer) {
 	g_preset.renderer = &renderer;
 	registerDisplay(renderer);
@@ -1472,7 +734,6 @@ void registerRendererSettings(VulkanRenderer& renderer) {
 	registerGi(renderer);
 	registerEnvironment(renderer);
 	registerVolumetrics(renderer);
-	registerVideo();
 #if defined(TOAST_DEV_TOOLS)
 	registerDebug(renderer);
 #endif

@@ -88,6 +88,8 @@ public:
 	void tick();
 	void integrate(float dt);
 
+	void drawDebugVisuals() const;
+
 	[[nodiscard]]
 	auto createBody(const BodyDescriptor& descriptor) -> BodyID;
 	void destroyBody(BodyID body);

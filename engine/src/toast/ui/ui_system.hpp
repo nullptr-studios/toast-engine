@@ -161,6 +161,10 @@ private:
 	[[nodiscard]]
 	auto currentLanguage() const -> std::string;
 
+	void switchLanguage(std::string language);
+	void publishLanguage();
+	void syncLanguageParameter();
+
 	static inline UISystem* instance = nullptr;
 
 	std::unique_ptr<UIFileInterface> m_file_interface;
@@ -170,6 +174,8 @@ private:
 	event::Listener m_asset_listener;
 
 	float m_dp_ratio = 1.0f;
+	float m_ui_scale = 1.0f;
+	float m_scroll_speed = 1.0f;
 
 	bool m_documents_reload_pending = false;
 	bool m_stylesheet_cache_dirty = false;
@@ -192,6 +198,8 @@ private:
 	std::unordered_set<std::string> m_loaded_fonts;
 
 	std::string m_language;
+	std::string m_language_param_seen;
+	bool m_language_param_ready = false;
 	std::vector<assets::Handle<assets::Localization>> m_global_localizations;
 	std::vector<assets::Handle<assets::ImageLocalization>> m_global_image_localizations;
 	std::unordered_map<uint64_t, size_t> m_global_localization_refs;

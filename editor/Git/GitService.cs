@@ -11,8 +11,8 @@ using editor.Engine;
 namespace editor.Git;
 
 public sealed class GitService : IDisposable {
-	private static readonly TimeSpan s_fetchInterval = TimeSpan.FromMinutes(5);
-	private static readonly TimeSpan s_locksInterval = TimeSpan.FromMinutes(1);
+	private static TimeSpan FetchInterval => TimeSpan.FromSeconds(Math.Clamp(ToastSettings.Number("editor.git.fetch_seconds", 300), 10, 7200));
+	private static TimeSpan LocksInterval => TimeSpan.FromSeconds(Math.Clamp(ToastSettings.Number("editor.git.locks_seconds", 60), 10, 600));
 
 	private sealed record StatusSnapshot(
 		GitBranchInfo Branch,
@@ -169,12 +169,12 @@ public sealed class GitService : IDisposable {
 	private void StartBackgroundWork() {
 		if (m_disposed) return;
 
-		m_fetchTimer = new DispatcherTimer { Interval = s_fetchInterval };
+		m_fetchTimer = new DispatcherTimer { Interval = FetchInterval };
 		m_fetchTimer.Tick += (_, _) => _ = FetchAsync();
 		m_fetchTimer.Start();
 
 		if (HasLfs) {
-			m_locksTimer = new DispatcherTimer { Interval = s_locksInterval };
+			m_locksTimer = new DispatcherTimer { Interval = LocksInterval };
 			m_locksTimer.Tick += (_, _) => _ = RefreshLocksAsync();
 			m_locksTimer.Start();
 		}

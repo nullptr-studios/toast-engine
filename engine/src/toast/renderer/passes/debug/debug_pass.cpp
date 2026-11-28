@@ -308,8 +308,9 @@ DebugPass::DebugPass(
 
 DebugPass::~DebugPass() {
 	if (m_imgui_ready) {
+		ImGui::SetCurrentContext(m_imgui_context);
 		ImGui_ImplVulkan_Shutdown();
-		ImGui::DestroyContext();
+		ImGui::DestroyContext(m_imgui_context);
 	}
 }
 
@@ -398,6 +399,7 @@ void DebugPass::update(uint32_t frame_index, float dt) {
 	}
 
 	if (m_imgui_ready) {
+		ImGui::SetCurrentContext(m_imgui_context);
 		ImGuiIO& io = ImGui::GetIO();
 		const auto& input = frame->imgui_input;
 
@@ -1181,6 +1183,7 @@ void DebugPass::record(vk::CommandBuffer cmd, uint32_t frame_index, uint32_t ima
 	}
 
 	if (m_imgui_ready) {
+		ImGui::SetCurrentContext(m_imgui_context);
 		ImDrawData* draw_data = ImGui::GetDrawData();
 		if (draw_data != nullptr) {
 			ImGui_ImplVulkan_RenderDrawData(draw_data, cmd);
@@ -1327,7 +1330,9 @@ auto DebugPass::billboardTextureSet(const renderer::VulkanCore& core, vk::ImageV
 void DebugPass::initImGui(const renderer::VulkanCore& core, vk::Format color_format, vk::Format depth_format) {
 	ZoneScoped;
 	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+	ImGuiContext* previous = ImGui::GetCurrentContext();
+	m_imgui_context = ImGui::CreateContext();
+	ImGui::SetCurrentContext(m_imgui_context);
 	ImGuiIO& io = ImGui::GetIO();
 	io.BackendPlatformName = "toast_engine (manual input feed)";
 	io.BackendRendererName = "imgui_impl_vulkan";
@@ -1360,8 +1365,9 @@ void DebugPass::initImGui(const renderer::VulkanCore& core, vk::Format color_for
 	m_imgui_ready = ImGui_ImplVulkan_Init(&init_info);
 	if (!m_imgui_ready) {
 		TOAST_ERROR("DebugPass", "Failed to initialize ImGui Vulkan backend");
-		ImGui::DestroyContext();
+		ImGui::DestroyContext(m_imgui_context);
 	}
+	ImGui::SetCurrentContext(previous);
 }
 
 void DebugPass::createGizmoGeometry(const renderer::VulkanCore& core) {

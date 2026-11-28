@@ -13,8 +13,6 @@
 
 namespace voxel {
 
-inline constexpr uint32_t k_procedural_brick_capacity = 1u << 18;
-
 /// @note Main thread only like the runtime pool
 [[nodiscard]]
 TOAST_API auto proceduralBrickPool() -> BrickPool&;

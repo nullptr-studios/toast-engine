@@ -2,6 +2,7 @@
 
 #include "toast/renderer/resources/video_decoder.hpp"
 #include "toast/renderer/resources/vulkan_texture.hpp"
+#include "toast/renderer/settings/renderer_params.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
 
 #include <array>
@@ -15,7 +16,6 @@
 #include <optional>
 #include <thread>
 #include <toast/assets/video.hpp>
-#include <toast/settings/settings.hpp>
 #include <toast/thread_pool.hpp>
 #include <unordered_map>
 #include <variant>
@@ -102,12 +102,7 @@ auto registry() -> Registry& {
 }
 
 auto cacheBudgetBytes() -> size_t {
-	int64_t megabytes = 512;
-	if (const auto value = toast::settings::Settings::get().value("renderer.video.frame_cache_mb")) {
-		if (const auto* v = std::get_if<int64_t>(&*value)) {
-			megabytes = *v;
-		}
-	}
+	const int64_t megabytes = rendererParams().video_frame_cache_mb;
 	return megabytes > 0 ? static_cast<size_t>(megabytes) << 20 : 0;
 }
 

@@ -331,6 +331,11 @@ public:
 	}
 
 	[[nodiscard]]
+	auto rootBox() const -> Box<Node> {
+		return m_root_node;
+	}
+
+	[[nodiscard]]
 	auto isValid() const -> bool {
 		return m_root_node.exists();
 	}

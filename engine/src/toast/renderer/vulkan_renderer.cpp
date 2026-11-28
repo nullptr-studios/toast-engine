@@ -36,9 +36,9 @@
 #include <toast/assets/animation.hpp>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/material.hpp>
+#include <toast/params/registry.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/profiler_phases.hpp>
-#include <toast/settings/settings.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
@@ -145,12 +145,24 @@ void VulkanRenderer::queueDebugLine(glm::vec3 a, glm::vec3 b, glm::vec4 color) {
 }
 
 void VulkanRenderer::setActiveCamera(toast::Camera* camera) {
-	m_camera = camera;
+	m_requested_camera = camera;
+	m_camera = m_camera_override != nullptr ? m_camera_override : camera;
+}
+
+void VulkanRenderer::setCameraOverride(toast::Camera* camera) {
+	m_camera_override = camera;
+	m_camera = camera != nullptr ? camera : m_requested_camera;
 }
 
 void VulkanRenderer::forgetCamera(const toast::Camera* camera) {
 	if (m_camera == camera) {
 		m_camera = nullptr;
+	}
+	if (m_requested_camera == camera) {
+		m_requested_camera = nullptr;
+	}
+	if (m_camera_override == camera) {
+		m_camera_override = nullptr;
 	}
 }
 
@@ -206,9 +218,9 @@ void VulkanRenderer::setRenderScale(float scale) {
 	}
 }
 
-void VulkanRenderer::requestSettingValue(std::string key, toast::settings::Value value) {
+void VulkanRenderer::requestSettingValue(std::string path, toast::params::Value value) {
 	const std::lock_guard lock(m_setting_request_mutex);
-	m_setting_requests.emplace_back(std::move(key), std::move(value));
+	m_setting_requests.emplace_back(std::move(path), std::move(value));
 }
 
 auto VulkanRenderer::renderExtent() const -> vk::Extent2D {
@@ -359,7 +371,9 @@ VulkanRenderer::VulkanRenderer(const VulkanCore& core, std::unique_ptr<IOutputTa
 	m_imgui_input_listener.subscribe<event::WindowKey>([this](const auto& e) {
 		m_imgui_key_events_accum.push_back({e.key, e.action != 0});
 		if (e.key == SDLK_F3 && e.action == event::window_input_pressed && m_game_view.load(std::memory_order_relaxed)) {
-			toast::settings::Settings::get().setValue(k_debug_overlay_in_game, toast::settings::Value {!debugOverlayInGame()});
+			toast::params::Registry::get().request(
+			    std::string {k_debug_overlay_in_game}, toast::params::Value {toast::params::Scalar {!debugOverlayInGame()}}
+			);
 		}
 		return false;
 	});

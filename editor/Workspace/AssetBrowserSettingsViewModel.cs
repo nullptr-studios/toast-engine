@@ -36,6 +36,32 @@ public sealed partial class AssetBrowserSettingsViewModel : ObservableObject {
 	public string[] SortOptions { get; } = Enum.GetNames<AssetSortBy>();
 	public string[] SearchScopes { get; } = ["Everywhere", "Current folder"];
 
+	public string CardSizeName {
+		get => CardSizes[Math.Clamp(CardSizeIndex, 0, CardSizes.Length - 1)];
+		set { var i = Array.IndexOf(CardSizes, value); if (i >= 0) CardSizeIndex = i; }
+	}
+
+	public string SortByName {
+		get => SortOptions[Math.Clamp(SortByIndex, 0, SortOptions.Length - 1)];
+		set { var i = Array.IndexOf(SortOptions, value); if (i >= 0) SortByIndex = i; }
+	}
+
+	public string SearchScopeName {
+		get => SearchScopes[Math.Clamp(SearchScopeIndex, 0, SearchScopes.Length - 1)];
+		set { var i = Array.IndexOf(SearchScopes, value); if (i >= 0) SearchScopeIndex = i; }
+	}
+
+	public bool TagsExpanded { get => Fold("tags"); set => SetFold("tags", value, nameof(TagsExpanded)); }
+	public bool DisplayExpanded { get => Fold("display"); set => SetFold("display", value, nameof(DisplayExpanded)); }
+	public bool BehaviourExpanded { get => Fold("behaviour"); set => SetFold("behaviour", value, nameof(BehaviourExpanded)); }
+
+	private static bool Fold(string name) => editor.Settings.SettingsPanelState.Current.Get("card:assetbrowser/" + name, true);
+
+	private void SetFold(string name, bool value, string property) {
+		editor.Settings.SettingsPanelState.Current.Set("card:assetbrowser/" + name, value, true);
+		OnPropertyChanged(property);
+	}
+
 	public bool ShowTags {
 		get => AssetBrowserSettings.ShowTags;
 		set => AssetBrowserSettings.SetShowTags(value);

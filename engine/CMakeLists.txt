@@ -113,7 +113,7 @@ target_link_libraries(toast_engine
         LZ4::lz4
         unofficial::sqlite3::sqlite3
         toast_pack
-        $<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:imgui::imgui>
+        imgui::imgui
         RmlUi::Core
         cpptrace::cpptrace
         $<$<CONFIG:Debug>:${EXTERNAL_LIBS_DEBUG}>

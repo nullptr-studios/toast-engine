@@ -35,9 +35,9 @@
 #include <toast/assets/animation.hpp>
 #include <toast/assets/asset_manager.hpp>
 #include <toast/assets/material.hpp>
+#include <toast/params/registry.hpp>
 #include <toast/physics/simulator.hpp>
 #include <toast/profiler_phases.hpp>
-#include <toast/settings/settings.hpp>
 #include <toast/voxel/nodes/voxel_node.hpp>
 #include <toast/voxel/runtime_pool.hpp>
 #include <toast/voxel/volume_bounds.hpp>
@@ -358,13 +358,13 @@ void VulkanRenderer::tick(float time) noexcept {
 	TOAST_PHASE(phases, "Tick: settings");
 
 	// Queued by render thread UI that holds the pass lock
-	std::vector<std::pair<std::string, toast::settings::Value>> setting_requests;
+	std::vector<std::pair<std::string, toast::params::Value>> setting_requests;
 	{
 		const std::lock_guard lock(m_setting_request_mutex);
 		setting_requests.swap(m_setting_requests);
 	}
 	for (auto& [key, value] : setting_requests) {
-		toast::settings::Settings::get().setValue(key, value, true);
+		toast::params::Registry::get().request(key, value, toast::params::Layer::runtime);
 	}
 
 	if (m_rendering_paused.load(std::memory_order_relaxed)) {

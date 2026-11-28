@@ -25,12 +25,22 @@
 #if defined(TOAST_DEV_TOOLS)
 #include "toast/renderer/passes/debug/debug_pass.hpp"
 #endif
+#include "console/console.hpp"
+#include "params/files.hpp"
+#include "params/migrate.hpp"
+#include "params/pack_source.hpp"
+#include "params/registry.hpp"
+#include "renderer/settings/renderer_params.hpp"
 #include "scripting/lua_state.hpp"
 #include "scripting/script_dispatch.hpp"
 #include "scripting/script_runtime.hpp"
-#include "settings/settings.hpp"
+#include "time_params.hpp"
+#include "toast/assets/asset_params.hpp"
+#include "toast/events/event_params.hpp"
+#include "toast/input/input_params.hpp"
 #include "toast/renderer/output/sdl_output_target.hpp"
 #include "toast/renderer/output/shared_texture_output_target.hpp"
+#include "toast/renderer/passes/debug/console_pass.hpp"
 #include "toast/renderer/passes/debug/grid_pass.hpp"
 #include "toast/renderer/passes/geometry/voxel_pass.hpp"
 #include "toast/renderer/passes/lighting/environment_pass.hpp"
@@ -53,6 +63,10 @@
 #include "toast/renderer/shaders/shader_compiler.hpp"
 #include "toast/renderer/shaders/shader_layout.hpp"
 #include "toast/renderer/vulkan_renderer.hpp"
+#include "toast/scripting/scripting_params.hpp"
+#include "toast/voxel/voxel_params.hpp"
+#include "toast/world/editor_params.hpp"
+#include "toast/world/world_params.hpp"
 #include "ui/render/ui_pass.hpp"
 #include "ui/render/world_ui_pass.hpp"
 #include "ui/ui_system.hpp"
@@ -61,6 +75,7 @@
 #include "window/startup_splash.hpp"
 #include "window/window_events.hpp"
 #include "world/camera.hpp"
+#include "world/fly_camera.hpp"
 #include "world/play_workspace.hpp"
 #include "world/workspace.hpp"
 #include "world/workspace_events.hpp"
@@ -183,6 +198,7 @@ struct EnginePimpl {
 	std::unique_ptr<logging::Logger> logger = nullptr;
 	std::unique_ptr<IBaseWindow> window = nullptr;
 	std::unique_ptr<World> world = nullptr;
+	std::unique_ptr<FlyCamera> fly_camera = nullptr;
 	std::unique_ptr<assets::AssetManager> asset_manager = nullptr;
 	std::unique_ptr<input::InputSystem> input_system = nullptr;
 	std::unique_ptr<input::HapticsSystem> haptics_system = nullptr;
@@ -192,6 +208,7 @@ struct EnginePimpl {
 	std::unique_ptr<audio::AudioSystem> audio_system = nullptr;
 	std::unique_ptr<ui::UISystem> ui_system = nullptr;
 	std::unique_ptr<ProjectSettings> settings = nullptr;
+	std::unique_ptr<params::Files> params_files = nullptr;
 	std::unique_ptr<scripting::LuaState> lua_state = nullptr;
 	std::unique_ptr<physics::Simulator> physics_simulator = nullptr;
 	// owned by renderer's output target
@@ -240,6 +257,58 @@ auto Engine::get() noexcept -> Engine* {
 	return instance;
 }
 
+static auto legacyUserSettingsFile(const std::filesystem::path& toast_path) -> std::filesystem::path {
+	std::string app_name = "Toast";
+	if (std::error_code ec; std::filesystem::is_regular_file(toast_path, ec)) {
+		std::ifstream in(toast_path, std::ios::binary);
+		std::stringstream buffer;
+		buffer << in.rdbuf();
+		if (auto document = params::tomlToDocument(buffer.str());
+		    document && document->contains("name") && (*document)["name"].is_string()) {
+			app_name = (*document)["name"].get<std::string>();
+		}
+	}
+
+	std::filesystem::path user_file;
+	if (char* pref_path = SDL_GetPrefPath("nullptr-studios", app_name.c_str())) {
+		user_file = std::filesystem::path(pref_path) / "settings.toml";
+		auto game_dir = std::filesystem::path(pref_path);
+		if (!game_dir.has_filename()) {
+			game_dir = game_dir.parent_path();
+		}
+		const auto older_file = game_dir.parent_path().parent_path() / "Nullptr Studios" / app_name / "settings.toml";
+		std::error_code ec;
+		if (std::filesystem::exists(older_file, ec) && !std::filesystem::exists(user_file, ec)) {
+			std::filesystem::copy_file(older_file, user_file, ec);
+		}
+		SDL_free(pref_path);
+	}
+	return user_file;
+}
+
+static auto savedConfigDirectory(const std::filesystem::path& toast_path) -> std::filesystem::path {
+	if (const auto& saved = assets::AssetManager::savedRoot(); !saved.empty()) {
+		return saved / "config";
+	}
+
+	std::string app_name = "Toast";
+	if (std::error_code ec; std::filesystem::is_regular_file(toast_path, ec)) {
+		std::ifstream in(toast_path, std::ios::binary);
+		std::stringstream buffer;
+		buffer << in.rdbuf();
+		if (auto document = params::tomlToDocument(buffer.str());
+		    document && document->contains("name") && (*document)["name"].is_string()) {
+			app_name = (*document)["name"].get<std::string>();
+		}
+	}
+	std::filesystem::path result;
+	if (char* pref_path = SDL_GetPrefPath("nullptr-studios", app_name.c_str())) {
+		result = std::filesystem::path(pref_path) / "config";
+		SDL_free(pref_path);
+	}
+	return result;
+}
+
 void Engine::init() {
 	ZoneScoped;
 	TracySetProgramName("ToastEngine");
@@ -248,6 +317,22 @@ void Engine::init() {
 #endif
 
 	event::registerProtoEvents();
+
+	console::Console::get().attach();
+	console::Console::get().setAssetCheck([](std::string_view uri) {
+		return !assets::AssetManager::isInitialized() || assets::AssetManager::resolveURI(uri).has_value();
+	});
+	console::Console::get().setNodeRoot([this]() -> Box<Node> {
+		{
+			std::scoped_lock lock(m->owners_mutex);
+			if (const auto it = m->owners.find(m->active_workspace); it != m->owners.end()) {
+				if (Workspace* workspace = it->second->asWorkspace(); workspace != nullptr && workspace->isValid()) {
+					return workspace->rootBox();
+				}
+			}
+		}
+		return World::root();
+	});
 	registerEngineTypes();
 
 	// Find the first .toast project file in the project root and load settings
@@ -262,7 +347,41 @@ void Engine::init() {
 				}
 			}
 		}
-		m->settings = std::make_unique<ProjectSettings>(toast_path);
+		const auto config_dir = assets::AssetManager::configRoot();
+		const auto config_pak = proj_root / "configs.pak";
+		const bool packaged = std::filesystem::is_regular_file(config_pak);
+
+		const auto saved_config_dir = savedConfigDirectory(toast_path);
+		if (!packaged && !toast_path.empty()) {
+			params::migrateProjectToast(toast_path, config_dir);
+		}
+		if (!packaged) {
+			params::upgradeLegacyConfig(config_dir);
+		}
+		if (const auto old_user_file = legacyUserSettingsFile(toast_path); !old_user_file.empty() && !saved_config_dir.empty()) {
+			params::migrateLegacyUserSettings(old_user_file, saved_config_dir);
+		}
+
+		m->params_files = std::make_unique<params::Files>(
+		    params::openProjectSource(config_dir, config_pak), std::make_unique<params::DirectoryConfigSource>(saved_config_dir)
+		);
+
+		auto& registry = params::Registry::get();
+		registry.setLayerPath(params::Layer::project, config_dir.string());
+		registry.setLayerPath(params::Layer::saved, saved_config_dir.string());
+		registry.setSaveHandler([this] {
+			if (m && m->params_files) {
+				m->params_files->saveDirty();
+			}
+		});
+		registry.setRestoreHandler([this] {
+			if (m && m->params_files) {
+				m->params_files->reload();
+			}
+		});
+
+		m->settings.reset();
+		m->settings = std::make_unique<ProjectSettings>(toast_path, m->params_files.get());
 	}
 
 	// Register content database VFS roots derived from project settings
@@ -273,35 +392,25 @@ void Engine::init() {
 		}
 	}
 
-	// User settings
 	{
-		auto& settings = settings::Settings::get();
-		const auto& proj_root = assets::AssetManager::projectRoot();
-
-		std::filesystem::path user_file;
-		const std::string app_name {ProjectSettings::name().empty() ? "Toast" : ProjectSettings::name()};
-		if (char* pref_path = SDL_GetPrefPath("nullptr-studios", app_name.c_str())) {
-			user_file = std::filesystem::path(pref_path) / "settings.toml";
-			auto game_dir = std::filesystem::path(pref_path);
-			if (!game_dir.has_filename()) {
-				game_dir = game_dir.parent_path();
-			}
-			const auto legacy_file = game_dir.parent_path().parent_path() / "Nullptr Studios" / app_name / "settings.toml";
-			std::error_code ec;
-			if (std::filesystem::exists(legacy_file, ec) && !std::filesystem::exists(user_file, ec)) {
-				std::filesystem::copy_file(legacy_file, user_file, ec);
-			}
-			SDL_free(pref_path);
-		}
-
-		settings.setPaths(toast_path, user_file);
-		settings.load();
-
 		// Before the renderer exists, ShadowPass reads its resolution when it allocates, so this cannot wait
 		// for the rest of the renderer settings
 		renderer::registerRendererStartupSettings();
 
 		physics::registerPhysicsSettings();
+		(void)editorParams();
+		(void)assets::assetParams();
+		(void)input::inputParams();
+		(void)scripting::scriptingParams();
+		(void)voxel::voxelParams();
+		(void)event::eventParams();
+		(void)worldParams();
+		(void)timeParams();
+
+		m->params_files->reload();
+
+		toast::params::onChange(timeParams().scale, [](const float& value) { Time::scale(value); });
+		toast::params::onChange(timeParams().max_delta, [](const float& value) { Time::setMaxDelta(value); });
 	}
 
 	m->asset_manager = std::make_unique<assets::AssetManager>();
@@ -389,7 +498,11 @@ Engine::~Engine() noexcept {
 	if (m) {
 		// Save settings before closing down
 		try {
-			settings::Settings::get().saveIfDirty();
+			if (m->params_files) {
+				m->params_files->saveDirty();
+			}
+			params::Registry::get().setSaveHandler(nullptr);
+			params::Registry::get().setRestoreHandler(nullptr);
 		} catch (const std::exception& e) { TOAST_ERROR("Engine", "Failed to save settings on shutdown: {}", e.what()); }
 
 		// Stops the render thread and waits for anything still building
@@ -402,6 +515,8 @@ Engine::~Engine() noexcept {
 			std::scoped_lock lock(m->owners_mutex);
 			m->owners.clear();
 		}
+		console::Console::get().setNodeRoot({});
+		m->fly_camera.reset();
 		m->world.reset();
 		m->ui_system.reset();
 		m->input_system.reset();
@@ -436,7 +551,8 @@ void Engine::reloadSettings() {
 
 	// Clear old content database routes and reload settings
 	assets::AssetManager::clearDatabases();
-	m->settings = std::make_unique<ProjectSettings>(toast_path);
+	m->settings.reset();
+	m->settings = std::make_unique<ProjectSettings>(toast_path, m->params_files.get());
 
 	// Re-register content databases from updated settings
 	for (const auto& db : ProjectSettings::databases()) {
@@ -511,6 +627,11 @@ void Engine::tick() {
 	}
 	m->time.tick();
 
+	params::Registry::get().applyPending();
+
+	console::Model::applyQueued();
+	console::Console::get().updatePins();
+
 	// Poll window events
 	if (m->window) {
 		m->window->pollEvents();
@@ -535,6 +656,15 @@ void Engine::tick() {
 	}
 	scripting::ScriptDispatch::deliver();
 
+	if (!m->fly_camera) {
+		m->fly_camera = std::make_unique<FlyCamera>();
+	}
+	m->fly_camera->tick(static_cast<float>(Time::delta()));
+
+	if (m->physics_simulator) {
+		m->physics_simulator->drawDebugVisuals();
+	}
+
 	// Run application layer
 	if (active_application) {
 		ZoneScopedN("GameLayer::tick()");
@@ -552,7 +682,8 @@ void Engine::tick() {
 	// TODO MOVE THIS
 	// FIXME: @XEIN where should we move this??
 	clear_assets_timer += Time::delta();
-	if (clear_assets_timer > 30.0) {
+	const double unload_interval = assets::assetParams().unload_interval;
+	if (unload_interval > 0.0 && clear_assets_timer > unload_interval) {
 		m->asset_manager->clearUnusedAssets();
 		clear_assets_timer = 0.0;
 	}
@@ -656,7 +787,8 @@ void Engine::tick() {
 	// The reloads are only applied in the editor while nothing is playing
 	if (m->shared_target != nullptr && m->asset_manager && !gameIsAdvancing(*m)) {
 		script_reload_timer += Time::delta();
-		if (script_reload_timer > 1.0) {
+		const auto& reload = assets::assetParams();
+		if (reload.hot_reload_enabled && script_reload_timer > reload.hot_reload_interval) {
 			script_reload_timer = 0.0;
 			m->asset_manager->pollModifiedAssets();
 		}
@@ -719,8 +851,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 	// Reads true only once the window is shown
 	const SDLWindow::DisplayHdr display_hdr = SDLWindow::queryDisplayHdr(sdl_window);
-	const auto hdr_setting = settings::Settings::get().value(renderer::k_hdr_output);
-	const bool prefer_hdr = display_hdr.enabled && (!hdr_setting.has_value() || std::get<bool>(*hdr_setting));
+	const bool prefer_hdr = display_hdr.enabled && renderer::rendererParams().display_hdr;
 	TOAST_INFO(
 	    "Render",
 	    "Display HDR {} (SDR white {:.2f}, headroom {:.2f}), HDR output {}",
@@ -762,6 +893,8 @@ void Engine::createSDLWindow(const char* w_name) {
 	m->renderer->addRenderPass(std::move(debug_pass));
 #endif
 
+	m->renderer->addRenderPass(std::make_unique<renderer::ConsolePass>(*m->vulkan_core, color_format, depth_format));
+
 	// FIXME: CAPPED AT 240 for now
 	m->renderer->setFrameRateLimit(240.0);
 
@@ -772,7 +905,7 @@ void Engine::createSDLWindow(const char* w_name) {
 
 void Engine::createAvaloniaWindow() {
 	ZoneScoped;
-	settings::Settings::get().setActiveLayer(settings::Layer::project);
+	params::Registry::get().setAuthoringLayer(params::Layer::project);
 
 	m->vulkan_core = std::make_unique<renderer::VulkanCore>(std::span<const char* const> {}, std::span<const char* const> {});
 
@@ -819,6 +952,8 @@ void Engine::createAvaloniaWindow() {
 		m->ui_system->initializeRenderer(*m->vulkan_core);
 		m->renderer->setUIFrameBuilder([ui = m->ui_system.get()](renderer::RenderFrame& frame) { ui->buildDrawFrame(frame); });
 	}
+
+	m->renderer->addRenderPass(std::make_unique<renderer::ConsolePass>(*m->vulkan_core, color_format, depth_format));
 
 	// editor will always be capped
 	m->renderer->setFrameRateLimit(240.0);
@@ -1285,6 +1420,10 @@ void toast_set_show_debug_windows(int visible) noexcept {
 	if (auto* vk_renderer = renderer::VulkanRenderer::instance; vk_renderer != nullptr) {
 		vk_renderer->setDebugWindowsVisible(visible != 0);
 	}
+}
+
+auto toast_console_is_open() noexcept -> int {
+	return toast::console::Console::get().isOpen() ? 1 : 0;
 }
 
 auto toast_debug_overlay_owns_cursor() noexcept -> int {

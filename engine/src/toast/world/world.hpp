@@ -105,6 +105,9 @@ public:
 	 */
 	static void destroyNode(Node& node);
 
+	[[nodiscard]]
+	static auto root() -> Box<Node>;
+
 	/**
 	 * @brief Linear search for a cached root node by display name
 	 * @param name The node's display name to search for

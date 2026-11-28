@@ -6,6 +6,7 @@
 #pragma once
 
 #include "camera.hpp"
+#include "editor_params.hpp"
 #include "workspace_events.hpp"
 
 #include <toast/events/listener.hpp>
@@ -32,6 +33,8 @@ public:
 	void configure(event::EditorCameraMode mode, float speed, bool horizontal_movement = false);
 
 	void copyViewFrom(const EditorCameraController& other) noexcept;
+
+	void placeAt(glm::vec3 position, const glm::quat& rotation) noexcept;
 
 	[[nodiscard]]
 	auto mode() const noexcept -> event::EditorCameraMode {
@@ -77,18 +80,10 @@ private:
 	float m_orbit_elevation = 0.0f;
 	float m_orbit_radius = 0.0f;
 
-	float m_speed = 5.0f;
+	float m_speed = editorParams().camera_default_speed;
 	bool m_horizontal_movement = false;
 	event::EditorCameraMode m_mode = event::EditorCameraMode::free;
 
-	static constexpr float k_min_speed = 0.5f;
-	static constexpr float k_max_speed = 50.0f;
-	static constexpr float k_min_radius = 0.1f;
-	static constexpr float k_max_radius = 5000.0f;
-	static constexpr float k_boost_multiplier = 3.0f;
-	static constexpr float k_look_sensitivity = 0.0025f;
-	static constexpr float k_gesture_zoom_sensitivity = 0.01f;
-	static constexpr float k_gesture_pan_sensitivity = 0.01f;
 	static constexpr float k_pitch_limit = 1.5533f;    // ~89 degrees
 
 	void setMode(event::EditorCameraMode mode);

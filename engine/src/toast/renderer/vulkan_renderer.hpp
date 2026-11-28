@@ -54,7 +54,7 @@
 #include <toast/events/event.inl>
 #include <toast/events/listener.hpp>
 #include <toast/lock_profiling.hpp>
-#include <toast/settings/settings.hpp>
+#include <toast/params/value.hpp>
 #include <toast/voxel/assets/detail_texture.hpp>
 #include <toast/world/gizmo_layout.hpp>
 #include <tracy/TracyVulkan.hpp>
@@ -1142,6 +1142,8 @@ public:
 
 	void setActiveCamera(toast::Camera* camera);
 
+	void setCameraOverride(toast::Camera* camera);
+
 	void forgetCamera(const toast::Camera* camera);
 
 	[[nodiscard]]
@@ -1269,7 +1271,7 @@ public:
 	void setRenderScale(float scale);
 
 	/// Thread safe and applied at the next tick
-	void requestSettingValue(std::string key, toast::settings::Value value);
+	void requestSettingValue(std::string path, toast::params::Value value);
 
 	[[nodiscard]]
 	auto renderScale() const noexcept -> float {
@@ -1728,6 +1730,8 @@ private:
 	uint32_t m_current_frame = 0;
 
 	toast::Camera* m_camera = nullptr;
+	toast::Camera* m_requested_camera = nullptr;
+	toast::Camera* m_camera_override = nullptr;
 
 	GizmoState m_gizmo_state;
 
@@ -1760,7 +1764,7 @@ private:
 	std::atomic_bool m_dlss_active {false};
 	std::atomic<float> m_render_scale {1.0f};
 	std::mutex m_setting_request_mutex;
-	std::vector<std::pair<std::string, toast::settings::Value>> m_setting_requests;
+	std::vector<std::pair<std::string, toast::params::Value>> m_setting_requests;
 	/// Of the current targets
 	std::atomic<float> m_applied_render_scale {1.0f};
 	std::atomic<float> m_taa_history_weight {0.9f};
@@ -2078,6 +2082,12 @@ inline void setActiveCamera(toast::Camera& camera) {
 inline void setActiveCamera(toast::Camera* camera) {
 	if (VulkanRenderer::instance != nullptr) {
 		VulkanRenderer::instance->setActiveCamera(camera);
+	}
+}
+
+inline void setCameraOverride(toast::Camera* camera) {
+	if (VulkanRenderer::instance != nullptr) {
+		VulkanRenderer::instance->setCameraOverride(camera);
 	}
 }
 

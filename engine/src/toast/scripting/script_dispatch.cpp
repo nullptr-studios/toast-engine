@@ -1,6 +1,7 @@
 #include "script_dispatch.hpp"
 
 #include "lua_state.hpp"
+#include "scripting_params.hpp"
 
 #include <toast/world/wave_executor.hpp>
 
@@ -17,7 +18,6 @@ struct DispatchJob {
 constexpr size_t k_tracked_interpreters = 1024;
 
 // Fewer queued calls than this run one after the other on the thread that delivers, handing them out costs more than it saves
-constexpr size_t k_min_parallel_batch = 8;
 
 // Leaked on purpose: queued jobs hold node handles and Lua references that must not be destroyed during static teardown
 auto& g_dispatch_mutex = *new std::mutex();                  // NOLINT
@@ -117,7 +117,7 @@ auto ScriptDispatch::deliver(int max_rounds) -> size_t {
 		// stay in the order they were queued, so they apply in the order they were issued, and the interpreters do not wait
 		// for each other. A small batch is not worth handing out
 		std::vector<toast::_detail::WaveJob> jobs;
-		if (batch.size() >= k_min_parallel_batch && toast::ThreadPool::workerCount() > 1) {
+		if (batch.size() >= static_cast<size_t>(scriptingParams().parallel_batch) && toast::ThreadPool::workerCount() > 1) {
 			std::unordered_map<size_t, size_t> job_of_interpreter;
 			for (size_t index = 0; index < batch.size(); ++index) {
 				const auto [slot, inserted] = job_of_interpreter.try_emplace(batch[index].vm_index, jobs.size());

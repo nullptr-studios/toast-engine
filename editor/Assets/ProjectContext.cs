@@ -206,41 +206,45 @@ public static class ProjectContext {
 		s_schemes["cache://"] = CachePath;
 		s_schemes["core://"] = CorePath;
 		s_schemes["saved://"] = SavedPath;
+		s_schemes["config://"] = Path.Combine(ProjectPath, "config");
 
 		// Dynamic content database schemes derived from the project's databases list
 		foreach (var db in Databases)
 			s_schemes[db + "://"] = Path.Combine(ProjectPath, db);
 	}
 
-	private static IReadOnlyList<string> ReadDatabasesFromProject(string projectPath) {
+	private static TomlTable? ReadProjectTable(string projectPath, string group, string? legacyKey = null) {
 		try {
+			var groupFile = Path.Combine(projectPath, "config", group + ".toml");
+			if (File.Exists(groupFile))
+				return TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(groupFile));
+
 			var toastFile = Directory.EnumerateFiles(projectPath, "*.toast").FirstOrDefault();
-			if (toastFile is null) return ["assets"];
+			if (toastFile is null) return null;
 
 			var table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(toastFile));
-			if (table?["databases"] is TomlArray dbs) {
-				var list = dbs.Select(d => d?.ToString() ?? "").Where(s => s.Length > 0).ToList();
-				return list.Count > 0 ? list : ["assets"];
-			}
+			if (legacyKey is null) return table;
+			return table?[legacyKey] as TomlTable;
 		} catch {
 			// ignored
+		}
+
+		return null;
+	}
+
+	private static IReadOnlyList<string> ReadDatabasesFromProject(string projectPath) {
+		if (ReadProjectTable(projectPath, "project")?["databases"] is TomlArray dbs) {
+			var list = dbs.Select(d => d?.ToString() ?? "").Where(s => s.Length > 0).ToList();
+			return list.Count > 0 ? list : ["assets"];
 		}
 
 		return ["assets"];
 	}
 
 	private static IReadOnlyList<string> ReadLanguagesFromProject(string projectPath) {
-		try {
-			var toastFile = Directory.EnumerateFiles(projectPath, "*.toast").FirstOrDefault();
-			if (toastFile is null) return ["en"];
-
-			var table = TomlSerializer.Deserialize<TomlTable>(File.ReadAllText(toastFile));
-			if (table?["ui"] is TomlTable ui && ui["languages"] is TomlArray langs) {
-				var list = langs.Select(l => l?.ToString() ?? "").Where(s => s.Length > 0).ToList();
-				return list.Count > 0 ? list : ["en"];
-			}
-		} catch {
-			// ignored
+		if (ReadProjectTable(projectPath, "ui", "ui")?["languages"] is TomlArray langs) {
+			var list = langs.Select(l => l?.ToString() ?? "").Where(s => s.Length > 0).ToList();
+			return list.Count > 0 ? list : ["en"];
 		}
 
 		return ["en"];

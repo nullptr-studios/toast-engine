@@ -21,7 +21,8 @@
 #include <initializer_list>
 #include <optional>
 #include <string_view>
-#include <toast/settings/settings.hpp>
+#include <toast/params/registry.hpp>
+#include <toast/params/text.hpp>
 #include <tracy/Tracy.hpp>
 #include <utility>
 #include <vector>
@@ -52,99 +53,114 @@ enum class PerfLevel : uint8_t {
 
 /// Queued ahead of an edit so Custom starts from the tier
 void requestCustomPreset() {
-	auto& registry = toast::settings::Settings::get();
-	if (const toast::settings::Entry* preset = registry.find("renderer.quality.preset"); preset != nullptr) {
-		VulkanRenderer::instance->requestSettingValue(preset->key, static_cast<int64_t>(preset->meta.options.size()) - 1);
+	if (const toast::params::ParamBase* preset = toast::params::Registry::get().find("renderer.quality.preset");
+	    preset != nullptr) {
+		VulkanRenderer::instance->requestSettingValue(
+		    "renderer.quality.preset",
+		    toast::params::Value {toast::params::Scalar {static_cast<int64_t>(preset->options().size()) - 1}}
+		);
 	}
 }
 
-/// An edit of a preset_driven row switches to Custom
-void drawSettingRow(toast::settings::Entry* entry, bool preset_driven = false) {
-	using toast::settings::Type;
-	using toast::settings::Value;
+auto pathOf(const toast::params::ParamBase& param) -> std::string {
+	return std::string {param.group()->name()} + "." + std::string {param.id()};
+}
 
-	auto& registry = toast::settings::Settings::get();
-	ImGui::PushID(entry->key.c_str());
+/// An edit of a preset_driven row switches to Custom
+void drawSettingRow(toast::params::ParamBase* param, bool preset_driven = false) {
+	using toast::params::Scalar;
+	using toast::params::Type;
+	using toast::params::Value;
+
+	const std::string path = pathOf(*param);
+	ImGui::PushID(path.c_str());
 	ImGui::TableNextRow();
 	ImGui::TableNextColumn();
 
-	std::string_view label = entry->meta.label;
-	if (label.empty()) {
-		label = std::string_view(entry->key).substr(entry->key.rfind('.') + 1);
-	}
+	const std::string label {param->name()};
 	ImGui::AlignTextToFramePadding();
-	ImGui::TextUnformatted(label.data(), label.data() + label.size());
-	if (ImGui::IsItemHovered() && !entry->meta.description.empty()) {
-		ImGui::SetTooltip("%s%s", entry->meta.description.c_str(), entry->meta.requires_restart ? "\nApplies on restart" : "");
+	ImGui::TextUnformatted(label.c_str());
+	if (ImGui::IsItemHovered() && !param->description().empty()) {
+		ImGui::SetTooltip("%s%s", std::string {param->description()}.c_str(), param->requiresRestart() ? "\nApplies on restart" : "");
 	}
-	if (entry->meta.requires_restart) {
+	if (param->requiresRestart()) {
 		ImGui::SameLine();
 		ImGui::TextColored(k_perf_warn, "(restart)");
 	}
 
 	ImGui::TableNextColumn();
 	ImGui::SetNextItemWidth(-FLT_MIN);
-	Value value = registry.resolved(entry);
+	Value value = param->snapshot();
 	bool leaves_tier = false;
 	if (preset_driven) {
-		if (auto forced = presetDrivenValue(entry->key); forced.has_value()) {
+		if (auto forced = presetDrivenValue(path); forced.has_value()) {
 			value = std::move(*forced);
 			leaves_tier = true;
 		}
 	}
-	const bool bounded = entry->meta.min < entry->meta.max;
+	const Scalar* scalar = std::get_if<Scalar>(&value);
+	const auto min = param->minValue();
+	const auto max = param->maxValue();
 	std::optional<Value> changed;
-	switch (entry->type) {
-		case Type::boolean: {
-			bool current = std::get<bool>(value);
-			if (ImGui::Checkbox("##value", &current)) {
-				changed = current;
-			}
-			break;
-		}
-		case Type::integer: {
-			int64_t current = std::get<int64_t>(value);
-			const auto& options = entry->meta.options;
-			if (!options.empty()) {
-				const auto index = static_cast<size_t>(std::clamp<int64_t>(current, 0, static_cast<int64_t>(options.size()) - 1));
-				if (ImGui::BeginCombo("##value", options[index].c_str())) {
-					for (size_t i = 0; i < options.size(); ++i) {
-						if (ImGui::Selectable(options[i].c_str(), i == index)) {
-							changed = static_cast<int64_t>(i);
-						}
-					}
-					ImGui::EndCombo();
+	if (scalar == nullptr) {
+		ImGui::TextDisabled("array");
+	} else {
+		switch (param->type()) {
+			case Type::boolean: {
+				bool current = std::get<bool>(*scalar);
+				if (ImGui::Checkbox("##value", &current)) {
+					changed = Value {Scalar {current}};
 				}
 				break;
 			}
-			const auto low = static_cast<int64_t>(entry->meta.min);
-			const auto high = static_cast<int64_t>(entry->meta.max);
-			const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_S64, &current, &low, &high)
-			                            : ImGui::DragScalar("##value", ImGuiDataType_S64, &current);
-			if (edited) {
-				changed = current;
+			case Type::integer: {
+				int64_t current = std::get<int64_t>(*scalar);
+				const auto options = param->options();
+				if (!options.empty()) {
+					const auto index = static_cast<size_t>(std::clamp<int64_t>(current, 0, static_cast<int64_t>(options.size()) - 1));
+					if (ImGui::BeginCombo("##value", std::string {options[index]}.c_str())) {
+						for (size_t i = 0; i < options.size(); ++i) {
+							if (ImGui::Selectable(std::string {options[i]}.c_str(), i == index)) {
+								changed = Value {Scalar {static_cast<int64_t>(i)}};
+							}
+						}
+						ImGui::EndCombo();
+					}
+					break;
+				}
+				const bool bounded = min && max;
+				const int64_t low = bounded ? std::get<int64_t>(*min) : 0;
+				const int64_t high = bounded ? std::get<int64_t>(*max) : 0;
+				const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_S64, &current, &low, &high)
+				                            : ImGui::DragScalar("##value", ImGuiDataType_S64, &current);
+				if (edited) {
+					changed = Value {Scalar {current}};
+				}
+				break;
 			}
-			break;
-		}
-		case Type::floating: {
-			double current = std::get<double>(value);
-			const double low = entry->meta.min;
-			const double high = entry->meta.max;
-			const auto speed = static_cast<float>(entry->meta.step > 0.0 ? entry->meta.step : 0.01);
-			const bool edited = bounded ? ImGui::SliderScalar("##value", ImGuiDataType_Double, &current, &low, &high, "%.3g")
-			                            : ImGui::DragScalar("##value", ImGuiDataType_Double, &current, speed, nullptr, nullptr, "%.3g");
-			if (edited) {
-				changed = current;
+			case Type::floating: {
+				double current = std::get<double>(*scalar);
+				const bool bounded = min && max;
+				const double low = bounded ? std::get<double>(*min) : 0.0;
+				const double high = bounded ? std::get<double>(*max) : 0.0;
+				const bool edited = bounded
+				                        ? ImGui::SliderScalar("##value", ImGuiDataType_Double, &current, &low, &high, "%.3g")
+				                        : ImGui::DragScalar("##value", ImGuiDataType_Double, &current, 0.01f, nullptr, nullptr, "%.3g");
+				if (edited) {
+					changed = Value {Scalar {current}};
+				}
+				break;
 			}
-			break;
+			case Type::string: ImGui::TextDisabled("%s", std::get<std::string>(*scalar).c_str()); break;
+			case Type::asset: ImGui::TextDisabled("%s", std::get<toast::params::AssetRef>(*scalar).uri.c_str()); break;
+			default: ImGui::TextDisabled("%s", toast::params::toText(value, param->type()).c_str()); break;
 		}
-		case Type::string: ImGui::TextDisabled("%s", std::get<std::string>(value).c_str()); break;
 	}
 	if (changed.has_value()) {
 		if (leaves_tier) {
 			requestCustomPreset();
 		}
-		VulkanRenderer::instance->requestSettingValue(entry->key, *changed);
+		VulkanRenderer::instance->requestSettingValue(path, *changed);
 	}
 	ImGui::PopID();
 }
@@ -1007,8 +1023,6 @@ void PerfWindow::drawSceneTab() {
 }
 
 void PerfWindow::drawShadowsTab() {
-	using toast::settings::Entry;
-
 	if (const auto* frame = VulkanRenderer::instance->renderingFrame(); frame != nullptr) {
 		const auto& lights = frame->light_stats;
 		const auto slots = [](const char* label, uint32_t used, uint32_t budget, uint32_t denied) {
@@ -1028,14 +1042,14 @@ void PerfWindow::drawShadowsTab() {
 		ImGui::TextDisabled("Nearest lights win. Raise a budget or lower Shadow Distance on lights that need none");
 	}
 
-	auto& registry = toast::settings::Settings::get();
 	ImGui::SeparatorText("Settings");
 	if (ImGui::BeginTable("##perf_shadow_settings", 2, ImGuiTableFlags_SizingStretchProp)) {
-		for (Entry* entry : registry.entries()) {
-			if (entry->meta.hidden || !entry->key.starts_with("renderer.shadows.")) {
-				continue;
+		if (const toast::params::GroupBase* group = toast::params::Registry::get().findGroup("renderer"); group != nullptr) {
+			for (toast::params::ParamBase* param : group->params()) {
+				if (param->id().starts_with("shadows.")) {
+					drawSettingRow(param);
+				}
 			}
-			drawSettingRow(entry);
 		}
 		ImGui::EndTable();
 	}
@@ -1043,13 +1057,13 @@ void PerfWindow::drawShadowsTab() {
 }
 
 void PerfWindow::drawQualityTab() {
-	auto& registry = toast::settings::Settings::get();
+	auto& registry = toast::params::Registry::get();
 	const auto rows = [&registry](const char* id, std::initializer_list<std::string_view> keys, bool preset_driven = false) {
 		if (!ImGui::BeginTable(id, 2, ImGuiTableFlags_SizingStretchProp)) {
 			return;
 		}
 		for (const std::string_view key : keys) {
-			if (toast::settings::Entry* entry = registry.find(key); entry != nullptr) {
+			if (toast::params::ParamBase* entry = registry.find(key); entry != nullptr) {
 				drawSettingRow(entry, preset_driven);
 			}
 		}
@@ -1067,8 +1081,8 @@ void PerfWindow::drawQualityTab() {
 	const bool hdr_active = VulkanRenderer::instance->hdrOutput();
 	ImGui::TextColored(hdr_active ? k_perf_good : k_perf_warn, "HDR output %s", hdr_active ? "on" : "off");
 	rows("##perf_display_hdr", {"renderer.display.hdr", "renderer.display.hdr_paper_white", "renderer.display.hdr_peak"});
-	if (const toast::settings::Entry* hdr_setting = registry.find("renderer.display.hdr"); hdr_setting != nullptr) {
-		const bool wanted = std::get<bool>(registry.resolved(hdr_setting));
+	if (const toast::params::ParamBase* hdr_setting = registry.find("renderer.display.hdr"); hdr_setting != nullptr) {
+		const bool wanted = std::get<bool>(std::get<toast::params::Scalar>(hdr_setting->snapshot()));
 		if (wanted && !hdr_active) {
 			ImGui::PushStyleColor(ImGuiCol_Text, k_perf_warn);
 			ImGui::TextWrapped("SDR is in use. Turn HDR on for this display");
@@ -1080,9 +1094,9 @@ void PerfWindow::drawQualityTab() {
 		}
 	}
 
-	const toast::settings::Entry* preset = registry.find("renderer.quality.preset");
-	const size_t tier_count = preset != nullptr ? preset->meta.options.size() - 1 : 0;
-	const int64_t preset_value = preset != nullptr ? std::get<int64_t>(registry.resolved(preset)) : 0;
+	const toast::params::ParamBase* preset = registry.find("renderer.quality.preset");
+	const size_t tier_count = preset != nullptr ? preset->options().size() - 1 : 0;
+	const int64_t preset_value = preset != nullptr ? std::get<int64_t>(std::get<toast::params::Scalar>(preset->snapshot())) : 0;
 	const bool custom = preset == nullptr || std::cmp_greater_equal(preset_value, tier_count);
 	const bool rt_tier = !custom && std::cmp_greater_equal(preset_value, tier_count / 2);
 
@@ -1102,27 +1116,34 @@ void PerfWindow::drawQualityTab() {
 	}
 
 	// On release since each value recreates every target
-	if (toast::settings::Entry* scale = registry.find("renderer.quality.render_scale");
+	if (toast::params::ParamBase* scale = registry.find("renderer.quality.render_scale");
 	    scale != nullptr && ImGui::BeginTable("##perf_quality_scale", 2, ImGuiTableFlags_SizingStretchProp)) {
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
 		ImGui::AlignTextToFramePadding();
-		ImGui::TextUnformatted(scale->meta.label.c_str());
+		ImGui::TextUnformatted(std::string {scale->name()}.c_str());
 		ImGui::TableNextColumn();
 		ImGui::SetNextItemWidth(-FLT_MIN);
-		const auto forced_scale = presetDrivenValue(scale->key);
+		const auto forced_scale = presetDrivenValue("renderer.quality.render_scale");
 		if (!m_render_scale_editing) {
-			m_render_scale_edit = static_cast<float>(std::get<double>(forced_scale.value_or(registry.resolved(scale))));
+			m_render_scale_edit =
+			    static_cast<float>(std::get<double>(std::get<toast::params::Scalar>(forced_scale.value_or(scale->snapshot()))));
 		}
 		ImGui::SliderFloat(
-		    "##value", &m_render_scale_edit, static_cast<float>(scale->meta.min), static_cast<float>(scale->meta.max), "%.2f"
+		    "##value",
+		    &m_render_scale_edit,
+		    static_cast<float>(std::get<double>(*scale->minValue())),
+		    static_cast<float>(std::get<double>(*scale->maxValue())),
+		    "%.2f"
 		);
 		m_render_scale_editing = ImGui::IsItemActive();
 		if (ImGui::IsItemDeactivatedAfterEdit()) {
 			if (forced_scale.has_value()) {
 				requestCustomPreset();
 			}
-			VulkanRenderer::instance->requestSettingValue(scale->key, static_cast<double>(m_render_scale_edit));
+			VulkanRenderer::instance->requestSettingValue(
+			    "renderer.quality.render_scale", toast::params::Value {toast::params::Scalar {static_cast<double>(m_render_scale_edit)}}
+			);
 		}
 		ImGui::EndTable();
 

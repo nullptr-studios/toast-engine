@@ -1160,11 +1160,9 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		return true;
 	}
 
-	/// Engine and game in RelWithDebInfo: optimized, with the dev tools, Tracy and full symbols
 	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
 	private Task CompileGameDevelopment() => CompileGame("RelWithDebInfo");
 
-	/// Engine and game in Release: full optimization, no dev tools or Tracy
 	[RelayCommand(CanExecute = nameof(CanCompileGameRelease))]
 	private Task CompileGameRelease() => CompileGame("Release");
 
@@ -1172,7 +1170,6 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 		if (App.MainWindow is not { } owner) return;
 		if (!ProjectContext.IsInitialized) return;
 
-		// The game links against the engine of the same config, which sits next to the editor's own out/<config>/
 		var toastPath = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", gameConfig, "toast_engine"));
 		if (!File.Exists(Path.Combine(toastPath, "bin", OperatingSystem.IsWindows() ? "toast_engine.dll" : "libtoast_engine.so"))) {
 			Log.Error($"Cannot build the game in {gameConfig}: the {gameConfig} engine was not built ({toastPath})");
@@ -1240,7 +1237,33 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			await Task.Run(() => File.Copy(toastFile, dest, true));
 		}
 
-		// The engine's crash handler looks for crash_reporter/ next to toast_engine.dll; runtimes/ holds its native libraries
+		async Task CookConfigs(Action<string> log) {
+			var configDir = Path.Combine(ProjectContext.ProjectPath, "config");
+			var toastFile = Directory.EnumerateFiles(ProjectContext.ProjectPath, "*.toast").FirstOrDefault() ?? "";
+			var stageDir = Path.Combine(stageRoot, "configs");
+			if (Directory.Exists(stageDir)) Directory.Delete(stageDir, true);
+
+			log("  cooking config://");
+			if (!await Task.Run(() => ToastSettings.Cook(configDir, toastFile, stageDir)))
+				throw new Exception("could not cook the config files; the log says which one");
+
+			var pakOut = Path.Combine(outputDir, "configs.pak");
+			log("  packing → configs.pak");
+			await Task.Run(() => {
+				using var proc = new Process();
+				proc.StartInfo = new ProcessStartInfo {
+					FileName = packerBin,
+					Arguments = $"\"{stageDir}\" \"{pakOut}\"",
+					WorkingDirectory = ProjectContext.ProjectPath,
+					UseShellExecute = false,
+					CreateNoWindow = true
+				};
+				var exitCode = TerminalReader.Run(proc, log);
+				if (exitCode != 0)
+					throw new Exception($"packer exited with code {exitCode} for configs");
+			});
+		}
+
 		async Task CopyCrashReporter(Action<string> log) {
 			var src = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "crash_reporter"));
 			if (!Directory.Exists(src)) {
@@ -1351,6 +1374,7 @@ public partial class MainWindowViewModel : ViewModelBase, IDisposable {
 			LoaderTask.Do("copy libraries", CopyDlls),
 			LoaderTask.Do("copy crash reporter", CopyCrashReporter),
 			LoaderTask.Do("copy project.toast", CopyProjectToast),
+			LoaderTask.Do("cook configs", CookConfigs),
 			LoaderTask.Do("copy baked lighting", CopyBakedLighting)
 		};
 
