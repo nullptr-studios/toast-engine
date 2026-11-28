@@ -3,6 +3,7 @@ project(toast_pack CXX)
 find_package(lz4 CONFIG REQUIRED)
 
 add_library(toast_pack STATIC src/pack.cpp)
+set_target_properties(toast_pack PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_features(toast_pack PUBLIC cxx_std_23)
 target_include_directories(toast_pack PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(toast_pack PUBLIC LZ4::lz4)
