@@ -152,6 +152,7 @@ if (TOAST_DLSS)
         # The runtime's license has to ship with it, the port installs it as share/nvidia-dlss/copyright
         get_filename_component(_nvidia_dlss_license "${NVIDIA_DLSS_RUNTIME_DLL}/../../share/nvidia-dlss/copyright" ABSOLUTE)
         add_custom_command(TARGET toast_engine POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${TOAST_ENGINE_BIN_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVIDIA_DLSS_RUNTIME_DLL}" "${TOAST_ENGINE_BIN_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_nvidia_dlss_license}" "${TOAST_ENGINE_BIN_DIR}/NVIDIA_DLSS_LICENSE.txt"
                 COMMENT "Copying the DLSS runtime"
@@ -311,6 +312,24 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND_EXPAND_LISTS
         VERBATIM
 )
+
+if (NOT WIN32)
+    # ffmpeg is shared on Linux (see cmake/vcpkg-triplets/x64-linux.cmake), ship each lib under its soname
+    set(_ffmpeg_prefix "${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
+    file(GLOB _ffmpeg_sos_debug CONFIGURE_DEPENDS "${_ffmpeg_prefix}/debug/lib/libav*.so.*" "${_ffmpeg_prefix}/debug/lib/libsw*.so.*")
+    file(GLOB _ffmpeg_sos_release CONFIGURE_DEPENDS "${_ffmpeg_prefix}/lib/libav*.so.*" "${_ffmpeg_prefix}/lib/libsw*.so.*")
+    list(FILTER _ffmpeg_sos_debug INCLUDE REGEX "\\.so\\.[0-9]+$")
+    list(FILTER _ffmpeg_sos_release INCLUDE REGEX "\\.so\\.[0-9]+$")
+    add_custom_command(TARGET toast_engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_SONAME_FILE:Tracy::TracyClient>" "${TOAST_ENGINE_OUTPUT_ROOT}/lib"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<$<CONFIG:Debug>:${_ffmpeg_sos_debug}>"
+                "$<$<NOT:$<CONFIG:Debug>>:${_ffmpeg_sos_release}>"
+                "${TOAST_ENGINE_OUTPUT_ROOT}/lib"
+            COMMAND_EXPAND_LISTS
+            VERBATIM
+    )
+endif ()
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
     add_custom_command(TARGET toast_engine POST_BUILD
