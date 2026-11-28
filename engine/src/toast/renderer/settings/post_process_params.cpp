@@ -360,6 +360,22 @@ auto PostProcessParams::resolve() const -> PostProcessSettings {
 	f("tonemap.adapt_speed_up", s.tonemap.adapt_speed_up);
 	f("tonemap.adapt_speed_down", s.tonemap.adapt_speed_down);
 
+	auto& grade = s.color_grading;
+	f("color_grading.temperature", grade.temperature);
+	f("color_grading.tint", grade.tint);
+	c("color_grading.color_filter", grade.color_filter_r, grade.color_filter_g, grade.color_filter_b);
+	f("color_grading.hue_shift", grade.hue_shift);
+	c("color_grading.lift", grade.lift_r, grade.lift_g, grade.lift_b);
+	f("color_grading.lift_offset", grade.lift_offset);
+	c("color_grading.gamma", grade.gamma_r, grade.gamma_g, grade.gamma_b);
+	f("color_grading.gamma_offset", grade.gamma_offset);
+	c("color_grading.gain", grade.gain_r, grade.gain_g, grade.gain_b);
+	f("color_grading.gain_offset", grade.gain_offset);
+	if (const auto uid = assetUid("color_grading.lut"); uid && uid->data() != 0) {
+		grade.lut = assets::load<assets::Texture>(*uid);
+	}
+	f("color_grading.lut_intensity", grade.lut_intensity);
+
 	f("fxaa.contrast_threshold", s.fxaa.contrast_threshold);
 	f("fxaa.relative_threshold", s.fxaa.relative_threshold);
 	f("fxaa.subpixel_blending", s.fxaa.subpixel_blending);

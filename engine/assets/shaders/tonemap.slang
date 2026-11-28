@@ -34,6 +34,22 @@ struct TonemapParams
 
     // 0.01 moves red and blue 1% of the distance to the centre
     float chromaticAberration;
+
+    // White balance, -1 to 1
+    float temperature;
+    float tint;
+
+    // w is the hue shift in degrees
+    float4 colorFilter;
+
+    // Prepared on the CPU, neutral is lift 0, gammaInv 1, gain 1
+    float4 lift;
+
+    // w is 1 when the LUT has an sRGB format and its samples come back linear
+    float4 gammaInv;
+
+    // w is the LUT intensity, 0 when no LUT is bound
+    float4 gain;
 };
 
 [[vk::binding(0,0)]]
@@ -45,6 +61,10 @@ Sampler2D gSceneColor;
 // Written by exposure.slang adaptMain
 [[vk::binding(2,0)]]
 StructuredBuffer<float> gExposure;
+
+// Strip of N slices of NxN, red across a slice, green down, blue picks the slice. The scene stands in when unbound
+[[vk::binding(3,0)]]
+Sampler2D gLut;
 
 typedef FullscreenVSOutput VSOutput;
 
@@ -72,6 +92,73 @@ float3 tonemapACES(float3 color)
     const float d = 0.59;
     const float e = 0.14;
     return saturate((color * (a * color + b)) / (color * (c * color + d) + e));
+}
+
+// CAT02 von Kries adaptation from D65 toward the illuminant temperature and tint pick, coefficients are 1 at 0, 0
+float3 whiteBalance(float3 c, float temperature, float tint)
+{
+    const float t1 = temperature * (100.0 / 65.0);
+    const float t2 = tint * (100.0 / 65.0);
+    const float x = 0.31271 - t1 * (t1 < 0.0 ? 0.1 : 0.05);
+    const float y = 2.87 * x - 3.0 * x * x - 0.27509507 + t2 * 0.05;
+    const float3 xyz = float3(x / y, 1.0, (1.0 - x - y) / y);
+    const float3 lms = float3(
+        dot(xyz, float3(0.7328, 0.4296, -0.1624)),
+        dot(xyz, float3(-0.7036, 1.6975, 0.0061)),
+        dot(xyz, float3(0.0030, 0.0136, 0.9834)));
+    const float3 coeffs = float3(0.949237, 1.03542, 1.08728) / lms;
+
+    const float3x3 toLms = float3x3(
+        0.390405, 0.549941, 0.00892632,
+        0.0708416, 0.963172, 0.00135775,
+        0.0231082, 0.128021, 0.936245);
+    const float3x3 fromLms = float3x3(
+        2.85847, -1.62879, -0.024891,
+        -0.210182, 1.1582, 0.000324281,
+        -0.041812, -0.118169, 1.06867);
+    return mul(fromLms, mul(toLms, c) * coeffs);
+}
+
+// Rotation about the grey axis keeps luminance roughly where it was
+float3 hueShift(float3 c, float degrees)
+{
+    const float3 k = float3(0.57735027, 0.57735027, 0.57735027);
+    const float a = radians(degrees);
+    const float cosA = cos(a);
+    return c * cosA + cross(k, c) * sin(a) + k * dot(k, c) * (1.0 - cosA);
+}
+
+float3 gradeLinear(float3 c)
+{
+    // The LMS matrices turn an fp16 overflow into Inf - Inf, the same range GT7 clamps to keeps it white
+    c = clamp(c, float3(0.0, 0.0, 0.0), float3(65000.0, 65000.0, 65000.0));
+    c = whiteBalance(c, gParams.temperature, gParams.tint);
+    c *= gParams.colorFilter.rgb;
+    c = hueShift(c, gParams.colorFilter.w);
+    c = c * gParams.gain.rgb + gParams.lift.rgb;
+    c = sign(c) * pow(abs(c), gParams.gammaInv.rgb);
+    return max(c, float3(0.0, 0.0, 0.0));
+}
+
+float3 linearToSrgb(float3 c)
+{
+    c = saturate(c);
+    return select(c <= 0.0031308, c * 12.92, 1.055 * pow(c, 1.0 / 2.4) - 0.055);
+}
+
+// Takes display encoded colour, the space the LUT was graded in
+float3 applyLut(float3 c)
+{
+    uint w, h;
+    gLut.GetDimensions(w, h);
+    const float n = float(h);
+    c = saturate(c) * (n - 1.0);
+    const float slice = floor(c.b);
+    const float2 uv = float2((c.r + 0.5 + slice * n) / float(w), (c.g + 0.5) / n);
+    const float3 a = gLut.SampleLevel(uv, 0).rgb;
+    const float3 b = gLut.SampleLevel(uv + float2(n / float(w), 0.0), 0).rgb;
+    const float3 graded = lerp(a, b, c.b - slice);
+    return gParams.gammaInv.w > 0.5 ? linearToSrgb(graded) : graded;
 }
 
 float ditherOffset(float2 pixel)
@@ -103,6 +190,8 @@ float4 fragmentMain(VSOutput input) : SV_Target0
         color = gSceneColor.Sample(input.uv).rgb * exposure;
     }
 
+    color = gradeLinear(color);
+
     const bool hdr = gParams.hdr != 0u;
     if (gParams.mode == 2)
     {
@@ -127,8 +216,20 @@ float4 fragmentMain(VSOutput input) : SV_Target0
     float lum = luminance(color);
     color = max(lerp(float3(lum, lum, lum), color, gParams.saturation), float3(0.0, 0.0, 0.0));
 
+    const float invGamma = 1.0 / max(gParams.gamma, 1e-4);
+    const float lutIntensity = gParams.gain.w;
+
     if (hdr)
     {
+        if (lutIntensity > 0.0)
+        {
+            // The LUT only covers up to paper white, so it grades hue and chroma and brightness above that is kept
+            const float scale = max(max(color.r, max(color.g, color.b)), 1.0);
+            const float3 encoded = pow(color / scale, float3(invGamma, invGamma, invGamma));
+            const float3 graded = pow(applyLut(encoded), float3(gParams.gamma, gParams.gamma, gParams.gamma)) * scale;
+            color = lerp(color, graded, lutIntensity);
+        }
+
         if (gParams.vignette > 0.0)
         {
             float2 centered = input.uv - 0.5;
@@ -145,8 +246,12 @@ float4 fragmentMain(VSOutput input) : SV_Target0
         return float4(min(max(color, float3(0.0, 0.0, 0.0)) * gParams.paperWhiteScale, float3(gParams.peakScale, gParams.peakScale, gParams.peakScale)), 1.0);
     }
 
-    float invGamma = 1.0 / max(gParams.gamma, 1e-4);
     color = pow(max(color, float3(0.0, 0.0, 0.0)), float3(invGamma, invGamma, invGamma));
+
+    if (lutIntensity > 0.0)
+    {
+        color = lerp(color, applyLut(color), lutIntensity);
+    }
 
     if (gParams.vignette > 0.0)
     {
