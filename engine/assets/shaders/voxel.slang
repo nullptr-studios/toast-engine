@@ -562,7 +562,8 @@ bool shade(VSOutput input, out FSOutput output, out float depth)
     // Never hit in front of the near plane whose clip distance is linear along the ray in either convention
     const float nearOrigin = clipNearDistance(mul(gCamera.viewProjection, float4(camera, 1.0)));
     const float nearStep = clipNearDistance(mul(gCamera.viewProjection, float4(worldDirection, 0.0)));
-    const float tMin = nearStep > 0.0 ? max(0.0, -nearOrigin / nearStep) : 0.0;
+    // const float tMin = nearStep > 0.0 ? max(0.0, -nearOrigin / nearStep) : 0.0;
+    const float tMin = max(0.0, -nearOrigin / nearStep);
 
     const RayHit hit = marchRayBox(instance.recordIndex, origin, direction, tMin, kFloatMax, input.boxMin, input.boxMax);
     return shadeHit(input.position, instance, origin, direction, worldDirection, hit, output, depth);

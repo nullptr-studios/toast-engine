@@ -65,6 +65,32 @@ struct PostProcessSettings {
 		float adapt_speed_down = 1.0f;
 	} tonemap;
 
+	/// Every default is neutral so a profile without grading renders as before
+	struct ColorGrading {
+		float temperature = 0.0f;
+		float tint = 0.0f;
+		float color_filter_r = 1.0f;
+		float color_filter_g = 1.0f;
+		float color_filter_b = 1.0f;
+		/// Degrees
+		float hue_shift = 0.0f;
+		float lift_r = 1.0f;
+		float lift_g = 1.0f;
+		float lift_b = 1.0f;
+		float lift_offset = 0.0f;
+		float gamma_r = 1.0f;
+		float gamma_g = 1.0f;
+		float gamma_b = 1.0f;
+		float gamma_offset = 0.0f;
+		float gain_r = 1.0f;
+		float gain_g = 1.0f;
+		float gain_b = 1.0f;
+		float gain_offset = 0.0f;
+		/// Strip of N slices of NxN, display encoded
+		assets::Handle<assets::Texture> lut;
+		float lut_intensity = 1.0f;
+	} color_grading;
+
 	struct Fxaa {
 		float contrast_threshold = 0.0312f;
 		float relative_threshold = 0.125f;

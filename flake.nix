@@ -24,6 +24,7 @@
 
 		libraries = with pkgs; [
 			lua5_4
+			ffmpeg
 			lua54Packages.luafilesystem
 			llvmPackages_23.clang
 			llvmPackages_23.llvm

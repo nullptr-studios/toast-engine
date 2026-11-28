@@ -33,7 +33,8 @@ public partial class CompactImportWindowViewModel : ViewModelBase {
 			new GltfImporter(GltfSettings, TextureSettings),
 			new VoxImporter(VoxSettings),
 			new AudioBankImporter(),
-			new AudioStringImporter(AudioStringSettings)
+			new AudioStringImporter(AudioStringSettings),
+			new VideoImporter()
 		];
 
 		RebuildSettingsCards();

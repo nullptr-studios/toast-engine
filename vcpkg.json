@@ -5,6 +5,9 @@
   "vcpkg-configuration": {
     "overlay-ports": [
       "./cmake/vcpkg-ports"
+    ],
+    "overlay-triplets": [
+      "./cmake/vcpkg-triplets"
     ]
   },
   "dependencies": [
@@ -152,6 +155,12 @@
     },
     {
       "name": "ffmpeg",
+      "default-features": false,
+      "features": [
+        "avcodec",
+        "avformat",
+        "swscale"
+      ],
       "version>=": "9.0.2#7"
     }
   ],

@@ -44,6 +44,11 @@ public:
 		return m_params.format;
 	}
 
+	[[nodiscard]]
+	auto params() const -> const Params& {
+		return m_params;
+	}
+
 	/// Unique per create() so a descriptor cache notices a recreated view that reuses a destroyed handle value
 	[[nodiscard]]
 	auto generation() const noexcept -> uint64_t {
