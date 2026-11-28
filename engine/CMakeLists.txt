@@ -150,6 +150,7 @@ if (TOAST_DLSS)
         # The runtime's license has to ship with it, the port installs it as share/nvidia-dlss/copyright
         get_filename_component(_nvidia_dlss_license "${NVIDIA_DLSS_RUNTIME_DLL}/../../share/nvidia-dlss/copyright" ABSOLUTE)
         add_custom_command(TARGET toast_engine POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${TOAST_ENGINE_BIN_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "${NVIDIA_DLSS_RUNTIME_DLL}" "${TOAST_ENGINE_BIN_DIR}"
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_nvidia_dlss_license}" "${TOAST_ENGINE_BIN_DIR}/NVIDIA_DLSS_LICENSE.txt"
                 COMMENT "Copying the DLSS runtime"
@@ -309,6 +310,13 @@ add_custom_command(TARGET toast_engine POST_BUILD
         COMMAND_EXPAND_LISTS
         VERBATIM
 )
+
+if (NOT WIN32)
+    add_custom_command(TARGET toast_engine POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different "$<TARGET_SONAME_FILE:Tracy::TracyClient>" "${TOAST_ENGINE_OUTPUT_ROOT}/lib"
+            VERBATIM
+    )
+endif ()
 
 if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/assets")
     add_custom_command(TARGET toast_engine POST_BUILD
